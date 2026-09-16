@@ -1,0 +1,18 @@
+{
+  "name": "clinicos-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "powershell -ExecutionPolicy Bypass -Command \"if (Test-Path apps/api/venv) { . apps/api/venv/Scripts/Activate.ps1; uvicorn apps.api.main:app --reload --port 8000 } else { uvicorn apps.api.main:app --reload --port 8000 }\"",
+    "build:web": "npm run build --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
