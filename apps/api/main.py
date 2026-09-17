@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.health import router as health_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.onboarding import router as onboarding_router
+from app.api.v1.doctors import router as doctors_router
+from app.api.v1.clinics import router as clinics_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -16,15 +19,18 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In development allow all; locked to settings.BACKEND_CORS_ORIGINS in prod
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include v1 API routes
+# Register v1 API routes
 app.include_router(health_router, prefix=settings.API_V1_STR)
 app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(onboarding_router, prefix=settings.API_V1_STR)
+app.include_router(doctors_router, prefix=settings.API_V1_STR)
+app.include_router(clinics_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():
