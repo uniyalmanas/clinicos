@@ -31,7 +31,7 @@ export default function InteractiveHeroSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search doctors, specialities, symptoms (e.g. Acne, Dental, Paediatrician, Rajpur Rd)..."
-            className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-28 text-sm text-slate-900 shadow-xl shadow-slate-200/50 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:shadow-none"
+            className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-28 text-sm text-slate-900 shadow-xl shadow-slate-200/50 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-[#1E2638] dark:bg-[#111726] dark:text-white dark:shadow-[0_4px_25px_-5px_rgba(0,0,0,0.6)]"
           />
           <button
             type="submit"
@@ -46,25 +46,25 @@ export default function InteractiveHeroSearch() {
         <span className="font-semibold text-slate-500 dark:text-slate-400">Popular in Dehradun:</span>
         <button
           onClick={() => handleQuickTag("Dermatology")}
-          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 transition"
+          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-[#1E2638] dark:bg-[#111726] dark:text-slate-300 dark:hover:border-teal-500/50 dark:hover:text-teal-300 transition"
         >
           ✨ Acne & Skin
         </button>
         <button
           onClick={() => handleQuickTag("Dentist")}
-          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 transition"
+          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-[#1E2638] dark:bg-[#111726] dark:text-slate-300 dark:hover:border-teal-500/50 dark:hover:text-teal-300 transition"
         >
           🦷 Painless Root Canal
         </button>
         <button
           onClick={() => handleQuickTag("Paediatrics")}
-          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 transition"
+          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-[#1E2638] dark:bg-[#111726] dark:text-slate-300 dark:hover:border-teal-500/50 dark:hover:text-teal-300 transition"
         >
           👶 Child Vaccination
         </button>
         <button
           onClick={() => handleQuickTag("Rajpur Road")}
-          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 transition"
+          className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-[#1E2638] dark:bg-[#111726] dark:text-slate-300 dark:hover:border-teal-500/50 dark:hover:text-teal-300 transition"
         >
           📍 Rajpur Road
         </button>

@@ -44,7 +44,7 @@ export default function ThemeToggle({ className = "", showLabel = false }: Theme
     return (
       <button
         aria-label="Toggle theme"
-        className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white p-2 text-slate-600 shadow-sm dark:border-[#1E2638] dark:bg-[#111726] dark:text-slate-300 ${className}`}
       >
         <Sun className="h-4 w-4" />
       </button>
@@ -56,7 +56,7 @@ export default function ThemeToggle({ className = "", showLabel = false }: Theme
       onClick={toggleTheme}
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
       title={`Switch to ${theme === "light" ? "Dark" : "Light"} Mode`}
-      className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white ${className}`}
+      className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-[#1E2638] dark:bg-[#111726] dark:text-slate-300 dark:hover:bg-[#161F36] dark:hover:text-white ${className}`}
     >
       {theme === "light" ? (
         <>

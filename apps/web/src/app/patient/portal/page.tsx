@@ -95,12 +95,12 @@ export default function PatientPortalPage() {
         )}
 
         {/* QUICK PATIENT SWITCHER */}
-        <div className="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 dark:border-brand-900/50 dark:bg-brand-950/20">
+        <div className="rounded-2xl border border-teal-200/80 bg-teal-50/40 p-4 dark:border-teal-900/40 dark:bg-[#111726]">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-brand-800 dark:text-brand-300">
+            <span className="font-bold text-teal-800 dark:text-teal-300">
               Demo Patient Profile Switcher:
             </span>
-            <span className="text-slate-500 text-[11px]">Click to view family health records:</span>
+            <span className="text-slate-500 dark:text-slate-400 text-[11px]">Click to view family health records:</span>
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {SEED_PATIENTS.map(p => (
@@ -110,7 +110,7 @@ export default function PatientPortalPage() {
                 className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
                   currentPatient.id === p.id
                     ? "bg-brand-600 text-white shadow-sm"
-                    : "border border-slate-200 bg-white text-slate-700 hover:border-brand-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                    : "border border-slate-200 bg-white text-slate-700 hover:border-brand-500 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-300 dark:hover:border-teal-500/50"
                 }`}
               >
                 {p.full_name} ({p.gender[0]}, {p.age}y)
@@ -120,23 +120,23 @@ export default function PatientPortalPage() {
         </div>
 
         {/* PATIENT PROFILE CARD */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 dark:border-slate-800">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-[#1E2638] dark:bg-[#111726]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5 dark:border-[#1E2638]">
             <div>
               <div className="flex items-center gap-2.5">
                 <h1 className="text-2xl font-black text-slate-900 dark:text-white">
                   {currentPatient.full_name}
                 </h1>
-                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
                   Blood Group: {currentPatient.blood_group}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Registered Mobile: <strong>{currentPatient.phone}</strong> • {currentPatient.age} Years • {currentPatient.gender}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full dark:bg-emerald-950 dark:text-emerald-300">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full dark:bg-emerald-950/70 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
               <ShieldCheck className="h-4 w-4" />
               <span>DPDP Encrypted Locker</span>
             </div>
@@ -144,11 +144,11 @@ export default function PatientPortalPage() {
 
           {/* ACTIVE CLINICAL FLAGS */}
           <div className="mt-4 flex flex-wrap gap-3 text-xs">
-            <div className="rounded-xl border border-rose-200 bg-rose-50/40 px-3 py-1.5 text-rose-700 dark:border-rose-950 dark:bg-rose-950/20 dark:text-rose-300 flex items-center gap-1.5 font-semibold">
+            <div className="rounded-xl border border-rose-200 bg-rose-50/40 px-3 py-1.5 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300 flex items-center gap-1.5 font-semibold">
               <AlertCircle className="h-4 w-4" />
               <span>Allergies: {currentPatient.chronic_allergies.join(", ") || "None"}</span>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 flex items-center gap-1.5">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-700 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-300 flex items-center gap-1.5">
               <span>Conditions: {currentPatient.known_conditions.join(", ") || "Healthy"}</span>
             </div>
           </div>
@@ -156,16 +156,16 @@ export default function PatientPortalPage() {
 
         {/* ACTIVE PRESCRIPTION HERO CARD */}
         {activeRx && (
-          <div className="rounded-3xl border-2 border-brand-500 bg-white p-6 sm:p-8 shadow-xl shadow-brand-600/10 dark:border-brand-900 dark:bg-slate-900 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+          <div className="rounded-3xl border-2 border-brand-500 bg-white p-6 sm:p-8 shadow-xl shadow-brand-600/10 dark:border-teal-500/40 dark:bg-[#111726] space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 dark:border-[#1E2638]">
               <div>
-                <span className="rounded bg-teal-50 px-2 py-0.5 text-xs font-bold text-teal-700 dark:bg-teal-950 dark:text-teal-300">
+                <span className="rounded bg-teal-50 px-2 py-0.5 text-xs font-bold text-teal-700 dark:bg-teal-950/70 dark:text-teal-300 dark:border dark:border-teal-800/40">
                   Active Digital Prescription
                 </span>
                 <h2 className="mt-1 text-xl font-black text-slate-900 dark:text-white">
                   {activeRx.provisional_diagnosis}
                 </h2>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Prescribed by <strong>{activeRx.doctor_name}</strong> • {activeRx.clinic_name} on {activeRx.visit_date}
                 </p>
               </div>
@@ -174,9 +174,9 @@ export default function PatientPortalPage() {
                 <Link
                   href={`/p/${activeRx.prescription_number}`}
                   target="_blank"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-200 dark:hover:bg-[#1C2846]"
                 >
-                  <FileText className="h-4 w-4 text-brand-600" />
+                  <FileText className="h-4 w-4 text-brand-600 dark:text-brand-400" />
                   <span>View Verified PDF</span>
                   <ExternalLink className="h-3 w-3" />
                 </Link>
@@ -185,7 +185,7 @@ export default function PatientPortalPage() {
 
             {/* MEDICINES & ALARM CONTROLS */}
             <div className="space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Daily Dosage Schedule & Alarm Reminders
               </span>
 
@@ -193,21 +193,21 @@ export default function PatientPortalPage() {
                 {activeRx.medications_summary.map((med, idx) => (
                   <div
                     key={idx}
-                    className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-[#1E2638] dark:bg-[#161F36] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div>
                       <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <Pill className="h-4 w-4 text-brand-600" />
+                        <Pill className="h-4 w-4 text-brand-600 dark:text-teal-400" />
                         <span>{med}</span>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                         Take after food with water. Follow complete prescribed course.
                       </div>
                     </div>
 
                     <button
                       onClick={() => setMedicationAlarm(med, "09:00 PM (Night)")}
-                      className="inline-flex items-center gap-1 rounded-xl bg-brand-50 border border-brand-200 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-300 transition"
+                      className="inline-flex items-center gap-1 rounded-xl bg-brand-50 border border-brand-200 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 dark:border-teal-500/30 dark:bg-teal-500/10 dark:text-teal-300 transition"
                     >
                       <Bell className="h-3.5 w-3.5" />
                       <span>Set Daily Alarm</span>
@@ -218,7 +218,7 @@ export default function PatientPortalPage() {
             </div>
 
             {/* 1-CLICK PARTNER FULFILLMENT */}
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 dark:border-emerald-950 dark:bg-emerald-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 dark:border-emerald-800/40 dark:bg-emerald-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="font-bold text-xs text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4 text-emerald-600" />
@@ -238,7 +238,7 @@ export default function PatientPortalPage() {
                 </button>
                 <button
                   onClick={() => alert("Diagnostic home sample collection requested for Dehradun address!")}
-                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 whitespace-nowrap"
+                  className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-200 dark:hover:bg-[#1C2846] whitespace-nowrap"
                 >
                   Book Lab Collection
                 </button>

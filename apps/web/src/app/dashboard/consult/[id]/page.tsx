@@ -259,7 +259,7 @@ export default function DynamicConsultationStudioPage() {
   return (
     <div className="space-y-6">
       {/* 1. TOP APPOINTMENT PATIENT BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#1E2638] dark:bg-[#111726]">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 font-mono text-xl font-black text-white shadow-md shadow-brand-600/20">
             #{patient.token_number}
@@ -267,15 +267,15 @@ export default function DynamicConsultationStudioPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-black text-slate-900 dark:text-white">{patient.name}</h1>
-              <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-[#182238] dark:text-slate-300">
                 {patient.age}Y / {patient.gender}
               </span>
-              <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+              <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
                 Token In Consultation
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Phone: {patient.phone} • Allergy Flag: <strong className="text-emerald-600">{patient.allergies}</strong>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Phone: {patient.phone} • Allergy Flag: <strong className="text-emerald-600 dark:text-emerald-400">{patient.allergies}</strong>
             </p>
           </div>
         </div>
@@ -285,19 +285,19 @@ export default function DynamicConsultationStudioPage() {
           <span className="text-[11px] font-semibold text-slate-400 hidden lg:inline">Specialty Presets:</span>
           <button
             onClick={() => applySpecialtyKit("acne")}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-200 dark:hover:border-teal-500/50"
           >
             Acne Kit
           </button>
           <button
             onClick={() => applySpecialtyKit("fungal")}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-200 dark:hover:border-teal-500/50"
           >
             Fungal Kit
           </button>
           <button
             onClick={() => applySpecialtyKit("fever")}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-200 dark:hover:border-teal-500/50"
           >
             Viral Fever
           </button>
@@ -457,9 +457,9 @@ export default function DynamicConsultationStudioPage() {
           {/* LEFT: CLINICAL INPUTS & EXAMINATIONS */}
           <div className="lg:col-span-4 space-y-6">
             {/* Vitals Recording */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Activity className="h-4 w-4 text-brand-600" /> Patient Clinical Vitals
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#1E2638] dark:bg-[#111726] space-y-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-brand-600 dark:text-brand-400" /> Patient Clinical Vitals
               </h2>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
@@ -470,7 +470,7 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.bp}
                     onChange={e => setVitals({ ...vitals, bp: e.target.value })}
                     placeholder="120/80"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   />
                 </div>
                 <div>
@@ -480,7 +480,7 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.pulse}
                     onChange={e => setVitals({ ...vitals, pulse: e.target.value })}
                     placeholder="72"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   />
                 </div>
                 <div>
@@ -490,7 +490,7 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.temp}
                     onChange={e => setVitals({ ...vitals, temp: e.target.value })}
                     placeholder="98.6"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   />
                 </div>
                 <div>
@@ -500,15 +500,15 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.weight}
                     onChange={e => setVitals({ ...vitals, weight: e.target.value })}
                     placeholder="65"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2 font-mono dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   />
                 </div>
               </div>
             </div>
 
             {/* Chief Complaints & Diagnosis */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#1E2638] dark:bg-[#111726] space-y-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Diagnosis & Examination
               </h2>
 
@@ -519,7 +519,7 @@ export default function DynamicConsultationStudioPage() {
                     type="text"
                     value={provisionalDiagnosis}
                     onChange={e => setProvisionalDiagnosis(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 font-bold text-slate-900 dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   />
                 </div>
 
@@ -529,7 +529,7 @@ export default function DynamicConsultationStudioPage() {
                     rows={3}
                     value={chiefComplaints}
                     onChange={e => setChiefComplaints(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   ></textarea>
                 </div>
 
@@ -539,16 +539,16 @@ export default function DynamicConsultationStudioPage() {
                     rows={2}
                     value={followupAdvice}
                     onChange={e => setFollowupAdvice(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   ></textarea>
                 </div>
               </div>
             </div>
 
             {/* Diagnostic Lab Tests Checklist */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Microscope className="h-4 w-4 text-blue-600" /> Order Diagnostic Lab Tests
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#1E2638] dark:bg-[#111726] space-y-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Microscope className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Order Diagnostic Lab Tests
               </h2>
 
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
@@ -560,8 +560,8 @@ export default function DynamicConsultationStudioPage() {
                       onClick={() => toggleLabTest(lab.id)}
                       className={`cursor-pointer rounded-xl p-2 text-xs flex items-center justify-between transition ${
                         isChecked
-                          ? "bg-blue-50 border border-blue-200 text-blue-900 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-300 font-bold"
-                          : "bg-slate-50 hover:bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-400"
+                          ? "bg-blue-50 border border-blue-200 text-blue-900 dark:bg-blue-950/50 dark:border-blue-800/60 dark:text-blue-300 font-bold"
+                          : "bg-slate-50 hover:bg-slate-100 text-slate-600 dark:bg-[#161F36] dark:text-slate-300 dark:hover:bg-[#1C2846]"
                       }`}
                     >
                       <span>{lab.test_name}</span>
@@ -575,14 +575,14 @@ export default function DynamicConsultationStudioPage() {
 
           {/* RIGHT: DYNAMIC PRESCRIPTION PAD & MEDICINE SEARCH */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-[#1E2638] dark:bg-[#111726] space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-[#1E2638]">
                 <div>
                   <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <Pill className="h-5 w-5 text-brand-600" />
+                    <Pill className="h-5 w-5 text-brand-600 dark:text-brand-400" />
                     Digital Prescription Builder (NMC Generic Compliant)
                   </h2>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Search 500+ Indian medicines by brand or generic molecule name
                   </p>
                 </div>
@@ -601,27 +601,27 @@ export default function DynamicConsultationStudioPage() {
                     }}
                     onFocus={() => setShowDropdown(true)}
                     placeholder="Type medicine name (e.g. Dolo, Augmentin, Doxy, Cetzine, Pan, Azithral)..."
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-900 focus:border-brand-500 focus:bg-white focus:outline-none dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                   />
                 </div>
 
                 {/* Auto-suggest dropdown */}
                 {showDropdown && filteredMedicines.length > 0 && (
-                  <div className="absolute left-0 right-0 top-12 z-30 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
-                    <div className="p-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider dark:bg-slate-800/60">
+                  <div className="absolute left-0 right-0 top-12 z-30 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-[#1E2638] dark:bg-[#111726]">
+                    <div className="p-2 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider dark:bg-[#0E1422]">
                       Indian Pharmacopeia Database Matches
                     </div>
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <div className="divide-y divide-slate-100 dark:divide-[#1E2638]">
                       {filteredMedicines.map(med => (
                         <div
                           key={med.id}
                           onClick={() => handleSelectMedicine(med)}
-                          className="cursor-pointer p-3 text-xs hover:bg-teal-50/50 dark:hover:bg-slate-800/60 transition flex items-center justify-between"
+                          className="cursor-pointer p-3 text-xs hover:bg-teal-50/50 dark:hover:bg-[#161F36] transition flex items-center justify-between"
                         >
                           <div>
                             <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                               <span>{med.brand_name}</span>
-                              <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                              <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600 dark:bg-[#1E2638] dark:text-slate-300">
                                 {med.dosage_form} • {med.strength}
                               </span>
                             </div>
@@ -629,7 +629,7 @@ export default function DynamicConsultationStudioPage() {
                               Generic: {med.generic_name}
                             </div>
                           </div>
-                          <span className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-bold text-white">
+                          <span className="rounded-lg bg-brand-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm shadow-brand-600/20">
                             + Add to Rx
                           </span>
                         </div>
@@ -641,31 +641,31 @@ export default function DynamicConsultationStudioPage() {
 
               {/* PRESCRIBED MEDICINES LIST */}
               <div className="space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Prescription Items ({prescribedItems.length})
                 </div>
 
                 {prescribedItems.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-950/40 space-y-3"
+                    className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-[#1E2638] dark:bg-[#141B2D] space-y-3"
                   >
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                           <span>{idx + 1}. {item.medicine_name}</span>
-                          <span className="rounded bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-700 dark:bg-teal-950 dark:text-teal-300">
+                          <span className="rounded-lg bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-700 dark:bg-teal-950/70 dark:text-teal-300 dark:border dark:border-teal-800/40">
                             {item.dosage_form}
                           </span>
                         </div>
-                        <div className="font-mono text-xs font-semibold text-brand-700 dark:text-brand-300 uppercase mt-0.5">
+                        <div className="font-mono text-xs font-semibold text-brand-700 dark:text-teal-300 uppercase mt-0.5">
                           Generic Molecule: {item.generic_name} ({item.strength})
                         </div>
                       </div>
 
                       <button
                         onClick={() => removeMedicine(item.id)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800"
+                        className="rounded-lg p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-[#20293F] transition"
                         title="Remove Medicine"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -682,7 +682,7 @@ export default function DynamicConsultationStudioPage() {
                             const updated = prescribedItems.map(p => p.id === item.id ? { ...p, frequency: e.target.value } : p);
                             setPrescribedItems(updated);
                           }}
-                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-bold dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-bold dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                         />
                       </div>
 
@@ -695,7 +695,7 @@ export default function DynamicConsultationStudioPage() {
                             const updated = prescribedItems.map(p => p.id === item.id ? { ...p, duration: e.target.value } : p);
                             setPrescribedItems(updated);
                           }}
-                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-bold dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 font-bold dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                         />
                       </div>
 
@@ -708,7 +708,7 @@ export default function DynamicConsultationStudioPage() {
                             const updated = prescribedItems.map(p => p.id === item.id ? { ...p, special_instructions: e.target.value } : p);
                             setPrescribedItems(updated);
                           }}
-                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+                          className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2 dark:border-[#1E2638] dark:bg-[#0D121D] dark:text-white"
                         />
                       </div>
                     </div>
@@ -717,9 +717,9 @@ export default function DynamicConsultationStudioPage() {
               </div>
 
               {/* ACTION FOOTER */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <ShieldCheck className="h-4 w-4 text-brand-600" />
+              <div className="pt-4 border-t border-slate-100 dark:border-[#1E2638] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <ShieldCheck className="h-4 w-4 text-brand-600 dark:text-brand-400" />
                   <span>NMC Generic Standards & SHA-256 Signature Activated</span>
                 </div>
 

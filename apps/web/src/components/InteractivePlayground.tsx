@@ -77,13 +77,13 @@ export default function InteractivePlayground() {
       </div>
 
       {/* TABS SELECTOR */}
-      <div className="flex overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex overflow-x-auto rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-sm dark:border-[#1E2638] dark:bg-[#0E1422]">
         <button
           onClick={() => setActiveTab("doctor")}
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap ${
             activeTab === "doctor"
               ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
-              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#161F36]"
           }`}
         >
           <Stethoscope className="h-4 w-4" /> Doctor Chamber
@@ -94,7 +94,7 @@ export default function InteractivePlayground() {
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap ${
             activeTab === "desk"
               ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
-              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#161F36]"
           }`}
         >
           <Building2 className="h-4 w-4" /> Reception Counter
@@ -105,7 +105,7 @@ export default function InteractivePlayground() {
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap ${
             activeTab === "patient"
               ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
-              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#161F36]"
           }`}
         >
           <Smartphone className="h-4 w-4" /> Patient WhatsApp Locker
@@ -116,7 +116,7 @@ export default function InteractivePlayground() {
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap ${
             activeTab === "expenses"
               ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
-              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#161F36]"
           }`}
         >
           <IndianRupee className="h-4 w-4" /> Clinic P&L Ledger
@@ -127,7 +127,7 @@ export default function InteractivePlayground() {
           className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition whitespace-nowrap ${
             activeTab === "admin"
               ? "bg-brand-600 text-white shadow-md shadow-brand-600/20"
-              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white dark:hover:bg-[#161F36]"
           }`}
         >
           <ShieldCheck className="h-4 w-4" /> Council & SaaS MRR
@@ -135,7 +135,7 @@ export default function InteractivePlayground() {
       </div>
 
       {/* TAB CONTENT CARDS */}
-      <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+      <div className="mt-4 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl dark:border-[#1E2638] dark:bg-[#111726] sm:p-8">
         {/* TAB 1: DOCTOR CHAMBER */}
         {activeTab === "doctor" && (
           <div className="space-y-6 animate-in fade-in duration-200">
