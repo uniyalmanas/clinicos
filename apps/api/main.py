@@ -6,6 +6,8 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.onboarding import router as onboarding_router
 from app.api.v1.doctors import router as doctors_router
 from app.api.v1.clinics import router as clinics_router
+from app.api.v1.search import router as search_router
+from app.api.v1.appointments import router as appointments_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -31,6 +33,8 @@ app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(onboarding_router, prefix=settings.API_V1_STR)
 app.include_router(doctors_router, prefix=settings.API_V1_STR)
 app.include_router(clinics_router, prefix=settings.API_V1_STR)
+app.include_router(search_router, prefix=settings.API_V1_STR)
+app.include_router(appointments_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():
