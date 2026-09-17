@@ -19,12 +19,14 @@ import {
   CheckCircle2, 
   Smartphone,
   CreditCard,
-  HeartHandshake,
   Pill,
   Microscope,
   ChevronDown,
   Phone,
-  QrCode
+  QrCode,
+  Lock,
+  Zap,
+  Activity
 } from "lucide-react";
 
 export default function HomePage() {
@@ -33,11 +35,11 @@ export default function HomePage() {
   const faqs = [
     {
       q: "How is DocSphere different from Practo or generic listing directories?",
-      a: "Practo operates as an aggregator marketplace where they own your patient relationships and charge up to 20-30% commissions on consultations. DocSphere is a self-hosted B2B operating layer: you own your patients, get your own branded subdomain, retain 100% of consultation fees directly in your bank account via UPI, and pay a flat tool fee."
+      a: "Practo operates as an aggregator marketplace where they own your patient relationships and charge heavy commissions on consultations. DocSphere is a direct operating system: you own your patients, get your own branded subdomain, retain 100% of consultation fees directly via UPI, and pay a flat tool fee."
     },
     {
       q: "Do patients need to download an application to book or view prescriptions?",
-      a: "No! 0% patient app downloads required. Patients receive their live token position, payment links, and tamper-proof digital prescription PDFs directly on WhatsApp or SMS via a secure, passwordless web link."
+      a: "No app downloads required. Patients receive their live token position, payment links, and tamper-proof digital prescription PDFs directly on WhatsApp or SMS via a secure, passwordless web link."
     },
     {
       q: "Is DocSphere compliant with National Medical Commission (NMC) regulations?",
@@ -45,7 +47,7 @@ export default function HomePage() {
     },
     {
       q: "What hardware does the Reception Desk require?",
-      a: "Any desktop computer, laptop, tablet, or mobile phone with a modern web browser. The counter console works as an offline-resilient Progressive Web App (PWA) with built-in Web Audio chime call bells."
+      a: "Any desktop computer, laptop, iPad/tablet, or mobile phone with a modern web browser. The counter console works as an offline-resilient Progressive Web App (PWA) with built-in acoustic chime call bells."
     },
     {
       q: "How does the Dehradun pilot network operate?",
@@ -54,57 +56,66 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
-      {/* 1. NAVIGATION BAR */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
+    <div className="flex min-h-screen flex-col bg-[#F5F5F7] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7]">
+      {/* 1. APPLE TRANSLUCENT NAVIGATION BAR */}
+      <header className="sticky top-0 z-50 w-full border-b border-black/[0.06] bg-[#F5F5F7]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-white shadow-md shadow-brand-600/20">
-                <Stethoscope className="h-6 w-6" />
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#0071E3] text-white shadow-sm transition group-hover:scale-105">
+                <Stethoscope className="h-5 w-5" />
               </div>
-              <div>
-                <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">DocSphere</span>
-                <span className="ml-1.5 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-800 dark:bg-brand-900/50 dark:text-brand-300">ClinicOS</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-bold tracking-tight text-[#1D1D1F] dark:text-white">DocSphere</span>
+                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">ClinicOS</span>
               </div>
             </Link>
           </div>
 
-          <nav className="hidden items-center gap-5 lg:flex">
-            <Link href="/dashboard" className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700">
-              ClinicOS Workspace
+          <nav className="hidden items-center gap-1 sm:flex rounded-full bg-black/[0.04] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06]">
+            <Link 
+              href="/dashboard" 
+              className="rounded-full px-4 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-white dark:text-white dark:hover:bg-white/10 transition shadow-sm"
+            >
+              Workspace
             </Link>
-            <Link href="/patient/portal" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700">
-              Patient Locker
-            </Link>
-            <Link href="/search" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
+            <Link 
+              href="/search" 
+              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
+            >
               Find Doctors
             </Link>
-            <Link href="/pharmacy/console" className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700">
-              Chemist Console
+            <Link 
+              href="/patient/portal" 
+              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
+            >
+              Patient Locker
             </Link>
-            <a href="#features" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
+            <a 
+              href="#features" 
+              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
+            >
               Features
             </a>
-            <a href="#pilot-clinics" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
-              Dehradun Pilot
-            </a>
-            <a href="#pricing" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
+            <a 
+              href="#pricing" 
+              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
+            >
               Pricing
             </a>
           </nav>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link
               href="/login"
-              className="rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="hidden sm:inline-block rounded-full px-4 py-2 text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.04] dark:text-white dark:hover:bg-white/[0.08] transition"
             >
               Sign In
             </Link>
             <Link
               href="/onboarding"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
             >
               Join as Doctor <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -112,290 +123,342 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* 2. HERO SECTION */}
-      <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-teal-50/40 via-white to-slate-50/50 px-4 py-16 dark:border-slate-800 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-5xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-semibold text-brand-800 dark:border-brand-900/50 dark:bg-brand-950 dark:text-brand-300">
-            <Sparkles className="h-3.5 w-3.5" /> Built for Independent Indian Clinics & Doctors
+      {/* 2. APPLE HERO SECTION */}
+      <section className="relative px-4 pt-16 pb-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          {/* Eyebrow Pill */}
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-4 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white">
+            <Sparkles className="h-3.5 w-3.5 text-[#0071E3] dark:text-[#2997FF]" />
+            <span>The Operating Infrastructure for Independent Doctors</span>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-6xl">
-            Your Clinic. Online. <br className="hidden sm:inline" />
-            <span className="text-brand-600">Organized. Connected.</span>
+
+          {/* Apple Grand Headline */}
+          <h1 className="text-5xl font-black tracking-[-0.04em] text-[#1D1D1F] dark:text-white sm:text-7xl lg:text-8xl leading-[1.04]">
+            Your clinic. <br className="hidden sm:inline" />
+            <span className="bg-gradient-to-r from-[#0071E3] via-[#00A389] to-[#30D158] bg-clip-text text-transparent">
+              Online. Connected.
+            </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-3xl text-base text-slate-600 dark:text-slate-300 sm:text-lg">
-            Everything independent doctors and clinics need: verified branded subdomains, walk-in token queues with counter chimes, 30-second digital prescriptions, and zero-commission WhatsApp delivery.
+
+          <p className="mx-auto mt-6 max-w-2xl text-base text-[#86868B] dark:text-[#8E8E93] sm:text-xl leading-relaxed">
+            Everything an independent practice needs: verified digital presence, live token queues with counter chimes, 30-second prescriptions, and direct WhatsApp delivery. Zero aggregator commissions.
           </p>
 
-          {/* INTERACTIVE HERO SEARCH COMPONENT */}
-          <InteractiveHeroSearch />
+          {/* Interactive Search Grid */}
+          <div className="mt-8">
+            <InteractiveHeroSearch />
+          </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          {/* Apple Pill Action Buttons */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Link
               href="/onboarding"
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-brand-600/25 transition hover:bg-brand-700 hover:shadow-brand-600/35"
+              className="inline-flex items-center gap-2 rounded-full bg-[#0071E3] px-7 py-3.5 text-sm font-bold text-white shadow-apple-sm hover:bg-[#0077ED] active:scale-95 transition"
             >
-              <Stethoscope className="h-4 w-4" /> Join as a Doctor (<span className="underline decoration-brand-300 underline-offset-2">&lt; 60s AI Setup</span>)
+              <Stethoscope className="h-4 w-4" />
+              <span>Join as Doctor (&lt; 60s AI Setup)</span>
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-7 py-3.5 text-sm font-semibold text-[#1D1D1F] shadow-apple-sm hover:bg-black/[0.02] active:scale-95 transition dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/[0.04]"
             >
-              <UserCheck className="h-4 w-4 text-brand-600" /> 1-Click Interactive Demo Login
+              <UserCheck className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
+              <span>1-Click Interactive Demo</span>
             </Link>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Zero Practo Commissions</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand-600" /> WhatsApp Rx PDF Delivery</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand-600" /> 100% Doctor-Owned Subdomain</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-brand-600" /> DPDP & NMC Compliant</span>
+          {/* Trust Value Points */}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 0% Aggregator Commission</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> WhatsApp Rx PDF Delivery</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 100% Doctor-Owned Brand</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> NMC & DPDP Act Compliant</span>
           </div>
         </div>
 
-        {/* 3. INTERACTIVE PLAYGROUND (All 5 Modules Test Drive) */}
-        <InteractivePlayground />
+        {/* 3. INTERACTIVE PLAYGROUND TEST-DRIVE */}
+        <div className="mt-12">
+          <InteractivePlayground />
+        </div>
       </section>
 
-      {/* 4. THREE CORE PILLARS */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
+      {/* 4. APPLE BENTO-GRID FEATURE PILLARS */}
+      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-brand-600">Complete Healthcare Operating Layer</h2>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">
-              Engineered for Ground-Level Indian OPD Reality
+          <div className="text-center max-w-3xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+              Architecture Overview
+            </span>
+            <h2 className="mt-2 text-3xl font-black text-[#1D1D1F] dark:text-white sm:text-5xl tracking-tight">
+              Engineered for ground-level Indian OPD reality.
+            </h2>
+            <p className="mt-4 text-sm sm:text-base text-[#86868B] dark:text-[#8E8E93]">
+              Simple enough for a 10-second front desk check-in. Powerful enough to run your entire practice.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {/* For Doctors */}
-            <div className="relative rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-brand-600 dark:bg-teal-950">
-                <Stethoscope className="h-6 w-6" />
+          <div className="mt-16 grid gap-6 md:grid-cols-3">
+            {/* Card 1: For Doctors */}
+            <div className="rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-modal transition">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">
+                  <Stethoscope className="h-6 w-6" />
+                </div>
+                <h3 className="mt-6 text-xl font-bold text-[#1D1D1F] dark:text-white tracking-tight">
+                  For Independent Doctors
+                </h3>
+                <p className="mt-2 text-sm text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                  Stop being an interchangeable search row. Get your own branded digital presence, 30-second prescription kits, and verified Google Maps ranking.
+                </p>
+
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>AI-synthesized profile in &lt; 60 seconds</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>1-click specialty prescription presets</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>Tamper-proof SHA-256 digital signatures</span>
+                  </li>
+                </ul>
               </div>
-              <h3 className="mt-6 text-xl font-bold text-slate-900 dark:text-white">For Independent Doctors</h3>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                Stop being an interchangeable row on aggregators. Get your own branded digital portal with 30-second prescription templates, Google Maps local ranking, and direct patient relationships.
-              </p>
-              <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> AI-Synthesized Profile in &lt; 60 seconds</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> 1-Click Common Prescription Kits</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Tamper-Proof Cryptographic Signatures</li>
-              </ul>
-              <Link href="/doctor/queue" className="mt-6 inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:underline">
-                Explore Doctor Chamber <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+
+              <div className="mt-8 pt-6 border-t border-black/[0.05] dark:border-white/[0.06]">
+                <Link 
+                  href="/doctor/queue" 
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0071E3] hover:underline dark:text-[#2997FF]"
+                >
+                  Explore Doctor Chamber <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </div>
 
-            {/* For Clinics */}
-            <div className="relative rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950">
-                <Building2 className="h-6 w-6" />
+            {/* Card 2: For Front Desk */}
+            <div className="rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-modal transition">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#00A389]/10 text-[#00A389] dark:text-[#30D1BE]">
+                  <Building2 className="h-6 w-6" />
+                </div>
+                <h3 className="mt-6 text-xl font-bold text-[#1D1D1F] dark:text-white tracking-tight">
+                  For Front-Desk Reception
+                </h3>
+                <p className="mt-2 text-sm text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                  A high-speed counter PWA for laptop or iPad. Eliminate waiting room chaos with live token calling, acoustic counter chimes, and Soundbox UPI reconciliation.
+                </p>
+
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>10-second walk-in token generator</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>Dual-tone Web Audio acoustic chime</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>Soundbox UPI & cash daily day-book</span>
+                  </li>
+                </ul>
               </div>
-              <h3 className="mt-6 text-xl font-bold text-slate-900 dark:text-white">For Clinics & Polyclinics</h3>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                A streamlined front-desk PWA for your counter PC. Eliminate waiting room chaos with live token calling, soundbox UPI reconciliation, and multi-doctor rosters.
-              </p>
-              <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-blue-600" /> Reception PWA with 1-tap Token Calling</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-blue-600" /> Daily Cash & Soundbox UPI Ledger</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-blue-600" /> Strict Staff vs Doctor Privacy Gate</li>
-              </ul>
-              <Link href="/clinic/desk" className="mt-6 inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline">
-                Explore Counter Console <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+
+              <div className="mt-8 pt-6 border-t border-black/[0.05] dark:border-white/[0.06]">
+                <Link 
+                  href="/clinic/desk" 
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#00A389] hover:underline dark:text-[#30D1BE]"
+                >
+                  Explore Counter Console <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </div>
 
-            {/* For Patients */}
-            <div className="relative rounded-2xl border border-slate-200 bg-white p-8 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950">
-                <UserCheck className="h-6 w-6" />
+            {/* Card 3: For Patients */}
+            <div className="rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-modal transition">
+              <div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[#FF9500]/10 text-[#FF9500] dark:text-[#FF9F0A]">
+                  <UserCheck className="h-6 w-6" />
+                </div>
+                <h3 className="mt-6 text-xl font-bold text-[#1D1D1F] dark:text-white tracking-tight">
+                  For Patients
+                </h3>
+                <p className="mt-2 text-sm text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                  Zero friction. Zero app store downloads. Patients receive their live token position, verified prescription PDF, and dosage alarms directly on WhatsApp.
+                </p>
+
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>Live phone queue tracker with wait times</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>Passwordless health locker on WhatsApp</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
+                    <span>Verified Medical Council credentials</span>
+                  </li>
+                </ul>
               </div>
-              <h3 className="mt-6 text-xl font-bold text-slate-900 dark:text-white">For Patients</h3>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                Zero app downloads required. Patients receive their live token status, official prescription PDFs, and appointment reminders directly on WhatsApp.
-              </p>
-              <ul className="mt-6 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600" /> Live Queue Waiting Tracker on Phone</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600" /> Permanent Digital Health Locker</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-amber-600" /> Verified Medical Council Credentials</li>
-              </ul>
-              <Link href="/p/RX-2026-09-0014" className="mt-6 inline-flex items-center gap-1 text-xs font-bold text-amber-600 hover:underline">
-                Explore Patient Locker <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+
+              <div className="mt-8 pt-6 border-t border-black/[0.05] dark:border-white/[0.06]">
+                <Link 
+                  href="/patient/portal" 
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF9500] hover:underline dark:text-[#FF9F0A]"
+                >
+                  Explore Patient Locker <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 5. PHARMACY & DIAGNOSTICS LOCAL ECOSYSTEM */}
-      <section className="border-t border-slate-200 bg-white py-16 px-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                <Pill className="h-3.5 w-3.5" /> Local Medical Ecosystem
-              </div>
-              <h2 className="mt-3 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">
-                Connecting Clinics, Pharmacies & Diagnostic Labs
-              </h2>
-              <p className="mt-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                When a doctor signs a prescription in DocSphere, patients can immediately route generic medicines to their trusted local chemist (e.g., Apollo Pharmacy or neighborhood stores along Rajpur Road) or book home sample collection with certified labs (Dr. Lal PathLabs, Thyrocare).
-              </p>
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-                  <Pill className="h-5 w-5 text-emerald-600 mb-2" />
-                  <div className="font-bold text-xs text-slate-900 dark:text-white">Partner Chemist Pickup</div>
-                  <div className="text-[11px] text-slate-500 mt-1">Direct generic drug availability cross-check without middlemen cuts.</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-                  <Microscope className="h-5 w-5 text-blue-600 mb-2" />
-                  <div className="font-bold text-xs text-slate-900 dark:text-white">Diagnostic Home Collection</div>
-                  <div className="text-[11px] text-slate-500 mt-1">1-tap lab test booking linked directly to the provisional diagnosis.</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-950">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Live Integration Preview</div>
-              <div className="rounded-xl bg-white p-4 shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-800 space-y-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-900 dark:text-white">Rx #RX-2026-09-0014</span>
-                  <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Ready for Fulfillment</span>
-                </div>
-                <div className="text-xs text-slate-600 dark:text-slate-300">
-                  Prescribed: <strong>TAB CETIRIZINE 10MG (5 strips), CAP DOXYCYCLINE 100MG (10 caps)</strong>
-                </div>
-                <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <button className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-bold text-white hover:bg-emerald-700">
-                    Forward to Chemist
-                  </button>
-                  <button className="flex-1 rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200">
-                    Order Lab Tests
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. PILOT CLINICS SHOWCASE (Dehradun Testbed) */}
-      <section id="pilot-clinics" className="border-t border-slate-200 bg-slate-100/60 py-20 px-4 dark:border-slate-800 dark:bg-slate-900/50 sm:px-6 lg:px-8">
+      {/* 5. PILOT CLINICS SHOWCASE (Dehradun Pilot) */}
+      <section id="pilot-clinics" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-brand-600">
-                <MapPin className="h-4 w-4" /> Live Dehradun Pilot Network
-              </div>
-              <h2 className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">
-                Independent Clinics Powered by DocSphere
+              <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF] flex items-center gap-1.5">
+                <MapPin className="h-4 w-4" /> Ground Deployment
+              </span>
+              <h2 className="mt-2 text-3xl font-black text-[#1D1D1F] dark:text-white sm:text-4xl tracking-tight">
+                Live Clinics Powered by DocSphere
               </h2>
             </div>
-            <Link href="/search" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700">
+            <Link 
+              href="/search" 
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0071E3] hover:underline dark:text-[#2997FF]"
+            >
               View all 20+ Dehradun doctors <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {/* Card 1: Derma Care */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+            {/* Clinic 1 */}
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="inline-block rounded-md bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700 dark:bg-teal-950 dark:text-teal-300">Dermatology</span>
-                    <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-white">Derma Care Skin & Laser</h3>
-                    <p className="text-xs text-slate-500">Dr. Rahul Sharma (MD Derm)</p>
+                    <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] dark:bg-white/[0.08] dark:text-white">
+                      Dermatology
+                    </span>
+                    <h3 className="mt-3 text-lg font-bold text-[#1D1D1F] dark:text-white">Derma Care Skin & Laser</h3>
+                    <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">Dr. Rahul Sharma (MD Derm)</p>
                   </div>
-                  <div className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">⭐ 4.9</div>
+                  <div className="rounded-full bg-[#30D158]/10 px-2.5 py-1 text-xs font-bold text-[#34C759] dark:text-[#30D158]">
+                    ⭐ 4.9
+                  </div>
                 </div>
-                <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
+
+                <p className="mt-3 text-xs text-[#86868B] dark:text-[#8E8E93]">
                   14, Rajpur Road, Near Ashley Hall, Dehradun
                 </p>
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-medium dark:border-slate-800">
-                  <span className="text-slate-700 dark:text-slate-300">Fee: ₹600</span>
-                  <span className="text-emerald-600 font-bold">OPD Active: Token #2</span>
+
+                <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3 text-xs dark:border-white/[0.06]">
+                  <span className="font-semibold text-[#1D1D1F] dark:text-white">Fee: ₹600</span>
+                  <span className="text-[#34C759] dark:text-[#30D158] font-bold">OPD Active: Token #2</span>
                 </div>
               </div>
-              <div className="mt-6 flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+
+              <div className="mt-5 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
                 <Link
                   href="/doctors/dr-rahul-sharma"
-                  className="flex-1 rounded-lg border border-slate-200 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200"
+                  className="flex-1 rounded-full border border-black/[0.08] py-2 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
                 >
-                  Doctor Profile
+                  Profile
                 </Link>
                 <Link
                   href="/book?doctor=dr-rahul-sharma"
-                  className="flex-1 rounded-lg bg-brand-600 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-brand-700"
+                  className="flex-1 rounded-full bg-[#0071E3] py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED]"
                 >
                   Book Token
                 </Link>
               </div>
             </div>
 
-            {/* Card 2: Smile Craft */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+            {/* Clinic 2 */}
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="inline-block rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300">Dentistry</span>
-                    <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-white">Smile Craft Dental</h3>
-                    <p className="text-xs text-slate-500">Dr. Aditi Joshi (MDS Endodontics)</p>
+                    <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] dark:bg-white/[0.08] dark:text-white">
+                      Dentistry
+                    </span>
+                    <h3 className="mt-3 text-lg font-bold text-[#1D1D1F] dark:text-white">Smile Craft Dental</h3>
+                    <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">Dr. Aditi Joshi (MDS Endodontics)</p>
                   </div>
-                  <div className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">⭐ 4.8</div>
+                  <div className="rounded-full bg-[#30D158]/10 px-2.5 py-1 text-xs font-bold text-[#34C759] dark:text-[#30D158]">
+                    ⭐ 4.8
+                  </div>
                 </div>
-                <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
+
+                <p className="mt-3 text-xs text-[#86868B] dark:text-[#8E8E93]">
                   42, EC Road, Near Survey Chowk, Dehradun
                 </p>
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-medium dark:border-slate-800">
-                  <span className="text-slate-700 dark:text-slate-300">Fee: ₹400</span>
-                  <span className="text-emerald-600 font-bold">OPD Active: Token #1</span>
+
+                <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3 text-xs dark:border-white/[0.06]">
+                  <span className="font-semibold text-[#1D1D1F] dark:text-white">Fee: ₹400</span>
+                  <span className="text-[#34C759] dark:text-[#30D158] font-bold">OPD Active: Token #1</span>
                 </div>
               </div>
-              <div className="mt-6 flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+
+              <div className="mt-5 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
                 <Link
                   href="/doctors/dr-aditi-joshi"
-                  className="flex-1 rounded-lg border border-slate-200 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200"
+                  className="flex-1 rounded-full border border-black/[0.08] py-2 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
                 >
-                  Doctor Profile
+                  Profile
                 </Link>
                 <Link
                   href="/book?doctor=dr-aditi-joshi"
-                  className="flex-1 rounded-lg bg-brand-600 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-brand-700"
+                  className="flex-1 rounded-full bg-[#0071E3] py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED]"
                 >
                   Book Token
                 </Link>
               </div>
             </div>
 
-            {/* Card 3: Dron Child Clinic */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+            {/* Clinic 3 */}
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="inline-block rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">Pediatrics</span>
-                    <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-white">Dron Child & Newborn</h3>
-                    <p className="text-xs text-slate-500">Dr. Vikram Sethi (DNB Pediatrics)</p>
+                    <span className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] dark:bg-white/[0.08] dark:text-white">
+                      Pediatrics
+                    </span>
+                    <h3 className="mt-3 text-lg font-bold text-[#1D1D1F] dark:text-white">Dron Child & Newborn</h3>
+                    <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">Dr. Vikram Sethi (DNB Pediatrics)</p>
                   </div>
-                  <div className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">⭐ 4.95</div>
+                  <div className="rounded-full bg-[#30D158]/10 px-2.5 py-1 text-xs font-bold text-[#34C759] dark:text-[#30D158]">
+                    ⭐ 4.95
+                  </div>
                 </div>
-                <p className="mt-3 text-xs text-slate-600 dark:text-slate-400">
+
+                <p className="mt-3 text-xs text-[#86868B] dark:text-[#8E8E93]">
                   88, Chakrata Road, Ballupur, Dehradun
                 </p>
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-medium dark:border-slate-800">
-                  <span className="text-slate-700 dark:text-slate-300">Fee: ₹500</span>
-                  <span className="text-amber-600 font-bold">OPD Slot: Next 11:30 AM</span>
+
+                <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3 text-xs dark:border-white/[0.06]">
+                  <span className="font-semibold text-[#1D1D1F] dark:text-white">Fee: ₹500</span>
+                  <span className="text-[#FF9500] dark:text-[#FF9F0A] font-bold">OPD Slot: Next 11:30 AM</span>
                 </div>
               </div>
-              <div className="mt-6 flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+
+              <div className="mt-5 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
                 <Link
                   href="/doctors/dr-vikram-sethi"
-                  className="flex-1 rounded-lg border border-slate-200 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200"
+                  className="flex-1 rounded-full border border-black/[0.08] py-2 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
                 >
-                  Doctor Profile
+                  Profile
                 </Link>
                 <Link
                   href="/book?doctor=dr-vikram-sethi"
-                  className="flex-1 rounded-lg bg-brand-600 py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-brand-700"
+                  className="flex-1 rounded-full bg-[#0071E3] py-2 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED]"
                 >
                   Book Token
                 </Link>
@@ -405,170 +468,147 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. PRICING SECTION */}
-      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8">
+      {/* 6. APPLE HIG PRICING SECTION */}
+      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-brand-600">Transparent Indian Clinic Pricing</h2>
-            <p className="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">
-              Pay a Flat Tool Fee. Zero Patient Commissions.
-            </p>
-            <p className="mx-auto mt-4 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-              Never pay 15% to 25% cuts on consultations. Keep 100% of your earnings via direct bank-to-bank UPI.
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+              Simple Transparent Pricing
+            </span>
+            <h2 className="mt-2 text-3xl font-black text-[#1D1D1F] dark:text-white sm:text-4xl tracking-tight">
+              Flat tool fee. Zero patient commissions.
+            </h2>
+            <p className="mt-3 text-sm text-[#86868B] dark:text-[#8E8E93]">
+              Never surrender 20% of your earnings. Keep 100% of patient fees via direct UPI.
             </p>
           </div>
 
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {/* Tier 1: Free */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+          <div className="mt-16 grid gap-6 md:grid-cols-3">
+            {/* Free */}
+            <div className="rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Starter Doctor</h3>
-                <p className="mt-2 text-xs text-slate-500">For new independent practices establishing their first digital presence.</p>
+                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Starter Doctor</h3>
+                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">For setting up your initial digital clinic presence.</p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">₹0</span>
-                  <span className="text-xs text-slate-500">/ forever</span>
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹0</span>
+                  <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">/ forever</span>
                 </div>
-                <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Verified Doctor Profile</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Google Maps Listing</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Basic Appointment Link</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Up to 30 Appointments/mo</li>
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Verified Doctor Profile</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Google Maps Discovery</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Up to 30 Appointments/mo</li>
                 </ul>
               </div>
-              <Link href="/onboarding" className="mt-8 block w-full rounded-lg border border-slate-300 py-2.5 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200">
-                Get Started Free
+              <Link 
+                href="/onboarding" 
+                className="mt-8 block w-full rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
+              >
+                Get Started
               </Link>
             </div>
 
-            {/* Tier 2: Pro */}
-            <div className="relative rounded-2xl border-2 border-brand-600 bg-white p-8 shadow-xl shadow-brand-600/10 dark:bg-slate-900 flex flex-col justify-between">
-              <div className="absolute -top-3.5 right-6 rounded-full bg-brand-600 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">
+            {/* Solo Pro */}
+            <div className="rounded-[28px] border-2 border-[#0071E3] bg-white p-8 shadow-apple-modal dark:bg-[#1C1C1E] flex flex-col justify-between relative">
+              <div className="absolute -top-3 right-8 rounded-full bg-[#0071E3] px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
                 Most Popular
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Solo Practice Pro</h3>
-                <p className="mt-2 text-xs text-slate-500">Complete operating suite for independent clinics and single practitioners.</p>
+                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Solo Practice Pro</h3>
+                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">For busy independent single-doctor chambers.</p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">₹499</span>
-                  <span className="text-xs text-slate-500">/ month</span>
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹499</span>
+                  <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">/ month</span>
                 </div>
-                <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Everything in Starter</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Unlimited Live Token Queue</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> 30-Second Prescription Builder</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> WhatsApp PDF Receipts & Rx Links</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Receptionist PWA Counter Mode</li>
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Unlimited Live Token Queue</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 30-Sec Digital Rx Studio</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Direct WhatsApp Rx PDF Delivery</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Soundbox UPI Reconciliation</li>
                 </ul>
               </div>
-              <Link href="/onboarding" className="mt-8 block w-full rounded-lg bg-brand-600 py-2.5 text-center text-xs font-semibold text-white shadow-sm hover:bg-brand-700">
-                Start 14-Day Free Trial
+              <Link 
+                href="/onboarding" 
+                className="mt-8 block w-full rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-apple-sm hover:bg-[#0077ED]"
+              >
+                Start 14-Day Trial
               </Link>
             </div>
 
-            {/* Tier 3: Clinic */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900 flex flex-col justify-between">
+            {/* Clinic */}
+            <div className="rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Multi-Doctor Clinic</h3>
-                <p className="mt-2 text-xs text-slate-500">For polyclinics, dental setups, and multi-speciality medical centres.</p>
+                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Multi-Doctor Clinic</h3>
+                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">For polyclinics and multi-chamber centers.</p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900 dark:text-white">₹1,999</span>
-                  <span className="text-xs text-slate-500">/ month</span>
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹1,999</span>
+                  <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">/ month</span>
                 </div>
-                <ul className="mt-6 space-y-3 text-xs text-slate-600 dark:text-slate-300">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Multiple Doctor Rosters & Splits</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Reception Staff Accounts</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Daily Cashflow & Expense P&L</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand-600" /> Custom Domain Integration</li>
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Up to 8 Doctor Chambers</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Front-Desk Reception PWA</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Clinic P&L and Expense Ledger</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Multi-Chamber Audio Chimes</li>
                 </ul>
               </div>
-              <Link href="/onboarding" className="mt-8 block w-full rounded-lg border border-slate-300 py-2.5 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200">
-                Upgrade to ClinicOS
+              <Link 
+                href="/onboarding" 
+                className="mt-8 block w-full rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
+              >
+                Upgrade to Clinic
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 8. FAQ ACCORDION SECTION */}
-      <section className="border-t border-slate-200 bg-white py-16 px-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl">
+      {/* 7. APPLE CLEAN FAQ ACCORDION */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08]">
+        <div className="mx-auto max-w-3xl">
           <div className="text-center">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-brand-600">Frequently Asked Questions</h2>
-            <p className="mt-2 text-2xl font-extrabold text-slate-900 dark:text-white sm:text-3xl">
-              Everything You Need to Know About DocSphere
-            </p>
+            <h2 className="text-3xl font-black tracking-tight text-[#1D1D1F] dark:text-white">Frequently Asked Questions</h2>
+            <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93]">Everything you need to know about DocSphere ClinicOS</p>
           </div>
 
-          <div className="mt-10 space-y-3">
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div
-                  key={idx}
-                  className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-950/50 transition"
+          <div className="mt-10 divide-y divide-black/[0.06] dark:divide-white/[0.08]">
+            {faqs.map((faq, idx) => (
+              <div key={idx} className="py-5">
+                <button
+                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                  className="flex w-full items-center justify-between text-left text-sm font-semibold text-[#1D1D1F] dark:text-white focus:outline-none"
                 >
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="flex w-full items-center justify-between p-4 text-left text-xs font-bold text-slate-900 dark:text-white"
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {isOpen && (
-                    <div className="px-4 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-850 pt-3">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  <span>{faq.q}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-[#86868B] transition-transform duration-200 ${
+                      openFaq === idx ? "rotate-180 text-[#0071E3]" : ""
+                    }`}
+                  />
+                </button>
+                {openFaq === idx && (
+                  <p className="mt-3 text-xs leading-relaxed text-[#86868B] dark:text-[#8E8E93]">
+                    {faq.a}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 9. TRUST & COMPLIANCE FOOTER */}
-      <footer id="trust" className="border-t border-slate-200 bg-slate-900 py-12 px-4 text-white dark:border-slate-800 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2 text-xl font-bold">
-                <Stethoscope className="h-6 w-6 text-brand-400" /> DocSphere ClinicOS
-              </div>
-              <p className="mt-3 max-w-md text-xs text-slate-400">
-                The digital operating layer for independent healthcare in India. Compliant with National Medical Commission (NMC) Telemedicine Guidelines and Digital Personal Data Protection (DPDP) Act.
-              </p>
-              <div className="mt-4 flex items-center gap-3 text-xs text-slate-400">
-                <ShieldCheck className="h-4 w-4 text-brand-400" /> Non-Autonomous Clinical AI (Human-in-the-Loop)
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">Quick Links</h4>
-              <ul className="mt-3 space-y-2 text-xs text-slate-400">
-                <li><Link href="/dashboard" className="text-brand-400 font-semibold hover:text-white">ClinicOS Studio (/dashboard)</Link></li>
-                <li><Link href="/patient/portal" className="text-emerald-400 font-semibold hover:text-white">Patient Health Hub (/patient/portal)</Link></li>
-                <li><Link href="/pharmacy/console" className="text-purple-400 font-semibold hover:text-white">Chemist Console (/pharmacy/console)</Link></li>
-                <li><Link href="/onboarding" className="hover:text-white">Doctor AI Onboarding</Link></li>
-                <li><Link href="/search" className="hover:text-white">Find a Doctor Nearby</Link></li>
-                <li><Link href="/dashboard/desk" className="hover:text-white">Reception Desk Console</Link></li>
-                <li><Link href="/dashboard/chambers" className="hover:text-white">Multi-Chamber Roster</Link></li>
-                <li><Link href="/dashboard/finance" className="hover:text-white">Clinic P&L Ledger</Link></li>
-                <li><Link href="/admin/analytics" className="hover:text-white text-red-400 font-medium">Founder SaaS Analytics</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">Pilot Testbed</h4>
-              <p className="mt-3 text-xs text-slate-400">
-                Dehradun Medical Hub<br />
-                Rajpur Road • EC Road • Chakrata Road<br />
-                Uttarakhand, India
-              </p>
-            </div>
+      {/* 8. APPLE MINIMAL FOOTER */}
+      <footer className="border-t border-black/[0.06] bg-[#F5F5F7] py-12 px-4 dark:border-white/[0.08] dark:bg-[#000000] sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#86868B] dark:text-[#8E8E93]">
+          <div className="flex items-center gap-2">
+            <Stethoscope className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
+            <span className="font-bold text-[#1D1D1F] dark:text-white">DocSphere ClinicOS</span>
+            <span>•</span>
+            <span>Digital Infrastructure for Independent Healthcare</span>
           </div>
 
-          <div className="mt-12 border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
-            © 2026 DocSphere / ClinicOS. All rights reserved. Built for independent doctors and healthcare providers.
+          <div className="flex items-center gap-6 font-medium">
+            <Link href="/search" className="hover:text-[#1D1D1F] dark:hover:text-white">Find Doctors</Link>
+            <Link href="/dashboard" className="hover:text-[#1D1D1F] dark:hover:text-white">Workspace</Link>
+            <Link href="/patient/portal" className="hover:text-[#1D1D1F] dark:hover:text-white">Patient Portal</Link>
+            <Link href="/onboarding" className="hover:text-[#1D1D1F] dark:hover:text-white">Doctor Setup</Link>
           </div>
         </div>
       </footer>

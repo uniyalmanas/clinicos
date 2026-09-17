@@ -14,14 +14,9 @@ import {
   Settings, 
   Menu, 
   X, 
-  Bell, 
   Plus, 
-  ArrowLeft, 
   Volume2, 
-  Sparkles, 
   LogOut,
-  QrCode,
-  CheckCircle2,
   ChevronRight,
   ExternalLink
 } from "lucide-react";
@@ -34,9 +29,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chimePlaying, setChimePlaying] = useState(false);
-  const [selectedDoctor, setSelectedDoctor] = useState("dr-rahul");
 
-  // Web Audio chime for quick counter alert
+  // Web Audio chime for quick counter alert (Apple style clean tone)
   const playCounterChime = () => {
     try {
       setChimePlaying(true);
@@ -48,7 +42,7 @@ export default function DashboardLayout({
       const gain1 = audioCtx.createGain();
       osc1.type = "sine";
       osc1.frequency.setValueAtTime(587.33, now);
-      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.setValueAtTime(0.25, now);
       gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
       osc1.connect(gain1);
       gain1.connect(audioCtx.destination);
@@ -59,15 +53,15 @@ export default function DashboardLayout({
       const osc2 = audioCtx.createOscillator();
       const gain2 = audioCtx.createGain();
       osc2.type = "sine";
-      osc2.frequency.setValueAtTime(880.00, now + 0.2);
-      gain2.gain.setValueAtTime(0.3, now + 0.2);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+      osc2.frequency.setValueAtTime(880.00, now + 0.18);
+      gain2.gain.setValueAtTime(0.25, now + 0.18);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
       osc2.connect(gain2);
       gain2.connect(audioCtx.destination);
-      osc2.start(now + 0.2);
-      osc2.stop(now + 0.8);
+      osc2.start(now + 0.18);
+      osc2.stop(now + 0.75);
 
-      setTimeout(() => setChimePlaying(false), 900);
+      setTimeout(() => setChimePlaying(false), 800);
     } catch (e) {
       console.error(e);
       setChimePlaying(false);
@@ -76,7 +70,7 @@ export default function DashboardLayout({
 
   const navItems = [
     { label: "OPD Overview", href: "/dashboard", icon: Building2 },
-    { label: "Reception Counter Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Chime PWA" },
+    { label: "Reception Counter Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Chime" },
     { label: "Doctor Chambers", href: "/dashboard/chambers", icon: Stethoscope, badge: "Live OPD" },
     { label: "Patient EMR Records", href: "/dashboard/patients", icon: Users },
     { label: "Clinic Cashflow & P&L", href: "/dashboard/finance", icon: CreditCard },
@@ -85,28 +79,28 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-[#0B0F17]">
-      {/* 1. SIDEBAR (DESKTOP) */}
-      <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200 bg-white dark:border-[#1E2638] dark:bg-[#0E1422]">
+    <div className="flex h-screen overflow-hidden bg-[#F5F5F7] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7]">
+      {/* 1. SIDEBAR (APPLE macOS / iPadOS STYLE) */}
+      <aside className="hidden lg:flex w-64 flex-col border-r border-black/[0.06] bg-[#F5F5F7] dark:border-white/[0.08] dark:bg-[#000000]">
         {/* Brand & Clinic Roster */}
-        <div className="p-4 border-b border-slate-100 dark:border-[#1E2638]">
+        <div className="p-4 border-b border-black/[0.06] dark:border-white/[0.08]">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm shadow-brand-600/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#0071E3] text-white shadow-sm">
               <Stethoscope className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-black text-slate-900 dark:text-white">DocSphere ClinicOS</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Dehradun Medical Hub</div>
+              <div className="text-sm font-black text-[#1D1D1F] dark:text-white">DocSphere ClinicOS</div>
+              <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] font-medium">Dehradun Medical Hub</div>
             </div>
           </div>
 
-          {/* Active Clinic Switcher */}
-          <div className="mt-3 rounded-xl bg-slate-50 p-2 border border-slate-200/80 dark:bg-[#131B2E] dark:border-[#1E2638]">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-900 dark:text-white">
+          {/* Active Clinic Badge */}
+          <div className="mt-3 rounded-[14px] bg-white p-2.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.08] shadow-apple-sm">
+            <div className="flex items-center justify-between text-xs font-bold text-[#1D1D1F] dark:text-white">
               <span>Derma Care Skin & Laser</span>
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="flex h-2 w-2 rounded-full bg-[#30D158] animate-pulse"></span>
             </div>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">14, Rajpur Road • 2 Doctors Active</p>
+            <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-0.5">14, Rajpur Road • 2 Doctors Active</p>
           </div>
         </div>
 
@@ -119,22 +113,22 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
+                className={`flex items-center justify-between rounded-[12px] px-3.5 py-2.5 text-xs font-semibold transition ${
                   isActive
-                    ? "bg-brand-600 text-white shadow-md shadow-brand-600/25"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[#161F36] dark:hover:text-white"
+                    ? "bg-black/[0.08] text-[#1D1D1F] dark:bg-white/[0.12] dark:text-white shadow-sm"
+                    : "text-[#86868B] hover:bg-black/[0.04] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:bg-white/[0.06] dark:hover:text-white"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <Icon className={`h-4 w-4 ${isActive ? "text-white" : "text-slate-400 dark:text-slate-400"}`} />
+                  <Icon className={`h-4 w-4 ${isActive ? "text-[#0071E3] dark:text-[#2997FF]" : "text-[#86868B] dark:text-[#8E8E93]"}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
                   <span
-                    className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                    className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
                       isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-brand-50 text-brand-700 dark:bg-brand-950/70 dark:text-brand-300 border border-brand-200/30 dark:border-brand-800/40"
+                        ? "bg-[#0071E3] text-white"
+                        : "bg-black/[0.04] text-[#86868B] dark:bg-white/[0.08] dark:text-[#8E8E93]"
                     }`}
                   >
                     {item.badge}
@@ -146,26 +140,26 @@ export default function DashboardLayout({
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-slate-100 dark:border-[#1E2638] space-y-2">
+        <div className="p-3 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2">
           <div className="flex items-center justify-between px-2 text-xs">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Theme & Mode</span>
+            <span className="text-[11px] font-medium text-[#86868B] dark:text-[#8E8E93]">Appearance</span>
             <ThemeToggle />
           </div>
 
-          <div className="flex items-center justify-between rounded-xl bg-slate-50 p-2.5 dark:bg-[#131B2E] border border-transparent dark:border-[#1E2638]">
+          <div className="flex items-center justify-between rounded-[14px] bg-white p-2.5 dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-apple-sm">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-100 text-brand-800 text-xs font-bold dark:bg-brand-950 dark:text-brand-300">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0071E3]/10 text-[#0071E3] text-xs font-bold dark:text-[#2997FF]">
                 RS
               </div>
               <div className="text-left">
-                <div className="text-xs font-bold text-slate-900 dark:text-white">Dr. Rahul Sharma</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">Dermatologist • Admin</div>
+                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Dr. Rahul Sharma</div>
+                <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">Dermatologist • Admin</div>
               </div>
             </div>
             <Link
               href="/"
               title="Return to Public Home"
-              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="p-1 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
             >
               <LogOut className="h-4 w-4" />
             </Link>
@@ -177,15 +171,15 @@ export default function DashboardLayout({
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 backdrop-blur-md"
             onClick={() => setSidebarOpen(false)}
           ></div>
-          <div className="relative flex w-72 flex-col bg-white dark:bg-slate-900 p-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-              <span className="font-bold text-slate-900 dark:text-white">ClinicOS Navigation</span>
+          <div className="relative flex w-72 flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E] p-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <span className="font-bold text-[#1D1D1F] dark:text-white">ClinicOS Navigation</span>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="rounded-full p-1 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -199,10 +193,10 @@ export default function DashboardLayout({
                     key={item.href}
                     href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold ${
+                    className={`flex items-center gap-3 rounded-[12px] px-3.5 py-2.5 text-xs font-semibold ${
                       isActive
-                        ? "bg-brand-600 text-white"
-                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        ? "bg-black/[0.08] text-[#1D1D1F] dark:bg-white/[0.12] dark:text-white"
+                        : "text-[#86868B] hover:bg-black/[0.04] dark:text-[#8E8E93] dark:hover:bg-white/[0.06]"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -211,7 +205,7 @@ export default function DashboardLayout({
                 );
               })}
             </nav>
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
               <ThemeToggle showLabel />
             </div>
           </div>
@@ -220,19 +214,19 @@ export default function DashboardLayout({
 
       {/* 3. MAIN CONTENT WRAPPER */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* TOP COMMAND HEADER */}
-        <header className="h-16 shrink-0 border-b border-slate-200 bg-white dark:border-[#1E2638] dark:bg-[#0E1422]/90 dark:backdrop-blur-md flex items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* TOP COMMAND HEADER (APPLE TRANSLUCENT MATERIAL) */}
+        <header className="h-16 shrink-0 border-b border-black/[0.06] bg-[#F5F5F7]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-[#161F36]"
+              className="lg:hidden rounded-full p-1.5 text-[#86868B] hover:bg-black/[0.04] dark:hover:bg-white/[0.08]"
             >
               <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-2 text-xs text-[#86868B] dark:text-[#8E8E93]">
               <span>Derma Care Clinic</span>
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-              <strong className="text-slate-900 dark:text-white capitalize">
+              <ChevronRight className="h-3 w-3 text-[#86868B]" />
+              <strong className="text-[#1D1D1F] dark:text-white capitalize">
                 {pathname === "/dashboard"
                   ? "Daily OPD Overview"
                   : pathname.replace("/dashboard/", "").replace("-", " ")}
@@ -240,21 +234,21 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5">
             {/* Quick Chime Sound Test */}
             <button
               onClick={playCounterChime}
               title="Test Counter Audio Chime"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-[#1E2638] dark:bg-[#131B2E] dark:text-slate-200 dark:hover:bg-[#18233C]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm hover:bg-black/[0.02] active:scale-95 dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/[0.04]"
             >
-              <Volume2 className={`h-3.5 w-3.5 text-brand-600 dark:text-brand-400 ${chimePlaying ? "animate-bounce" : ""}`} />
+              <Volume2 className={`h-3.5 w-3.5 text-[#0071E3] dark:text-[#2997FF] ${chimePlaying ? "animate-bounce" : ""}`} />
               <span className="hidden sm:inline">Chime Bell</span>
             </button>
 
             {/* Quick Admit Walk-in Link */}
             <Link
               href="/dashboard/desk"
-              className="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-brand-700 transition shadow-brand-600/20"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Admit Walk-in</span>
@@ -264,7 +258,7 @@ export default function DashboardLayout({
             <Link
               href="/patient/portal"
               target="_blank"
-              className="hidden md:inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-[#1E2638] dark:bg-[#131B2E] dark:text-slate-300 dark:hover:bg-[#18233C]"
+              className="hidden md:inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm hover:bg-black/[0.02] active:scale-95 dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/[0.04]"
               title="Open Patient Portal in new tab"
             >
               <span>Patient Portal</span>
@@ -274,7 +268,7 @@ export default function DashboardLayout({
         </header>
 
         {/* PAGE CONTENT CONTAINER */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-[#0B0F17]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F5F5F7] dark:bg-[#000000]">
           {children}
         </main>
       </div>

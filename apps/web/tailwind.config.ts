@@ -10,45 +10,89 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "Inter", "-apple-system", "BlinkMacSystemFont", "system-ui", "sans-serif"],
-        mono: ["'JetBrains Mono'", "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
+        sans: ["'Plus Jakarta Sans'", "-apple-system", "BlinkMacSystemFont", "'SF Pro Display'", "'SF Pro Text'", "system-ui", "sans-serif"],
+        mono: ["'JetBrains Mono'", "-apple-system-monospaced", "'SF Mono'", "ui-monospace", "monospace"],
+      },
+      borderRadius: {
+        'apple-sm': '10px',
+        'apple-md': '16px',
+        'apple-lg': '22px',
+        'apple-xl': '28px',
+        'apple-2xl': '36px',
       },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        apple: {
+          bg: {
+            light: "#F5F5F7",
+            dark: "#000000",
+          },
+          card: {
+            light: "#FFFFFF",
+            dark: "#1C1C1E",
+          },
+          elevated: {
+            light: "#F2F2F7",
+            dark: "#2C2C2E",
+          },
+          input: {
+            light: "#E5E5EA",
+            dark: "#3A3A3C",
+          },
+          border: {
+            light: "rgba(0, 0, 0, 0.07)",
+            dark: "rgba(255, 255, 255, 0.09)",
+          },
+          blue: {
+            light: "#0071E3",
+            dark: "#2997FF",
+          },
+          teal: {
+            light: "#00A389",
+            dark: "#30D1BE",
+          },
+          green: {
+            light: "#34C759",
+            dark: "#30D158",
+          },
+          amber: {
+            light: "#FF9500",
+            dark: "#FF9F0A",
+          },
+          red: {
+            light: "#FF3B30",
+            dark: "#FF453A",
+          }
+        },
         surface: {
-          light: "#ffffff",
-          dark: "#111726",
-          darkSubtle: "#0E1420",
+          light: "#FFFFFF",
+          dark: "#1C1C1E",
+          darkSubtle: "#2C2C2E",
         },
         border: {
-          light: "#e2e8f0",
-          dark: "#1E2638",
+          light: "rgba(0, 0, 0, 0.07)",
+          dark: "rgba(255, 255, 255, 0.09)",
         },
         brand: {
-          50: "#f0fdfa",
+          50: "#f0fdf9",
           100: "#ccfbf1",
           200: "#99f6e4",
           300: "#5eead4",
           400: "#2dd4bf",
-          500: "#14b8a6", // clinical teal
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
-          950: "#042f2e",
-        },
-        medical: {
-          blue: "#0284c7",
-          green: "#16a34a",
-          red: "#dc2626",
-          amber: "#d97706",
-          slate: "#0f172a",
+          500: "#00A389", // Apple Health Precision Teal
+          600: "#008772",
+          700: "#006D5C",
+          800: "#005548",
+          900: "#004238",
+          950: "#00241E",
         }
       },
       boxShadow: {
-        'dark-card': '0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3)',
-        'dark-glow': '0 0 25px -5px rgba(20, 184, 166, 0.15)',
+        'apple-sm': '0 2px 8px -1px rgba(0, 0, 0, 0.05), 0 1px 3px -1px rgba(0, 0, 0, 0.03)',
+        'apple-card': '0 8px 32px -4px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02)',
+        'apple-modal': '0 24px 64px -12px rgba(0, 0, 0, 0.14), 0 8px 24px -4px rgba(0, 0, 0, 0.08)',
+        'apple-dark-card': '0 8px 32px -4px rgba(0, 0, 0, 0.7), 0 1px 2px 0 rgba(255, 255, 255, 0.05)',
       }
     },
   },
