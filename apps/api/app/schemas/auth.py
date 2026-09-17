@@ -27,3 +27,10 @@ class UserProfile(BaseModel):
     full_name: str
     role: str
     is_verified: bool
+
+class OTPRequest(BaseModel):
+    phone: str
+
+class OTPVerify(BaseModel):
+    phone: str
+    otp: str
