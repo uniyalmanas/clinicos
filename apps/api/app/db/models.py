@@ -158,3 +158,44 @@ class ClinicBed(Base):
     admission_timestamp = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class PharmacyItem(Base):
+    __tablename__ = "pharmacy_items"
+
+    id = Column(String, primary_key=True, index=True)
+    clinic_slug = Column(String, index=True, default="derma-care-dehradun")
+    brand_name = Column(String, nullable=False, index=True)
+    generic_name = Column(String, nullable=False, index=True)
+    dosage_form = Column(String, default="Tablet")
+    strength = Column(String, default="100mg")
+    batch_number = Column(String, nullable=False, index=True)
+    expiry_date = Column(String, nullable=False, index=True) # YYYY-MM-DD
+    current_stock = Column(Integer, default=50)
+    reorder_level = Column(Integer, default=15)
+    purchase_price = Column(Float, default=30.0)
+    mrp = Column(Float, default=65.0)
+    selling_price = Column(Float, default=60.0)
+    gst_rate = Column(Float, default=12.0)
+    hsn_code = Column(String, default="3004")
+    manufacturer = Column(String, default="Sun Pharma")
+    rack_location = Column(String, default="Rack A-01")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class PharmacyDispense(Base):
+    __tablename__ = "pharmacy_dispenses"
+
+    id = Column(String, primary_key=True, index=True)
+    bill_number = Column(String, unique=True, index=True)
+    clinic_slug = Column(String, index=True, default="derma-care-dehradun")
+    prescription_number = Column(String, nullable=True, index=True)
+    patient_name = Column(String, nullable=False)
+    patient_phone = Column(String, nullable=True)
+    doctor_name = Column(String, nullable=True)
+    items = Column(JSON, default=list) # [{item_id, brand_name, batch_number, dosage_form, quantity, unit_price, total, gst_rate}]
+    subtotal = Column(Float, default=0.0)
+    discount = Column(Float, default=0.0)
+    gst_amount = Column(Float, default=0.0)
+    total_amount = Column(Float, default=0.0)
+    payment_mode = Column(String, default="upi") # upi, cash, card
+    status = Column(String, default="dispensed") # dispensed, pending, cancelled
+    created_at = Column(DateTime, default=datetime.utcnow)
+

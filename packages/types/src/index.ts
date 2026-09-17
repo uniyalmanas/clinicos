@@ -277,3 +277,57 @@ export interface AIOnboardingResult {
   missing_fields: string[];
   status: 'ready_for_review' | 'needs_clarification';
 }
+
+export interface PharmacyBatchItem {
+  id: string;
+  clinic_slug: string;
+  brand_name: string;
+  generic_name: string;
+  dosage_form: 'Tablet' | 'Capsule' | 'Syrup' | 'Ointment' | 'Injection' | 'Drops';
+  strength?: string;
+  batch_number: string;
+  expiry_date: string; // YYYY-MM-DD
+  days_to_expiry?: number;
+  is_expiring_soon?: boolean;
+  is_expired?: boolean;
+  current_stock: number;
+  reorder_level: number;
+  is_low_stock?: boolean;
+  purchase_price: number;
+  mrp: number;
+  selling_price: number;
+  gst_rate: number; // 5, 12, 18
+  hsn_code?: string;
+  manufacturer?: string;
+  rack_location?: string;
+  created_at?: string;
+}
+
+export interface PharmacyBillItem {
+  item_id: string;
+  brand_name: string;
+  batch_number: string;
+  dosage_form: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  gst_rate: number;
+}
+
+export interface PharmacyBill {
+  id: string;
+  bill_number: string;
+  clinic_slug: string;
+  prescription_number?: string;
+  patient_name: string;
+  patient_phone?: string;
+  doctor_name?: string;
+  items: PharmacyBillItem[];
+  subtotal: number;
+  discount: number;
+  gst_amount: number;
+  total_amount: number;
+  payment_mode: 'cash' | 'upi' | 'card';
+  status: 'dispensed' | 'pending' | 'cancelled';
+  created_at: string;
+}

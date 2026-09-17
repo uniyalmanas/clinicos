@@ -1,5 +1,8 @@
 from app.db.session import engine, SessionLocal, Base
-from app.db.models import Doctor, Clinic, Appointment, Prescription, PatientDocument, Review, Expense, ClinicWard, ClinicBed
+from app.db.models import (
+    Doctor, Clinic, Appointment, Prescription, PatientDocument, Review, Expense, 
+    ClinicWard, ClinicBed, PharmacyItem, PharmacyDispense
+)
 from datetime import date, datetime, timedelta
 import uuid
 
@@ -464,6 +467,214 @@ def init_database():
                 admission_timestamp=now - timedelta(hours=11, minutes=30)
             )
             db.add_all([bed1, bed2, bed3, bed4, bed5, bed6, bed7, bed8, bed9, bed10])
+
+        # Seed Pharmacy Items & Batches
+        if db.query(PharmacyItem).count() == 0:
+            today = date.today()
+            
+            pharm1 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Doxy-100 L",
+                generic_name="DOXYCYCLINE 100MG + LACTOBACILLUS",
+                dosage_form="Capsule",
+                strength="100mg",
+                batch_number="DX-2026-91",
+                expiry_date=str(today + timedelta(days=42)), # Expiring soon (<60d)
+                current_stock=30,
+                reorder_level=15,
+                purchase_price=28.0,
+                mrp=65.0,
+                selling_price=58.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="Dr. Reddy's Lab",
+                rack_location="Rack A-01"
+            )
+
+            pharm2 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Retino-A 0.05%",
+                generic_name="TRETINOIN 0.05% W/W GEL",
+                dosage_form="Ointment",
+                strength="0.05%",
+                batch_number="TR-2027-14",
+                expiry_date=str(today + timedelta(days=380)),
+                current_stock=4, # Low stock alert!
+                reorder_level=10,
+                purchase_price=110.0,
+                mrp=220.0,
+                selling_price=195.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="Janssen India",
+                rack_location="Rack A-04"
+            )
+
+            pharm3 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Cetzine 10",
+                generic_name="CETIRIZINE HYDROCHLORIDE 10MG",
+                dosage_form="Tablet",
+                strength="100mg",
+                batch_number="CT-2027-55",
+                expiry_date=str(today + timedelta(days=450)),
+                current_stock=120,
+                reorder_level=20,
+                purchase_price=12.0,
+                mrp=35.0,
+                selling_price=30.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="GSK Pharma",
+                rack_location="Rack B-02"
+            )
+
+            pharm4 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Augmentin 625 Duo",
+                generic_name="AMOXICILLIN 500MG + CLAVULANIC ACID 125MG",
+                dosage_form="Tablet",
+                strength="625mg",
+                batch_number="AMX-2026-44",
+                expiry_date=str(today + timedelta(days=210)),
+                current_stock=45,
+                reorder_level=15,
+                purchase_price=95.0,
+                mrp=210.0,
+                selling_price=185.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="GlaxoSmithKline",
+                rack_location="Rack B-05"
+            )
+
+            pharm5 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Dolo 650",
+                generic_name="PARACETAMOL 650MG",
+                dosage_form="Tablet",
+                strength="650mg",
+                batch_number="PCM-2027-80",
+                expiry_date=str(today + timedelta(days=620)),
+                current_stock=240,
+                reorder_level=30,
+                purchase_price=14.5,
+                mrp=32.0,
+                selling_price=29.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="Micro Labs",
+                rack_location="Rack C-01"
+            )
+
+            pharm6 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Momate Cream",
+                generic_name="MOMETASONE FUROATE 0.1% W/W",
+                dosage_form="Ointment",
+                strength="0.1%",
+                batch_number="MF-2026-19",
+                expiry_date=str(today + timedelta(days=18)), # Critical Expiry (<30d)
+                current_stock=6, # Low stock too
+                reorder_level=10,
+                purchase_price=85.0,
+                mrp=175.0,
+                selling_price=150.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="Glenmark",
+                rack_location="Rack A-08"
+            )
+
+            pharm7 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Azithral 500",
+                generic_name="AZITHROMYCIN 500MG",
+                dosage_form="Tablet",
+                strength="500mg",
+                batch_number="AZ-2027-02",
+                expiry_date=str(today + timedelta(days=320)),
+                current_stock=40,
+                reorder_level=10,
+                purchase_price=62.0,
+                mrp=135.0,
+                selling_price=120.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="Alembic Pharma",
+                rack_location="Rack B-03"
+            )
+
+            pharm8 = PharmacyItem(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                brand_name="Clindac A Gel",
+                generic_name="CLINDAMYCIN PHOSPHATE 1% GEL",
+                dosage_form="Ointment",
+                strength="1%",
+                batch_number="CL-2026-33",
+                expiry_date=str(today + timedelta(days=240)),
+                current_stock=5, # Low stock alert!
+                reorder_level=12,
+                purchase_price=90.0,
+                mrp=185.0,
+                selling_price=165.0,
+                gst_rate=12.0,
+                hsn_code="3004",
+                manufacturer="Alkem Labs",
+                rack_location="Rack A-05"
+            )
+
+            db.add_all([pharm1, pharm2, pharm3, pharm4, pharm5, pharm6, pharm7, pharm8])
+
+        # Seed Sample Pharmacy Dispense Bill
+        if db.query(PharmacyDispense).count() == 0:
+            bill1 = PharmacyDispense(
+                id=str(uuid.uuid4()),
+                bill_number="BILL-PHARM-2026-001",
+                clinic_slug="derma-care-dehradun",
+                prescription_number="RX-2026-09-0014",
+                patient_name="Amit Rawat",
+                patient_phone="+919123456780",
+                doctor_name="Dr. Rahul Sharma",
+                items=[
+                    {
+                        "item_id": "seed-1",
+                        "brand_name": "Doxy-100 L",
+                        "batch_number": "DX-2026-91",
+                        "dosage_form": "Capsule",
+                        "quantity": 1,
+                        "unit_price": 58.0,
+                        "total": 58.0,
+                        "gst_rate": 12.0
+                    },
+                    {
+                        "item_id": "seed-2",
+                        "brand_name": "Retino-A 0.05%",
+                        "batch_number": "TR-2027-14",
+                        "dosage_form": "Ointment",
+                        "quantity": 1,
+                        "unit_price": 195.0,
+                        "total": 195.0,
+                        "gst_rate": 12.0
+                    }
+                ],
+                subtotal=253.0,
+                discount=13.0,
+                gst_amount=28.8,
+                total_amount=268.8,
+                payment_mode="upi",
+                status="dispensed",
+                created_at=datetime.utcnow() - timedelta(hours=2)
+            )
+            db.add(bill1)
 
         db.commit()
         print("ClinicOS Database initialized and seeded successfully!")
