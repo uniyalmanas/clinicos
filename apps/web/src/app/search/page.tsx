@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { 
   Search, 
   MapPin, 
@@ -138,9 +139,12 @@ export default function SearchDiscoveryPage() {
             </div>
             DocSphere <span className="text-xs font-semibold text-brand-600">Discovery</span>
           </Link>
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
-            <MapPin className="h-4 w-4 text-brand-600" />
-            Location: <strong className="text-slate-900 dark:text-white">Dehradun, Uttarakhand</strong>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+              <MapPin className="h-4 w-4 text-brand-600" />
+              Location: <strong className="text-slate-900 dark:text-white">Dehradun, Uttarakhand</strong>
+            </div>
           </div>
         </div>
       </header>

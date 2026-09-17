@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { notFound } from "next/navigation";
 import { 
   Stethoscope, 
@@ -179,7 +180,8 @@ export default async function DoctorProfilePage({ params }: Props) {
           <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 dark:text-slate-400">
             <ArrowLeft className="h-4 w-4" /> Back to Home
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href={`/clinics/${doctor.clinic_slug}`}
               className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"

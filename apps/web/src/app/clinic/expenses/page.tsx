@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { 
   Building2, 
   TrendingUp, 
@@ -133,12 +134,15 @@ export default function ClinicExpensesPage() {
             </div>
           </div>
 
-          <Link
-            href="/clinic/desk"
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
-          >
-            Open Reception Desk
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              href="/clinic/desk"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
+            >
+              Open Reception Desk
+            </Link>
+          </div>
         </div>
       </header>
 
