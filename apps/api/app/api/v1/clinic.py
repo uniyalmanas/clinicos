@@ -319,3 +319,100 @@ async def update_payment(payload: UpdatePaymentRequest, db: Session = Depends(ge
         "payment_status": apt["payment_status"],
         "payment_mode": apt["payment_mode"]
     }
+
+# ==================== SHIFT CASH SETTLEMENT ====================
+class ShiftSettlementRequest(BaseModel):
+    clinic_slug: str = "derma-care-dehradun"
+    shift_name: str = "Evening Shift (05:00 PM - 08:30 PM)"
+    staff_name: str = "Pooja Verma"
+    doctor_name: str = "Dr. Rahul Sharma"
+    total_patients: int = 18
+    gross_collections: float = 10800.0
+    upi_amount: float = 7200.0
+    cash_expected: float = 3600.0
+    petty_cash_expenses: float = 200.0
+    petty_cash_remarks: Optional[str] = "Clinic cleaning supplies & tea"
+    net_cash_expected: float = 3400.0
+    actual_cash_counted: float = 3400.0
+    discrepancy: float = 0.0
+    denominations: Dict[str, int] = Field(default_factory=dict)
+    notes: Optional[str] = None
+
+SHIFT_SETTLEMENTS_DB: List[Dict[str, Any]] = [
+    {
+        "id": "stl-2026-09-17-01",
+        "settlement_number": "STL-20260917-M",
+        "clinic_slug": "derma-care-dehradun",
+        "shift_name": "Morning Shift (10:00 AM - 02:00 PM)",
+        "shift_date": "2026-09-17",
+        "staff_name": "Pooja Verma",
+        "doctor_name": "Dr. Rahul Sharma",
+        "total_patients": 24,
+        "gross_collections": 14400.0,
+        "upi_amount": 9000.0,
+        "cash_expected": 5400.0,
+        "petty_cash_expenses": 350.0,
+        "petty_cash_remarks": "Speed Post for biopsy report (₹150) + Bisleri water jar (₹200)",
+        "net_cash_expected": 5050.0,
+        "actual_cash_counted": 5050.0,
+        "discrepancy": 0.0,
+        "status": "balanced",
+        "denominations": {"500": 9, "200": 2, "100": 1, "50": 1, "20": 0, "10": 0},
+        "notes": "Exact reconciliation. Cash locked in clinic safe.",
+        "created_at": "2026-09-17T14:15:00"
+    }
+]
+
+@router.get("/settlements")
+def get_shift_settlements(clinic_slug: str = "derma-care-dehradun"):
+    return {
+        "status": "success",
+        "clinic_slug": clinic_slug,
+        "settlements": SHIFT_SETTLEMENTS_DB
+    }
+
+@router.post("/settle-shift")
+async def record_shift_settlement(payload: ShiftSettlementRequest):
+    disc = round(payload.actual_cash_counted - payload.net_cash_expected, 2)
+    stl_status = "balanced" if abs(disc) < 1.0 else ("shortage" if disc < 0 else "surplus")
+    
+    today_stamp = datetime.now().strftime("%Y%m%d-%H%M")
+    settlement_record = {
+        "id": f"stl-{uuid.uuid4().hex[:8]}",
+        "settlement_number": f"STL-{today_stamp}",
+        "clinic_slug": payload.clinic_slug,
+        "shift_name": payload.shift_name,
+        "shift_date": str(date.today()),
+        "staff_name": payload.staff_name,
+        "doctor_name": payload.doctor_name,
+        "total_patients": payload.total_patients,
+        "gross_collections": payload.gross_collections,
+        "upi_amount": payload.upi_amount,
+        "cash_expected": payload.cash_expected,
+        "petty_cash_expenses": payload.petty_cash_expenses,
+        "petty_cash_remarks": payload.petty_cash_remarks,
+        "net_cash_expected": payload.net_cash_expected,
+        "actual_cash_counted": payload.actual_cash_counted,
+        "discrepancy": disc,
+        "status": stl_status,
+        "denominations": payload.denominations,
+        "notes": payload.notes,
+        "created_at": datetime.now().isoformat()
+    }
+
+    SHIFT_SETTLEMENTS_DB.insert(0, settlement_record)
+
+    await broadcast_event("shift_settled", {
+        "settlement_number": settlement_record["settlement_number"],
+        "shift_name": payload.shift_name,
+        "net_cash_handed_over": payload.actual_cash_counted,
+        "status": stl_status,
+        "discrepancy": disc
+    })
+
+    return {
+        "status": "success",
+        "settlement": settlement_record,
+        "message": f"Shift closed successfully! Handover cash: ₹{payload.actual_cash_counted} ({stl_status})."
+    }
+

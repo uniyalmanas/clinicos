@@ -19,7 +19,9 @@ import {
   Check, 
   IndianRupee,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  Tv,
+  Receipt
 } from "lucide-react";
 
 // Web Audio API chime generator
@@ -216,6 +218,25 @@ export default function ReceptionDeskPage() {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
+            <Link
+              href="/display/waiting-room"
+              target="_blank"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800/40 dark:bg-indigo-950/60 dark:text-indigo-300 transition active:scale-95"
+              title="Launch Smart TV Waiting Room Wall Display"
+            >
+              <Tv className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              <span>📺 Waiting Room TV</span>
+            </Link>
+
+            <Link
+              href="/clinic/settlement"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800/40 dark:bg-emerald-950/60 dark:text-emerald-300 transition active:scale-95"
+              title="Close shift and balance cash drawer"
+            >
+              <Receipt className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <span>💵 Settle Shift</span>
+            </Link>
+
             <button
               onClick={() => setShowQrModal(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
@@ -277,14 +298,24 @@ export default function ReceptionDeskPage() {
           </div>
 
           {/* Card 4: Shift Collections */}
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm dark:border-emerald-950 dark:bg-emerald-950/20">
-            <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-              Shift Cash & UPI
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm dark:border-emerald-950 dark:bg-emerald-950/20 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                  Shift Cash & UPI
+                </div>
+                <Link
+                  href="/clinic/settlement"
+                  className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 hover:underline inline-flex items-center gap-0.5"
+                >
+                  Settle ➔
+                </Link>
+              </div>
+              <div className="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                ₹{cashCollected + upiCollected}
+              </div>
             </div>
-            <div className="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-400">
-              ₹{cashCollected + upiCollected}
-            </div>
-            <div className="mt-1 text-[11px] text-slate-500 flex justify-between">
+            <div className="mt-2 text-[11px] text-slate-500 flex justify-between pt-2 border-t border-emerald-200/60 dark:border-emerald-900/40">
               <span>UPI: ₹{upiCollected}</span>
               <span>Cash: ₹{cashCollected}</span>
             </div>

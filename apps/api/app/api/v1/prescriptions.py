@@ -10,6 +10,7 @@ from app.db.session import get_db
 from sqlalchemy.orm import Session
 from app.db.models import Prescription as PrescriptionModel
 from app.ai.clinical_scribe import parse_clinical_dictation
+from app.ai.ddi_engine import check_drug_interactions
 
 router = APIRouter(prefix="/prescriptions", tags=["Prescriptions & Clinical Consultations"])
 
@@ -42,12 +43,24 @@ class GeneratePrescriptionRequest(BaseModel):
 class ScribeRequest(BaseModel):
     dictation_text: str
 
+class CheckInteractionsRequest(BaseModel):
+    medications: List[Dict[str, Any]]
+    patient_allergies: Optional[str] = None
+
 @router.post("/scribe")
 def scribe_clinical_notes(payload: ScribeRequest):
     structured = parse_clinical_dictation(payload.dictation_text)
     return {
         "status": "success",
         "data": structured
+    }
+
+@router.post("/check-interactions")
+def check_prescription_interactions(payload: CheckInteractionsRequest):
+    result = check_drug_interactions(payload.medications, payload.patient_allergies)
+    return {
+        "status": "success",
+        "data": result
     }
 
 # In-memory store for prescriptions
@@ -218,3 +231,210 @@ def get_prescription(rx_number: str, db: Session = Depends(get_db)):
         }
         PRESCRIPTIONS_DB[rx_number] = rx
     return rx
+
+# ================= DOCTOR'S PERSONAL RX COMBOS (TEMPLATES) =================
+
+class RxComboItemModel(BaseModel):
+    medicine_name: str
+    generic_name: str
+    dosage_form: str = "Tablet"
+    strength: str = "500 mg"
+    frequency: str = "1-0-1 (After Meals)"
+    duration: str = "5 Days"
+    special_instructions: str = "Take after meals"
+
+class CreateRxComboRequest(BaseModel):
+    doctor_slug: str = "dr-rahul-sharma"
+    combo_name: str
+    category: Optional[str] = "General"
+    provisional_diagnosis: str
+    chief_complaints: Optional[str] = ""
+    followup_advice: Optional[str] = "Review after 7 days"
+    items: List[RxComboItemModel]
+    labs: Optional[List[str]] = []
+
+DOCTOR_RX_COMBOS_DB: List[Dict[str, Any]] = [
+    {
+        "id": "combo-acne-mod",
+        "doctor_slug": "dr-rahul-sharma",
+        "combo_name": "Moderate Acne Vulgaris (Grade II)",
+        "category": "Dermatology",
+        "badge": "Top Protocol",
+        "provisional_diagnosis": "Moderate Acne Vulgaris (Grade II)",
+        "chief_complaints": "Multiple inflammatory papules and comedones over cheeks and forehead for 3 weeks.",
+        "followup_advice": "Review after 14 days. Drink 3L water daily. Strictly use gel-based non-comedogenic sunscreen.",
+        "labs": ["lab-01"],
+        "items": [
+            {
+                "medicine_name": "Doxy-100",
+                "generic_name": "DOXYCYCLINE HYCLATE",
+                "dosage_form": "Capsule",
+                "strength": "100 mg",
+                "frequency": "1-0-1 (After Food)",
+                "duration": "14 Days",
+                "special_instructions": "Take after meals with a full glass of water. Avoid lying down immediately."
+            },
+            {
+                "medicine_name": "Clindac-A",
+                "generic_name": "CLINDAMYCIN PHOSPHATE",
+                "dosage_form": "Gel",
+                "strength": "1% w/w",
+                "frequency": "1-0-0 (Morning)",
+                "duration": "14 Days",
+                "special_instructions": "Apply thinly over active acne lesions after gentle face wash."
+            },
+            {
+                "medicine_name": "Acretin 0.05%",
+                "generic_name": "TRETINOIN",
+                "dosage_form": "Cream",
+                "strength": "0.05% w/w",
+                "frequency": "0-0-1 (At Bedtime)",
+                "duration": "14 Days",
+                "special_instructions": "Apply pea-sized amount at night on dry skin. Use sunscreen in morning."
+            }
+        ]
+    },
+    {
+        "id": "combo-fungal-tinea",
+        "doctor_slug": "dr-rahul-sharma",
+        "combo_name": "Tinea Corporis & Cruris (Ringworm)",
+        "category": "Dermatology",
+        "badge": "High Adherence",
+        "provisional_diagnosis": "Tinea Corporis & Cruris (Extensive fungal dermatomycosis)",
+        "chief_complaints": "Annular erythematous scaly plaques with active borders and intense pruritus for 10 days.",
+        "followup_advice": "Review after 14 days. Keep affected areas dry. Wear loose cotton clothes.",
+        "labs": ["lab-08"],
+        "items": [
+            {
+                "medicine_name": "Lulican",
+                "generic_name": "LULICONAZOLE",
+                "dosage_form": "Cream",
+                "strength": "1% w/w",
+                "frequency": "0-0-1 (At Bedtime)",
+                "duration": "14 Days",
+                "special_instructions": "Apply 1 inch beyond active scaly margin once daily at night. Keep skin dry."
+            },
+            {
+                "medicine_name": "Cetzine 10",
+                "generic_name": "CETIRIZINE HYDROCHLORIDE",
+                "dosage_form": "Tablet",
+                "strength": "10 mg",
+                "frequency": "0-0-1 (At Bedtime)",
+                "duration": "7 Days",
+                "special_instructions": "Take 1 tablet at bedtime with water for allergic itching and urticaria."
+            }
+        ]
+    },
+    {
+        "id": "combo-viral-fever",
+        "doctor_slug": "dr-rahul-sharma",
+        "combo_name": "Acute Viral URI & Body Ache",
+        "category": "General Medicine",
+        "badge": "OPD Staple",
+        "provisional_diagnosis": "Acute Viral Upper Respiratory Infection with Myalgia",
+        "chief_complaints": "High-grade fever (101°F), body aches, chills, and mild sore throat for 2 days.",
+        "followup_advice": "Review after 3 days if fever > 100°F persists or breathlessness develops. High fluid intake.",
+        "labs": ["lab-01"],
+        "items": [
+            {
+                "medicine_name": "Dolo 650",
+                "generic_name": "PARACETAMOL",
+                "dosage_form": "Tablet",
+                "strength": "650 mg",
+                "frequency": "1-1-1 (SOS Fever)",
+                "duration": "3 Days",
+                "special_instructions": "Take after meals if temperature exceeds 99.5°F. Minimum 6 hours gap between doses."
+            },
+            {
+                "medicine_name": "Pan-40",
+                "generic_name": "PANTOPRAZOLE SODIUM",
+                "dosage_form": "Tablet",
+                "strength": "40 mg",
+                "frequency": "1-0-0 (Empty Stomach)",
+                "duration": "5 Days",
+                "special_instructions": "Take 1 tablet 30 minutes before morning breakfast."
+            },
+            {
+                "medicine_name": "Cetzine 10",
+                "generic_name": "CETIRIZINE HYDROCHLORIDE",
+                "dosage_form": "Tablet",
+                "strength": "10 mg",
+                "frequency": "0-0-1 (At Bedtime)",
+                "duration": "5 Days",
+                "special_instructions": "Take at night for runny nose and sneezing."
+            }
+        ]
+    },
+    {
+        "id": "combo-allergic-derma",
+        "doctor_slug": "dr-rahul-sharma",
+        "combo_name": "Acute Allergic Contact Dermatitis",
+        "category": "Dermatology",
+        "badge": "Fast Relief",
+        "provisional_diagnosis": "Allergic Contact Dermatitis (Chemical / Cosmetic induced)",
+        "chief_complaints": "Pruritic erythematous rash and edema over exposed contact areas for 4 days.",
+        "followup_advice": "Review in 7 days. Avoid scented soaps, detergents, and cosmetic products.",
+        "labs": ["lab-01", "lab-08"],
+        "items": [
+            {
+                "medicine_name": "Cetzine 10",
+                "generic_name": "CETIRIZINE HYDROCHLORIDE",
+                "dosage_form": "Tablet",
+                "strength": "10 mg",
+                "frequency": "1-0-1 (After Meals)",
+                "duration": "5 Days",
+                "special_instructions": "Take after food with water. Provides systemic antipruritic relief."
+            },
+            {
+                "medicine_name": "Clindac-A",
+                "generic_name": "CLINDAMYCIN PHOSPHATE",
+                "dosage_form": "Gel",
+                "strength": "1% w/w",
+                "frequency": "1-0-0 (Morning)",
+                "duration": "7 Days",
+                "special_instructions": "Apply thinly over inflamed skin after gentle wash."
+            }
+        ]
+    }
+]
+
+@router.get("/combos/list/{doctor_slug}")
+def get_doctor_rx_combos(doctor_slug: str):
+    matches = [c for c in DOCTOR_RX_COMBOS_DB if c.get("doctor_slug") == doctor_slug or c.get("doctor_slug") == "dr-rahul-sharma"]
+    return {
+        "status": "success",
+        "total": len(matches),
+        "data": matches
+    }
+
+@router.post("/combos/create")
+def create_doctor_rx_combo(payload: CreateRxComboRequest):
+    new_id = f"combo-{uuid.uuid4().hex[:8]}"
+    combo_dict = {
+        "id": new_id,
+        "doctor_slug": payload.doctor_slug,
+        "combo_name": payload.combo_name,
+        "category": payload.category or "Custom",
+        "badge": "Doctor Custom",
+        "provisional_diagnosis": payload.provisional_diagnosis,
+        "chief_complaints": payload.chief_complaints or "",
+        "followup_advice": payload.followup_advice or "Review after 7 days",
+        "labs": payload.labs or [],
+        "items": [item.dict() for item in payload.items]
+    }
+    DOCTOR_RX_COMBOS_DB.insert(0, combo_dict)
+    return {
+        "status": "success",
+        "message": f"Rx Combo '{payload.combo_name}' saved to doctor protocol library.",
+        "data": combo_dict
+    }
+
+@router.delete("/combos/{combo_id}")
+def delete_doctor_rx_combo(combo_id: str):
+    global DOCTOR_RX_COMBOS_DB
+    DOCTOR_RX_COMBOS_DB = [c for c in DOCTOR_RX_COMBOS_DB if c.get("id") != combo_id]
+    return {
+        "status": "success",
+        "message": f"Rx Combo '{combo_id}' removed from protocol library."
+    }
+

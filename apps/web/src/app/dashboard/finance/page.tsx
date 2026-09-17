@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
   Building2, 
   TrendingUp, 
@@ -24,6 +25,7 @@ import {
 
 export default function DashboardFinancePage() {
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [settlements, setSettlements] = useState<any[]>([]);
   const [kpis, setKpis] = useState({
     gross_collections: 49598,
     appointment_collections: 1200,
@@ -60,6 +62,12 @@ export default function DashboardFinancePage() {
         setExpenses(json.expenses || []);
         if (json.kpis) setKpis(json.kpis);
         if (json.category_breakdown) setCategoryBreakdown(json.category_breakdown);
+      }
+      
+      const settleRes = await fetch("http://localhost:8000/api/v1/clinic/settlements");
+      if (settleRes.ok) {
+        const settleJson = await settleRes.json();
+        setSettlements(settleJson.settlements || []);
       }
     } catch (e) {
       console.error("Error loading expenses ledger:", e);
@@ -134,14 +142,25 @@ export default function DashboardFinancePage() {
           </p>
         </div>
 
-        <button
-          onClick={fetchLedger}
-          disabled={isLoading}
-          className="inline-flex items-center gap-1.5 rounded-[12px] border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition"
-        >
-          <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
-          <span>Sync Financial Ledger</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/clinic/settlement"
+            className="inline-flex items-center gap-1.5 rounded-[12px] border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 shadow-sm transition active:scale-95"
+            title="Front Desk Cash Drawer Daily Settlement & Handover"
+          >
+            <Receipt className="h-3.5 w-3.5" />
+            <span>💵 Shift Cash Settlements</span>
+          </Link>
+
+          <button
+            onClick={fetchLedger}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 rounded-[12px] border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition"
+          >
+            <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <span>Sync Financial Ledger</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. P&L FINANCIAL SCOREBOARD */}
@@ -396,6 +415,96 @@ export default function DashboardFinancePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 4. DAILY SHIFT CASH SETTLEMENTS & CASH DRAWER RECONCILIATIONS */}
+      <div className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+        <div className="p-4 border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Receipt className="h-4 w-4 text-emerald-600" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+              Daily Shift Cash Drawer Handover Audits ({settlements.length} Shifts Reconciled)
+            </h2>
+          </div>
+          <Link
+            href="/clinic/settlement"
+            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1"
+          >
+            <span>Open Cash Settlement Console</span>
+            <span>➔</span>
+          </Link>
+        </div>
+
+        {settlements.length === 0 ? (
+          <div className="p-8 text-center text-xs text-[#86868B]">
+            No shifts settled yet today. Staff can balance and lock shift cash drawers from the{" "}
+            <Link href="/clinic/settlement" className="text-emerald-600 underline font-semibold">
+              Shift Settlement Console
+            </Link>.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-black/[0.06] bg-[#ECEEF2]/40 text-[#86868B] dark:border-white/[0.06] dark:bg-white/[0.02]">
+                <tr>
+                  <th className="px-5 py-3.5 font-bold">Shift & Time</th>
+                  <th className="px-4 py-3.5 font-bold">Counter Staff</th>
+                  <th className="px-4 py-3.5 font-bold">Doctor OPD</th>
+                  <th className="px-4 py-3.5 font-bold text-right">Gross Inflow</th>
+                  <th className="px-4 py-3.5 font-bold text-right">Soundbox UPI</th>
+                  <th className="px-4 py-3.5 font-bold text-right">Expected Cash</th>
+                  <th className="px-4 py-3.5 font-bold text-right">Actual Counted</th>
+                  <th className="px-4 py-3.5 font-bold text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+                {settlements.map((s) => (
+                  <tr key={s.settlement_id} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition">
+                    <td className="px-5 py-4">
+                      <div className="font-bold text-[#1D1D1F] dark:text-white">
+                        {s.shift_name}
+                      </div>
+                      <div className="font-mono text-[10px] text-[#86868B] mt-0.5">
+                        {s.settlement_id} • {s.settlement_date}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-[#1D1D1F] dark:text-white font-medium">
+                      {s.staff_name}
+                    </td>
+                    <td className="px-4 py-4 text-[#86868B]">
+                      {s.doctor_name}
+                    </td>
+                    <td className="px-4 py-4 text-right font-mono font-bold text-[#1D1D1F] dark:text-white">
+                      ₹{s.gross_collected?.toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-4 py-4 text-right font-mono text-[#0071E3] dark:text-[#2997FF]">
+                      ₹{s.upi_collected?.toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-4 py-4 text-right font-mono font-medium text-[#86868B]">
+                      ₹{s.expected_cash?.toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-4 py-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      ₹{s.actual_cash_counted?.toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        s.discrepancy_status === "balanced"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                          : s.discrepancy_status === "surplus"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
+                          : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                      }`}>
+                        {s.discrepancy_status === "balanced" && "✓ Balanced"}
+                        {s.discrepancy_status === "surplus" && `+₹${s.discrepancy_amount} Surplus`}
+                        {s.discrepancy_status === "shortage" && `-₹${Math.abs(s.discrepancy_amount)} Shortage`}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

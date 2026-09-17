@@ -19,7 +19,9 @@ import {
   IndianRupee,
   Sparkles,
   ExternalLink,
-  Stethoscope
+  Stethoscope,
+  Tv,
+  Receipt
 } from "lucide-react";
 
 // Web Audio API chime generator
@@ -316,6 +318,25 @@ export default function DashboardDeskPage() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="/display/waiting-room"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 active:scale-95 transition"
+            title="Launch Smart TV Waiting Room Wall Display"
+          >
+            <Tv className="h-4 w-4" />
+            <span>📺 Waiting Room TV</span>
+          </Link>
+
+          <Link
+            href="/clinic/settlement"
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition"
+            title="Shift Day-Closing Cash Settlement"
+          >
+            <Receipt className="h-4 w-4" />
+            <span>💵 Settle Shift</span>
+          </Link>
+
           <button
             onClick={() => setShowQrModal(true)}
             className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-4 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition"
@@ -383,14 +404,24 @@ export default function DashboardDeskPage() {
           </p>
         </div>
 
-        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card">
-          <div className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider flex items-center gap-1.5">
-            <IndianRupee className="h-4 w-4" /> Cash in Drawer
+        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider flex items-center gap-1.5">
+                <IndianRupee className="h-4 w-4" /> Cash in Drawer
+              </div>
+              <Link
+                href="/clinic/settlement"
+                className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline"
+              >
+                Settle ➔
+              </Link>
+            </div>
+            <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
+              ₹{cashCollected.toLocaleString("en-IN")}
+            </div>
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
-            ₹{cashCollected.toLocaleString("en-IN")}
-          </div>
-          <p className="mt-1 text-xs text-[#86868B]">
+          <p className="mt-2 text-xs text-[#86868B] pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
             Total Gross: ₹{totalCollectedToday.toLocaleString("en-IN")}
           </p>
         </div>

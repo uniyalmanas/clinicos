@@ -16,17 +16,20 @@
 1. [Product Vision & Core Philosophy](#-product-vision--core-philosophy)
 2. [Target Audience & Ecosystem](#-target-audience--ecosystem)
 3. [All Features Built & Progress Made](#-all-features-built--progress-made)
-   - [Clinical Chamber Studio (Doctor Consultation)](#1-doctor-clinical-chamber-studio--consultation-room)
+   - [Clinical Chamber Studio, 1-Tap Rx Combos & Letterhead Calibrator](#1-doctor-clinical-chamber-studio--consultation-room)
    - [Clinic Front Desk & Live Token Desk](#2-clinic-front-desk-reception-console--token-desk)
-   - [Zero-App Patient Portal & Discovery](#3-zero-app-patient-portal--discovery-experience)
-   - [60-Second AI Onboarding Wizard](#4-60-second-ai-onboarding-wizard--assistant)
-   - [AI Clinic Receptionist Widget](#5-ai-clinic-receptionist-widget)
-   - [Clinic Cash Flow & Expense Ledger](#6-clinic-cash-flow--expense-ledger)
-   - [In-House & Partner Pharmacy / Lab Dispensary](#7-in-house-pharmacy-batch-inventory-expiry-radar--pos-dispense)
-   - [Platform Administration & NMC Verification](#8-platform-administration--nmc-verification)
-   - [Verified Patient Reviews & Reputation System](#9-verified-patient-reviews--reputation-system)
-   - [Inpatient Bed & Ward Management Matrix](#10-inpatient-bed--ward-management-matrix)
-   - [Patient EMR Directory & Diagnostic Lab Reports Vault](#11-patient-emr-directory--diagnostic-lab-reports-vault)
+   - [Waiting Room Smart TV Queue Display & Bilingual Audio Chime](#3-waiting-room-smart-tv-queue-display--bilingual-audio-chime)
+   - [Front Desk Cash Drawer Settlement & Day-Closing Reconciliation](#4-front-desk-cash-drawer-settlement--day-closing-reconciliation)
+   - [Zero-App Patient Portal & Discovery Experience](#5-zero-app-patient-portal--discovery-experience)
+   - [60-Second AI Onboarding Wizard & Assistant](#6-60-second-ai-onboarding-wizard--assistant)
+   - [AI Clinic Receptionist Widget](#7-ai-clinic-receptionist-widget)
+   - [Clinic Cash Flow & Expense Ledger](#8-clinic-cash-flow--expense-ledger)
+   - [In-House & Partner Pharmacy / Lab Dispensary](#9-in-house-pharmacy-batch-inventory-expiry-radar--pos-dispense)
+   - [Platform Administration & NMC Verification](#10-platform-administration--nmc-verification)
+   - [Verified Patient Reviews & Reputation System](#11-verified-patient-reviews--reputation-system)
+   - [Inpatient Bed & Ward Management Matrix](#12-inpatient-bed--ward-management-matrix)
+   - [Patient EMR Directory & Diagnostic Lab Reports Vault](#13-patient-emr-directory--diagnostic-lab-reports-vault)
+   - [Drug-Drug Interaction (DDI) Radar & ABDM M1 Readiness](#14-drug-drug-interaction-ddi-radar--abdm-m1-readiness)
 4. [Design System & Apple HIG UI/UX](#-design-system--apple-hig-uiux)
 5. [Monorepo Architecture & Codebase Map](#-monorepo-architecture--codebase-map)
 6. [Backend API Reference](#-backend-api-reference)
@@ -102,6 +105,13 @@ In India, healthcare software is broken into two extremes:
 *Location:* [`apps/web/src/app/dashboard/consult/[id]/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/consult/%5Bid%5D/page.tsx) & [`doctor/consult/[id]`](file:///D:/medic-sept-2026/apps/web/src/app/doctor/consult/%5Bid%5D/page.tsx)
 
 - **Comprehensive Patient Demographic & Clinical Header:** Token indicator, patient age, gender, contact number, blood group, and allergy alerts.
+- **⚡ 1-Tap "Doctor's Rx Combos" (< 15-Second Prescribing):**
+  - Instant 1-click clinical packs for Dermatology, General Practice, Pediatrics, and Dental (e.g., *Acne Vulgaris Inflammatory*, *Atopic Eczema Flare*, *Acute Bronchitis & Cough*, *Pediatric Febrile Illness*, *Gingivitis / Pulpitis*).
+  - Automatically loads generic formulations, dosage forms, instructions, dietary advice, and follow-up days in under **2 seconds**.
+  - **"Save Current as My Combo":** Any doctor can save their own custom combinations to local clinic storage with 1 click.
+- **🖨️ Physical Letterhead Calibrator:**
+  - Dual Print Mode: Toggle between **"Plain A4 Paper"** (prints complete clinic branding) and **"Doctor Pre-Printed Letterhead"** (suppresses header/footer graphics so Rx prints strictly on the blank space of the physical pad).
+  - Millimeter-accurate margin sliders (`topMarginMm`, `bottomMarginMm`, `sideMarginMm`) with interactive live silhouette preview and dynamic `@page { margin: ... }` `@media print` injection.
 - **AI Clinical Voice & Dictation Scribe (`POST /api/v1/prescriptions/scribe`):**
   - Doctors can dictate or type unstructured clinical findings.
   - Powered by Gemini 2.0 Flash with clinical heuristic parsing, automatically extracting Vitals, Chief Complaints, Provisional Diagnosis, Investigations, and UPPERCASE generic pharmacopeia medications in < 1 second.
@@ -142,7 +152,30 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 3. 👥 Zero-App Patient Portal & Discovery Experience
+### 3. 📺 Waiting Room Smart TV Queue Display & Bilingual Audio Chime
+*Location:* [`apps/web/src/app/display/waiting-room/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/display/waiting-room/page.tsx) & [`/display/waiting-room`](file:///D:/medic-sept-2026/apps/web/src/app/display/waiting-room/page.tsx)
+
+- **Zero-Setup Fullscreen TV Wall Display:** Runs directly inside the web browser of any Smart TV, Fire TV Stick, Android TV, or wall-mounted tablet with no app store download required.
+- **Hero "Now Serving" Spotlight:** High-contrast token spotlight with live chamber status, attending doctor name, and consultation state.
+- **"Up Next" Waiting Lounge Queue:** Real-time queue board showing the next 5 patients in line with dynamic estimated waiting times.
+- **Zero-App Smartphone QR Token Tracker:** Large on-screen QR code allowing waiting patients to scan with their phone camera and monitor token progression while sitting in their vehicle or a nearby cafe.
+- **Bilingual Acoustic Chime & Audio Announcer:** 4-tone Web Audio API soundbox chime paired with Web Speech API voice synthesis in English and Hindi (*"Token 103, please proceed to Chamber 1 / टोकन नंबर 103, कमरा नंबर 1 में आएं"*).
+
+---
+
+### 4. 💵 Front Desk Cash Drawer Settlement & Day-Closing Reconciliation
+*Location:* [`apps/web/src/app/clinic/settlement/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/clinic/settlement/page.tsx) & [`/clinic/settlement`](file:///D:/medic-sept-2026/apps/web/src/app/clinic/settlement/page.tsx)
+
+- **Shift Reconciler:** Switch between Morning and Evening OPD shifts. Automatically calculates Gross Collections, Soundbox UPI payments, and Net Expected Cash in the drawer.
+- **Petty Cash Outflow Tracker:** Real-time logging of spot counter deductions (e.g. ₹150 biopsy courier, ₹200 drinking water cans) automatically deducted from expected cash.
+- **Indian Currency Denomination Counter:** Interactive denomination sheet (₹500, ₹200, ₹100, ₹50, ₹20, ₹10 notes) with live real-time recalculation of counted cash.
+- **Live Discrepancy & Verification Engine:** Automatically classifies cash drawer state into `✓ Balanced`, `Surplus (+₹)`, or `Shortage (-₹)`. If a discrepancy exists, the staff member must enter an explanation before locking the shift.
+- **1-Click WhatsApp Audit & Printable Handover Slip:** Generates an official printable handover voucher and includes a 1-click button to send the full settlement audit to the Doctor/Clinic Director via WhatsApp.
+- **Synchronized with Clinic Finance:** Handed-over shifts persist to SQLite (`POST /api/v1/clinic/settle-shift` & `GET /api/v1/clinic/settlements`) and appear in the Clinic Director's Finance Ledger (`/dashboard/finance`).
+
+---
+
+### 5. 👥 Zero-App Patient Portal & Discovery Experience
 *Location:* [`apps/web/src/app/patient/portal/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/patient/portal/page.tsx), [`p/[id]/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/p/%5Bid%5D/page.tsx), and [`book/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/book/page.tsx)
 
 - **Zero-Friction Advance Booking (`/book`):**
@@ -161,7 +194,7 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 4. ⚡ 60-Second AI Onboarding Wizard & Assistant
+### 6. ⚡ 60-Second AI Onboarding Wizard & Assistant
 *Location:* [`apps/web/src/app/onboarding/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/onboarding/page.tsx) & [`apps/api/app/ai/onboarding_agent.py`](file:///D:/medic-sept-2026/apps/api/app/ai/onboarding_agent.py)
 
 - **Zero Manual Forms:** Doctor types or speaks a raw text description or uploads a photo of their visiting card/letterhead.
@@ -189,7 +222,7 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 5. 💬 AI Clinic Receptionist Widget
+### 7. 💬 AI Clinic Receptionist Widget
 *Location:* [`apps/web/src/components/AIReceptionistWidget.tsx`](file:///D:/medic-sept-2026/apps/web/src/components/AIReceptionistWidget.tsx)
 
 - Floating patient assistant embedded on doctor profiles (`/doctors/[slug]`).
@@ -202,7 +235,7 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 6. 💰 Clinic Cash Flow & Expense Ledger
+### 8. 💰 Clinic Cash Flow & Expense Ledger
 *Location:* [`apps/web/src/app/dashboard/finance/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/finance/page.tsx) & [`apps/api/app/api/v1/expenses.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/expenses.py)
 
 - **Database-Backed Financial Cockpit:** Real-time reconciliation between daily OPD gross patient collections, in-house pharmacy sales, and clinic operating expenses directly persisted to SQLite.
@@ -212,11 +245,12 @@ In India, healthcare software is broken into two extremes:
   - Clinic Staff Salaries (receptionists, nursing assistants).
   - Medical Equipment Servicing (lasers, dental chairs, autoclaves).
 - **Fast 1-Click Presets & Real-Time Deletion:** Instant logging of common overheads with instant voucher deletion.
+- **Shift Settlement Audit Registry:** Displays all daily front desk cash drawer handovers with balanced/discrepancy status.
 - **Real Net In-Hand Profit & Margins:** Calculates real net profit percentages after meeting all physical operating costs.
 
 ---
 
-### 7. 💊 In-House Pharmacy Batch Inventory, Expiry Radar & POS Dispense
+### 9. 💊 In-House Pharmacy Batch Inventory, Expiry Radar & POS Dispense
 *Location:* [`apps/web/src/app/dashboard/pharmacy/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/pharmacy/page.tsx) & [`apps/api/app/api/v1/pharmacy.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/pharmacy.py)
 
 - **Batch Inventory & Expiry Countdown Radar:**
@@ -232,7 +266,7 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 8. 🛡️ Platform Administration & NMC Verification
+### 10. 🛡️ Platform Administration & NMC Verification
 *Location:* [`apps/web/src/app/admin/verifications/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/admin/verifications/page.tsx) & [`apps/api/app/api/v1/admin.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/admin.py)
 
 - **NMC Verification Queue:** Admin approval workflow verifying doctor identity, degrees, and State Medical Council registration numbers before public directory indexing.
@@ -241,7 +275,7 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 9. ⭐ Verified Patient Reviews & Reputation System
+### 11. ⭐ Verified Patient Reviews & Reputation System
 *Location:* [`apps/web/src/components/DoctorReviewsSection.tsx`](file:///D:/medic-sept-2026/apps/web/src/components/DoctorReviewsSection.tsx) & [`apps/api/app/api/v1/reviews.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/reviews.py)
 
 - **Anti-Fraud Verified Visit Badges:** Only patients with recorded appointment tokens can leave verified reviews.
@@ -250,7 +284,7 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 10. 🛏️ Inpatient Bed & Ward Management Matrix
+### 12. 🛏️ Inpatient Bed & Ward Management Matrix
 *Location:* [`apps/web/src/app/dashboard/beds/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/beds/page.tsx) & [`apps/api/app/api/v1/beds.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/beds.py)
 
 - **Live Ward Floorplan Matrix:** Real-time visualization across General Wards, Semi-Private Rooms, Deluxe AC Suites, Daycare Recovery, and HDU/ICU.
@@ -261,10 +295,23 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 11. 📁 Patient EMR Directory & Diagnostic Lab Reports Vault
+### 13. 📁 Patient EMR Directory & Diagnostic Lab Reports Vault
 *Location:* [`apps/web/src/app/dashboard/patients/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/patients/page.tsx) & [`apps/web/src/components/PatientDocumentsManager.tsx`](file:///D:/medic-sept-2026/apps/web/src/components/PatientDocumentsManager.tsx)
 
 - **Unified Patient Health Records (PHR):** Combines registered OPD walk-ins, consultation notes, and chronic drug allergy flags.
+- **Dual-Pane Clinical Workspace:** Instant switching between previous consultation visit timelines and the diagnostic document vault.
+- **Diagnostic Document Locker:** Upload and view blood panels, radiology X-rays, pathology reports, and past prescription PDFs with doctor annotations.
+
+---
+
+### 14. 🛡️ Drug-Drug Interaction (DDI) Radar & ABDM M1 Readiness
+*Location:* [`apps/api/app/ai/ddi_engine.py`](file:///D:/medic-sept-2026/apps/api/app/ai/ddi_engine.py) & [`apps/api/app/api/v1/abdm.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/abdm.py)
+
+- **Real-Time DDI Pharmacological Engine:** Scans active prescribed medication combinations for contraindications, severe drug-drug interactions, and adverse events (e.g. Ciprofloxacin + Theophylline, NSAIDs + Anticoagulants, ACE inhibitors + Spironolactone).
+- **Clinical Safety Alerts:** Displays clear severity warnings, physiological mechanism explanations, and recommended dosage or drug adjustments before the prescription is finalized.
+- **ABDM Milestone 1 (M1) FHIR R4 Bundle Gateway:**
+  - `POST /api/v1/abdm/m1/care-context/link`: Links consultations and prescriptions to the patient's verified 14-digit ABHA ID and ABHA address.
+  - `POST /api/v1/abdm/m1/bundle/generate`: Emits compliant HL7 FHIR R4 JSON clinical bundles containing Patient, Practitioner, Encounter, Condition, and MedicationRequest resources for the national ABDM health data repository.
 - **Dual-Pane Clinical Workspace:** Instant switching between previous consultation visit timelines and the diagnostic document vault.
 - **Diagnostic Document Locker:** Upload and view blood panels, radiology X-rays, pathology reports, and past prescription PDFs with doctor annotations.
 
@@ -292,19 +339,21 @@ clinicos-monorepo/
 │   ├── api/                                # FastAPI Async Python API Backend
 │   │   ├── app/
 │   │   │   ├── ai/
+│   │   │   │   ├── ddi_engine.py           # Real-time Drug-Drug Interaction safety radar
 │   │   │   │   └── onboarding_agent.py     # Gemini 2.0 & Heuristic Medical NLP Extractor
 │   │   │   ├── api/v1/                     # Modular API Routers
+│   │   │   │   ├── abdm.py                 # ABDM M1 FHIR R4 care-context & bundle gateway
 │   │   │   │   ├── admin.py                # Platform admin & verifications
 │   │   │   │   ├── appointments.py         # Appointment booking & token queue
 │   │   │   │   ├── auth.py                 # JWT authentication & OTP schemas
-│   │   │   │   ├── clinic.py               # Reception desk operations
+│   │   │   │   ├── clinic.py               # Reception desk, walk-ins & shift settlement
 │   │   │   │   ├── clinics.py              # Clinic public profiles
 │   │   │   │   ├── doctors.py              # Doctor public profiles
 │   │   │   │   ├── documents.py            # Patient document vault
 │   │   │   │   ├── expenses.py             # Clinic financial ledger
 │   │   │   │   ├── health.py               # Health probe endpoint
 │   │   │   │   ├── onboarding.py           # 60s AI doctor onboarding endpoint
-│   │   │   │   ├── prescriptions.py        # NMC-compliant Rx generator
+│   │   │   │   ├── prescriptions.py        # NMC-compliant Rx generator & DDI checker
 │   │   │   │   ├── reviews.py              # Verified patient reviews
 │   │   │   │   └── search.py               # Doctor/clinic search engine
 │   │   │   ├── core/
@@ -325,28 +374,29 @@ clinicos-monorepo/
 │           ├── app/
 │           │   ├── admin/                  # Admin verifications & analytics
 │           │   ├── book/                   # Live appointment & token booking flow
-│           │   ├── clinic/                 # Clinic desk & expense pages
+│           │   ├── clinic/                 # Clinic counter PWA & cash settlement
+│           │   │   ├── desk/               # Counter receptionist console
+│           │   │   └── settlement/         # Shift cash drawer settlement & handover
 │           │   ├── clinics/[slug]/         # Clinic public profiles
 │           │   ├── dashboard/              # Full Clinic ERP Cockpit
 │           │   │   ├── chambers/           # OPD shift & room scheduler
-│           │   │   ├── consult/[id]/       # Doctor consultation room & Rx writer
+│           │   │   ├── consult/[id]/       # Doctor consultation, 1-tap combos & letterhead calibrator
 │           │   │   ├── desk/               # Reception desk token queue
-│           │   │   ├── finance/            # Expense & cashflow ledger
+│           │   │   ├── finance/            # Expense, cashflow & shift settlements audit
 │           │   │   ├── patients/           # EMR Patient directory
 │           │   │   ├── pharmacy/           # Dispensary & lab orders
 │           │   │   └── settings/           # Clinic profile & billing settings
+│           │   ├── display/
+│           │   │   └── waiting-room/       # Smart TV Wall Queue Display & Audio Chime
 │           │   ├── doctor/                 # Standalone doctor queue & consult
 │           │   ├── doctors/[slug]/         # Doctor public verified profiles
 │           │   ├── login/                  # Staff & Doctor authentication
 │           │   ├── onboarding/             # 60-Second AI Onboarding Wizard
 │           │   ├── p/[id]/                 # Public Digital Rx with SHA-256 verify
 │           │   ├── patient/portal/         # Patient records & alarm portal
-│           │   ├── pharmacy/console/       # In-house pharmacy dispensing desk
-│           │   ├── search/                 # Doctor & clinic directory search
-│           │   ├── layout.tsx              # Root HTML & theme provider
-│           │   └── page.tsx                # Apple HIG Landing page & playground
-│           ├── components/
-│           │   ├── AIReceptionistWidget.tsx    # Floating conversational assistant
+│           │   └── waiting-room/           # Mobile & desktop patient queue tracker
+│           ├── components/                 # Reusable UI component architecture
+│           │   ├── AIReceptionistWidget.tsx    # Floating clinic AI concierge
 │           │   ├── DoctorReviewsSection.tsx    # Verified reviews & doctor replies
 │           │   ├── InteractiveClinicMap.tsx    # Canvas clinic geolocation map
 │           │   ├── InteractiveHeroSearch.tsx   # Instant specialty & locality search
@@ -355,7 +405,9 @@ clinicos-monorepo/
 │           │   └── ThemeToggle.tsx             # Light/Dark mode switcher
 │           └── data/
 │               ├── medicines.ts            # Indian pharmacopeia formulary
-│               └── patients.ts             # Pilot patient records & histories
+│               ├── patients.ts             # Pilot patient records & histories
+│               ├── prescriptionHelpers.ts  # Generic name & instruction utilities
+│               └── rxCombos.ts             # 1-Tap specialty prescribing combinations
 │
 └── packages/
     ├── database/                           # Canonical database schema & migrations
@@ -390,6 +442,8 @@ All API routes are served under the `/api/v1` namespace:
 | | `POST` | `/api/v1/clinic/walk-in` | Instant counter walk-in token generator |
 | | `POST` | `/api/v1/clinic/call-token` | Call token with real-time SSE broadcast & chime |
 | | `POST` | `/api/v1/clinic/complete-token` | Mark token consultation completed |
+| | `POST` | `/api/v1/clinic/settle-shift` | Reconcile shift cash drawer, petty deductions & denominations |
+| | `GET` | `/api/v1/clinic/settlements` | List persisted shift cash drawer settlements |
 | **Inpatient Beds** | `GET` | `/api/v1/beds` | Bed & Ward occupancy matrix with accrued charges |
 | | `POST` | `/api/v1/beds/admit` | Admit patient to bed with doctor & clinical notes |
 | | `POST` | `/api/v1/beds/discharge` | Discharge patient & calculate stay invoice bill |
@@ -397,6 +451,9 @@ All API routes are served under the `/api/v1` namespace:
 | **Prescriptions**| `POST`| `/api/v1/prescriptions/generate` | Generate NMC-compliant prescription with SHA-256 |
 | | `GET` | `/api/v1/prescriptions/{rx_number}`| View tamper-proof prescription record |
 | | `POST` | `/api/v1/prescriptions/scribe` | AI Clinical Voice & Dictation Scribe parser |
+| | `POST` | `/api/v1/prescriptions/check-ddi` | Real-time Drug-Drug Interaction safety analysis |
+| **ABDM Gateway** | `POST` | `/api/v1/abdm/m1/care-context/link` | Link consultation/Rx to patient ABHA ID |
+| | `POST` | `/api/v1/abdm/m1/bundle/generate` | Generate FHIR R4 JSON clinical prescription bundle |
 | **Pharmacy** | `GET` | `/api/v1/pharmacy/inventory` | In-house batch inventory with days-to-expiry countdown radar |
 | | `POST` | `/api/v1/pharmacy/inventory` | Add new medicine batch / SKU to dispensary |
 | | `PUT` | `/api/v1/pharmacy/inventory/{id}/stock` | Adjust physical verified stock count |
