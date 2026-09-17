@@ -132,7 +132,7 @@ function BookingForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col">
+    <div className="min-h-screen bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 apple-glass border-b border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -166,7 +166,7 @@ function BookingForm() {
 
             <div className="p-6 sm:p-8 space-y-6">
               {/* Giant Token Callout */}
-              <div className="rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] bg-[#F5F5F7] dark:bg-[#2C2C2E] p-6 text-center">
+              <div className="rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] p-6 text-center">
                 <div className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">
                   Your OPD Live Token
                 </div>
@@ -179,7 +179,7 @@ function BookingForm() {
               </div>
 
               {/* Clinic & Doctor Details */}
-              <div className="space-y-3 rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#F5F5F7]/70 dark:bg-[#2C2C2E]/50 p-5 text-xs">
+              <div className="space-y-3 rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/50 p-5 text-xs">
                 <div className="flex justify-between py-1.5 border-b border-black/[0.04] dark:border-white/[0.06]">
                   <span className="text-[#86868B]">Patient:</span>
                   <span className="font-semibold text-[#1D1D1F] dark:text-white">{bookingConfirmed.appointment.patient_name}</span>
@@ -311,7 +311,7 @@ function BookingForm() {
                   value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
                   placeholder="e.g. Ramesh Chandra"
-                  className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                 />
               </div>
 
@@ -326,7 +326,7 @@ function BookingForm() {
                   value={patientPhone}
                   onChange={(e) => setPatientPhone(e.target.value)}
                   placeholder="+91 9876543210"
-                  className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 font-mono"
+                  className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 font-mono"
                 />
                 <p className="mt-1 text-[10px] text-[#86868B]">
                   Your token number and digital prescription link will be messaged to this WhatsApp number.
@@ -343,7 +343,7 @@ function BookingForm() {
                   value={symptoms}
                   onChange={(e) => setSymptoms(e.target.value)}
                   placeholder="e.g. Red skin rash with itching for 4 days, mild fever..."
-                  className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                 />
               </div>
 

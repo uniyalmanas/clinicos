@@ -159,7 +159,7 @@ export default function DashboardOverviewPage() {
             </span>
           </div>
 
-          <div className="mt-4 rounded-[16px] bg-[#F5F5F7] p-3.5 dark:bg-[#2C2C2E]">
+          <div className="mt-4 rounded-[16px] bg-[#ECEEF2]/70 p-3.5 dark:bg-[#2C2C2E]">
             <div className="flex items-center justify-between text-xs">
               <span className="text-[#86868B] dark:text-[#8E8E93]">Current Patient:</span>
               <span className="font-bold text-[#1D1D1F] dark:text-white">Priya Singh (Token #2)</span>
@@ -202,7 +202,7 @@ export default function DashboardOverviewPage() {
             </span>
           </div>
 
-          <div className="mt-4 rounded-[16px] bg-[#F5F5F7] p-3.5 dark:bg-[#2C2C2E]">
+          <div className="mt-4 rounded-[16px] bg-[#ECEEF2]/70 p-3.5 dark:bg-[#2C2C2E]">
             <div className="flex items-center justify-between text-xs">
               <span className="text-[#86868B] dark:text-[#8E8E93]">Current Patient:</span>
               <span className="font-bold text-[#1D1D1F] dark:text-white">Kavita Joshi (Token #4)</span>
@@ -248,7 +248,7 @@ export default function DashboardOverviewPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F5F5F7] border-b border-black/[0.05] text-[#86868B] dark:bg-[#2C2C2E]/60 dark:border-white/[0.06] dark:text-[#8E8E93]">
+            <thead className="bg-[#ECEEF2]/60 border-b border-black/[0.05] text-[#86868B] dark:bg-[#2C2C2E]/60 dark:border-white/[0.06] dark:text-[#8E8E93]">
               <tr>
                 <th className="px-6 py-3 font-semibold">Token</th>
                 <th className="px-6 py-3 font-semibold">Patient Name</th>

@@ -51,7 +51,7 @@ export default function PatientPortalPage() {
   const activeRx = currentPatient.visits[0];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col">
+    <div className="min-h-screen bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col">
       {/* 1. TOP PATIENT PORTAL HEADER */}
       <header className="sticky top-0 z-40 apple-glass border-b border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
@@ -194,7 +194,7 @@ export default function PatientPortalPage() {
                 {activeRx.medications_summary.map((med, idx) => (
                   <div
                     key={idx}
-                    className="rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#F5F5F7]/70 dark:bg-[#2C2C2E]/50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className="rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div>
                       <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white flex items-center gap-2">
@@ -219,7 +219,7 @@ export default function PatientPortalPage() {
             </div>
 
             {/* 1-CLICK PARTNER FULFILLMENT */}
-            <div className="rounded-[24px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="rounded-[24px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4 text-apple-teal" />
@@ -264,7 +264,7 @@ export default function PatientPortalPage() {
             {currentPatient.visits.map(v => (
               <div
                 key={v.visit_id}
-                className="rounded-[20px] bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/40 border border-black/[0.04] dark:border-white/[0.06] p-4 flex items-start justify-between"
+                className="rounded-[20px] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/40 border border-black/[0.04] dark:border-white/[0.06] p-4 flex items-start justify-between"
               >
                 <div>
                   <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white">

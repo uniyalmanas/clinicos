@@ -120,7 +120,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
       {/* Ratings Metrics Cards */}
       {data && (
         <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-[20px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center">
+          <div className="rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center">
             <div className="text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white flex items-center justify-center gap-1.5 font-mono">
               <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
               {data.average_rating}
@@ -129,7 +129,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
             <div className="text-[10px] text-[#86868B]/80 font-mono">({data.total_reviews} verified patients)</div>
           </div>
 
-          <div className="rounded-[20px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center">
+          <div className="rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center">
             <div className="text-2xl font-bold tracking-tight text-apple-teal dark:text-[#30D1BE] flex items-center justify-center gap-1.5 font-mono">
               <Clock className="h-5 w-5" />
               {data.metrics.waiting_time_score}
@@ -138,7 +138,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
             <div className="text-[10px] text-[#86868B]/80">Live token queuing</div>
           </div>
 
-          <div className="rounded-[20px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center">
+          <div className="rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center">
             <div className="text-2xl font-bold tracking-tight text-apple-blue dark:text-sky-400 flex items-center justify-center gap-1.5 font-mono">
               <CheckCircle2 className="h-5 w-5" />
               {data.metrics.bedside_manner_score}
@@ -161,7 +161,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
           data.reviews.map((rev) => (
             <div
               key={rev.id}
-              className="rounded-[20px] bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/50 border border-black/[0.04] dark:border-white/[0.06] p-5 space-y-3 transition-all"
+              className="rounded-[20px] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/50 border border-black/[0.04] dark:border-white/[0.06] p-5 space-y-3 transition-all"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
@@ -262,7 +262,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                     placeholder="e.g. Ramesh Chandra"
-                    className="mt-1.5 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] bg-[#F5F5F7] dark:bg-black/40 px-3.5 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1.5 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] bg-[#ECEEF2] dark:bg-black/40 px-3.5 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
 
@@ -298,7 +298,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
                     <select
                       value={formWaitRating}
                       onChange={(e) => setFormWaitRating(parseFloat(e.target.value))}
-                      className="mt-1 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] px-2.5 py-2 text-xs bg-[#F5F5F7] dark:bg-black/40 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                      className="mt-1 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] px-2.5 py-2 text-xs bg-[#ECEEF2] dark:bg-black/40 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                     >
                       <option value={5}>5 - Minimal Wait (&lt; 10 mins)</option>
                       <option value={4}>4 - Fast (10-20 mins)</option>
@@ -314,7 +314,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
                     <select
                       value={formBedsideRating}
                       onChange={(e) => setFormBedsideRating(parseFloat(e.target.value))}
-                      className="mt-1 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] px-2.5 py-2 text-xs bg-[#F5F5F7] dark:bg-black/40 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                      className="mt-1 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] px-2.5 py-2 text-xs bg-[#ECEEF2] dark:bg-black/40 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                     >
                       <option value={5}>5 - Very Patient & Empathetic</option>
                       <option value={4}>4 - Clear & Helpful</option>
@@ -334,7 +334,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
                     value={formComment}
                     onChange={(e) => setFormComment(e.target.value)}
                     placeholder="Describe how the doctor examined you, explanation of diagnosis, clinic cleanliness, etc."
-                    className="mt-1.5 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] bg-[#F5F5F7] dark:bg-black/40 p-3 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1.5 w-full rounded-xl border border-black/[0.1] dark:border-white/[0.12] bg-[#ECEEF2] dark:bg-black/40 p-3 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
 

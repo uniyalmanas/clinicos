@@ -169,7 +169,7 @@ export default async function DoctorProfilePage({ params }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7]">
+    <div className="min-h-screen bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7]">
       {/* JSON-LD for Google SEO */}
       <script
         type="application/ld+json"
@@ -219,7 +219,7 @@ export default async function DoctorProfilePage({ params }: Props) {
                 </div>
 
                 {/* Rating Badge */}
-                <div className="rounded-[20px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center min-w-[120px]">
+                <div className="rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center min-w-[120px]">
                   <div className="flex items-center justify-center gap-1 text-lg font-bold text-[#1D1D1F] dark:text-white font-mono">
                     <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {doctor.rating}
                   </div>

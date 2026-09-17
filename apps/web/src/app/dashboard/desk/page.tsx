@@ -296,7 +296,7 @@ export default function DashboardDeskPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F5F5F7]/80 dark:bg-[#2C2C2E]/60 border-b border-black/[0.04] dark:border-white/[0.06] text-[#86868B] font-medium">
+            <thead className="bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/60 border-b border-black/[0.04] dark:border-white/[0.06] text-[#86868B] font-medium">
               <tr>
                 <th className="px-5 py-3.5">Token</th>
                 <th className="px-5 py-3.5">Patient</th>
@@ -403,7 +403,7 @@ export default function DashboardDeskPage() {
                   placeholder="e.g. Ramesh Chandra"
                   value={walkInName}
                   onChange={e => setWalkInName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                 />
               </div>
 
@@ -415,7 +415,7 @@ export default function DashboardDeskPage() {
                   placeholder="+91 98765 43210"
                   value={walkInPhone}
                   onChange={e => setWalkInPhone(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 font-mono text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                 />
               </div>
 
@@ -426,7 +426,7 @@ export default function DashboardDeskPage() {
                     type="number"
                     value={walkInFee}
                     onChange={e => setWalkInFee(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 font-mono text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
                 <div>
@@ -434,7 +434,7 @@ export default function DashboardDeskPage() {
                   <select
                     value={walkInPaymentMode}
                     onChange={e => setWalkInPaymentMode(e.target.value as any)}
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   >
                     <option value="upi">UPI (PhonePe / Soundbox)</option>
                     <option value="cash">Counter Cash</option>
@@ -472,7 +472,7 @@ export default function DashboardDeskPage() {
             <p className="text-xs text-[#86868B] mt-1">
               Place at reception counter for 1-tap patient token self-check-in
             </p>
-            <div className="mx-auto my-6 flex h-44 w-44 items-center justify-center rounded-[20px] bg-[#F5F5F7] p-3 border border-black/[0.04] dark:bg-[#2C2C2E] dark:border-white/[0.06]">
+            <div className="mx-auto my-6 flex h-44 w-44 items-center justify-center rounded-[20px] bg-[#ECEEF2]/70 p-3 border border-black/[0.04] dark:bg-[#2C2C2E] dark:border-white/[0.06]">
               <QrCode className="h-36 w-36 text-[#1D1D1F] dark:text-white" />
             </div>
             <div className="text-xs font-mono font-medium text-apple-blue">

@@ -79,9 +79,9 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F5F5F7] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7]">
+    <div className="flex h-screen overflow-hidden bg-[#ECEEF2] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7]">
       {/* 1. SIDEBAR (APPLE macOS / iPadOS STYLE) */}
-      <aside className="hidden lg:flex w-64 flex-col border-r border-black/[0.06] bg-[#F5F5F7] dark:border-white/[0.08] dark:bg-[#000000]">
+      <aside className="hidden lg:flex w-64 flex-col border-r border-black/[0.06] bg-[#ECEEF2] dark:border-white/[0.08] dark:bg-[#000000]">
         {/* Brand & Clinic Roster */}
         <div className="p-4 border-b border-black/[0.06] dark:border-white/[0.08]">
           <div className="flex items-center gap-2.5">
@@ -174,7 +174,7 @@ export default function DashboardLayout({
             className="fixed inset-0 bg-black/40 backdrop-blur-md"
             onClick={() => setSidebarOpen(false)}
           ></div>
-          <div className="relative flex w-72 flex-col bg-[#F5F5F7] dark:bg-[#1C1C1E] p-4 shadow-2xl">
+          <div className="relative flex w-72 flex-col bg-[#ECEEF2] dark:bg-[#1C1C1E] p-4 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="font-bold text-[#1D1D1F] dark:text-white">ClinicOS Navigation</span>
               <button
@@ -215,7 +215,7 @@ export default function DashboardLayout({
       {/* 3. MAIN CONTENT WRAPPER */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* TOP COMMAND HEADER (APPLE TRANSLUCENT MATERIAL) */}
-        <header className="h-16 shrink-0 border-b border-black/[0.06] bg-[#F5F5F7]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+        <header className="h-16 shrink-0 border-b border-black/[0.06] bg-[#ECEEF2]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80 flex items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -268,7 +268,7 @@ export default function DashboardLayout({
         </header>
 
         {/* PAGE CONTENT CONTAINER */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F5F5F7] dark:bg-[#000000]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#ECEEF2] dark:bg-[#000000]">
           {children}
         </main>
       </div>

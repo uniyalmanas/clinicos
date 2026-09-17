@@ -134,7 +134,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#F5F5F7]/70 dark:bg-[#2C2C2E]/50 p-4 sm:p-5 flex flex-col justify-between space-y-3.5 hover:border-apple-teal/40 transition"
+              className="rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/50 p-4 sm:p-5 flex flex-col justify-between space-y-3.5 hover:border-apple-teal/40 transition"
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
@@ -192,7 +192,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
             </div>
 
             {/* Diagnostic Details Preview */}
-            <div className="mt-5 rounded-[20px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 space-y-3">
+            <div className="mt-5 rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 space-y-3">
               <div className="flex justify-between text-xs">
                 <span className="text-[#86868B]">Patient:</span>
                 <strong className="text-[#1D1D1F] dark:text-white font-medium">{patientName}</strong>
@@ -266,7 +266,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. Thyroid Profile (T3, T4, TSH) or Chest X-Ray"
-                    className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 px-3.5 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-teal/30"
+                    className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 px-3.5 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-teal/30"
                   />
                 </div>
 
@@ -277,7 +277,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
                   <select
                     value={docType}
                     onChange={(e) => setDocType(e.target.value)}
-                    className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 px-3 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-teal/30"
+                    className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 px-3 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-teal/30"
                   >
                     <option value="Blood Test">Blood Test (CBC, LFT, KFT, Lipid)</option>
                     <option value="Radiology X-Ray">Radiology (X-Ray, Ultrasound, CT, MRI)</option>
@@ -296,11 +296,11 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="e.g. Done fasting in morning; normal reference range"
-                    className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 px-3.5 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-teal/30"
+                    className="mt-1.5 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 px-3.5 py-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-teal/30"
                   />
                 </div>
 
-                <div className="rounded-[20px] border border-dashed border-black/[0.12] dark:border-white/[0.15] p-5 text-center bg-[#F5F5F7]/50 dark:bg-black/20">
+                <div className="rounded-[20px] border border-dashed border-black/[0.12] dark:border-white/[0.15] p-5 text-center bg-[#ECEEF2]/50 dark:bg-black/20">
                   <UploadCloud className="mx-auto h-6 w-6 text-[#86868B]" />
                   <p className="mt-1.5 text-xs text-[#86868B] font-medium">
                     PDF, JPEG, or DICOM scans up to 25 MB

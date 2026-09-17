@@ -25,7 +25,7 @@ const config: Config = {
         foreground: "var(--foreground)",
         apple: {
           bg: {
-            light: "#F5F5F7",
+            light: "#ECEEF2",
             dark: "#000000",
           },
           card: {
@@ -33,11 +33,11 @@ const config: Config = {
             dark: "#1C1C1E",
           },
           elevated: {
-            light: "#F2F2F7",
+            light: "#F4F5F8",
             dark: "#2C2C2E",
           },
           input: {
-            light: "#E5E5EA",
+            light: "#E2E4E9",
             dark: "#3A3A3C",
           },
           border: {

@@ -393,7 +393,7 @@ export default function DynamicConsultationStudioPage() {
             </div>
 
             {/* Patient Details Bar */}
-            <div className="mt-4 grid grid-cols-4 gap-2 bg-[#F5F5F7] p-3 rounded-xl text-xs dark:bg-[#2C2C2E]/60 text-[#1D1D1F] dark:text-white">
+            <div className="mt-4 grid grid-cols-4 gap-2 bg-[#ECEEF2]/70 p-3 rounded-xl text-xs dark:bg-[#2C2C2E]/60 text-[#1D1D1F] dark:text-white">
               <div>Patient: <strong>{patient.name}</strong></div>
               <div>Age/Sex: <strong>{patient.age}Y / {patient.gender}</strong></div>
               <div>Rx Date: <strong>{new Date().toLocaleDateString("en-IN")}</strong></div>
@@ -402,10 +402,10 @@ export default function DynamicConsultationStudioPage() {
 
             {/* Vitals */}
             <div className="mt-4 flex flex-wrap gap-3 text-xs text-[#86868B] font-mono">
-              <span className="bg-[#F5F5F7] px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">BP: {vitals.bp} mmHg</span>
-              <span className="bg-[#F5F5F7] px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Pulse: {vitals.pulse} bpm</span>
-              <span className="bg-[#F5F5F7] px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Temp: {vitals.temp} °F</span>
-              <span className="bg-[#F5F5F7] px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Weight: {vitals.weight} kg</span>
+              <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">BP: {vitals.bp} mmHg</span>
+              <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Pulse: {vitals.pulse} bpm</span>
+              <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Temp: {vitals.temp} °F</span>
+              <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Weight: {vitals.weight} kg</span>
             </div>
 
             {/* Provisional Diagnosis */}
@@ -506,7 +506,7 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.bp}
                     onChange={e => setVitals({ ...vitals, bp: e.target.value })}
                     placeholder="120/80"
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
                 <div>
@@ -516,7 +516,7 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.pulse}
                     onChange={e => setVitals({ ...vitals, pulse: e.target.value })}
                     placeholder="72"
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
                 <div>
@@ -526,7 +526,7 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.temp}
                     onChange={e => setVitals({ ...vitals, temp: e.target.value })}
                     placeholder="98.6"
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
                 <div>
@@ -536,7 +536,7 @@ export default function DynamicConsultationStudioPage() {
                     value={vitals.weight}
                     onChange={e => setVitals({ ...vitals, weight: e.target.value })}
                     placeholder="65"
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
               </div>
@@ -555,7 +555,7 @@ export default function DynamicConsultationStudioPage() {
                     type="text"
                     value={provisionalDiagnosis}
                     onChange={e => setProvisionalDiagnosis(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
 
@@ -565,7 +565,7 @@ export default function DynamicConsultationStudioPage() {
                     rows={3}
                     value={chiefComplaints}
                     onChange={e => setChiefComplaints(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   ></textarea>
                 </div>
 
@@ -575,7 +575,7 @@ export default function DynamicConsultationStudioPage() {
                     rows={2}
                     value={followupAdvice}
                     onChange={e => setFollowupAdvice(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   ></textarea>
                 </div>
               </div>
@@ -597,7 +597,7 @@ export default function DynamicConsultationStudioPage() {
                       className={`cursor-pointer rounded-xl p-2.5 text-xs flex items-center justify-between transition ${
                         isChecked
                           ? "bg-apple-blue/10 border border-apple-blue/25 text-apple-blue dark:bg-apple-blue/20 dark:text-sky-300 font-semibold"
-                          : "bg-[#F5F5F7] hover:bg-black/[0.05] text-[#515154] dark:bg-[#2C2C2E] dark:text-[#A1A1A6] dark:hover:bg-[#3A3A3C]"
+                          : "bg-[#ECEEF2]/70 hover:bg-black/[0.05] text-[#515154] dark:bg-[#2C2C2E] dark:text-[#A1A1A6] dark:hover:bg-[#3A3A3C]"
                       }`}
                     >
                       <span>{lab.test_name}</span>
@@ -637,14 +637,14 @@ export default function DynamicConsultationStudioPage() {
                     }}
                     onFocus={() => setShowDropdown(true)}
                     placeholder="Type medicine name (e.g. Dolo, Augmentin, Doxy, Cetzine, Pan, Azithral)..."
-                    className="w-full rounded-2xl border border-black/[0.08] dark:border-white/[0.1] bg-[#F5F5F7] dark:bg-black/40 py-2.5 pl-10 pr-4 text-xs font-medium text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                    className="w-full rounded-2xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 py-2.5 pl-10 pr-4 text-xs font-medium text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
 
                 {/* Auto-suggest dropdown */}
                 {showDropdown && filteredMedicines.length > 0 && (
                   <div className="absolute left-0 right-0 top-12 z-30 overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] shadow-apple-modal">
-                    <div className="p-2.5 bg-[#F5F5F7] text-[10px] font-bold text-[#86868B] uppercase tracking-wider dark:bg-[#2C2C2E]">
+                    <div className="p-2.5 bg-[#ECEEF2]/70 text-[10px] font-bold text-[#86868B] uppercase tracking-wider dark:bg-[#2C2C2E]">
                       Indian Pharmacopeia Database Matches
                     </div>
                     <div className="divide-y divide-black/[0.04] dark:divide-white/[0.06] max-h-60 overflow-y-auto">
@@ -684,7 +684,7 @@ export default function DynamicConsultationStudioPage() {
                 {prescribedItems.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="rounded-[20px] border border-black/[0.06] dark:border-white/[0.08] bg-[#F5F5F7]/70 dark:bg-[#2C2C2E]/50 p-4 sm:p-5 space-y-3.5"
+                    className="rounded-[20px] border border-black/[0.06] dark:border-white/[0.08] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/50 p-4 sm:p-5 space-y-3.5"
                   >
                     <div className="flex items-start justify-between">
                       <div>
