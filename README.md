@@ -339,9 +339,15 @@ All API routes are served under the `/api/v1` namespace:
 | **Search** | `GET` | `/api/v1/search` | Multi-parameter search by specialty, city, and fees |
 | **Appointments**| `POST` | `/api/v1/appointments/book` | Book advance slot or walk-in appointment |
 | | `GET` | `/api/v1/appointments/my-queue` | Get live queue tokens by date & doctor |
-| **Clinic Desk** | `GET` | `/api/v1/clinic/desk-queue` | Front desk counter token list & cash reconciler |
+| **Clinic Desk** | `GET` | `/api/v1/clinic/stream` | Server-Sent Events (SSE) live token broadcast |
+| | `GET` | `/api/v1/clinic/desk-queue` | Front desk counter token list & cash reconciler |
 | | `POST` | `/api/v1/clinic/walk-in` | Instant counter walk-in token generator |
-| | `POST` | `/api/v1/clinic/advance-token` | Advance active chamber token with chime |
+| | `POST` | `/api/v1/clinic/call-token` | Call token with real-time SSE broadcast & chime |
+| | `POST` | `/api/v1/clinic/complete-token` | Mark token consultation completed |
+| **Inpatient Beds** | `GET` | `/api/v1/beds` | Bed & Ward occupancy matrix with accrued charges |
+| | `POST` | `/api/v1/beds/admit` | Admit patient to bed with doctor & clinical notes |
+| | `POST` | `/api/v1/beds/discharge` | Discharge patient & calculate stay invoice bill |
+| | `POST` | `/api/v1/beds/status` | Quick toggle bed status (vacant, maintenance) |
 | **Prescriptions**| `POST`| `/api/v1/prescriptions/generate` | Generate NMC-compliant prescription with SHA-256 |
 | | `GET` | `/api/v1/prescriptions/{rx_number}`| View tamper-proof prescription record |
 | **Documents** | `GET` | `/api/v1/documents` | Fetch patient lab reports & records |
@@ -439,10 +445,12 @@ npm run dev:web
 - [x] **Milestone 6:** 60-Second AI Onboarding Wizard (Gemini 2.0 Flash + heuristic NLP).
 - [x] **Milestone 7:** Patient documents manager, lab reports vault, and verified reviews system.
 - [x] **Milestone 8:** Clinic cash flow and expense ledger.
-- [ ] **Milestone 9:** WebSocket / Server-Sent Events (SSE) push for zero-latency token advance across waiting room screens.
-- [ ] **Milestone 10:** Official Meta WhatsApp Cloud API webhooks for automated PDF dispatch and appointment notifications.
-- [ ] **Milestone 11:** Ayushman Bharat Digital Mission (ABDM) Milestone 1 (M1) Sandbox certification.
-- [ ] **Milestone 12:** Next.js Edge Middleware for custom doctor subdomains (`dr-rahul.clinicos.in`).
+- [x] **Milestone 9:** Inpatient Bed & Ward Management Matrix (`/dashboard/beds`) with admissions & stay billing.
+- [x] **Milestone 10:** Server-Sent Events (SSE) live token stream (`/api/v1/clinic/stream`) for real-time chamber-desk chime alerts.
+- [x] **Milestone 11:** Complete database persistence unification across appointments, prescriptions, and wards.
+- [ ] **Milestone 12:** Official Meta WhatsApp Cloud API webhooks for automated PDF dispatch and appointment notifications.
+- [ ] **Milestone 13:** Ayushman Bharat Digital Mission (ABDM) Milestone 1 (M1) Sandbox certification.
+- [ ] **Milestone 14:** Next.js Edge Middleware for custom doctor subdomains (`dr-rahul.clinicos.in`).
 
 ---
 
