@@ -24,8 +24,10 @@ import {
   Microscope,
   AlertTriangle,
   Pill,
-  Send
+  Send,
+  X
 } from "lucide-react";
+import PatientDocumentsManager from "@/components/PatientDocumentsManager";
 
 interface PrescribedMedicine {
   id: string;
@@ -53,6 +55,8 @@ export default function DynamicConsultationStudioPage() {
     allergies: "No known drug allergies reported",
     blood_group: "O+"
   });
+
+  const [showDocsModal, setShowDocsModal] = useState(false);
 
   const [doctor] = useState({
     name: "Dr. Rahul Sharma",
@@ -301,8 +305,40 @@ export default function DynamicConsultationStudioPage() {
           >
             Viral Fever
           </button>
+          <button
+            onClick={() => setShowDocsModal(true)}
+            className="inline-flex items-center gap-1 rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700 hover:bg-teal-100 dark:border-teal-800/50 dark:bg-teal-950/40 dark:text-teal-300"
+          >
+            <Microscope className="h-3.5 w-3.5" />
+            <span>Patient Lab Reports & Scans</span>
+          </button>
         </div>
       </div>
+
+      {/* Patient Documents Drawer Modal */}
+      {showDocsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-[#1E2638] dark:bg-[#111726] max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-[#1E2638]">
+              <div className="flex items-center gap-2">
+                <Microscope className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Patient Diagnostic History: {patient.name} ({patient.phone})
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDocsModal(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-4">
+              <PatientDocumentsManager patientPhone={patient.phone} patientName={patient.name} isDoctorView={true} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 2. SIGNED Rx VIEW OR DRAFTING STUDIO */}
       {signedPrescription ? (

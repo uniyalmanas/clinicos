@@ -16,6 +16,8 @@ import {
   Building2,
   Sparkles
 } from "lucide-react";
+import DoctorReviewsSection from "@/components/DoctorReviewsSection";
+import AIReceptionistWidget from "@/components/AIReceptionistWidget";
 
 // Server-side seed data map
 const SEED_DOCTORS: Record<string, any> = {
@@ -270,6 +272,9 @@ export default async function DoctorProfilePage({ params }: Props) {
                 ))}
               </div>
             </div>
+
+            {/* Verified Patient Reviews & Rating System */}
+            <DoctorReviewsSection doctorSlug={doctor.slug} doctorName={doctor.full_name} />
           </div>
 
           {/* Right Sidebar: Booking & Action Box */}
@@ -319,6 +324,18 @@ export default async function DoctorProfilePage({ params }: Props) {
             </div>
           </div>
         </div>
+
+        {/* Floating AI Receptionist Widget */}
+        <AIReceptionistWidget
+          doctorName={doctor.full_name}
+          doctorSlug={doctor.slug}
+          specialization={doctor.specialization}
+          clinicName={doctor.clinic_name}
+          clinicAddress={doctor.clinic_address}
+          consultationFee={doctor.consultation_fee}
+          opdTimings={doctor.opd_timings}
+          phone={doctor.phone}
+        />
       </main>
     </div>
   );

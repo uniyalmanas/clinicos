@@ -12,6 +12,12 @@ from app.api.v1.clinic import router as clinic_desk_router
 from app.api.v1.prescriptions import router as prescriptions_router
 from app.api.v1.expenses import router as expenses_router
 from app.api.v1.admin import router as admin_router
+from app.api.v1.reviews import router as reviews_router
+from app.api.v1.documents import router as documents_router
+from app.db.init_db import init_database
+
+# Auto-initialize SQLite database tables and seeds on launch
+init_database()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -43,6 +49,8 @@ app.include_router(clinic_desk_router, prefix=settings.API_V1_STR)
 app.include_router(prescriptions_router, prefix=settings.API_V1_STR)
 app.include_router(expenses_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)
+app.include_router(reviews_router, prefix=settings.API_V1_STR)
+app.include_router(documents_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():

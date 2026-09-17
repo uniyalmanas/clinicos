@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Sparkles
 } from "lucide-react";
+import PatientDocumentsManager from "@/components/PatientDocumentsManager";
 
 export default function PatientPortalPage() {
   const [phone, setPhone] = useState("+919123456780");
@@ -246,6 +247,12 @@ export default function PatientPortalPage() {
             </div>
           </div>
         )}
+
+        {/* MEDICAL DOCUMENTS & LAB REPORTS LOCKER */}
+        <PatientDocumentsManager 
+          patientPhone={currentPatient.phone}
+          patientName={currentPatient.full_name}
+        />
 
         {/* VISIT HISTORY TIMELINE */}
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
