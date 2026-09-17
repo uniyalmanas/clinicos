@@ -20,8 +20,10 @@ import {
   IndianRupee,
   Upload,
   X,
-  ImageIcon
+  ImageIcon,
+  Mic
 } from "lucide-react";
+import VoiceClinicRecorder from "@/components/VoiceClinicRecorder";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -261,14 +263,25 @@ export default function OnboardingPage() {
                   ))}
                 </div>
 
+                {/* Voice to Text Dictation Module */}
+                <VoiceClinicRecorder
+                  value={rawText}
+                  onChange={(newText) => setRawText(newText)}
+                  className="mt-4"
+                />
+
                 {/* Text Area */}
-                <div className="mt-4">
+                <div className="mt-3">
+                  <div className="flex items-center justify-between pb-1 text-[11px] font-medium text-slate-500">
+                    <span>Clinical Description & Timings</span>
+                    <span>{rawText ? `${rawText.length} characters` : "Empty"}</span>
+                  </div>
                   <textarea
-                    rows={7}
+                    rows={6}
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
-                    placeholder="e.g. I am Dr. ..., practicing in Dehradun for 10 years..."
-                    className="w-full rounded-xl border border-slate-300 p-3.5 text-xs text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                    placeholder="Speak your clinic details using the microphone above, or type: e.g. I am Dr. ..., practicing in Dehradun for 10 years..."
+                    className="w-full rounded-xl border border-slate-300 p-3.5 text-xs text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white leading-relaxed"
                   />
                 </div>
 
