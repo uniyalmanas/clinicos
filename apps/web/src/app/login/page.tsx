@@ -120,7 +120,7 @@ export default function LoginPage() {
             <div className="mt-3 grid grid-cols-1 gap-2">
               <button
                 type="button"
-                onClick={() => quickLoginAs("doctor", "/doctor/queue")}
+                onClick={() => quickLoginAs("doctor", "/dashboard")}
                 className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-brand-500 hover:bg-brand-50/30 dark:border-slate-800 dark:bg-slate-900"
               >
                 <div className="flex items-center gap-2.5">
@@ -128,8 +128,8 @@ export default function LoginPage() {
                     <Stethoscope className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900 dark:text-white">Dr. Rahul Sharma</div>
-                    <div className="text-[10px] text-slate-500">Doctor OPD Queue & 30s Rx Studio</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">Dr. Rahul Sharma (ClinicOS Dashboard)</div>
+                    <div className="text-[10px] text-slate-500">Live OPD Queue, Chambers, Dynamic Rx 2.0 & P&L</div>
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-slate-400" />
@@ -137,7 +137,7 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => quickLoginAs("staff", "/clinic/desk")}
+                onClick={() => quickLoginAs("staff", "/dashboard/desk")}
                 className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-brand-500 hover:bg-brand-50/30 dark:border-slate-800 dark:bg-slate-900"
               >
                 <div className="flex items-center gap-2.5">
@@ -145,12 +145,46 @@ export default function LoginPage() {
                     <UserCheck className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900 dark:text-white">Pooja Verma (Receptionist)</div>
-                    <div className="text-[10px] text-slate-500">Counter Desk PWA & Audio Chime</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">Pooja Verma (Counter Reception Desk)</div>
+                    <div className="text-[10px] text-slate-500">10s Walk-in Token Generator & Audio Chime</div>
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-slate-400" />
               </button>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Link
+                  href="/patient/portal"
+                  className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/50 p-2.5 text-left shadow-sm transition hover:border-emerald-500 hover:bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-900 dark:text-white">Patient Hub</div>
+                      <div className="text-[9px] text-slate-500">Health Locker</div>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-emerald-600" />
+                </Link>
+
+                <Link
+                  href="/pharmacy/console"
+                  className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50/50 p-2.5 text-left shadow-sm transition hover:border-purple-500 hover:bg-purple-50 dark:border-purple-900/50 dark:bg-purple-950/20"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                      <Zap className="h-3.5 w-3.5" />
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-900 dark:text-white">Chemist Terminal</div>
+                      <div className="text-[9px] text-slate-500">Rx Fulfillment</div>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 text-purple-600" />
+                </Link>
+              </div>
 
               <button
                 type="button"

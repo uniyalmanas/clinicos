@@ -70,15 +70,18 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <nav className="hidden items-center gap-6 lg:flex">
+          <nav className="hidden items-center gap-5 lg:flex">
+            <Link href="/dashboard" className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700">
+              ClinicOS Workspace
+            </Link>
+            <Link href="/patient/portal" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700">
+              Patient Locker
+            </Link>
             <Link href="/search" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
               Find Doctors
             </Link>
-            <Link href="/clinic/desk" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
-              Reception Desk
-            </Link>
-            <Link href="/doctor/queue" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
-              Doctor OPD
+            <Link href="/pharmacy/console" className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700">
+              Chemist Console
             </Link>
             <a href="#features" className="text-xs font-semibold text-slate-600 transition hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400">
               Features
@@ -542,13 +545,15 @@ export default function HomePage() {
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">Quick Links</h4>
               <ul className="mt-3 space-y-2 text-xs text-slate-400">
+                <li><Link href="/dashboard" className="text-brand-400 font-semibold hover:text-white">ClinicOS Studio (/dashboard)</Link></li>
+                <li><Link href="/patient/portal" className="text-emerald-400 font-semibold hover:text-white">Patient Health Hub (/patient/portal)</Link></li>
+                <li><Link href="/pharmacy/console" className="text-purple-400 font-semibold hover:text-white">Chemist Console (/pharmacy/console)</Link></li>
                 <li><Link href="/onboarding" className="hover:text-white">Doctor AI Onboarding</Link></li>
                 <li><Link href="/search" className="hover:text-white">Find a Doctor Nearby</Link></li>
-                <li><Link href="/clinic/desk" className="hover:text-white">Reception Desk Console</Link></li>
-                <li><Link href="/doctor/queue" className="hover:text-white">Doctor OPD Chamber</Link></li>
-                <li><Link href="/clinic/expenses" className="hover:text-white">Clinic P&L Ledger</Link></li>
-                <li><Link href="/admin/analytics" className="hover:text-white text-brand-400 font-medium">Founder SaaS Analytics</Link></li>
-                <li><Link href="/admin/verifications" className="hover:text-white text-red-400 font-medium">Doctor Council Verifications</Link></li>
+                <li><Link href="/dashboard/desk" className="hover:text-white">Reception Desk Console</Link></li>
+                <li><Link href="/dashboard/chambers" className="hover:text-white">Multi-Chamber Roster</Link></li>
+                <li><Link href="/dashboard/finance" className="hover:text-white">Clinic P&L Ledger</Link></li>
+                <li><Link href="/admin/analytics" className="hover:text-white text-red-400 font-medium">Founder SaaS Analytics</Link></li>
               </ul>
             </div>
 
