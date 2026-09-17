@@ -1,3 +1,4 @@
+
 # CLINICOS / DOCSPHERE — HEALTHCARE DIGITAL INFRASTRUCTURE PLATFORM
 ## Complete Technical & Product Architecture Specification (CTO Master Blueprint)
 **Version:** 1.0.0-PROD-SPEC  
