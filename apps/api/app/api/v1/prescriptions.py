@@ -9,6 +9,7 @@ import urllib.parse
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from app.db.models import Prescription as PrescriptionModel
+from app.ai.clinical_scribe import parse_clinical_dictation
 
 router = APIRouter(prefix="/prescriptions", tags=["Prescriptions & Clinical Consultations"])
 
@@ -37,6 +38,17 @@ class GeneratePrescriptionRequest(BaseModel):
     items: List[PrescriptionItemInput]
     instructions: Optional[str] = "Complete the full antibiotic course. Stay well hydrated."
     followup_date: Optional[str] = None
+
+class ScribeRequest(BaseModel):
+    dictation_text: str
+
+@router.post("/scribe")
+def scribe_clinical_notes(payload: ScribeRequest):
+    structured = parse_clinical_dictation(payload.dictation_text)
+    return {
+        "status": "success",
+        "data": structured
+    }
 
 # In-memory store for prescriptions
 PRESCRIPTIONS_DB: Dict[str, Any] = {

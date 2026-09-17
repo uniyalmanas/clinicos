@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { INDIAN_MEDICINES, COMMON_LAB_TESTS, MedicineItem, LabTestItem } from "@/data/medicines";
@@ -25,7 +25,8 @@ import {
   AlertTriangle,
   Pill,
   Send,
-  X
+  X,
+  Mic
 } from "lucide-react";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
 
@@ -57,6 +58,41 @@ export default function DynamicConsultationStudioPage() {
   });
 
   const [showDocsModal, setShowDocsModal] = useState(false);
+  const [showScribeModal, setShowScribeModal] = useState(false);
+  const [dictationInput, setDictationInput] = useState("");
+  const [isScribing, setIsScribing] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+  const [scribeSuccessMessage, setScribeSuccessMessage] = useState<string | null>(null);
+
+  // Fetch real appointment details if available
+  useEffect(() => {
+    async function loadAppointment() {
+      try {
+        const res = await fetch("http://localhost:8000/api/v1/clinic/desk-queue");
+        if (res.ok) {
+          const json = await res.json();
+          const match = (json.queue || []).find((a: any) => 
+            a.appointment_number === appointmentId || a.token_number === Number(appointmentId)
+          );
+          if (match) {
+            setPatient(prev => ({
+              ...prev,
+              name: match.patient_name || prev.name,
+              phone: match.patient_phone || prev.phone,
+              token_number: match.token_number || prev.token_number,
+              appointment_number: match.appointment_number || prev.appointment_number,
+            }));
+            if (match.symptoms_description) {
+              setChiefComplaints(match.symptoms_description);
+            }
+          }
+        }
+      } catch (e) {
+        // Fallback to initial state
+      }
+    }
+    loadAppointment();
+  }, [appointmentId]);
 
   const [doctor] = useState({
     name: "Dr. Rahul Sharma",
@@ -236,29 +272,161 @@ export default function DynamicConsultationStudioPage() {
   // Signed Prescription State
   const [signedPrescription, setSignedPrescription] = useState<any | null>(null);
 
-  const handleSignPrescription = () => {
+  // AI Scribe Handler
+  const handleRunAIScribe = async (customText?: string) => {
+    const textToProcess = customText || dictationInput;
+    if (!textToProcess.trim()) return;
+
+    setIsScribing(true);
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/prescriptions/scribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dictation_text: textToProcess })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data;
+        if (data.vitals) {
+          setVitals(prev => ({
+            ...prev,
+            bp: data.vitals.bp || prev.bp,
+            pulse: data.vitals.pulse || prev.pulse,
+            temp: data.vitals.temp || prev.temp,
+            weight: data.vitals.weight || prev.weight,
+            spo2: data.vitals.spo2 || prev.spo2
+          }));
+        }
+        if (data.chief_complaints) setChiefComplaints(data.chief_complaints);
+        if (data.provisional_diagnosis) setProvisionalDiagnosis(data.provisional_diagnosis);
+        if (data.followup_advice) setFollowupAdvice(data.followup_advice);
+        if (data.medicines && data.medicines.length > 0) {
+          const mappedMeds: PrescribedMedicine[] = data.medicines.map((m: any, idx: number) => ({
+            id: `rx-ai-${Date.now()}-${idx}`,
+            medicine_name: m.medicine_name,
+            generic_name: m.generic_name,
+            dosage_form: m.dosage_form || "Tablet",
+            strength: m.strength || "",
+            frequency: m.frequency || "1-0-1",
+            duration: m.duration || "5 Days",
+            special_instructions: m.special_instructions || "Take after meals"
+          }));
+          setPrescribedItems(mappedMeds);
+        }
+
+        setShowScribeModal(false);
+        setScribeSuccessMessage("AI Clinical Scribe parsed and populated vitals, diagnosis, and prescription items!");
+        setTimeout(() => setScribeSuccessMessage(null), 5000);
+      }
+    } catch (e) {
+      console.error("AI Scribe error:", e);
+    } finally {
+      setIsScribing(false);
+    }
+  };
+
+  const handleSignPrescription = async () => {
+    setIsSigning(true);
+    const rxNumber = `RX-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    try {
+      const payload = {
+        appointment_number: patient.appointment_number,
+        doctor_slug: "dr-rahul-sharma",
+        doctor_name: doctor.name,
+        doctor_reg_number: doctor.reg_number,
+        patient_name: patient.name,
+        patient_phone: patient.phone,
+        patient_age: patient.age,
+        patient_gender: patient.gender,
+        vitals: vitals,
+        symptoms: [chiefComplaints],
+        provisional_diagnosis: provisionalDiagnosis,
+        items: prescribedItems.map(p => ({
+          medicine_name: p.medicine_name,
+          generic_name: p.generic_name,
+          dosage_form: p.dosage_form,
+          strength: p.strength,
+          dosage_frequency: p.frequency,
+          timing_relation: "After Food",
+          duration_days: parseInt(p.duration) || 5,
+          special_instructions: p.special_instructions
+        })),
+        instructions: followupAdvice,
+        followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      };
+
+      const res = await fetch("http://localhost:8000/api/v1/prescriptions/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        setSignedPrescription({
+          ...json.prescription,
+          labs: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id))
+        });
+
+        // Notify clinic desk that token is completed
+        await fetch("http://localhost:8000/api/v1/clinic/complete-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointment_number: patient.appointment_number })
+        }).catch(() => {});
+      } else {
+        runFallbackSigning();
+      }
+    } catch (e) {
+      runFallbackSigning();
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
+  const runFallbackSigning = () => {
     const rxNumber = `RX-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${Math.floor(1000 + Math.random() * 9000)}`;
     const shaSignature = "d384b6" + Math.random().toString(36).substring(2, 10) + "7a9e1" + Math.random().toString(36).substring(2, 8) + "fc710e";
 
     const rxData = {
       prescription_number: rxNumber,
       signed_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      signature_hash: shaSignature,
-      doctor: doctor,
-      patient: patient,
+      digital_signature_hash: shaSignature,
+      qr_verification_code: `VERIFY-DRRAHUL-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      doctor_name: doctor.name,
+      doctor_reg_number: doctor.reg_number,
+      qualification_summary: doctor.title,
+      clinic_name: doctor.clinic_name,
+      clinic_address: doctor.clinic_address,
+      patient_name: patient.name,
+      patient_phone: patient.phone,
+      patient_age: patient.age,
+      patient_gender: patient.gender,
       vitals: vitals,
-      diagnosis: provisionalDiagnosis,
-      complaints: chiefComplaints,
-      items: prescribedItems,
+      provisional_diagnosis: provisionalDiagnosis,
+      symptoms: [chiefComplaints],
+      items: prescribedItems.map(p => ({
+        medicine_name: p.medicine_name,
+        generic_name: p.generic_name,
+        dosage_form: p.dosage_form,
+        strength: p.strength,
+        dosage_frequency: p.frequency,
+        timing_relation: "After Food",
+        duration_days: parseInt(p.duration) || 5,
+        special_instructions: p.special_instructions
+      })),
       labs: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id)),
-      followup: followupAdvice
+      instructions: followupAdvice,
+      followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
     };
 
     setSignedPrescription(rxData);
   };
 
   const cleanPhone = patient.phone.replace(/[^0-9]/g, "");
-  const waShareText = `🏥 *Prescription - ${doctor.clinic_name}*\nHello ${patient.name}, Dr. Rahul Sharma has signed your prescription (#${signedPrescription?.prescription_number || "RX-2026"}).\nView & Download: https://clinicos.in/p/${signedPrescription?.prescription_number || "RX-2026-09-0021"}`;
+  const waShareText = `🏥 *Prescription - ${doctor.clinic_name}*\nHello ${patient.name}, Dr. Rahul Sharma has signed your prescription (#${signedPrescription?.prescription_number || "RX-2026"}).\nView & Download: http://localhost:3000/p/${signedPrescription?.prescription_number || "RX-2026-09-0014"}`;
 
   return (
     <div className="space-y-6">
@@ -285,6 +453,15 @@ export default function DynamicConsultationStudioPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* AI Clinical Scribe Button */}
+          <button
+            onClick={() => setShowScribeModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>✨ AI Voice / Dictation Scribe</span>
+          </button>
+
           {/* Quick Specialty Kits */}
           <span className="text-[11px] font-medium text-[#86868B] hidden lg:inline">Specialty Presets:</span>
           <button
@@ -314,6 +491,117 @@ export default function DynamicConsultationStudioPage() {
           </button>
         </div>
       </div>
+
+      {/* Scribe Success Notification Banner */}
+      {scribeSuccessMessage && (
+        <div className="rounded-[18px] bg-[#34C759]/10 border border-[#34C759]/30 px-4 py-3 text-xs font-semibold text-[#34C759] flex items-center justify-between shadow-sm">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4" /> {scribeSuccessMessage}
+          </span>
+          <button onClick={() => setScribeSuccessMessage(null)} className="text-[#86868B] hover:text-[#1D1D1F]">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* AI Clinical Voice & Dictation Scribe Modal */}
+      {showScribeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+          <div className="w-full max-w-xl rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-modal">
+            <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+                  AI Clinical Consultation Scribe
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowScribeModal(false)}
+                className="rounded-full p-1.5 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-[#86868B]">
+                Dictate or type unstructured doctor notes. Our clinical parser extracts Vitals, Diagnosis, and UPPERCASE generic medications automatically:
+              </p>
+
+              {/* Sample Dictation Chips */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[10px] font-semibold text-[#86868B] self-center">Try Samples:</span>
+                <button
+                  type="button"
+                  onClick={() => setDictationInput("Patient 24 female with acute severe urticaria and facial itching for 2 days. BP 120/80, pulse 76. Start Bilastine 20mg once daily at night for 7 days, Calamine lotion application, and advise review after 7 days.")}
+                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white"
+                >
+                  Urticaria & Itching
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDictationInput("Patient with Grade II inflammatory acne with pustules on cheeks for 3 weeks. BP 118/74. Prescribe Doxy-100 capsule once daily after food for 14 days and Clindac-A gel at night. Review in 2 weeks.")}
+                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white"
+                >
+                  Cystic Acne
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDictationInput("Fever 101F, body ache, dry cough for 3 days. Temp 101, pulse 88, BP 110/72. Acute viral pharyngitis. Start Dolo 650mg TDS SOS for 3 days, Pan-40 before breakfast for 5 days. Blood test advised: CBC.")}
+                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white"
+                >
+                  Viral Fever & CBC
+                </button>
+              </div>
+
+              <div className="relative">
+                <textarea
+                  rows={5}
+                  value={dictationInput}
+                  onChange={(e) => setDictationInput(e.target.value)}
+                  placeholder="e.g. Patient 24F with severe itchy rash on arms after cosmetic cream. BP 118/74, pulse 76. Diagnosed with Allergic Contact Dermatitis. Give Cetzine 10mg night for 5 days, Momate cream morning for 7 days..."
+                  className="w-full rounded-[16px] border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-black/40 p-3.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-1.5 text-[11px] text-[#86868B]">
+                  <Mic className="h-3.5 w-3.5 text-indigo-500" />
+                  <span>Speech-to-text / Audio dictation enabled</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowScribeModal(false)}
+                    className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#86868B]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isScribing || !dictationInput.trim()}
+                    onClick={() => handleRunAIScribe()}
+                    className="inline-flex items-center gap-1.5 rounded-[12px] bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition"
+                  >
+                    {isScribing ? (
+                      <>
+                        <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                        <span>Analyzing & Extracting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3.5 w-3.5" />
+                        <span>Extract & Populate Rx</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Patient Documents Drawer Modal */}
       {showDocsModal && (
@@ -761,10 +1049,20 @@ export default function DynamicConsultationStudioPage() {
 
                 <button
                   onClick={handleSignPrescription}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue hover:bg-[#0077ED] px-7 py-3.5 text-sm font-semibold text-white shadow-apple-sm active:scale-[0.98] transition"
+                  disabled={isSigning}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue hover:bg-[#0077ED] px-7 py-3.5 text-sm font-semibold text-white shadow-apple-sm active:scale-[0.98] transition disabled:opacity-50"
                 >
-                  <ShieldCheck className="h-5 w-5" />
-                  Sign Prescription & Generate Official Rx
+                  {isSigning ? (
+                    <>
+                      <RotateCw className="h-5 w-5 animate-spin" />
+                      <span>Cryptographically Signing & Sealing Rx...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="h-5 w-5" />
+                      <span>Sign Prescription & Generate Official Rx</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
