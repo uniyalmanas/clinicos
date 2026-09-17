@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useSearchParams } from "next/navigation";
 import { 
   Stethoscope, 
@@ -138,8 +139,11 @@ function BookingForm() {
           <Link href="/search" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 dark:text-slate-400">
             <ArrowLeft className="h-4 w-4" /> Back to Directory
           </Link>
-          <div className="flex items-center gap-2 text-xs font-semibold text-brand-600">
-            <Sparkles className="h-3.5 w-3.5" /> Direct Clinic Booking (0% Convenience Fee)
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <div className="flex items-center gap-2 text-xs font-semibold text-brand-600">
+              <Sparkles className="h-3.5 w-3.5" /> Direct Clinic Booking (0% Fee)
+            </div>
           </div>
         </div>
       </header>

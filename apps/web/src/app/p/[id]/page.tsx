@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { notFound } from "next/navigation";
 import { 
   Stethoscope, 
@@ -98,7 +99,8 @@ export default async function PatientPrescriptionLockerPage({ params }: Props) {
           <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 dark:text-slate-400">
             <ArrowLeft className="h-4 w-4" /> Home
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
             <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
               <ShieldCheck className="h-4 w-4 text-emerald-600" /> Digitally Verified Prescription
             </span>

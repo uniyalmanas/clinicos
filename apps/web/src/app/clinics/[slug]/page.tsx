@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { 
   Building2, 
   MapPin, 
@@ -145,9 +146,12 @@ export default async function ClinicProfilePage({ params }: Props) {
           <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 dark:text-slate-400">
             <ArrowLeft className="h-4 w-4" /> Back to Home
           </Link>
-          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full dark:bg-emerald-950 dark:text-emerald-300">
-            Verified Healthcare Facility
-          </span>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full dark:bg-emerald-950 dark:text-emerald-300">
+              Verified Healthcare Facility
+            </span>
+          </div>
         </div>
       </header>
 
