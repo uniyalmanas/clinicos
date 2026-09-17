@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import date, datetime
@@ -6,6 +6,10 @@ from app.api.v1.doctors import SEED_DOCTORS
 from app.api.v1.onboarding import DOCTORS_DATABASE
 import uuid
 import urllib.parse
+
+from app.db.session import get_db
+from sqlalchemy.orm import Session
+from app.db.models import Appointment as AppointmentModel
 
 router = APIRouter(prefix="/appointments", tags=["Appointments & Live Tokens"])
 
@@ -100,7 +104,7 @@ def get_live_queue(doctor_slug: str = "dr-rahul-sharma"):
     }
 
 @router.post("/book")
-def book_appointment(payload: BookAppointmentRequest):
+def book_appointment(payload: BookAppointmentRequest, db: Session = Depends(get_db)):
     all_docs = {**SEED_DOCTORS, **DOCTORS_DATABASE}
     doc = all_docs.get(payload.doctor_slug)
     if not doc:
@@ -133,6 +137,31 @@ def book_appointment(payload: BookAppointmentRequest):
     }
 
     APPOINTMENTS_DB[apt_number] = new_appointment
+
+    # Persist to database
+    try:
+        db_apt = AppointmentModel(
+            id=str(uuid.uuid4()),
+            appointment_number=apt_number,
+            doctor_slug=payload.doctor_slug,
+            doctor_name=doc["full_name"],
+            clinic_name=doc["clinic_name"],
+            patient_name=payload.patient_name,
+            patient_phone=payload.patient_phone,
+            appointment_date=today_str,
+            time_slot=payload.time_slot or f"Token #{assigned_token}",
+            token_number=assigned_token,
+            status="in_waiting",
+            fee_amount=float(doc["consultation_fee"]),
+            payment_status="pending",
+            payment_mode="upi",
+            symptoms_description=payload.symptoms_description
+        )
+        db.add(db_apt)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print("Appointment DB save warning:", e)
 
     # Construct zero-cost WhatsApp notification deep-link
     wa_message = (

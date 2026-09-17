@@ -18,7 +18,8 @@ import {
   Volume2, 
   LogOut,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Bed
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -72,6 +73,7 @@ export default function DashboardLayout({
     { label: "OPD Overview", href: "/dashboard", icon: Building2 },
     { label: "Reception Counter Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Chime" },
     { label: "Doctor Chambers", href: "/dashboard/chambers", icon: Stethoscope, badge: "Live OPD" },
+    { label: "Inpatient Bed Matrix", href: "/dashboard/beds", icon: Bed, badge: "Wards" },
     { label: "Patient EMR Records", href: "/dashboard/patients", icon: Users },
     { label: "Clinic Cashflow & P&L", href: "/dashboard/finance", icon: CreditCard },
     { label: "Pharmacy & Lab Orders", href: "/dashboard/pharmacy", icon: Pill },

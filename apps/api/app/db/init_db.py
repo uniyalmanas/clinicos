@@ -1,6 +1,6 @@
 from app.db.session import engine, SessionLocal, Base
-from app.db.models import Doctor, Clinic, Appointment, Prescription, PatientDocument, Review, Expense
-from datetime import date, datetime
+from app.db.models import Doctor, Clinic, Appointment, Prescription, PatientDocument, Review, Expense, ClinicWard, ClinicBed
+from datetime import date, datetime, timedelta
 import uuid
 
 def init_database():
@@ -324,6 +324,146 @@ def init_database():
                 date=today_str
             )
             db.add_all([exp1, exp2])
+
+        # Seed Inpatient Wards & Beds
+        if db.query(ClinicWard).count() == 0:
+            ward1_id = "ward-daycare-01"
+            ward2_id = "ward-deluxe-02"
+            ward3_id = "ward-general-03"
+            ward4_id = "ward-icu-04"
+
+            w1 = ClinicWard(
+                id=ward1_id,
+                clinic_slug="derma-care-dehradun",
+                name="Daycare Laser & Recovery Suite",
+                ward_type="daycare_recovery",
+                daily_rate=1400.0,
+                hourly_rate=150.0
+            )
+            w2 = ClinicWard(
+                id=ward2_id,
+                clinic_slug="derma-care-dehradun",
+                name="Private Deluxe Suite",
+                ward_type="private_deluxe",
+                daily_rate=3200.0,
+                hourly_rate=300.0
+            )
+            w3 = ClinicWard(
+                id=ward3_id,
+                clinic_slug="derma-care-dehradun",
+                name="General Observation Ward",
+                ward_type="general",
+                daily_rate=900.0,
+                hourly_rate=100.0
+            )
+            w4 = ClinicWard(
+                id=ward4_id,
+                clinic_slug="derma-care-dehradun",
+                name="Emergency HDU & Monitoring",
+                ward_type="icu",
+                daily_rate=4500.0,
+                hourly_rate=450.0
+            )
+            db.add_all([w1, w2, w3, w4])
+
+            # Seed Beds
+            now = datetime.utcnow()
+            bed1 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward1_id,
+                bed_number="DC-01",
+                status="occupied",
+                current_patient_name="Amit Rawat",
+                current_patient_phone="+919123456780",
+                assigned_doctor_name="Dr. Rahul Sharma",
+                admission_notes="Post-PRP laser therapy recovery. Monitor vitals for 4 hours.",
+                admission_timestamp=now - timedelta(hours=3, minutes=15)
+            )
+            bed2 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward1_id,
+                bed_number="DC-02",
+                status="vacant"
+            )
+            bed3 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward1_id,
+                bed_number="DC-03",
+                status="vacant"
+            )
+            bed4 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward2_id,
+                bed_number="DLX-101",
+                status="occupied",
+                current_patient_name="Sunita Joshi",
+                current_patient_phone="+919876543299",
+                assigned_doctor_name="Dr. Rahul Sharma",
+                admission_notes="Admitted for severe drug-induced urticarial rash and systemic observation.",
+                admission_timestamp=now - timedelta(hours=18)
+            )
+            bed5 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward2_id,
+                bed_number="DLX-102",
+                status="discharge_pending",
+                current_patient_name="Pooja Rawat",
+                current_patient_phone="+919876511223",
+                assigned_doctor_name="Dr. Aditi Joshi",
+                admission_notes="Post-op jaw observation. Final discharge summary pending doctor sign-off.",
+                admission_timestamp=now - timedelta(hours=26)
+            )
+            bed6 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward3_id,
+                bed_number="GEN-01",
+                status="occupied",
+                current_patient_name="Rajesh Mehra",
+                current_patient_phone="+919876522334",
+                assigned_doctor_name="Dr. Vikram Sethi",
+                admission_notes="Pediatric hydration monitoring and nebulization support.",
+                admission_timestamp=now - timedelta(hours=6, minutes=45)
+            )
+            bed7 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward3_id,
+                bed_number="GEN-02",
+                status="vacant"
+            )
+            bed8 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward3_id,
+                bed_number="GEN-03",
+                status="maintenance"
+            )
+            bed9 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward4_id,
+                bed_number="HDU-01",
+                status="vacant"
+            )
+            bed10 = ClinicBed(
+                id=str(uuid.uuid4()),
+                clinic_slug="derma-care-dehradun",
+                ward_id=ward4_id,
+                bed_number="HDU-02",
+                status="occupied",
+                current_patient_name="Mohan Lal Verma",
+                current_patient_phone="+919876533445",
+                assigned_doctor_name="Dr. Rahul Sharma",
+                admission_notes="Severe anaphylactoid reaction. Continuous oxygen and SpO2 monitoring.",
+                admission_timestamp=now - timedelta(hours=11, minutes=30)
+            )
+            db.add_all([bed1, bed2, bed3, bed4, bed5, bed6, bed7, bed8, bed9, bed10])
 
         db.commit()
         print("ClinicOS Database initialized and seeded successfully!")

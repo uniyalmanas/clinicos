@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Building2, 
@@ -132,7 +132,69 @@ export default function DashboardDeskPage() {
     .filter(q => q.payment_status === "paid" && q.payment_mode === "cash")
     .reduce((acc, curr) => acc + curr.fee_amount, 0);
 
-  const handleCallToken = (tokenNumber: number, patientName: string) => {
+  // 1. Real-time Server-Sent Events (SSE) Listener
+  useEffect(() => {
+    let evtSource: EventSource | null = null;
+    try {
+      evtSource = new EventSource("http://127.0.0.1:8000/api/v1/clinic/stream");
+      evtSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.event === "token_called") {
+            const data = payload.data;
+            if (data.trigger_chime) {
+              playTokenCallChime();
+            }
+            setQueue(prevQueue =>
+              prevQueue.map(item => {
+                if (item.status === "in_consultation") {
+                  return { ...item, status: "completed" };
+                }
+                if (item.token_number === data.token_number) {
+                  return { ...item, status: "in_consultation" };
+                }
+                return item;
+              })
+            );
+            setCalledTokenMsg(`🔔 Live Broadcast: Token #${data.token_number} (${data.patient_name}) called`);
+            setTimeout(() => setCalledTokenMsg(null), 5000);
+          } else if (payload.event === "walk_in_registered") {
+            const data = payload.data;
+            setQueue(prev => {
+              if (prev.some(q => q.token_number === data.token_number)) return prev;
+              return [
+                ...prev,
+                {
+                  appointment_number: data.appointment_number,
+                  token_number: data.token_number,
+                  patient_name: data.patient_name,
+                  patient_phone: "+91 98765 00000",
+                  status: "waiting",
+                  time_slot: "Immediate Walk-In",
+                  fee_amount: 600,
+                  payment_status: "paid",
+                  payment_mode: "upi",
+                  is_walk_in: true
+                }
+              ];
+            });
+          }
+        } catch (err) {
+          console.error("SSE parse error:", err);
+        }
+      };
+    } catch (err) {
+      console.warn("SSE not available:", err);
+    }
+
+    return () => {
+      if (evtSource) {
+        evtSource.close();
+      }
+    };
+  }, []);
+
+  const handleCallToken = async (tokenNumber: number, patientName: string) => {
     playTokenCallChime();
     setQueue(prevQueue =>
       prevQueue.map(item => {
@@ -148,6 +210,19 @@ export default function DashboardDeskPage() {
 
     setCalledTokenMsg(`Calling Token #${tokenNumber}: ${patientName}`);
     setTimeout(() => setCalledTokenMsg(null), 4000);
+
+    const aptItem = queue.find(q => q.token_number === tokenNumber);
+    if (aptItem?.appointment_number) {
+      try {
+        await fetch("http://127.0.0.1:8000/api/v1/clinic/call-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointment_number: aptItem.appointment_number })
+        });
+      } catch (e) {
+        // Local state already updated
+      }
+    }
   };
 
   const handleTogglePayment = (tokenNumber: number) => {
@@ -162,31 +237,69 @@ export default function DashboardDeskPage() {
     );
   };
 
-  const handleAdmitWalkIn = (e: React.FormEvent) => {
+  const handleAdmitWalkIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!walkInName || !walkInPhone) return;
 
-    const nextTokenNum = Math.max(...queue.map(q => q.token_number), 0) + 1;
-    const newAppointment = {
-      appointment_number: `APT-WALKIN-${100 + nextTokenNum}`,
-      token_number: nextTokenNum,
-      patient_name: walkInName,
-      patient_phone: walkInPhone,
-      status: "waiting",
-      time_slot: "Immediate Walk-In",
-      fee_amount: walkInFee,
-      payment_status: "paid",
-      payment_mode: walkInPaymentMode,
-      is_walk_in: true
-    };
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/v1/clinic/walk-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_name: walkInName,
+          patient_phone: walkInPhone,
+          fee_amount: walkInFee,
+          payment_mode: walkInPaymentMode,
+          clinic_slug: "derma-care-dehradun",
+          doctor_slug: "dr-rahul-sharma"
+        })
+      });
 
-    setQueue([...queue, newAppointment]);
-    setShowWalkInModal(false);
-    setWalkInName("");
-    setWalkInPhone("");
-
-    setCalledTokenMsg(`Admitted Walk-In Token #${nextTokenNum} (${walkInName})`);
-    setTimeout(() => setCalledTokenMsg(null), 4000);
+      if (res.ok) {
+        const data = await res.json();
+        setQueue(prev => [...prev, data.appointment]);
+      } else {
+        const nextTokenNum = Math.max(...queue.map(q => q.token_number), 0) + 1;
+        setQueue(prev => [
+          ...prev,
+          {
+            appointment_number: `APT-WALKIN-${100 + nextTokenNum}`,
+            token_number: nextTokenNum,
+            patient_name: walkInName,
+            patient_phone: walkInPhone,
+            status: "waiting",
+            time_slot: "Immediate Walk-In",
+            fee_amount: walkInFee,
+            payment_status: "paid",
+            payment_mode: walkInPaymentMode,
+            is_walk_in: true
+          }
+        ]);
+      }
+    } catch {
+      const nextTokenNum = Math.max(...queue.map(q => q.token_number), 0) + 1;
+      setQueue(prev => [
+        ...prev,
+        {
+          appointment_number: `APT-WALKIN-${100 + nextTokenNum}`,
+          token_number: nextTokenNum,
+          patient_name: walkInName,
+          patient_phone: walkInPhone,
+          status: "waiting",
+          time_slot: "Immediate Walk-In",
+          fee_amount: walkInFee,
+          payment_status: "paid",
+          payment_mode: walkInPaymentMode,
+          is_walk_in: true
+        }
+      ]);
+    } finally {
+      setShowWalkInModal(false);
+      setWalkInName("");
+      setWalkInPhone("");
+      setCalledTokenMsg(`Admitted Walk-In (${walkInName})`);
+      setTimeout(() => setCalledTokenMsg(null), 4000);
+    }
   };
 
   return (

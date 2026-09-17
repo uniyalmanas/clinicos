@@ -131,3 +131,30 @@ class Expense(Base):
     recorded_by = Column(String, default="Front Desk Reception")
     date = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class ClinicWard(Base):
+    __tablename__ = "clinic_wards"
+
+    id = Column(String, primary_key=True, index=True)
+    clinic_slug = Column(String, index=True, default="derma-care-dehradun")
+    name = Column(String, nullable=False)
+    ward_type = Column(String, nullable=False) # general, semi_private, private_deluxe, icu, daycare_recovery
+    daily_rate = Column(Float, default=1500.0)
+    hourly_rate = Column(Float, default=150.0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ClinicBed(Base):
+    __tablename__ = "clinic_beds"
+
+    id = Column(String, primary_key=True, index=True)
+    clinic_slug = Column(String, index=True, default="derma-care-dehradun")
+    ward_id = Column(String, index=True)
+    bed_number = Column(String, nullable=False)
+    status = Column(String, default="vacant") # vacant, occupied, discharge_pending, maintenance
+    current_patient_name = Column(String, nullable=True)
+    current_patient_phone = Column(String, nullable=True)
+    assigned_doctor_name = Column(String, nullable=True)
+    admission_notes = Column(Text, nullable=True)
+    admission_timestamp = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

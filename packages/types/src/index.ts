@@ -208,6 +208,41 @@ export interface ClinicExpense {
   created_at: string;
 }
 
+export type WardType = 'general' | 'semi_private' | 'private_deluxe' | 'icu' | 'daycare_recovery';
+export type BedStatus = 'vacant' | 'occupied' | 'discharge_pending' | 'maintenance';
+
+export interface ClinicWard {
+  id: string;
+  clinic_id: string;
+  name: string;
+  ward_type: WardType;
+  daily_rate: number;
+  hourly_rate: number;
+  total_beds?: number;
+  occupied_beds?: number;
+  created_at?: string;
+}
+
+export interface ClinicBed {
+  id: string;
+  clinic_id: string;
+  ward_id: string;
+  ward_name?: string;
+  ward_type?: WardType;
+  bed_number: string;
+  status: BedStatus;
+  current_patient_name?: string;
+  current_patient_phone?: string;
+  assigned_doctor_name?: string;
+  admission_notes?: string;
+  admission_timestamp?: string;
+  daily_rate?: number;
+  hourly_rate?: number;
+  accrued_charge?: number;
+  stay_hours?: number;
+  created_at?: string;
+}
+
 export interface MedicalAuditLog {
   id: string;
   clinic_id: string;
