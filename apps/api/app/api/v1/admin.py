@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from app.api.v1.doctors import SEED_DOCTORS
 from app.api.v1.onboarding import DOCTORS_DATABASE
+from app.db.session import get_db
+from sqlalchemy.orm import Session
+from app.db.models import Doctor as DoctorModel
 
 router = APIRouter(prefix="/admin", tags=["SuperAdmin Governance & Analytics"])
 
@@ -76,35 +79,64 @@ def get_platform_analytics():
     }
 
 @router.get("/verifications")
-def list_doctor_verifications():
+def list_doctor_verifications(db: Session = Depends(get_db)):
+    db_docs = db.query(DoctorModel).all()
+    results = []
+    seen_slugs = set()
+
+    for d in db_docs:
+        results.append({
+            "slug": d.slug,
+            "full_name": d.full_name,
+            "specialization": d.specialization,
+            "qualification_summary": d.qualification_summary,
+            "medical_council_reg_number": d.medical_council_reg_number,
+            "medical_council_state": d.medical_council_state,
+            "clinic_name": d.clinic_name,
+            "verification_status": d.verification_status
+        })
+        seen_slugs.add(d.slug)
+
     all_docs = {**SEED_DOCTORS, **DOCTORS_DATABASE}
-    return [
-        {
-            "slug": d["slug"],
-            "full_name": d["full_name"],
-            "specialization": d["specialization"],
-            "qualification_summary": d["qualification_summary"],
-            "medical_council_reg_number": d["medical_council_reg_number"],
-            "medical_council_state": d["medical_council_state"],
-            "clinic_name": d["clinic_name"],
-            "verification_status": d["verification_status"]
-        }
-        for d in all_docs.values()
-    ]
+    for d in all_docs.values():
+        if d["slug"] not in seen_slugs:
+            results.append({
+                "slug": d["slug"],
+                "full_name": d["full_name"],
+                "specialization": d["specialization"],
+                "qualification_summary": d["qualification_summary"],
+                "medical_council_reg_number": d["medical_council_reg_number"],
+                "medical_council_state": d["medical_council_state"],
+                "clinic_name": d["clinic_name"],
+                "verification_status": d["verification_status"]
+            })
+            seen_slugs.add(d["slug"])
+
+    return results
 
 @router.post("/verify")
-def verify_doctor(payload: VerifyDoctorRequest):
+def verify_doctor(payload: VerifyDoctorRequest, db: Session = Depends(get_db)):
+    # 1. Update in SQLite DB if present
+    db_doc = db.query(DoctorModel).filter(DoctorModel.slug == payload.doctor_slug).first()
+    if db_doc:
+        db_doc.verification_status = payload.verification_status
+        db.commit()
+
+    # 2. Sync in-memory dicts
     all_docs = {**SEED_DOCTORS, **DOCTORS_DATABASE}
     doc = all_docs.get(payload.doctor_slug)
-    if not doc:
+    if doc:
+        doc["verification_status"] = payload.verification_status
+
+    if not db_doc and not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor profile not found.")
 
-    doc["verification_status"] = payload.verification_status
+    name = db_doc.full_name if db_doc else doc["full_name"]
     return {
         "status": "success",
         "doctor_slug": payload.doctor_slug,
         "verification_status": payload.verification_status,
-        "message": f"{doc['full_name']} marked as {payload.verification_status.upper()}."
+        "message": f"{name} marked as {payload.verification_status.upper()}."
     }
 
 @router.post("/subscription")
