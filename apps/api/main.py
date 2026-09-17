@@ -9,6 +9,7 @@ from app.api.v1.clinics import router as clinics_router
 from app.api.v1.search import router as search_router
 from app.api.v1.appointments import router as appointments_router
 from app.api.v1.clinic import router as clinic_desk_router
+from app.api.v1.prescriptions import router as prescriptions_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -37,6 +38,7 @@ app.include_router(clinics_router, prefix=settings.API_V1_STR)
 app.include_router(search_router, prefix=settings.API_V1_STR)
 app.include_router(appointments_router, prefix=settings.API_V1_STR)
 app.include_router(clinic_desk_router, prefix=settings.API_V1_STR)
+app.include_router(prescriptions_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():
