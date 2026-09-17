@@ -331,10 +331,13 @@ export default function HomePage() {
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">Quick Links</h4>
               <ul className="mt-3 space-y-2 text-xs text-slate-400">
-                <li><Link href="/onboarding" className="hover:text-white">Doctor Onboarding</Link></li>
-                <li><Link href="/search" className="hover:text-white">Find a Doctor</Link></li>
-                <li><Link href="/login" className="hover:text-white">Reception Desk Login</Link></li>
-                <li><Link href="/login" className="hover:text-white">Doctor Portal Login</Link></li>
+                <li><Link href="/onboarding" className="hover:text-white">Doctor AI Onboarding</Link></li>
+                <li><Link href="/search" className="hover:text-white">Find a Doctor Nearby</Link></li>
+                <li><Link href="/clinic/desk" className="hover:text-white">Reception Desk Console</Link></li>
+                <li><Link href="/doctor/queue" className="hover:text-white">Doctor OPD Chamber</Link></li>
+                <li><Link href="/clinic/expenses" className="hover:text-white">Clinic P&L Ledger</Link></li>
+                <li><Link href="/admin/analytics" className="hover:text-white text-brand-400 font-medium">Founder SaaS Analytics</Link></li>
+                <li><Link href="/admin/verifications" className="hover:text-white text-red-400 font-medium">Doctor Council Verifications</Link></li>
               </ul>
             </div>
 
