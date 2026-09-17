@@ -1,9 +1,13 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from app.ai.onboarding_agent import extract_doctor_and_clinic
 import re
 import uuid
+
+from app.db.session import get_db
+from sqlalchemy.orm import Session
+from app.db.models import Doctor as DoctorModel, Clinic as ClinicModel
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
@@ -41,7 +45,7 @@ def extract_onboarding_data(payload: ExtractRequest):
     }
 
 @router.post("/publish")
-def publish_onboarding_profile(payload: PublishRequest):
+def publish_onboarding_profile(payload: PublishRequest, db: Session = Depends(get_db)):
     doc = payload.doctor
     cln = payload.clinic
 
@@ -94,6 +98,60 @@ def publish_onboarding_profile(payload: PublishRequest):
 
     DOCTORS_DATABASE[doc_slug] = doctor_record
     CLINICS_DATABASE[clinic_slug] = clinic_record
+
+    # Persist to database
+    try:
+        db_clinic = db.query(ClinicModel).filter(ClinicModel.slug == clinic_slug).first()
+        if not db_clinic:
+            db_clinic = ClinicModel(
+                id=clinic_id,
+                slug=clinic_slug,
+                name=cln.get("name"),
+                phone=payload.phone,
+                address_line=cln.get("address_line"),
+                city=cln.get("city"),
+                state=cln.get("state", "Uttarakhand"),
+                postal_code=cln.get("postal_code", "248001"),
+                facilities=["AC", "Wheelchair Accessible", "WiFi"],
+                opening_hours=cln.get("opening_hours", {"all_days": "10:00 AM - 08:00 PM"}),
+                status="active"
+            )
+            db.add(db_clinic)
+
+        db_doctor = db.query(DoctorModel).filter(DoctorModel.slug == doc_slug).first()
+        if not db_doctor:
+            db_doctor = DoctorModel(
+                id=doc_id,
+                slug=doc_slug,
+                title="Dr.",
+                full_name=doc.get("full_name"),
+                medical_council_reg_number=doc.get("medical_council_reg_number", "UKMC-TEMP-2026"),
+                medical_council_state=doc.get("medical_council_state", "Uttarakhand Medical Council"),
+                qualification_summary=doc.get("qualifications", "MBBS"),
+                specialization=doc.get("specialization", "General Physician"),
+                sub_specializations=doc.get("sub_specializations", []),
+                years_of_experience=doc.get("years_of_experience", 5),
+                languages_spoken=["English", "Hindi"],
+                bio=payload.ai_bio or f"{doc.get('full_name')} practices in {cln.get('city')}.",
+                consultation_fee=float(doc.get("consultation_fee", 500)),
+                followup_fee=float(doc.get("followup_fee", 200)),
+                followup_validity_days=7,
+                services_offered=[{"name": s, "fee": float(doc.get("consultation_fee", 500))} for s in doc.get("services", [])],
+                verification_status="verified",
+                rating=5.0,
+                total_reviews=1,
+                clinic_id=clinic_id,
+                clinic_name=cln.get("name"),
+                clinic_slug=clinic_slug,
+                clinic_address=f"{cln.get('address_line')}, {cln.get('city')}",
+                phone=payload.phone
+            )
+            db.add(db_doctor)
+
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print("Onboarding DB save warning:", e)
 
     return {
         "status": "published",

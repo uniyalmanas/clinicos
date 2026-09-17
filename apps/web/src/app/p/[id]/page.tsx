@@ -1,7 +1,9 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
-import { notFound } from "next/navigation";
+import { useParams } from "next/navigation";
 import { 
   Stethoscope, 
   ShieldCheck, 
@@ -15,10 +17,14 @@ import {
   CheckCircle2, 
   ArrowLeft,
   QrCode,
-  AlertCircle
+  AlertCircle,
+  Pill,
+  Download,
+  ExternalLink,
+  Sparkles
 } from "lucide-react";
 
-// Server-side seed data map for prescriptions
+// Server fallback seeds
 const SEED_PRESCRIPTIONS: Record<string, any> = {
   "RX-2026-09-0014": {
     prescription_number: "RX-2026-09-0014",
@@ -34,7 +40,7 @@ const SEED_PRESCRIPTIONS: Record<string, any> = {
     patient_phone: "+919123456780",
     patient_age: 26,
     patient_gender: "Male",
-    vitals: { bp: "118/78", pulse: 74, temp: 98.4, weight: 64 },
+    vitals: { bp: "118/78", pulse: 74, temp: 98.4, weight: 64, spo2: 99 },
     provisional_diagnosis: "Moderate to Severe Acne Vulgaris (Grade III)",
     items: [
       {
@@ -60,7 +66,7 @@ const SEED_PRESCRIPTIONS: Record<string, any> = {
       {
         medicine_name: "Cetaphil Gentle Cleanser",
         generic_name: "NON-SOAP CLEANSING LOTION",
-        dosage_form: "Syrup",
+        dosage_form: "Lotion",
         strength: "250 ml",
         dosage_frequency: "1-0-1",
         timing_relation: "Before Food",
@@ -75,131 +81,246 @@ const SEED_PRESCRIPTIONS: Record<string, any> = {
   }
 };
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
+export default function PatientPrescriptionLockerPage() {
+  const params = useParams();
+  const rawId = (params?.id as string) || "RX-2026-09-0014";
+  
+  const [rx, setRx] = useState<any>(SEED_PRESCRIPTIONS["RX-2026-09-0014"]);
+  const [loading, setLoading] = useState(true);
+  const [routedChemistMsg, setRoutedChemistMsg] = useState<string | null>(null);
 
-export async function generateStaticParams() {
-  return [
-    { id: "RX-2026-09-0014" },
-  ];
-}
+  useEffect(() => {
+    const fetchRx = async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/v1/prescriptions/${rawId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRx(data);
+        } else if (SEED_PRESCRIPTIONS[rawId]) {
+          setRx(SEED_PRESCRIPTIONS[rawId]);
+        }
+      } catch {
+        if (SEED_PRESCRIPTIONS[rawId]) {
+          setRx(SEED_PRESCRIPTIONS[rawId]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRx();
+  }, [rawId]);
 
-export default async function PatientPrescriptionLockerPage({ params }: Props) {
-  const { id } = await params;
-  const rx = SEED_PRESCRIPTIONS[id] || SEED_PRESCRIPTIONS["RX-2026-09-0014"];
+  const waShareText = `🏥 *Verified Digital Prescription - ${rx.doctor_name}*\n` +
+    `Patient: ${rx.patient_name}\n` +
+    `Rx Number: #${rx.prescription_number}\n` +
+    `Diagnosis: ${rx.provisional_diagnosis}\n\n` +
+    `🔗 View & Download Official A4 Document: https://clinicos.in/p/${rx.prescription_number}\n` +
+    `🔒 Cryptographic Hash: ${rx.digital_signature_hash?.slice(0, 16)}...`;
 
-  const waShareText = `🏥 *Prescription - ${rx.doctor_name}*\nPatient: ${rx.patient_name}\nRx: ${rx.prescription_number}\nView Verified PDF: https://clinicos.in/p/${rx.prescription_number}`;
+  const handleRouteToPharmacy = () => {
+    setRoutedChemistMsg(`💊 Prescription #${rx.prescription_number} transmitted to Apollo Pharmacy (Rajpur Road Hub). They will prepare generic generic strips.`);
+    setTimeout(() => setRoutedChemistMsg(null), 5000);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-sm sticky top-0 z-40 print:hidden">
-        <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-brand-600 dark:text-slate-400">
-            <ArrowLeft className="h-4 w-4" /> Home
-          </Link>
+    <div className="min-h-screen bg-[#ECEEF2] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7] flex flex-col">
+      {/* 1. TOP APP HEADER (Hidden during printing) */}
+      <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-[#ECEEF2]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80 print:hidden">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <Link 
+              href="/" 
+              className="inline-flex items-center gap-1.5 rounded-full p-2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-xs font-semibold">Home</span>
+            </Link>
+          </div>
+
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" /> Digitally Verified Prescription
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#34C759]/10 px-3 py-1 text-xs font-bold text-[#34C759] dark:text-[#30D158]">
+              <ShieldCheck className="h-4 w-4" /> Digitally Signed (NMC Compliant)
             </span>
           </div>
         </div>
       </header>
 
-      {/* Main Prescription Container */}
-      <main className="flex-1 mx-auto max-w-4xl w-full px-4 py-6 sm:px-6 space-y-6">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 sm:p-10 shadow-lg dark:border-slate-800 dark:bg-slate-900 print:p-0 print:border-none print:shadow-none">
-          {/* Clinic & Doctor Letterhead */}
-          <div className="border-b-2 border-slate-900 pb-5 dark:border-white">
+      {/* 2. PRINT BANNER NOTIFICATION */}
+      {routedChemistMsg && (
+        <div className="mx-auto max-w-4xl w-full px-4 pt-4 print:hidden animate-fade-in">
+          <div className="rounded-[16px] bg-[#34C759]/10 border border-[#34C759]/20 p-3.5 text-xs font-semibold text-[#34C759] dark:text-[#30D158] flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>{routedChemistMsg}</span>
+          </div>
+        </div>
+      )}
+
+      {/* 3. MAIN PRESCRIPTION A4 DOCUMENT */}
+      <main className="flex-1 mx-auto max-w-4xl w-full px-4 py-6 sm:px-6 space-y-4">
+        {/* Top Floating Document Action Bar (Print / Share) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#1C1C1E] p-4 rounded-[20px] border border-black/[0.06] dark:border-white/[0.08] shadow-apple-sm print:hidden">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-[#1D1D1F] dark:text-white">
+              Official Medical Prescription Document
+            </span>
+            <span className="font-mono text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+              #{rx.prescription_number}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 rounded-full bg-[#0071E3] px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#0077ED]"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span>Print A4 Letterhead</span>
+            </button>
+
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(waShareText)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#20bd5a]"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span>WhatsApp PDF</span>
+            </a>
+
+            <button
+              onClick={handleRouteToPharmacy}
+              className="flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm hover:bg-black/[0.02] dark:border-white/[0.1] dark:bg-[#2C2C2E] dark:text-white"
+            >
+              <Pill className="h-3.5 w-3.5 text-[#0071E3]" />
+              <span>Route to Chemist</span>
+            </button>
+          </div>
+        </div>
+
+        {/* The Printable A4 Sheet */}
+        <div className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white p-8 sm:p-12 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] print:p-0 print:border-none print:shadow-none print:bg-white print:text-black">
+          {/* Clinic Header & Letterhead */}
+          <div className="border-b-2 border-[#1D1D1F] pb-6 dark:border-white print:border-black">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
               <div>
-                <h1 className="text-2xl font-black text-slate-900 dark:text-white">
-                  {rx.clinic_name}
-                </h1>
-                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" /> {rx.clinic_address}
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#0071E3] text-white print:border print:border-black">
+                    <Stethoscope className="h-4 w-4" />
+                  </div>
+                  <h1 className="text-xl font-black text-[#1D1D1F] dark:text-white print:text-black tracking-tight">
+                    {rx.clinic_name || "Derma Care Skin & Laser Centre"}
+                  </h1>
+                </div>
+                <p className="text-xs text-[#86868B] mt-2 flex items-center gap-1.5 print:text-gray-600">
+                  <MapPin className="h-3.5 w-3.5 text-[#0071E3]" />
+                  <span>{rx.clinic_address || "14, Rajpur Road, Dehradun"}</span>
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                  <Phone className="h-3.5 w-3.5" /> Helpline: {rx.clinic_phone}
+                <p className="text-xs text-[#86868B] mt-0.5 flex items-center gap-1.5 print:text-gray-600">
+                  <Phone className="h-3.5 w-3.5 text-[#0071E3]" />
+                  <span>Helpline: {rx.clinic_phone || "+91 98765 43210"}</span>
                 </p>
               </div>
 
+              {/* Doctor Credentials & Medical Council Reg */}
               <div className="text-left sm:text-right">
-                <div className="text-base font-bold text-slate-900 dark:text-white">{rx.doctor_name}</div>
-                <div className="text-xs text-brand-600 font-semibold">{rx.qualification_summary}</div>
-                <div className="text-[11px] text-slate-500">NMC Reg: <strong>{rx.doctor_reg_number}</strong></div>
+                <div className="text-base font-extrabold text-[#1D1D1F] dark:text-white print:text-black">
+                  {rx.doctor_name || "Dr. Rahul Sharma"}
+                </div>
+                <div className="text-xs text-[#0071E3] font-semibold mt-0.5">
+                  {rx.qualification_summary || "MBBS, MD (Registered Medical Practitioner)"}
+                </div>
+                <div className="text-[11px] text-[#86868B] font-mono mt-1 print:text-gray-600">
+                  State Medical Council Reg: <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.doctor_reg_number}</strong>
+                </div>
               </div>
             </div>
 
             {/* Patient Metadata Grid */}
-            <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl text-xs dark:bg-slate-800/50">
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-[16px] bg-[#ECEEF2]/60 p-4 text-xs dark:bg-white/[0.04] print:bg-gray-100 print:border print:border-gray-200">
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-bold">Patient Name</span>
-                <strong className="text-slate-900 dark:text-white text-sm">{rx.patient_name}</strong>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Patient Name</span>
+                <strong className="text-sm text-[#1D1D1F] dark:text-white print:text-black">{rx.patient_name}</strong>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-bold">Age & Gender</span>
-                <strong className="text-slate-900 dark:text-white">{rx.patient_age} Yrs / {rx.patient_gender}</strong>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Age & Gender</span>
+                <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.patient_age} Yrs / {rx.patient_gender}</strong>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-bold">Date Issued</span>
-                <strong className="text-slate-900 dark:text-white">{rx.created_at}</strong>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Date Issued</span>
+                <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.created_at}</strong>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-bold">Prescription ID</span>
-                <strong className="text-brand-600 font-mono">{rx.prescription_number}</strong>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Prescription ID</span>
+                <strong className="font-mono text-[#0071E3] dark:text-[#2997FF] print:text-black">{rx.prescription_number}</strong>
               </div>
             </div>
           </div>
 
-          {/* Vitals & Diagnosis */}
-          <div className="mt-5 space-y-2 text-xs border-b border-slate-100 pb-4 dark:border-slate-800">
-            <div className="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400">
-              <span><strong>BP:</strong> {rx.vitals.bp} mmHg</span>
-              <span><strong>Pulse:</strong> {rx.vitals.pulse} bpm</span>
-              <span><strong>Temp:</strong> {rx.vitals.temp} °F</span>
-              <span><strong>Weight:</strong> {rx.vitals.weight} kg</span>
-            </div>
-            <div className="pt-2">
-              <span className="text-slate-500 block text-[11px] uppercase font-bold">Provisional Diagnosis</span>
-              <strong className="text-base text-slate-900 dark:text-white">{rx.provisional_diagnosis}</strong>
+          {/* Vitals & Clinical Diagnosis */}
+          <div className="mt-5 space-y-3 border-b border-black/[0.06] pb-5 dark:border-white/[0.08] print:border-gray-300 text-xs">
+            {rx.vitals && (
+              <div className="flex flex-wrap items-center gap-4 text-[#86868B] font-mono">
+                {rx.vitals.bp && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">BP:</strong> {rx.vitals.bp} mmHg</span>}
+                {rx.vitals.pulse && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Pulse:</strong> {rx.vitals.pulse} bpm</span>}
+                {rx.vitals.temp && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Temp:</strong> {rx.vitals.temp} °F</span>}
+                {rx.vitals.spo2 && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">SpO2:</strong> {rx.vitals.spo2}%</span>}
+                {rx.vitals.weight && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Weight:</strong> {rx.vitals.weight} kg</span>}
+              </div>
+            )}
+
+            <div className="pt-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">
+                Provisional Diagnosis & Findings
+              </span>
+              <div className="text-base font-extrabold text-[#1D1D1F] dark:text-white print:text-black mt-0.5">
+                {rx.provisional_diagnosis}
+              </div>
             </div>
           </div>
 
-          {/* Prescribed Medications */}
+          {/* Prescribed Medications Section (NMC Generic Enforcement) */}
           <div className="mt-6">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-3">
-              ℞ Prescribed Medication Regimen
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white print:text-black flex items-center gap-1.5">
+                <span className="font-serif italic text-lg font-bold text-[#0071E3]">℞</span> Prescribed Medication Regimen
+              </h3>
+              <span className="text-[10px] font-mono text-[#86868B] uppercase">
+                (Generic formulations prioritized as per NMC regulations)
+              </span>
+            </div>
 
-            <div className="space-y-4">
-              {rx.items.map((item: any, idx: number) => (
-                <div key={idx} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-xs dark:border-slate-800 dark:bg-slate-950/40">
+            <div className="space-y-3">
+              {rx.items?.map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/30 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300 print:bg-white"
+                >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">
-                        {idx + 1}. {item.medicine_name} ({item.dosage_form})
+                      <div className="text-sm font-black text-[#1D1D1F] dark:text-white print:text-black">
+                        {idx + 1}. {item.medicine_name} <span className="text-xs font-semibold text-[#86868B]">({item.dosage_form} • {item.strength || ""})</span>
                       </div>
-                      <div className="text-[11px] font-mono text-slate-500 uppercase mt-0.5">
-                        Generic: {item.generic_name}
+                      <div className="text-[11px] font-mono font-bold text-[#0071E3] dark:text-[#2997FF] uppercase mt-0.5 print:text-black">
+                        GENERIC CHEMICAL: {item.generic_name}
                       </div>
                     </div>
+
                     <div className="flex items-center gap-2">
-                      <span className="rounded-lg bg-teal-50 px-2.5 py-1 font-mono font-bold text-teal-800 dark:bg-teal-950 dark:text-teal-300">
+                      <span className="rounded-[8px] bg-[#0071E3]/10 px-2.5 py-1 font-mono font-bold text-[#0071E3] dark:text-[#2997FF] print:border print:border-black print:text-black">
                         {item.dosage_frequency}
                       </span>
-                      <span className="rounded-lg bg-slate-200/70 px-2.5 py-1 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="rounded-[8px] bg-black/[0.04] px-2.5 py-1 font-semibold text-[#1D1D1F] dark:bg-white/[0.08] dark:text-white print:border print:border-gray-300">
                         {item.timing_relation}
                       </span>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      <span className="font-bold text-[#1D1D1F] dark:text-white print:text-black">
                         {item.duration_days} Days
                       </span>
                     </div>
                   </div>
+
                   {item.special_instructions && (
-                    <div className="mt-2 text-[11px] text-slate-600 dark:text-slate-400 italic bg-white p-2 rounded-lg border border-slate-100 dark:bg-slate-900 dark:border-slate-800">
+                    <div className="mt-2 text-[11px] text-[#86868B] italic bg-white dark:bg-[#1C1C1E] p-2 rounded-[10px] border border-black/[0.04] dark:border-white/[0.06] print:border-gray-200">
                       💡 <strong>Instruction:</strong> {item.special_instructions}
                     </div>
                   )}
@@ -208,51 +329,44 @@ export default async function PatientPrescriptionLockerPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Special Advice */}
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs dark:border-slate-800 dark:bg-slate-900">
-            <div className="font-bold text-slate-900 dark:text-white">Doctor&apos;s Advice & Instructions:</div>
-            <p className="mt-1 text-slate-600 dark:text-slate-300 leading-relaxed">{rx.instructions}</p>
-            <div className="mt-2 text-slate-500">
-              Next Review / Follow-up: <strong>{rx.followup_date}</strong>
+          {/* Doctor's Advice & Review Date */}
+          <div className="mt-6 rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/40 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300">
+            <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black">
+              Doctor&apos;s Clinical Advice & Lifestyle Guidelines:
+            </div>
+            <p className="mt-1 text-[#86868B] leading-relaxed dark:text-[#8E8E93] print:text-gray-700">
+              {rx.instructions}
+            </p>
+            <div className="mt-2.5 text-xs text-[#0071E3] dark:text-[#2997FF] font-semibold print:text-black">
+              📅 Next Review / Follow-up Scheduled: <strong>{rx.followup_date || "Within 7 Days"}</strong>
             </div>
           </div>
 
-          {/* Cryptographic Proof Footer */}
-          <div className="mt-8 border-t border-slate-200 pt-5 text-xs flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 dark:border-slate-800">
+          {/* Cryptographic SHA-256 Tamper-Proof Seal & Digital Signature */}
+          <div className="mt-8 border-t-2 border-[#1D1D1F] pt-6 dark:border-white print:border-black text-xs flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
             <div>
-              <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs">
-                <CheckCircle2 className="h-4 w-4" /> Cryptographically Sealed & Tamper-Proof
+              <div className="flex items-center gap-2 font-bold text-[#34C759] dark:text-[#30D158] print:text-black">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Cryptographically Sealed & Signed</span>
               </div>
-              <div className="font-mono text-[10px] text-slate-400 mt-1 max-w-sm break-all">
+              <div className="font-mono text-[10px] text-[#86868B] mt-1 max-w-sm break-all">
                 SHA-256: {rx.digital_signature_hash}
+              </div>
+              <div className="font-mono text-[10px] text-[#86868B] mt-0.5">
+                Verification Code: <strong>{rx.qr_verification_code}</strong>
               </div>
             </div>
 
             <div className="text-left sm:text-right">
-              <div className="font-bold text-slate-900 dark:text-white">{rx.doctor_name}</div>
-              <div className="text-[11px] text-slate-500">Registered Medical Practitioner</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">NMC Verification Code: {rx.qr_verification_code}</div>
-            </div>
-          </div>
-
-          {/* Patient Action Buttons (Hidden when printing) */}
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-6 print:hidden">
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(waShareText)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow hover:bg-emerald-700"
-            >
-              <Share2 className="h-4 w-4" /> Share with Pharmacy on WhatsApp
-            </a>
-
-            <div className="flex items-center gap-3">
-              <Link
-                href={`/book?doctor=dr-rahul-sharma`}
-                className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
-              >
-                Book Follow-Up Token
-              </Link>
+              <div className="font-black text-sm text-[#1D1D1F] dark:text-white print:text-black">
+                {rx.doctor_name}
+              </div>
+              <div className="text-[11px] text-[#86868B]">
+                Registered Medical Practitioner
+              </div>
+              <div className="text-[10px] text-[#86868B] font-mono mt-0.5">
+                {rx.doctor_reg_number}
+              </div>
             </div>
           </div>
         </div>

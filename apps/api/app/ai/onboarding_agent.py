@@ -15,7 +15,7 @@ def extract_doctor_and_clinic(raw_text: str, document_data: str | None = None) -
             import httpx
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}"
             prompt = f"""
-            You are a medical administrative AI onboarding agent. Extract structured information from this doctor's input:
+            You are a medical administrative AI onboarding agent. Extract structured information from this doctor's input and/or attached visiting card image:
             \"\"\"{raw_text}\"\"\"
 
             Return STRICT JSON matching this schema:
@@ -42,7 +42,17 @@ def extract_doctor_and_clinic(raw_text: str, document_data: str | None = None) -
                 "missing_fields": [string]
             }}
             """
-            resp = httpx.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=15.0)
+            parts = [{"text": prompt}]
+            if document_data and len(document_data) > 50:
+                clean_b64 = re.sub(r"^data:image\/[a-zA-Z0-9]+;base64,", "", document_data).strip()
+                parts.append({
+                    "inline_data": {
+                        "mime_type": "image/jpeg",
+                        "data": clean_b64
+                    }
+                })
+
+            resp = httpx.post(url, json={"contents": [{"parts": parts}]}, timeout=15.0)
             if resp.status_code == 200:
                 data = resp.json()
                 text_content = data["candidates"][0]["content"]["parts"][0]["text"]
