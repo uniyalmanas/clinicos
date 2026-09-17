@@ -22,9 +22,11 @@
    - [60-Second AI Onboarding Wizard](#4-60-second-ai-onboarding-wizard--assistant)
    - [AI Clinic Receptionist Widget](#5-ai-clinic-receptionist-widget)
    - [Clinic Cash Flow & Expense Ledger](#6-clinic-cash-flow--expense-ledger)
-   - [In-House & Partner Pharmacy / Lab Dispensary](#7-pharmacy--diagnostic-dispensary-hub)
+   - [In-House & Partner Pharmacy / Lab Dispensary](#7-in-house-pharmacy-batch-inventory-expiry-radar--pos-dispense)
    - [Platform Administration & NMC Verification](#8-platform-administration--nmc-verification)
    - [Verified Patient Reviews & Reputation System](#9-verified-patient-reviews--reputation-system)
+   - [Inpatient Bed & Ward Management Matrix](#10-inpatient-bed--ward-management-matrix)
+   - [Patient EMR Directory & Diagnostic Lab Reports Vault](#11-patient-emr-directory--diagnostic-lab-reports-vault)
 4. [Design System & Apple HIG UI/UX](#-design-system--apple-hig-uiux)
 5. [Monorepo Architecture & Codebase Map](#-monorepo-architecture--codebase-map)
 6. [Backend API Reference](#-backend-api-reference)
@@ -100,21 +102,26 @@ In India, healthcare software is broken into two extremes:
 *Location:* [`apps/web/src/app/dashboard/consult/[id]/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/consult/%5Bid%5D/page.tsx) & [`doctor/consult/[id]`](file:///D:/medic-sept-2026/apps/web/src/app/doctor/consult/%5Bid%5D/page.tsx)
 
 - **Comprehensive Patient Demographic & Clinical Header:** Token indicator, patient age, gender, contact number, blood group, and allergy alerts.
-- **Clinical Vitals Grid:** Real-time logging of Blood Pressure (Systolic/Diastolic), Pulse Rate (bpm), Body Temperature (°F), SpO2 (%), Blood Sugar (mg/dL), and Body Weight (kg) with clinical reference guidance.
+- **AI Clinical Voice & Dictation Scribe (`POST /api/v1/prescriptions/scribe`):**
+  - Doctors can dictate or type unstructured clinical findings.
+  - Powered by Gemini 2.0 Flash with clinical heuristic parsing, automatically extracting Vitals, Chief Complaints, Provisional Diagnosis, Investigations, and UPPERCASE generic pharmacopeia medications in < 1 second.
+- **Clinical Vitals Grid:** Real-time logging of Blood Pressure (Systolic/Diastolic), Pulse Rate (bpm), Body Temperature (°F), SpO2 (%), Blood Sugar (mg/dL), and Body Weight (kg).
 - **Chief Complaints & Diagnosis:** Multi-symptom tagger with clinical severity notes and provisional diagnosis editor.
 - **NMC-Compliant Indian Pharmacopeia Prescription Writer:**
   - Integrated Indian medicine formulary (`data/medicines.ts`) covering Dermatology, Antibiotics, Analgesics, Gastrointestinal, Dental, Pediatrics, and Cardio-Diabetic.
   - **Mandatory Uppercase Generic Chemical Names:** Automatically highlights the chemical formulation (e.g. `DOXYCYCLINE HYCLATE`, `AMOXICILLIN + CLAVULANIC ACID`, `PARACETAMOL`) alongside the brand name in adherence to NMC directives.
   - Dosage format selection (Tablets, Capsules, Syrups, Ointments, Injections), exact strengths, frequencies (`1-0-1`, `0-0-1`, etc.), relation to meals (`Before Food`, `After Food`, `At Bedtime`), and duration.
   - Special patient instructions per item (e.g., *"Take with full glass of water, avoid lying down immediately"*).
-- **Cryptographic Tamper-Proofing:**
+- **Cryptographic Tamper-Proofing & Unified Database Persistence:**
+  - Persists directly to SQLite database (`prescriptions` table).
   - Generates a **SHA-256 digital signature hash** derived from the doctor’s credentials, patient ID, diagnosis, and medicine array.
   - Generates an instant **QR Verification Code** for chemist and audit authentication.
+  - Automatically notifies the Clinic Desk (`/api/v1/clinic/complete-token`) to advance the token sequence in real-time.
 - **Integrated Patient Document Vault:**
   - Instant access to patient lab reports, blood panels, and past prescriptions via `PatientDocumentsManager`.
 - **1-Click WhatsApp & SMS Dispatch:**
   - Generates a pre-filled `wa.me` intent URL to send the digital prescription link directly to the patient's WhatsApp.
-  - Clean printable layout formatted for physical thermal or A4 clinic letterhead printers.
+  - High-fidelity printable layout formatted for physical A4 clinic letterhead printers (`/p/[id]`).
 
 ---
 
@@ -122,9 +129,9 @@ In India, healthcare software is broken into two extremes:
 *Location:* [`apps/web/src/app/dashboard/desk/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/desk/page.tsx) & [`clinic/desk`](file:///D:/medic-sept-2026/apps/web/src/app/clinic/desk/page.tsx)
 
 - **Walk-in Patient Quick Check-In:** Fast 10-second intake capturing patient name, mobile number, doctor selection, and fee payment.
-- **Real-Time Token Number Engine:**
-  - Live token sequence tracking (`Token #1`, `Token #2`, ...).
-  - Status lifecycle management: `in_waiting` ➔ `in_consultation` ➔ `completed` ➔ `cancelled`.
+- **Real-Time Token Synchronization Engine (Server-Sent Events / SSE):**
+  - Asynchronous event broadcast over `GET /api/v1/clinic/stream`.
+  - Instantly updates waiting rooms, patient screens, and receptionist terminals whenever a doctor calls or completes a token.
 - **Built-in Web Audio Acoustic Chime Bell:**
   - Built-in dual-sine wave oscillator (Tone 1: 587.33 Hz D5 + Tone 2: 880.00 Hz A5) running directly in the browser.
   - Eliminates the need for expensive token display hardware or voice intercoms in clinic waiting areas.
@@ -154,9 +161,20 @@ In India, healthcare software is broken into two extremes:
 
 ---
 
-### 4. 🤖 60-Second AI Onboarding Wizard & Assistant
+### 4. ⚡ 60-Second AI Onboarding Wizard & Assistant
 *Location:* [`apps/web/src/app/onboarding/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/onboarding/page.tsx) & [`apps/api/app/ai/onboarding_agent.py`](file:///D:/medic-sept-2026/apps/api/app/ai/onboarding_agent.py)
 
+- **Zero Manual Forms:** Doctor types or speaks a raw text description or uploads a photo of their visiting card/letterhead.
+- **Multimodal Gemini Vision OCR:** Decodes doctor visiting cards, signboards, and printed letterheads directly into structured credentials and clinic address.
+- **Information Extracted Automatically:**
+  - Doctor full name, degrees (MBBS, MD, BDS, MDS), and specialties.
+  - State Medical Council registration numbers (e.g. `UKMC-5541-2012`).
+  - Clinic name, street address, landmarks, and city.
+  - Consultation fees & follow-up validity days.
+  - Morning and evening OPD timings.
+- **AI Professional Biography Synthesizer:** Crafts patient-friendly, SEO-optimized professional summaries.
+- **1-Click Profile Publication:**
+  - Commits directly to database tables (`doctors` and `clinics`) and generates the live doctor and clinic URLs immediately.
 - **Conversational Ingestion:**
   - Doctors or clinic staff simply type or dictate an unstructured description, or paste their visiting card / WhatsApp bio.
 - **Hybrid Intelligence Engine:**
@@ -185,32 +203,40 @@ In India, healthcare software is broken into two extremes:
 ---
 
 ### 6. 💰 Clinic Cash Flow & Expense Ledger
-*Location:* [`apps/web/src/app/dashboard/finance/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/finance/page.tsx) & [`clinic/expenses/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/clinic/expenses/page.tsx)
+*Location:* [`apps/web/src/app/dashboard/finance/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/finance/page.tsx) & [`apps/api/app/api/v1/expenses.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/expenses.py)
 
-- **Financial Cockpit:** Real-time reconciliation between daily OPD gross patient collections and clinic operating expenses.
+- **Database-Backed Financial Cockpit:** Real-time reconciliation between daily OPD gross patient collections, in-house pharmacy sales, and clinic operating expenses directly persisted to SQLite.
 - **Granular Expense Categories:**
   - UPCL Commercial Electricity & HVAC.
   - OPD Consumables (disposable nitrile gloves, surgical spirit, cotton rolls, disinfectant).
   - Clinic Staff Salaries (receptionists, nursing assistants).
   - Medical Equipment Servicing (lasers, dental chairs, autoclaves).
-- **Fast 1-Click Presets:** Instant logging of common overheads.
-- **Net Daily / Monthly Cash Position:** Transparent calculation of net clinic cashflow.
+- **Fast 1-Click Presets & Real-Time Deletion:** Instant logging of common overheads with instant voucher deletion.
+- **Real Net In-Hand Profit & Margins:** Calculates real net profit percentages after meeting all physical operating costs.
 
 ---
 
-### 7. 💊 Pharmacy & Diagnostic Dispensary Hub
-*Location:* [`apps/web/src/app/dashboard/pharmacy/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/pharmacy/page.tsx) & [`pharmacy/console/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/pharmacy/console/page.tsx)
+### 7. 💊 In-House Pharmacy Batch Inventory, Expiry Radar & POS Dispense
+*Location:* [`apps/web/src/app/dashboard/pharmacy/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/pharmacy/page.tsx) & [`apps/api/app/api/v1/pharmacy.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/pharmacy.py)
 
-- **Prescription Dispensary Feed:** Live queue of prescriptions emitted by doctors in the clinic or surrounding area.
-- **Fulfillment Pipeline:** Orders update across states: `ready_for_pickup` ➔ `sample_collected` ➔ `dispatched`.
-- **Diagnostic Sample Collection:** Tracks blood tests, CBC, LFT, and lipid profile collections with partner diagnostic labs (e.g. Dr. Lal PathLabs).
+- **Batch Inventory & Expiry Countdown Radar:**
+  - Tracks brand names, generic formulations, strength, batch numbers, and expiry dates (`YYYY-MM-DD`).
+  - **Dynamic Expiry Countdown:** Flags batches expiring within 60 days (amber warning) and within 30 days (critical red alert).
+  - **Low-Stock Detection:** Real-time alerts when current stock falls below reorder thresholds.
+- **Computerized Prescription Dispense & POS Billing:**
+  - Doctor prescriptions emitted in chambers appear automatically in the clinic dispensary feed.
+  - 1-Click counter dispense automatically deducts items from matching inventory batch stock.
+  - Pre-calculates GST slabs (5%, 12%, 18%) and applies discounts.
+  - Generates official, printable GST Tax Invoices with clinic letterhead, GSTIN, and payment mode breakdowns.
+- **External Partner Deliveries:** Optional routing to partner hubs (Apollo Pharmacy, Dr. Lal PathLabs) for home delivery.
 
 ---
 
 ### 8. 🛡️ Platform Administration & NMC Verification
-*Location:* [`apps/web/src/app/admin/verifications/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/admin/verifications/page.tsx) & [`admin/analytics/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/admin/analytics/page.tsx)
+*Location:* [`apps/web/src/app/admin/verifications/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/admin/verifications/page.tsx) & [`apps/api/app/api/v1/admin.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/admin.py)
 
 - **NMC Verification Queue:** Admin approval workflow verifying doctor identity, degrees, and State Medical Council registration numbers before public directory indexing.
+- **SQLite Database Synchronization:** Approvals and rejections are committed directly to `DoctorModel` in the database with optimistic UI updates.
 - **Platform Analytics:** Real-time metrics on total onboarded doctors, active clinics, patient appointments booked, and gross consultation volumes.
 
 ---
@@ -221,6 +247,26 @@ In India, healthcare software is broken into two extremes:
 - **Anti-Fraud Verified Visit Badges:** Only patients with recorded appointment tokens can leave verified reviews.
 - **Multi-Vector Ratings:** Overall satisfaction, waiting time experience, and bedside manner scores.
 - **Doctor Public Replies:** Enables doctors to professionally respond to patient feedback.
+
+---
+
+### 10. 🛏️ Inpatient Bed & Ward Management Matrix
+*Location:* [`apps/web/src/app/dashboard/beds/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/beds/page.tsx) & [`apps/api/app/api/v1/beds.py`](file:///D:/medic-sept-2026/apps/api/app/api/v1/beds.py)
+
+- **Live Ward Floorplan Matrix:** Real-time visualization across General Wards, Semi-Private Rooms, Deluxe AC Suites, Daycare Recovery, and HDU/ICU.
+- **Color-Coded Lifecycle States:** Vacant (Green), Occupied (Blue), Discharge Pending (Amber), and Maintenance/Sanitization (Gray).
+- **Patient Admission Flow:** Direct admission capturing patient name, phone, attending doctor, clinical notes, and admission timestamp.
+- **Stay Duration & Billing Engine:** Automatically computes hours/days stayed and accrued room charges based on daily and hourly ward tariff rates.
+- **Instant Discharge Receipt:** Generates printable discharge summary and invoice upon patient checkout.
+
+---
+
+### 11. 📁 Patient EMR Directory & Diagnostic Lab Reports Vault
+*Location:* [`apps/web/src/app/dashboard/patients/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/patients/page.tsx) & [`apps/web/src/components/PatientDocumentsManager.tsx`](file:///D:/medic-sept-2026/apps/web/src/components/PatientDocumentsManager.tsx)
+
+- **Unified Patient Health Records (PHR):** Combines registered OPD walk-ins, consultation notes, and chronic drug allergy flags.
+- **Dual-Pane Clinical Workspace:** Instant switching between previous consultation visit timelines and the diagnostic document vault.
+- **Diagnostic Document Locker:** Upload and view blood panels, radiology X-rays, pathology reports, and past prescription PDFs with doctor annotations.
 
 ---
 
@@ -350,14 +396,23 @@ All API routes are served under the `/api/v1` namespace:
 | | `POST` | `/api/v1/beds/status` | Quick toggle bed status (vacant, maintenance) |
 | **Prescriptions**| `POST`| `/api/v1/prescriptions/generate` | Generate NMC-compliant prescription with SHA-256 |
 | | `GET` | `/api/v1/prescriptions/{rx_number}`| View tamper-proof prescription record |
+| | `POST` | `/api/v1/prescriptions/scribe` | AI Clinical Voice & Dictation Scribe parser |
+| **Pharmacy** | `GET` | `/api/v1/pharmacy/inventory` | In-house batch inventory with days-to-expiry countdown radar |
+| | `POST` | `/api/v1/pharmacy/inventory` | Add new medicine batch / SKU to dispensary |
+| | `PUT` | `/api/v1/pharmacy/inventory/{id}/stock` | Adjust physical verified stock count |
+| | `GET` | `/api/v1/pharmacy/prescriptions-queue` | Prescriptions awaiting dispensary fulfillment |
+| | `POST` | `/api/v1/pharmacy/dispense` | POS dispense with automatic stock deduction & GST invoice |
+| | `GET` | `/api/v1/pharmacy/bills` | Fetch past dispensary tax invoices |
 | **Documents** | `GET` | `/api/v1/documents` | Fetch patient lab reports & records |
 | | `POST` | `/api/v1/documents/upload` | Upload new medical document with notes |
 | **Reviews** | `GET` | `/api/v1/reviews` | Fetch doctor reviews and satisfaction metrics |
 | | `POST` | `/api/v1/reviews` | Submit verified patient review |
-| **Expenses** | `GET` | `/api/v1/expenses` | Daily clinic expense ledger & balance |
-| | `POST` | `/api/v1/expenses` | Record new clinic overhead expense |
-| **Admin** | `GET` | `/api/v1/admin/verifications` | View pending doctor NMC credential requests |
-| | `POST` | `/api/v1/admin/verifications/verify` | Approve or reject doctor registration |
+| **Expenses** | `GET` | `/api/v1/expenses` | Daily clinic expense ledger & P&L balance |
+| | `POST` | `/api/v1/expenses` | Record new clinic operating expense voucher |
+| | `DELETE`| `/api/v1/expenses/{id}` | Delete operating expense voucher |
+| **Admin** | `GET` | `/api/v1/admin/verifications` | View doctor NMC credential requests (SQLite synced) |
+| | `POST` | `/api/v1/admin/verify` | Approve or reject doctor registration in database |
+| | `GET` | `/api/v1/admin/analytics` | Platform ARR, MRR, tenant status & token metrics |
 
 ---
 
@@ -442,15 +497,17 @@ npm run dev:web
 - [x] **Milestone 3:** NMC-compliant digital prescription creator with generic drug formatting & SHA-256 signatures.
 - [x] **Milestone 4:** Front desk counter token desk with dual-sine browser audio chime bell.
 - [x] **Milestone 5:** Zero-app patient portal, digital Rx viewer, and dosage alarms.
-- [x] **Milestone 6:** 60-Second AI Onboarding Wizard (Gemini 2.0 Flash + heuristic NLP).
-- [x] **Milestone 7:** Patient documents manager, lab reports vault, and verified reviews system.
-- [x] **Milestone 8:** Clinic cash flow and expense ledger.
-- [x] **Milestone 9:** Inpatient Bed & Ward Management Matrix (`/dashboard/beds`) with admissions & stay billing.
-- [x] **Milestone 10:** Server-Sent Events (SSE) live token stream (`/api/v1/clinic/stream`) for real-time chamber-desk chime alerts.
-- [x] **Milestone 11:** Complete database persistence unification across appointments, prescriptions, and wards.
-- [ ] **Milestone 12:** Official Meta WhatsApp Cloud API webhooks for automated PDF dispatch and appointment notifications.
-- [ ] **Milestone 13:** Ayushman Bharat Digital Mission (ABDM) Milestone 1 (M1) Sandbox certification.
-- [ ] **Milestone 14:** Next.js Edge Middleware for custom doctor subdomains (`dr-rahul.clinicos.in`).
+- [x] **Milestone 6:** 60-Second AI Onboarding Wizard (Gemini 2.0 Flash + multimodal visiting card OCR).
+- [x] **Milestone 7:** Inpatient Bed & Ward Management Matrix (`/dashboard/beds`) with admissions & stay billing.
+- [x] **Milestone 8:** Server-Sent Events (SSE) live token stream (`/api/v1/clinic/stream`) for real-time chamber-desk chime alerts.
+- [x] **Milestone 9:** In-House Pharmacy Batch Inventory, Expiry Radar & POS Dispense Billing Terminal (`/dashboard/pharmacy`).
+- [x] **Milestone 10:** Doctor Consultation Studio with AI Clinical Voice & Dictation Scribe (`/dashboard/consult/[id]`).
+- [x] **Milestone 11:** Database-backed Clinic Cashflow Ledger, Real Net Profit P&L, and Expense Vouchers (`/dashboard/finance`).
+- [x] **Milestone 12:** Patient EMR Directory with Embedded Diagnostic Lab Reports Vault (`/dashboard/patients`).
+- [x] **Milestone 13:** Platform Administration & Doctor State Medical Council Verification (`/admin/verifications`).
+- [ ] **Milestone 14:** Official Meta WhatsApp Cloud API webhooks for automated PDF dispatch and appointment notifications.
+- [ ] **Milestone 15:** Ayushman Bharat Digital Mission (ABDM) Milestone 1 (M1) Sandbox certification.
+- [ ] **Milestone 16:** Next.js Edge Middleware for custom doctor subdomains (`dr-rahul.clinicos.in`).
 
 ---
 
