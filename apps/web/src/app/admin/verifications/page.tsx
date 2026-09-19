@@ -17,7 +17,8 @@ import {
   Stethoscope,
   BarChart3,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Pill
 } from "lucide-react";
 
 interface DoctorRecord {
@@ -158,6 +159,13 @@ export default function AdminVerificationsPage() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Link
+              href="/admin/inquiries"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            >
+              <Pill className="h-4 w-4 text-[#0071E3]" />
+              Marketplace Orders
+            </Link>
             <Link
               href="/admin/analytics"
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"

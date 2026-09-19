@@ -5,6 +5,7 @@ import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import InteractiveHeroSearch from "@/components/InteractiveHeroSearch";
 import InteractivePlayground from "@/components/InteractivePlayground";
+import BrowseSpecialtiesSection from "@/components/BrowseSpecialtiesSection";
 import { 
   Stethoscope, 
   Building2, 
@@ -21,6 +22,7 @@ import {
   CreditCard,
   Pill,
   Microscope,
+  FlaskConical,
   ChevronDown,
   Phone,
   QrCode,
@@ -78,6 +80,12 @@ export default function HomePage() {
               className="rounded-full px-4 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-white dark:text-white dark:hover:bg-white/10 transition shadow-sm"
             >
               Workspace
+            </Link>
+            <Link 
+              href="/specialties" 
+              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
+            >
+              Specialties
             </Link>
             <Link 
               href="/search" 
@@ -181,6 +189,9 @@ export default function HomePage() {
           <InteractivePlayground />
         </div>
       </section>
+
+      {/* 3.5 BROWSE BY SPECIALTIES & WHY BOOK DIRECT */}
+      <BrowseSpecialtiesSection />
 
       {/* 4. APPLE BENTO-GRID FEATURE PILLARS */}
       <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08]">

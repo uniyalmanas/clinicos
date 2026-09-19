@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
   Search, 
@@ -16,375 +17,1015 @@ import {
   ArrowRight,
   Sparkles,
   Map as MapIcon,
-  LayoutGrid
+  LayoutGrid,
+  Info,
+  Check,
+  X,
+  ThumbsUp,
+  ChevronDown,
+  Layers,
+  Filter,
+  CheckCircle2
 } from "lucide-react";
-import InteractiveClinicMap from "@/components/InteractiveClinicMap";
+import GoogleTerrainMap, { DoctorMapItem } from "@/components/GoogleTerrainMap";
 
-// Pre-seeded Dehradun Doctors Directory
-const DEHRADUN_DOCTORS = [
+// ============================================================================
+// COMPREHENSIVE DOCTORS DIRECTORY (Matches Screenshot & Dehradun Topography)
+// ============================================================================
+const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
+  {
+    slug: "dr-rohit-sureka",
+    full_name: "Dr Rohit Sureka",
+    title: "Dr.",
+    specialization: "Gastroenterology/Gi Medicine Specialist",
+    qualification_summary: "15 YEARS • MBBS, DNB GENERAL MEDICINE, DNB GASTROENTEROLOGY",
+    years_of_experience: 15,
+    rating: 4.95,
+    total_reviews: 184,
+    consultation_fee: 999,
+    clinic_name: "DocSphere Direct - Virtual & Clinic",
+    clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
+    locality: "Rajpur Road",
+    wait_time: "Available in 14 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Male",
+    avatar_url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3421,
+    lng: 78.0512
+  },
+  {
+    slug: "dr-harish-k-c",
+    full_name: "Dr Harish K C",
+    title: "Dr.",
+    specialization: "Gastroenterology/Gi Medicine Specialist",
+    qualification_summary: "15 YEARS • MBBS, MD (GENERAL MEDICINE), DM (GASTROENTEROLOGY)",
+    years_of_experience: 15,
+    rating: 4.88,
+    total_reviews: 125,
+    consultation_fee: 1000,
+    clinic_name: "DocSphere Clinic, Survey Chowk",
+    clinic_address: "42, EC Road, Survey Chowk, Dehradun",
+    locality: "EC Road",
+    wait_time: "Available in 9 minutes",
+    on_time_guarantee: false,
+    online_available: true,
+    gender: "Male",
+    avatar_url: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3204,
+    lng: 78.0489
+  },
   {
     slug: "dr-rahul-sharma",
-    full_name: "Dr. Rahul Sharma",
+    full_name: "Dr Rahul Sharma",
     title: "Dr.",
-    specialization: "Dermatologist",
-    qualification_summary: "MBBS, MD (Dermatology)",
+    specialization: "Dermatology/Skin & Hair Specialist",
+    qualification_summary: "12 YEARS • MBBS, MD (DERMATOLOGY, VENEREOLOGY & LEPROSY)",
     years_of_experience: 12,
-    rating: 4.9,
+    rating: 4.90,
     total_reviews: 142,
     consultation_fee: 600,
     clinic_name: "Derma Care Skin & Laser Centre",
-    clinic_slug: "derma-care-dehradun",
     clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
     locality: "Rajpur Road",
-    services: ["Acne & Scar Laser", "Eczema Therapy", "PRP Hair Loss", "Chemical Peels"],
-    next_token: 4,
-    wait_time: "10-15 mins",
+    wait_time: "Available in 10 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Male",
+    avatar_url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=300&auto=format&fit=crop&q=80",
     lat: 30.3255,
     lng: 78.0436
   },
   {
     slug: "dr-aditi-joshi",
-    full_name: "Dr. Aditi Joshi",
+    full_name: "Dr Aditi Joshi",
     title: "Dr.",
-    specialization: "Dentist",
-    qualification_summary: "BDS, MDS (Endodontics)",
+    specialization: "Dentistry/Endodontics Specialist",
+    qualification_summary: "8 YEARS • BDS, MDS (CONSERVATIVE DENTISTRY & ENDODONTICS)",
     years_of_experience: 8,
-    rating: 4.8,
+    rating: 4.80,
     total_reviews: 98,
     consultation_fee: 400,
     clinic_name: "Smile Craft Multi-Speciality Dental",
-    clinic_slug: "smile-craft-dental",
     clinic_address: "42, EC Road, Near Survey Chowk, Dehradun",
     locality: "EC Road",
-    services: ["Single Sitting RCT", "Invisible Braces", "Teeth Whitening", "Dental Implants"],
-    next_token: 2,
-    wait_time: "5-10 mins",
-    lat: 30.3204,
-    lng: 78.0489
+    wait_time: "Available in 5 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Female",
+    avatar_url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3218,
+    lng: 78.0495
   },
   {
     slug: "dr-vikram-sethi",
-    full_name: "Dr. Vikram Sethi",
+    full_name: "Dr Vikram Sethi",
     title: "Dr.",
-    specialization: "Pediatrician",
-    qualification_summary: "MBBS, DCH, DNB (Pediatrics)",
+    specialization: "Paediatrics/Child & Newborn Specialist",
+    qualification_summary: "15 YEARS • MBBS, DCH, DNB (PEDIATRICS)",
     years_of_experience: 15,
     rating: 4.95,
     total_reviews: 210,
     consultation_fee: 500,
     clinic_name: "Dron Child & Newborn Health Centre",
-    clinic_slug: "dron-child-clinic",
     clinic_address: "88, Chakrata Road, Near Ballupur Chowk, Dehradun",
     locality: "Chakrata Road",
-    services: ["Newborn Care", "Vaccination Schedule", "Childhood Asthma", "Milestones"],
-    next_token: 5,
-    wait_time: "15-20 mins",
+    wait_time: "Available in 15 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Male",
+    avatar_url: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=300&auto=format&fit=crop&q=80",
     lat: 30.3342,
     lng: 78.0125
+  },
+  {
+    slug: "dr-priya-nair",
+    full_name: "Dr Priya Nair",
+    title: "Dr.",
+    specialization: "Cardiology/Heart & Vascular Specialist",
+    qualification_summary: "14 YEARS • MBBS, MD (MEDICINE), DM (CARDIOLOGY), FACC",
+    years_of_experience: 14,
+    rating: 4.96,
+    total_reviews: 167,
+    consultation_fee: 800,
+    clinic_name: "Himalayan Heart & Vascular Clinic",
+    clinic_address: "56, Rajpur Road, Opp. Hotel Madhuban, Dehradun",
+    locality: "Rajpur Road",
+    wait_time: "Available in 12 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Female",
+    avatar_url: "https://images.unsplash.com/photo-1594824813589-38b4d8d1e0d4?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3381,
+    lng: 78.0512
+  },
+  {
+    slug: "dr-arvind-rawat",
+    full_name: "Dr Arvind Rawat",
+    title: "Dr.",
+    specialization: "General Physician/Internal Medicine Specialist",
+    qualification_summary: "16 YEARS • MBBS, MD (INTERNAL MEDICINE)",
+    years_of_experience: 16,
+    rating: 4.92,
+    total_reviews: 184,
+    consultation_fee: 500,
+    clinic_name: "Doon Family Health & Diabetes Care",
+    clinic_address: "12, Saharanpur Road, Near Patel Chowk, Dehradun",
+    locality: "Saharanpur Road",
+    wait_time: "Available in 8 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Male",
+    avatar_url: "https://images.unsplash.com/photo-1614608682850-e0d6ed316d47?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3152,
+    lng: 78.0321
+  },
+  {
+    slug: "dr-meenakshi-sundaram",
+    full_name: "Dr Meenakshi Sundaram",
+    title: "Dr.",
+    specialization: "Obstetrics & Gynaecology Specialist",
+    qualification_summary: "15 YEARS • MBBS, MS (OBSTETRICS & GYNECOLOGY), DGO",
+    years_of_experience: 15,
+    rating: 4.94,
+    total_reviews: 195,
+    consultation_fee: 600,
+    clinic_name: "Motherhood Care & Fertility Clinic",
+    clinic_address: "31, Dalanwala, Circular Road, Dehradun",
+    locality: "Dalanwala",
+    wait_time: "Available in 10 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Female",
+    avatar_url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3211,
+    lng: 78.0562
+  },
+  {
+    slug: "dr-rajesh-semwal",
+    full_name: "Dr Rajesh Semwal",
+    title: "Dr.",
+    specialization: "Orthopaedics/Joint & Spine Specialist",
+    qualification_summary: "18 YEARS • MBBS, MS (ORTHOPEDICS), MCH (JOINT REPLACEMENT)",
+    years_of_experience: 18,
+    rating: 4.92,
+    total_reviews: 230,
+    consultation_fee: 600,
+    clinic_name: "Doon Ortho & Joint Spine Clinic",
+    clinic_address: "24, Ballupur Chowk, Chakrata Road, Dehradun",
+    locality: "Ballupur Chowk",
+    wait_time: "Available in 20 minutes",
+    on_time_guarantee: false,
+    online_available: true,
+    gender: "Male",
+    avatar_url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3395,
+    lng: 78.0089
+  },
+  {
+    slug: "dr-amit-bansal",
+    full_name: "Dr Amit Bansal",
+    title: "Dr.",
+    specialization: "ENT/Otorhinolaryngology Specialist",
+    qualification_summary: "11 YEARS • MBBS, MS (ENT)",
+    years_of_experience: 11,
+    rating: 4.85,
+    total_reviews: 115,
+    consultation_fee: 500,
+    clinic_name: "Bansal ENT & Micro-Ear Care Centre",
+    clinic_address: "18, Subhash Road, Near Clock Tower, Dehradun",
+    locality: "Subhash Road",
+    wait_time: "Available in 6 minutes",
+    on_time_guarantee: true,
+    online_available: true,
+    gender: "Male",
+    avatar_url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
+    lat: 30.3274,
+    lng: 78.0415
   }
 ];
 
-export default function SearchDiscoveryPage() {
-  const [query, setQuery] = useState("");
-  const [selectedLocality, setSelectedLocality] = useState("All");
-  const [selectedSpecialty, setSelectedSpecialty] = useState("All");
-  const [maxFee, setMaxFee] = useState<number>(1000);
-  const [filteredDoctors, setFilteredDoctors] = useState(DEHRADUN_DOCTORS);
-  const [activeDoctorOnMap, setActiveDoctorOnMap] = useState<any>(DEHRADUN_DOCTORS[0]);
+// Fallback Doctor Avatar SVG when image is loading or fails
+function DoctorPortrait({ name, avatarUrl, gender }: { name: string; avatarUrl?: string; gender?: string }) {
+  const [imgError, setImgError] = useState(false);
+
+  if (avatarUrl && !imgError) {
+    return (
+      <div className="relative h-24 w-24 sm:h-28 sm:w-28 shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-100 shadow-xs">
+        <img
+          src={avatarUrl}
+          alt={name}
+          onError={() => setImgError(true)}
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  // Realistic Doctor SVG Avatar
+  return (
+    <div className="relative flex h-24 w-24 sm:h-28 sm:w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gradient-to-b from-[#EFF6FF] to-[#DBEAFE] dark:from-[#1E293B] dark:to-[#0F172A] shadow-xs">
+      <svg className="h-20 w-20 text-[#2563EB] dark:text-[#60A5FA]" viewBox="0 0 100 100" fill="none">
+        {/* Head */}
+        <circle cx="50" cy="35" r="18" fill="#F87171" opacity="0.8" />
+        <path d="M 32 30 C 32 18, 68 18, 68 30 Z" fill="#1E293B" />
+        {/* White Lab Coat & Stethoscope */}
+        <path d="M 22 85 C 22 55, 36 50, 50 50 C 64 50, 78 55, 78 85 Z" fill="#FFFFFF" stroke="#CBD5E1" strokeWidth="2" />
+        <path d="M 40 50 L 50 72 L 60 50" fill="#3B82F6" opacity="0.3" />
+        <path d="M 38 52 C 38 70, 62 70, 62 52" stroke="#475569" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        <circle cx="50" cy="72" r="3" fill="#64748B" />
+      </svg>
+      <span className="absolute bottom-1 right-1 rounded-full bg-emerald-500 p-0.5 ring-2 ring-white">
+        <Check className="h-2.5 w-2.5 text-white" />
+      </span>
+    </div>
+  );
+}
+
+function normalizeSpecialty(input: string): string {
+  if (!input || input === "All") return "All";
+  const s = input.toLowerCase().replace(/[-_]/g, " ").trim();
+  
+  if (s.includes("gastro") || s.includes("gi medicine") || s.includes("stomach") || s.includes("liver") || s.includes("digest")) {
+    return "Gastroenterology";
+  }
+  if (s.includes("derma") || s.includes("skin") || s.includes("hair") || s.includes("scalp")) {
+    return "Dermatology";
+  }
+  if (s.includes("pediatric") || s.includes("paediatric") || s.includes("child") || s.includes("newborn")) {
+    return "Paediatrics";
+  }
+  if (s.includes("cardio") || s.includes("heart") || s.includes("vascular")) {
+    return "Cardiology";
+  }
+  if (s.includes("dent") || s.includes("teeth") || s.includes("tooth") || s.includes("oral") || s.includes("rct")) {
+    return "Dentistry";
+  }
+  if (s.includes("physician") || s.includes("internal medicine") || s.includes("general medicine")) {
+    return "General Physician";
+  }
+  if (s.includes("gyn") || s.includes("obstetric") || s.includes("women") || s.includes("pregnancy")) {
+    return "Gynaecology";
+  }
+  if (s.includes("ortho") || s.includes("bone") || s.includes("joint") || s.includes("spine")) {
+    return "Orthopaedics";
+  }
+  if (s.includes("ent") || s.includes("ear") || s.includes("nose") || s.includes("throat")) {
+    return "ENT";
+  }
+  if (s.includes("ophthal") || s.includes("eye") || s.includes("vision")) {
+    return "Ophthalmology";
+  }
+  return input;
+}
+
+function SearchDiscoveryContent() {
+  const searchParams = useSearchParams();
+  const urlSpecialty = searchParams.get("specialty") || searchParams.get("category") || "";
+  const urlQuery = searchParams.get("query") || searchParams.get("q") || "";
+
+  // --------------------------------------------------------------------------
+  // FILTER STATES (Matching screenshot)
+  // --------------------------------------------------------------------------
+  const [query, setQuery] = useState(urlQuery);
+  const [modeOnline, setModeOnline] = useState(true);
+  const [modePhysical, setModePhysical] = useState(false);
+  const [cityFilter, setCityFilter] = useState("Dehradun City Dehradun");
+  
+  // Experience filters: "0-5", "6-10", "11-16", "16+"
+  const [expRanges, setExpRanges] = useState<string[]>([]);
+
+  // Fee filters: "100-500", "500-1000", "1000+"
+  const [feeRanges, setFeeRanges] = useState<string[]>([]);
+
+  // Gender filters: "Male", "Female"
+  const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
+
+  // Specialty filter
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string>(
+    urlSpecialty ? normalizeSpecialty(urlSpecialty) : "All"
+  );
+
+  // Sync URL parameters for ?specialty and ?query
+  useEffect(() => {
+    if (urlSpecialty) {
+      setSelectedSpecialty(normalizeSpecialty(urlSpecialty));
+    }
+    if (urlQuery) {
+      setQuery(urlQuery);
+    }
+  }, [urlSpecialty, urlQuery]);
+
+  // View Mode: "split" | "list" | "map"
   const [viewMode, setViewMode] = useState<"split" | "list" | "map">("split");
 
-  // Filter effect
+  // Active doctor for Map highlighting & info modal
+  const [activeDoctor, setActiveDoctor] = useState<DoctorMapItem | null>(ALL_SEARCH_DOCTORS[0]);
+  const [infoModalDoctor, setInfoModalDoctor] = useState<DoctorMapItem | null>(null);
+
+  // Clear all filters handler
+  const handleClearAll = () => {
+    setQuery("");
+    setModeOnline(true);
+    setModePhysical(false);
+    setCityFilter("Dehradun City Dehradun");
+    setExpRanges([]);
+    setFeeRanges([]);
+    setSelectedGenders([]);
+    setSelectedSpecialty("All");
+  };
+
+  // Toggle helper for arrays
+  const toggleArrayItem = (list: string[], item: string, setter: (val: string[]) => void) => {
+    if (list.includes(item)) {
+      setter(list.filter((x) => x !== item));
+    } else {
+      setter([...list, item]);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // FILTER LOGIC
+  // --------------------------------------------------------------------------
+  const filteredDoctors = useMemo(() => {
+    return ALL_SEARCH_DOCTORS.filter((doc) => {
+      // Keyword search
+      if (query.trim()) {
+        const q = query.toLowerCase();
+        const matchesName = doc.full_name.toLowerCase().includes(q);
+        const matchesSpec = doc.specialization.toLowerCase().includes(q);
+        const matchesClinic = doc.clinic_name.toLowerCase().includes(q);
+        const matchesAddress = doc.clinic_address.toLowerCase().includes(q);
+        if (!matchesName && !matchesSpec && !matchesClinic && !matchesAddress) {
+          return false;
+        }
+      }
+
+      // Specialty filter (handles synonyms like gastroenterologist -> Gastroenterology)
+      if (selectedSpecialty !== "All") {
+        const normSelected = normalizeSpecialty(selectedSpecialty).toLowerCase();
+        const normDoc = normalizeSpecialty(doc.specialization).toLowerCase();
+        const rawDoc = doc.specialization.toLowerCase();
+        const rawSelected = selectedSpecialty.toLowerCase();
+        const match =
+          rawDoc.includes(rawSelected) ||
+          rawSelected.includes(rawDoc) ||
+          normDoc === normSelected ||
+          rawDoc.includes(normSelected);
+        if (!match) {
+          return false;
+        }
+      }
+
+      // Gender filter
+      if (selectedGenders.length > 0) {
+        if (!doc.gender || !selectedGenders.includes(doc.gender)) {
+          return false;
+        }
+      }
+
+      // Experience ranges
+      if (expRanges.length > 0) {
+        const exp = doc.years_of_experience;
+        const matchesAnyExp = expRanges.some((range) => {
+          if (range === "0-5") return exp >= 0 && exp <= 5;
+          if (range === "6-10") return exp >= 6 && exp <= 10;
+          if (range === "11-16") return exp >= 11 && exp <= 16;
+          if (range === "16+") return exp > 16;
+          return true;
+        });
+        if (!matchesAnyExp) return false;
+      }
+
+      // Fee ranges
+      if (feeRanges.length > 0) {
+        const fee = doc.consultation_fee;
+        const matchesAnyFee = feeRanges.some((range) => {
+          if (range === "100-500") return fee >= 100 && fee <= 500;
+          if (range === "500-1000") return fee > 500 && fee <= 1000;
+          if (range === "1000+") return fee > 1000;
+          return true;
+        });
+        if (!matchesAnyFee) return false;
+      }
+
+      return true;
+    });
+  }, [query, selectedSpecialty, selectedGenders, expRanges, feeRanges]);
+
+  // Keep active doctor in sync
   useEffect(() => {
-    let list = DEHRADUN_DOCTORS;
-
-    if (query.trim()) {
-      const qLower = query.toLowerCase();
-      list = list.filter(d => 
-        d.full_name.toLowerCase().includes(qLower) ||
-        d.specialization.toLowerCase().includes(qLower) ||
-        d.clinic_name.toLowerCase().includes(qLower) ||
-        d.services.some(s => s.toLowerCase().includes(qLower)) ||
-        d.clinic_address.toLowerCase().includes(qLower)
-      );
+    if (filteredDoctors.length > 0) {
+      if (!filteredDoctors.some((d) => d.slug === activeDoctor?.slug)) {
+        setActiveDoctor(filteredDoctors[0]);
+      }
+    } else {
+      setActiveDoctor(null);
     }
-
-    if (selectedLocality !== "All") {
-      list = list.filter(d => d.locality.toLowerCase() === selectedLocality.toLowerCase());
-    }
-
-    if (selectedSpecialty !== "All") {
-      list = list.filter(d => d.specialization.toLowerCase() === selectedSpecialty.toLowerCase());
-    }
-
-    list = list.filter(d => d.consultation_fee <= maxFee);
-
-    setFilteredDoctors(list);
-    if (list.length > 0) {
-      setActiveDoctorOnMap(list[0]);
-    }
-  }, [query, selectedLocality, selectedSpecialty, maxFee]);
-
-  const quickTags = [
-    { label: "Acne & Skin", q: "Acne" },
-    { label: "Painless Root Canal", q: "Root Canal" },
-    { label: "Child Vaccination", q: "Vaccination" },
-    { label: "Rajpur Road Clinics", loc: "Rajpur Road" },
-    { label: "EC Road Clinics", loc: "EC Road" }
-  ];
+  }, [filteredDoctors]);
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#1D1D1F] dark:bg-black dark:text-[#F5F5F7] flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 apple-glass border-b border-black/[0.06] dark:border-white/[0.08]">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-apple-blue text-white shadow-sm">
-              <Stethoscope className="h-5 w-5" />
+    <div className="min-h-screen bg-[#F5F6F8] dark:bg-[#121212] text-[#1D1D1F] dark:text-[#F5F5F7] flex flex-col font-sans">
+      {/* =====================================================================
+          TOP NAVIGATION BAR (Clean DocSphere Discovery Header)
+      ===================================================================== */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-md border-b border-black/[0.08] dark:border-white/[0.08]">
+        <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-[#0071E3] to-[#008778] text-white shadow-sm">
+                <Stethoscope className="h-5 w-5" />
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-black tracking-tight text-[#1D1D1F] dark:text-white">
+                  DocSphere
+                </span>
+                <span className="text-xs font-bold text-[#0071E3] uppercase tracking-wider">
+                  Direct Search
+                </span>
+              </div>
+            </Link>
+
+            <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-gray-500">
+              <span className="h-4 w-[1px] bg-gray-300 dark:bg-white/20" />
+              <MapPin className="h-3.5 w-3.5 text-[#008778]" />
+              <span>Dehradun, Uttarakhand • 0% Aggregator Fee</span>
             </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-base font-bold text-[#1D1D1F] dark:text-white">DocSphere</span>
-              <span className="text-xs font-semibold text-[#86868B]">Discovery</span>
-            </div>
-          </Link>
+          </div>
+
           <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <div className="flex items-center gap-1.5 text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
-              <MapPin className="h-3.5 w-3.5 text-apple-teal" />
-              <span>Location: <strong className="text-[#1D1D1F] dark:text-white font-medium">Dehradun, Uttarakhand</strong></span>
+            {/* View Mode Switcher */}
+            <div className="flex items-center rounded-lg bg-gray-100 dark:bg-white/10 p-1 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setViewMode("split")}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${
+                  viewMode === "split"
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-white shadow-xs"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                }`}
+                title="Cards + Terrain Map Side-by-Side"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Split View</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${
+                  viewMode === "list"
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-white shadow-xs"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                }`}
+                title="Doctors Cards Only"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">List Only</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode("map")}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition ${
+                  viewMode === "map"
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#0071E3] dark:text-white shadow-xs"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900"
+                }`}
+                title="Google Maps Terrain Fullscreen"
+              >
+                <MapIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Terrain Map</span>
+              </button>
             </div>
+
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
-      {/* Main Search & Discovery Section */}
-      <main className="flex-1 mx-auto max-w-7xl w-full px-4 py-6 sm:px-6 lg:px-8">
-        {/* Search & Filter Bar */}
-        <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E]">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-[#86868B]" />
+      {/* =====================================================================
+          MAIN LAYOUT: SIDEBAR (FILTERS) + RESULTS (CARDS) + GOOGLE TERRAIN MAP
+      ===================================================================== */}
+      <div className="flex-1 mx-auto w-full max-w-[1680px] px-3 sm:px-6 py-5">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+
+          {/* ===================================================================
+              LEFT SIDEBAR: FILTERS (AUTHENTIC SCREENSHOT LAYOUT, SLEEK 230PX WIDTH)
+          =================================================================== */}
+          <aside className="w-full lg:w-[230px] shrink-0">
+            <div className="sticky top-20 rounded-2xl bg-white dark:bg-[#1C1C1E] p-4 border border-[#E5E7EB] dark:border-white/10 shadow-sm space-y-4">
+              {/* Header: Filters & Clear All */}
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-white/10">
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">
+                  Filters
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="text-xs font-bold text-[#0071E3] hover:underline transition"
+                >
+                  Clear All
+                </button>
+              </div>
+
+              {/* Active Filter Chips */}
+              <div className="flex flex-wrap gap-1.5">
+                {modeOnline && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-2.5 py-1 text-xs font-bold text-[#0071E3] dark:text-[#60A5FA]">
+                    <span>ONLINE</span>
+                    <button
+                      type="button"
+                      onClick={() => setModeOnline(false)}
+                      className="hover:opacity-75"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+
+                {cityFilter && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-2.5 py-1 text-xs font-bold text-[#0071E3] dark:text-[#60A5FA]">
+                    <span className="truncate max-w-[130px]">{cityFilter}</span>
+                    <button
+                      type="button"
+                      onClick={() => setCityFilter("")}
+                      className="hover:opacity-75 shrink-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+
+                {selectedSpecialty !== "All" && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-2.5 py-1 text-xs font-bold text-[#0071E3] dark:text-[#60A5FA]">
+                    <span className="truncate max-w-[130px]">{selectedSpecialty}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSpecialty("All")}
+                      className="hover:opacity-75 shrink-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                )}
+
+                {expRanges.map((exp) => (
+                  <span
+                    key={exp}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 dark:border-white/20 bg-gray-50 dark:bg-white/5 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:text-gray-300"
+                  >
+                    <span>{exp} Yrs</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleArrayItem(expRanges, exp, setExpRanges)}
+                      className="hover:opacity-75"
+                    >
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              {/* 1. Mode of Consult (Clean vertical list) */}
+              <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/10">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                  Mode of Consult
+                </h3>
+                <div className="space-y-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <label className="flex items-center gap-2.5 cursor-pointer hover:text-[#0071E3]">
+                    <input
+                      type="checkbox"
+                      checked={modeOnline}
+                      onChange={(e) => setModeOnline(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                    />
+                    <span>Online Consult</span>
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer hover:text-[#0071E3]">
+                    <input
+                      type="checkbox"
+                      checked={modePhysical}
+                      onChange={(e) => setModePhysical(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                    />
+                    <span>Physical Visit / In-Clinic</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* 2. Experience (In Years) (Clean vertical list) */}
+              <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/10">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                  Experience (In Years)
+                </h3>
+                <div className="space-y-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {["0-5", "6-10", "11-16"].map((range) => (
+                    <label key={range} className="flex items-center gap-2.5 cursor-pointer hover:text-[#0071E3]">
+                      <input
+                        type="checkbox"
+                        checked={expRanges.includes(range)}
+                        onChange={() => toggleArrayItem(expRanges, range, setExpRanges)}
+                        className="h-4 w-4 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                      />
+                      <span>{range}</span>
+                    </label>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => toggleArrayItem(expRanges, "16+", setExpRanges)}
+                    className={`text-xs font-bold transition flex items-center gap-1 ${
+                      expRanges.includes("16+") ? "text-[#0071E3]" : "text-[#0071E3] hover:underline"
+                    }`}
+                  >
+                    {expRanges.includes("16+") ? "✓ 16+ Years Selected" : "+1 More (16+ Years)"}
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Fees (In Rupees) (Clean vertical list) */}
+              <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/10">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                  Fees (In Rupees)
+                </h3>
+                <div className="space-y-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {["100-500", "500-1000", "1000+"].map((fee) => (
+                    <label key={fee} className="flex items-center gap-2.5 cursor-pointer hover:text-[#0071E3]">
+                      <input
+                        type="checkbox"
+                        checked={feeRanges.includes(fee)}
+                        onChange={() => toggleArrayItem(feeRanges, fee, setFeeRanges)}
+                        className="h-4 w-4 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                      />
+                      <span>₹{fee}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. Gender (Clean vertical list) */}
+              <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/10">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                  Gender
+                </h3>
+                <div className="space-y-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {["Male", "Female"].map((gender) => (
+                    <label key={gender} className="flex items-center gap-2.5 cursor-pointer hover:text-[#0071E3]">
+                      <input
+                        type="checkbox"
+                        checked={selectedGenders.includes(gender)}
+                        onChange={() => toggleArrayItem(selectedGenders, gender, setSelectedGenders)}
+                        className="h-4 w-4 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                      />
+                      <span>{gender} Doctors</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* 5. Speciality Selector */}
+              <div className="space-y-2.5 pt-3 border-t border-gray-100 dark:border-white/10">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                  Speciality
+                </h3>
+                <select
+                  value={selectedSpecialty}
+                  onChange={(e) => setSelectedSpecialty(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-900 focus:border-[#0071E3] focus:outline-none dark:border-white/15 dark:bg-[#2C2C2E] dark:text-white"
+                >
+                  <option value="All">All Specialities</option>
+                  <option value="Gastroenterology">Gastroenterology</option>
+                  <option value="Dermatology">Dermatology</option>
+                  <option value="General Physician">General Physician</option>
+                  <option value="Paediatrics">Paediatrics</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Dentistry">Dentistry</option>
+                  <option value="Gynaecology">Gynaecology</option>
+                  <option value="Orthopaedics">Orthopaedics</option>
+                  <option value="ENT">ENT</option>
+                </select>
+              </div>
+
+              {/* Direct Booking Promise */}
+              <div className="pt-3 border-t border-gray-100 dark:border-white/10 text-[11px] text-[#008778] font-semibold flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                <span>DocSphere 0% Markup Guarantee</span>
+              </div>
+            </div>
+          </aside>
+
+          {/* ===================================================================
+              CENTER COLUMN: DOCTOR CARDS (APOLLO 24/7 STYLE FROM SCREENSHOT)
+          =================================================================== */}
+          <main
+            className={`${
+              viewMode === "split"
+                ? "flex-1 min-w-0"
+                : viewMode === "list"
+                ? "flex-1 min-w-0"
+                : "hidden"
+            } space-y-4`}
+          >
+            {/* Top Search Input Box */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search doctors, specializations, symptoms (e.g. acne, root canal, pediatrician)..."
-                className="w-full rounded-xl border border-black/[0.08] bg-[#ECEEF2]/70 pl-10 pr-4 py-2.5 text-xs text-[#1D1D1F] placeholder:text-[#86868B] focus:border-apple-blue focus:outline-none focus:ring-2 focus:ring-apple-blue/20 dark:border-white/[0.1] dark:bg-black/40 dark:text-white"
+                placeholder="Search doctors, specialities, symptoms (e.g., Gastroenterologist, Acne, Root Canal)..."
+                className="w-full rounded-2xl border border-gray-200 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/10 dark:bg-[#1C1C1E] dark:text-white"
               />
             </div>
 
-            {/* Locality Selector */}
-            <select
-              value={selectedLocality}
-              onChange={(e) => setSelectedLocality(e.target.value)}
-              className="rounded-xl border border-black/[0.08] bg-[#ECEEF2]/70 px-3 py-2.5 text-xs text-[#1D1D1F] focus:border-apple-blue focus:outline-none focus:ring-2 focus:ring-apple-blue/20 dark:border-white/[0.1] dark:bg-black/40 dark:text-[#F5F5F7]"
-            >
-              <option value="All">All Dehradun Localities</option>
-              <option value="Rajpur Road">Rajpur Road</option>
-              <option value="EC Road">EC Road</option>
-              <option value="Chakrata Road">Chakrata Road</option>
-            </select>
+            {/* Quick Result Counter */}
+            <div className="flex items-center justify-between text-xs font-semibold text-gray-500 px-1">
+              <span>
+                Showing <strong className="text-gray-900 dark:text-white">{filteredDoctors.length}</strong> verified doctors
+              </span>
+              <span className="text-[#008778]">● Direct Consultation • 0% Markup</span>
+            </div>
 
-            {/* Specialty Selector */}
-            <select
-              value={selectedSpecialty}
-              onChange={(e) => setSelectedSpecialty(e.target.value)}
-              className="rounded-xl border border-black/[0.08] bg-[#ECEEF2]/70 px-3 py-2.5 text-xs text-[#1D1D1F] focus:border-apple-blue focus:outline-none focus:ring-2 focus:ring-apple-blue/20 dark:border-white/[0.1] dark:bg-black/40 dark:text-[#F5F5F7]"
-            >
-              <option value="All">All Specialties</option>
-              <option value="Dermatologist">Dermatology</option>
-              <option value="Dentist">Dentistry</option>
-              <option value="Pediatrician">Pediatrics</option>
-            </select>
-          </div>
+            {/* Doctors Cards List */}
+            {filteredDoctors.length === 0 ? (
+              <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center dark:border-white/10 dark:bg-[#1C1C1E]">
+                <Stethoscope className="mx-auto h-8 w-8 text-gray-400" />
+                <h3 className="mt-2 text-sm font-bold text-gray-900 dark:text-white">
+                  No doctors match your filters
+                </h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  Try clearing your filter chips or search keyword to see all available specialists.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="mt-4 rounded-full bg-[#0071E3] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              filteredDoctors.map((doc) => {
+                const isSelected = activeDoctor?.slug === doc.slug;
 
-          {/* Quick Filter Pills */}
-          <div className="mt-3.5 flex flex-wrap items-center gap-2 pt-3 border-t border-black/[0.04] dark:border-white/[0.06]">
-            <span className="text-[11px] font-semibold text-[#86868B] flex items-center gap-1">
-              <Sparkles className="h-3 w-3 text-apple-blue" /> Quick:
-            </span>
-            {quickTags.map((tag, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  if (tag.q) setQuery(tag.q);
-                  if (tag.loc) setSelectedLocality(tag.loc);
-                }}
-                className="rounded-full border border-black/[0.04] bg-[#ECEEF2]/60 px-3 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-white dark:border-white/[0.06] dark:bg-[#2C2C2E] dark:text-[#F5F5F7] dark:hover:bg-[#3A3A3C] transition active:scale-95"
-              >
-                {tag.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* View Mode Switcher Header */}
-        <div className="mt-6 flex items-center justify-between">
-          <div className="text-xs font-semibold text-[#86868B]">
-            <span>Showing {filteredDoctors.length} verified doctors in Dehradun • Live Token Queue</span>
-          </div>
-
-          <div className="flex items-center gap-1 rounded-full border border-black/[0.04] bg-black/[0.03] p-1 dark:border-white/[0.06] dark:bg-white/[0.06]">
-            <button
-              onClick={() => setViewMode("split")}
-              className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                viewMode === "split"
-                  ? "bg-white text-[#1D1D1F] shadow-apple-sm dark:bg-[#2C2C2E] dark:text-white"
-                  : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Split View</span>
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                viewMode === "list"
-                  ? "bg-white text-[#1D1D1F] shadow-apple-sm dark:bg-[#2C2C2E] dark:text-white"
-                  : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
-              }`}
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">List Only</span>
-            </button>
-            <button
-              onClick={() => setViewMode("map")}
-              className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                viewMode === "map"
-                  ? "bg-white text-[#1D1D1F] shadow-apple-sm dark:bg-[#2C2C2E] dark:text-white"
-                  : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
-              }`}
-            >
-              <MapIcon className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Map Only</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Results Layout: Dynamic Split, Full List, or Full Map */}
-        <div className="mt-4 grid gap-6 lg:grid-cols-12">
-          {/* Doctors List Column */}
-          {viewMode !== "map" && (
-            <div className={`${viewMode === "list" ? "lg:col-span-12" : "lg:col-span-7"} space-y-4`}>
-              {filteredDoctors.length === 0 ? (
-                <div className="rounded-[24px] border border-black/[0.06] bg-white p-12 text-center shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E]">
-                  <Stethoscope className="mx-auto h-8 w-8 text-[#86868B]" />
-                  <h3 className="mt-2 text-sm font-bold text-[#1D1D1F] dark:text-white">No doctors match your search</h3>
-                  <p className="mt-1 text-xs text-[#86868B]">Try broadening your search keyword or clearing the locality filter.</p>
-                  <button
-                    onClick={() => { setQuery(""); setSelectedLocality("All"); setSelectedSpecialty("All"); }}
-                    className="mt-4 rounded-full bg-apple-blue px-4 py-2 text-xs font-semibold text-white shadow-apple-sm hover:bg-[#0077ED] active:scale-95 transition"
-                  >
-                    Reset Filters
-                  </button>
-                </div>
-              ) : (
-                filteredDoctors.map((doc) => (
+                return (
                   <div
                     key={doc.slug}
-                    onMouseEnter={() => setActiveDoctorOnMap(doc)}
-                    onClick={() => setActiveDoctorOnMap(doc)}
-                    className={`cursor-pointer rounded-[24px] border bg-white p-5 shadow-apple-card transition-all hover:shadow-apple-modal dark:bg-[#1C1C1E] ${
-                      activeDoctorOnMap?.slug === doc.slug ? "border-apple-blue ring-1 ring-apple-blue" : "border-black/[0.06] dark:border-white/[0.08]"
+                    onMouseEnter={() => setActiveDoctor(doc)}
+                    onClick={() => setActiveDoctor(doc)}
+                    className={`group relative rounded-2xl border bg-white dark:bg-[#1C1C1E] p-5 shadow-xs transition-all duration-200 cursor-pointer ${
+                      isSelected
+                        ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 shadow-md"
+                        : "border-[#E5E7EB] hover:border-gray-300 dark:border-white/10 dark:hover:border-white/20"
                     }`}
                   >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-apple-teal/10 text-apple-teal dark:bg-apple-teal/20 dark:text-[#30D1BE] font-bold text-base">
-                          {doc.full_name.split(" ")[1]?.[0] || "D"}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Link href={`/doctors/${doc.slug}`} className="text-base font-bold text-[#1D1D1F] hover:text-apple-blue dark:text-white transition">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                      {/* Left: Doctor Photo + Details */}
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <DoctorPortrait
+                          name={doc.full_name}
+                          avatarUrl={doc.avatar_url}
+                          gender={doc.gender}
+                        />
+
+                        {/* Middle: Doctor Details */}
+                        <div className="min-w-0 flex-1 space-y-1">
+                          {/* Name + Info Button */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white hover:text-[#0071E3] transition">
                               {doc.full_name}
-                            </Link>
-                            <span className="flex items-center gap-1 rounded-full bg-apple-teal/10 px-2.5 py-0.5 text-[10px] font-semibold text-apple-teal dark:bg-apple-teal/20 dark:text-[#30D1BE]">
-                              <ShieldCheck className="h-3 w-3" /> NMC Verified
+                            </h3>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setInfoModalDoctor(doc);
+                              }}
+                              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition p-0.5"
+                              title="View doctor credentials & registration info"
+                            >
+                              <Info className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {/* Specialization */}
+                          <p className="text-xs sm:text-[13.5px] font-medium text-gray-700 dark:text-gray-300">
+                            {doc.specialization}
+                          </p>
+
+                          {/* Qualification & Experience (Purple/Indigo in screenshot) */}
+                          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#4338CA] dark:text-[#818CF8]">
+                            {doc.qualification_summary}
+                          </p>
+
+                          {/* Locality & Clinic */}
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {doc.locality}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {doc.clinic_name}
+                          </p>
+
+                          {/* Patient Satisfaction / Rating (Green Thumbs Up) */}
+                          <div className="pt-1 flex items-center gap-2 text-xs font-bold text-[#15803D] dark:text-[#4ADE80]">
+                            <ThumbsUp className="h-3.5 w-3.5 fill-[#15803D]/20 text-[#15803D] dark:text-[#4ADE80]" />
+                            <span>
+                              {Math.round(doc.rating * 19)}% ({doc.total_reviews}+ Patients)
                             </span>
                           </div>
-                          <p className="text-xs text-[#86868B]">
-                            {doc.specialization} • {doc.qualification_summary} ({doc.years_of_experience} yrs exp)
-                          </p>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <div className="flex items-center sm:justify-end gap-1 text-xs font-bold text-[#1D1D1F] dark:text-white font-mono">
-                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {doc.rating}
-                          <span className="text-[11px] font-normal text-[#86868B]">({doc.total_reviews})</span>
+                      {/* Right: Guarantee Badge, Price & Booking Button */}
+                      <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-2 text-right shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-white/10 w-full sm:w-auto sm:min-w-[180px]">
+                        {/* ON TIME GUARANTEE Badge (Dark Navy in screenshot) */}
+                        {doc.on_time_guarantee ? (
+                          <div className="rounded bg-[#08214D] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
+                            ON TIME GUARANTEE
+                          </div>
+                        ) : (
+                          <div className="rounded bg-emerald-900/90 px-2 py-0.5 text-[9.5px] font-bold text-emerald-100">
+                            VERIFIED DOCTOR
+                          </div>
+                        )}
+
+                        {/* Price */}
+                        <div className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white font-mono sm:mt-1">
+                          ₹{doc.consultation_fee}
                         </div>
-                        <div className="text-xs font-bold text-[#1D1D1F] dark:text-white mt-1 font-mono">
-                          ₹{doc.consultation_fee} <span className="text-[10px] font-normal text-[#86868B]">fee</span>
-                        </div>
-                      </div>
-                    </div>
 
-                    <p className="mt-3 text-xs text-[#86868B] flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5 text-[#86868B] shrink-0" />
-                      <strong className="text-[#1D1D1F] dark:text-white font-medium">{doc.clinic_name}</strong> — {doc.clinic_address}
-                    </p>
-
-                    {/* Services tags */}
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {doc.services.map((s: string, idx: number) => (
-                        <span key={idx} className="rounded-full bg-[#ECEEF2]/70 px-2.5 py-0.5 text-[10px] font-medium text-[#1D1D1F] border border-black/[0.04] dark:bg-[#2C2C2E] dark:text-[#F5F5F7] dark:border-white/[0.06]">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Live Token Status & Action Footer */}
-                    <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-black/[0.04] dark:border-white/[0.06] pt-3 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1.5 font-semibold text-[#30D158]">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#30D158] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#30D158]"></span>
-                          </span>
-                          Next Token: #{doc.next_token}
-                        </span>
-                        <span className="text-[#86868B]">•</span>
-                        <span className="text-[#86868B] flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" /> Wait: {doc.wait_time}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={`https://maps.google.com/?q=${encodeURIComponent(doc.clinic_address)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full border border-black/[0.08] bg-white px-3.5 py-1.5 text-xs font-medium text-[#1D1D1F] hover:bg-black/[0.02] dark:border-white/[0.12] dark:bg-[#2C2C2E] dark:text-white active:scale-95 transition"
-                        >
-                          <Navigation className="inline h-3 w-3 text-apple-blue mr-1" /> Directions
-                        </a>
+                        {/* Booking Button (Outlined Blue with wait time inside) */}
                         <Link
                           href={`/book?doctor=${doc.slug}`}
-                          className="apple-btn rounded-full bg-apple-blue hover:bg-[#0077ED] px-4 py-1.5 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full sm:w-[175px] inline-flex flex-col items-center justify-center rounded-xl border-2 border-[#0071E3] bg-white px-4 py-2 text-center text-[#0071E3] shadow-xs hover:bg-[#0071E3] hover:text-white dark:bg-transparent dark:border-[#38BDF8] dark:text-[#38BDF8] dark:hover:bg-[#38BDF8] dark:hover:text-gray-900 transition-all active:scale-95"
                         >
-                          Book Token #{doc.next_token}
+                          <span className="text-xs font-bold leading-tight">
+                            Online Consult
+                          </span>
+                          <span className="text-[10px] font-normal opacity-90 leading-tight">
+                            {doc.wait_time}
+                          </span>
                         </Link>
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          )}
+                );
+              })
+            )}
+          </main>
 
-          {/* Interactive Map Column */}
-          {viewMode !== "list" && (
-            <div className={`${viewMode === "map" ? "lg:col-span-12" : "lg:col-span-5"}`}>
-              <div className="sticky top-24 rounded-[24px] overflow-hidden border border-black/[0.06] dark:border-white/[0.08] shadow-apple-card">
-                <InteractiveClinicMap
-                  doctors={filteredDoctors}
-                  activeDoctor={activeDoctorOnMap}
-                  onSelectDoctor={setActiveDoctorOnMap}
-                />
+          {/* ===================================================================
+              RIGHT COLUMN: GOOGLE MAPS TERRAIN MODE COMPONENT
+          =================================================================== */}
+          <aside
+            className={`${
+              viewMode === "split"
+                ? "w-full lg:w-[420px] xl:w-[460px] 2xl:w-[500px] shrink-0"
+                : viewMode === "map"
+                ? "flex-1 min-w-0"
+                : "hidden"
+            }`}
+          >
+            <div className="sticky top-20">
+              <GoogleTerrainMap
+                doctors={filteredDoctors}
+                activeDoctor={activeDoctor}
+                onSelectDoctor={(doc) => setActiveDoctor(doc)}
+              />
+
+              {/* Helper legend underneath map in Split View */}
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-white dark:bg-[#1C1C1E] px-4 py-2.5 border border-gray-200 dark:border-white/10 text-xs text-gray-500 shadow-xs">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#188038]" />
+                  <span>Google Terrain Elevation: 600m - 1400m</span>
+                </span>
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  Dehradun Medical Grid
+                </span>
               </div>
             </div>
-          )}
+          </aside>
+
         </div>
-      </main>
+      </div>
+
+      {/* =====================================================================
+          DOCTOR INFO CREDENTIALS MODAL (When clicking ⓘ info icon)
+      ===================================================================== */}
+      {infoModalDoctor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-gray-200 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => setInfoModalDoctor(null)}
+              className="absolute right-4 top-4 rounded-full p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <DoctorPortrait
+                name={infoModalDoctor.full_name}
+                avatarUrl={infoModalDoctor.avatar_url}
+                gender={infoModalDoctor.gender}
+              />
+              <div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  {infoModalDoctor.full_name}
+                </h3>
+                <p className="text-xs text-gray-500">{infoModalDoctor.specialization}</p>
+                <div className="mt-1 flex items-center gap-1 text-xs font-bold text-emerald-600">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>NMC Registered & Verified</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2 border-t border-gray-100 dark:border-white/10 pt-4 text-xs text-gray-600 dark:text-gray-300">
+              <p>
+                <strong className="text-gray-900 dark:text-white">Qualifications:</strong>{" "}
+                {infoModalDoctor.qualification_summary}
+              </p>
+              <p>
+                <strong className="text-gray-900 dark:text-white">Clinical Experience:</strong>{" "}
+                {infoModalDoctor.years_of_experience} Years
+              </p>
+              <p>
+                <strong className="text-gray-900 dark:text-white">Clinic Address:</strong>{" "}
+                {infoModalDoctor.clinic_address}
+              </p>
+              <p>
+                <strong className="text-gray-900 dark:text-white">DocSphere Promise:</strong> Direct
+                booking at doctor's original consultation fee. 0% aggregator surcharge.
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center gap-3">
+              <Link
+                href={`/book?doctor=${infoModalDoctor.slug}`}
+                className="flex-1 rounded-xl bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
+              >
+                Book Direct Consultation (₹{infoModalDoctor.consultation_fee})
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+export default function SearchDiscoveryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F5F6F8] dark:bg-[#121212] flex items-center justify-center text-xs font-semibold text-gray-400">
+          Loading DocSphere Discovery...
+        </div>
+      }
+    >
+      <SearchDiscoveryContent />
+    </Suspense>
   );
 }
