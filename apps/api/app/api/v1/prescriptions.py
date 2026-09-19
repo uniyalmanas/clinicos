@@ -5,6 +5,9 @@ from datetime import date, datetime
 import hashlib
 import uuid
 import urllib.parse
+import os
+
+APP_BASE_URL = os.getenv("APP_BASE_URL", "https://clinicos.in")
 
 from app.db.session import get_db
 from sqlalchemy.orm import Session
@@ -231,6 +234,103 @@ def get_prescription(rx_number: str, db: Session = Depends(get_db)):
         }
         PRESCRIPTIONS_DB[rx_number] = rx
     return rx
+
+class WhatsAppDispatchInput(BaseModel):
+    recipient_phone: str
+    recipient_type: Optional[str] = "patient"  # patient | attendant | chemist
+    attendant_name: Optional[str] = None
+    template_type: Optional[str] = "standard"  # standard | bilingual_hindi | chemist_order
+    custom_note: Optional[str] = None
+
+@router.post("/{rx_number}/whatsapp-dispatch")
+def dispatch_prescription_whatsapp(rx_number: str, payload: WhatsAppDispatchInput, db: Session = Depends(get_db)):
+    rx = PRESCRIPTIONS_DB.get(rx_number)
+    if not rx:
+        db_rx = db.query(PrescriptionModel).filter(PrescriptionModel.prescription_number == rx_number).first()
+        if not db_rx:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Prescription not found.")
+        rx = {
+            "prescription_number": db_rx.prescription_number,
+            "doctor_name": db_rx.doctor_name,
+            "clinic_name": db_rx.clinic_name,
+            "patient_name": db_rx.patient_name,
+            "patient_phone": db_rx.patient_phone,
+            "provisional_diagnosis": db_rx.provisional_diagnosis,
+            "items": db_rx.items or [],
+            "digital_signature_hash": db_rx.digital_signature_hash
+        }
+
+    clean_phone = "".join([c for c in payload.recipient_phone if c.isdigit()])
+    if len(clean_phone) == 10:
+        clean_phone = f"91{clean_phone}"
+
+    rx_link = f"{APP_BASE_URL}/p/{rx_number}"
+    patient_name = rx.get("patient_name", "Patient")
+    doctor_name = rx.get("doctor_name", "Doctor")
+    clinic_name = rx.get("clinic_name", "DocSphere Clinic")
+    diagnosis = rx.get("provisional_diagnosis", "Consultation")
+    sig_hash = rx.get("digital_signature_hash", "")[:16]
+
+    if payload.template_type == "bilingual_hindi":
+        msg = (
+            f"🏥 *डिजिटल मेडिकल प्रिस्क्रिप्शन / Digital Rx*\n"
+            f"नमस्ते {patient_name}!\n\n"
+            f"डॉक्टर: *{doctor_name}*\n"
+            f"क्लिनिक: *{clinic_name}*\n"
+            f"पर्चा संख्या: #{rx_number}\n\n"
+            f"📄 *अपना आधिकारिक डिजिटल पर्चा (PDF) देखने और डाउनलोड करने के लिए यहाँ टैप करें:*\n"
+            f"👉 {rx_link}\n\n"
+            f"🔒 NMC सत्यापित डिजिटल हस्ताक्षर: {sig_hash}...\n"
+            f"दवाएं समय पर लें। आपके शीघ्र स्वास्थ्य लाभ की कामना करते हैं!"
+        )
+    elif payload.template_type == "chemist_order":
+        items_summary = []
+        for idx, it in enumerate(rx.get("items", [])):
+            med_name = it.get("medicine_name", "")
+            gen_name = it.get("generic_name", "")
+            qty = f"{it.get('duration_days', 5)} days"
+            items_summary.append(f"{idx+1}. {med_name} ({gen_name}) - {qty}")
+        items_str = "\n".join(items_summary) if items_summary else "Medicines as per digital prescription"
+
+        msg = (
+            f"💊 *Chemist Express Dispense Order*\n"
+            f"Patient: *{patient_name}* ({clean_phone})\n"
+            f"Prescribing Doctor: *{doctor_name}* ({clinic_name})\n"
+            f"Rx Reference: #{rx_number}\n\n"
+            f"📋 *Prescription Medications:*\n{items_str}\n\n"
+            f"📄 Full Verified Doctor Letterhead PDF:\n👉 {rx_link}\n\n"
+            f"Please verify generic stocks and prepare for express patient pickup."
+        )
+    else:  # Standard
+        msg = (
+            f"🏥 *Official Digital Prescription - {clinic_name}*\n"
+            f"Dear {patient_name},\n\n"
+            f"Dr. {doctor_name} has signed your consultation prescription.\n"
+            f"Diagnosis: *{diagnosis}*\n"
+            f"Prescription Number: *#{rx_number}*\n\n"
+            f"📄 *View, Print & Download Official A4/A5 PDF:*\n"
+            f"👉 {rx_link}\n\n"
+            f"🔒 Tamper-Proof Cryptographic Hash: {sig_hash}...\n"
+            f"Take medications strictly as instructed after meals. Wishing you vibrant health!"
+        )
+
+    if payload.custom_note:
+        msg += f"\n\n💬 *Note from Clinic:* {payload.custom_note}"
+
+    encoded_msg = urllib.parse.quote(msg)
+    wa_url = f"https://wa.me/{clean_phone}?text={encoded_msg}"
+
+    return {
+        "status": "success",
+        "prescription_number": rx_number,
+        "recipient_phone": clean_phone,
+        "recipient_type": payload.recipient_type,
+        "template_type": payload.template_type,
+        "message_text": msg,
+        "whatsapp_url": wa_url,
+        "dispatched_at": datetime.now().isoformat()
+    }
+
 
 # ================= DOCTOR'S PERSONAL RX COMBOS (TEMPLATES) =================
 
