@@ -25,6 +25,7 @@ import {
   RotateCw
 } from "lucide-react";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function DashboardPatientsPage() {
   const [patients, setPatients] = useState<PatientProfile[]>(SEED_PATIENTS);
@@ -38,7 +39,7 @@ export default function DashboardPatientsPage() {
     async function loadRealPatients() {
       setIsLoading(true);
       try {
-        const res = await fetch("http://localhost:8000/api/v1/clinic/desk-queue");
+        const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
         if (res.ok) {
           const json = await res.json();
           const queue = json.queue || [];

@@ -23,6 +23,7 @@ import {
   Tv,
   Receipt
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 // Web Audio API chime generator
 function playTokenCallChime() {
@@ -126,7 +127,7 @@ export default function ReceptionDeskPage() {
     }));
 
     // Trigger API call in background
-    fetch("http://localhost:8000/api/v1/clinic/call-token", {
+    fetch(`${API_BASE_URL}/api/v1/clinic/call-token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ appointment_number: aptNumber })
@@ -180,7 +181,7 @@ export default function ReceptionDeskPage() {
     setShowWalkInModal(false);
 
     // Call API
-    fetch("http://localhost:8000/api/v1/clinic/walk-in", {
+    fetch(`${API_BASE_URL}/api/v1/clinic/walk-in`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

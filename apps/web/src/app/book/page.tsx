@@ -19,6 +19,7 @@ import {
   Sparkles,
   ShieldAlert
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 const DOCTORS_MAP: Record<string, any> = {
   "dr-rahul-sharma": {
@@ -86,7 +87,7 @@ function BookingForm() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/appointments/book", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/appointments/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
