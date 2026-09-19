@@ -6,7 +6,14 @@ export interface MedicineItem {
   strength: string;
   category: "Dermatology" | "Antibiotics" | "Analgesic / Anti-pyretic" | "Gastrointestinal" | "Dental" | "Pediatric" | "Cardio-Diabetic" | "Respiratory";
   common_instructions: string;
+  mrp?: number;
+  direct_price?: number;
+  manufacturer?: string;
+  rx_required?: boolean;
+  pack_size?: string;
+  therapeutic_uses?: string[];
 }
+
 
 export const INDIAN_MEDICINES: MedicineItem[] = [
   // Dermatology
@@ -244,3 +251,57 @@ export const COMMON_LAB_TESTS: LabTestItem[] = [
   { id: "lab-09", test_name: "Urine Routine & Microscopic Examination", category: "Microbiology", sample_type: "Midstream Urine", turnaround_hours: 4, fasting_required: false, mrp_inr: 200 },
   { id: "lab-10", test_name: "Digital X-Ray (Chest PA View)", category: "Radiology", sample_type: "Radiographic Scan", turnaround_hours: 2, fasting_required: false, mrp_inr: 400 }
 ];
+
+export interface EnrichedMedicine extends MedicineItem {
+  mrp: number;
+  direct_price: number;
+  discount_percent: number;
+  manufacturer: string;
+  rx_required: boolean;
+  pack_size: string;
+  in_stock: boolean;
+}
+
+const MEDICINE_METADATA_MAP: Record<string, { mrp: number; direct_price: number; manufacturer: string; rx: boolean; pack: string }> = {
+  "med-001": { mrp: 120, direct_price: 96, manufacturer: "Dr. Reddy's", rx: true, pack: "Strip of 10 Capsules" },
+  "med-002": { mrp: 210, direct_price: 175, manufacturer: "Menarini", rx: true, pack: "20g Tube" },
+  "med-003": { mrp: 260, direct_price: 210, manufacturer: "Alkem Labs", rx: true, pack: "20g Gel Tube" },
+  "med-004": { mrp: 42, direct_price: 35, manufacturer: "Alkem Labs", rx: false, pack: "Strip of 10 Tablets" },
+  "med-005": { mrp: 340, direct_price: 280, manufacturer: "Glenmark", rx: false, pack: "30g Cream Tube" },
+  "med-006": { mrp: 850, direct_price: 690, manufacturer: "Cipla", rx: false, pack: "60ml Solution Bottle" },
+  "med-007": { mrp: 115, direct_price: 95, manufacturer: "Mankind", rx: false, pack: "100ml Lotion Bottle" },
+  "med-008": { mrp: 228, direct_price: 185, manufacturer: "GSK Pharmaceuticals", rx: true, pack: "Strip of 10 Tablets" },
+  "med-009": { mrp: 132, direct_price: 110, manufacturer: "Alembic Pharma", rx: true, pack: "Strip of 3 Tablets" },
+  "med-010": { mrp: 185, direct_price: 148, manufacturer: "Alkem Labs", rx: true, pack: "Strip of 10 Tablets" },
+  "med-011": { mrp: 24, direct_price: 19, manufacturer: "Sanofi India", rx: true, pack: "Strip of 15 Tablets" },
+  "med-012": { mrp: 34, direct_price: 30, manufacturer: "Micro Labs", rx: false, pack: "Strip of 15 Tablets" },
+  "med-013": { mrp: 125, direct_price: 102, manufacturer: "Ipca Labs", rx: true, pack: "Strip of 10 Tablets" },
+  "med-014": { mrp: 148, direct_price: 120, manufacturer: "Dr. Reddy's", rx: true, pack: "Strip of 15 Dispersible Tabs" },
+  "med-015": { mrp: 160, direct_price: 130, manufacturer: "Alkem Labs", rx: false, pack: "Strip of 15 Tablets" },
+  "med-021": { mrp: 55, direct_price: 45, manufacturer: "USV Pharma", rx: true, pack: "Strip of 20 Tablets" },
+  "med-022": { mrp: 230, direct_price: 189, manufacturer: "Glenmark", rx: true, pack: "Strip of 30 Tablets" },
+};
+
+export function getEnrichedMedicines(): EnrichedMedicine[] {
+  return INDIAN_MEDICINES.map((med) => {
+    const meta = MEDICINE_METADATA_MAP[med.id] || {
+      mrp: 90,
+      direct_price: 75,
+      manufacturer: "Cipla / Sun Pharma",
+      rx: true,
+      pack: "Strip of 10 Units"
+    };
+    const discount = Math.round(((meta.mrp - meta.direct_price) / meta.mrp) * 100);
+    return {
+      ...med,
+      mrp: meta.mrp,
+      direct_price: meta.direct_price,
+      discount_percent: discount,
+      manufacturer: meta.manufacturer,
+      rx_required: meta.rx,
+      pack_size: meta.pack,
+      in_stock: true,
+    };
+  });
+}
+

@@ -21,7 +21,11 @@ import {
   ExternalLink,
   Stethoscope,
   Tv,
-  Receipt
+  Receipt,
+  Star,
+  Send,
+  Calendar,
+  X
 } from "lucide-react";
 
 // Web Audio API chime generator
@@ -117,6 +121,89 @@ export default function DashboardDeskPage() {
   const [walkInFee, setWalkInFee] = useState(600);
   const [walkInPaymentMode, setWalkInPaymentMode] = useState<"cash" | "upi">("upi");
   const [calledTokenMsg, setCalledTokenMsg] = useState<string | null>(null);
+
+  // Automated WhatsApp Follow-up & Review Booster (Option B)
+  const [showAutomationsModal, setShowAutomationsModal] = useState(false);
+  const [automationsList, setAutomationsList] = useState<any[]>([
+    {
+      id: "auto-rx-101",
+      appointment_number: "APT-DERMA-101",
+      patient_name: "Amit Rawat",
+      patient_phone: "+919123456780",
+      trigger_type: "rx_dispatch",
+      title: "Instant Rx WhatsApp Dispatch",
+      badge: "Immediate",
+      scheduled_for: "Immediate (0 Min)",
+      status: "sent",
+      sent_at: "10:35 AM",
+      message_text: "Namaste Amit Rawat,\nYour digital prescription from Dr. Rahul Sharma at DermaCare Skin & Laser Clinic is ready.\n\n📄 View & Download Rx: http://localhost:3000/prescriptions/RX-2026-09-1024\n💊 Please take medicines as advised after meals.\n\nWishing you good health!",
+      whatsapp_url: "https://wa.me/919123456780?text=" + encodeURIComponent("Namaste Amit Rawat,\nYour digital prescription is ready: http://localhost:3000/prescriptions/RX-2026-09-1024")
+    },
+    {
+      id: "auto-rev-101",
+      appointment_number: "APT-DERMA-101",
+      patient_name: "Amit Rawat",
+      patient_phone: "+919123456780",
+      trigger_type: "google_review",
+      title: "Google 5-Star Review Booster",
+      badge: "Evening Booster",
+      scheduled_for: "Today at 19:30 PM",
+      status: "scheduled",
+      message_text: "Namaste Amit Rawat! We hope you are recovering well after your visit with Dr. Rahul Sharma at DermaCare. ⭐ If you had a helpful and comforting experience, could you please take 15 seconds to support our clinic with a 5-star Google review? 👉 https://g.page/r/derma-care-dehradun/review",
+      whatsapp_url: "https://wa.me/919123456780?text=" + encodeURIComponent("Namaste Amit Rawat! If you had a good experience with Dr. Rahul Sharma, please leave us a 5-star Google review: https://g.page/r/derma-care-dehradun/review")
+    },
+    {
+      id: "auto-flw-101",
+      appointment_number: "APT-DERMA-101",
+      patient_name: "Amit Rawat",
+      patient_phone: "+919123456780",
+      trigger_type: "followup_reminder",
+      title: "Follow-Up Validity Expiry Alert",
+      badge: "Day 5 Reminder",
+      scheduled_for: "24-Sep-2026 (Day 5)",
+      status: "scheduled",
+      message_text: "Namaste Amit Rawat, gentle reminder from DermaCare Clinic: Your consultation follow-up validity with Dr. Rahul Sharma expires in 48 hours. Tap here to view queue & reserve your priority token: http://localhost:3000/doctors/dr-rahul-sharma",
+      whatsapp_url: "https://wa.me/919123456780?text=" + encodeURIComponent("Namaste Amit Rawat, your follow-up validity expires in 48h. Reserve token: http://localhost:3000/doctors/dr-rahul-sharma")
+    }
+  ]);
+  const [loadingAutomations, setLoadingAutomations] = useState(false);
+  const [dispatchingId, setDispatchingId] = useState<string | null>(null);
+
+  const fetchAutomations = async () => {
+    try {
+      setLoadingAutomations(true);
+      const res = await fetch("http://127.0.0.1:8000/api/v1/clinic/automations");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.automations) setAutomationsList(json.automations);
+      }
+    } catch {
+      // Keep local mock
+    } finally {
+      setLoadingAutomations(false);
+    }
+  };
+
+  const handleTriggerAutomation = async (auto: any) => {
+    setDispatchingId(auto.id);
+    try {
+      await fetch(`http://127.0.0.1:8000/api/v1/clinic/trigger-automation/${auto.id}`, {
+        method: "POST"
+      }).catch(() => {});
+      setAutomationsList(prev =>
+        prev.map(a => a.id === auto.id ? { ...a, status: "sent" } : a)
+      );
+      if (auto.whatsapp_url) {
+        window.open(auto.whatsapp_url, "_blank");
+      }
+    } catch {
+      if (auto.whatsapp_url) {
+        window.open(auto.whatsapp_url, "_blank");
+      }
+    } finally {
+      setDispatchingId(null);
+    }
+  };
 
   const activeInConsultation = queue.find(q => q.status === "in_consultation");
   const waitingPatients = queue.filter(q => q.status === "waiting");
@@ -336,6 +423,21 @@ export default function DashboardDeskPage() {
             <Receipt className="h-4 w-4" />
             <span>💵 Settle Shift</span>
           </Link>
+
+          <button
+            onClick={() => {
+              fetchAutomations();
+              setShowAutomationsModal(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition"
+            title="View scheduled WhatsApp follow-ups & Google review boosters"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>⚡ WhatsApp Follow-ups</span>
+            <span className="rounded-full bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.2">
+              {automationsList.filter(a => a.status === "scheduled").length}
+            </span>
+          </button>
 
           <button
             onClick={() => setShowQrModal(true)}
@@ -632,6 +734,107 @@ export default function DashboardDeskPage() {
               <button
                 onClick={() => setShowQrModal(false)}
                 className="flex-1 rounded-full border border-black/[0.1] dark:border-white/[0.12] py-2.5 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⚡ OPTION B: AUTOMATED WHATSAPP FOLLOW-UP & GOOGLE REVIEW MODAL */}
+      {showAutomationsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="w-full max-w-3xl rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 sm:p-7 shadow-apple-modal max-h-[85vh] flex flex-col justify-between space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
+                    Automated WhatsApp Follow-Up & Google Review Engine
+                  </h3>
+                  <p className="text-xs text-[#86868B] mt-0.5">
+                    Live schedule queue: Rx Dispatches, Evening 5-Star Reviews & Follow-Up Reminders
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAutomationsModal(false)}
+                className="rounded-full p-2 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Content List */}
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {automationsList.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-[#F5F5F7]/60 dark:bg-[#2C2C2E]/60 p-4 space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                        item.trigger_type === "rx_dispatch"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : item.trigger_type === "google_review"
+                          ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                          : "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300"
+                      }`}>
+                        {item.trigger_type === "google_review" && <Star className="h-3 w-3 fill-current" />}
+                        {item.trigger_type === "followup_reminder" && <Calendar className="h-3 w-3" />}
+                        <span>{item.title}</span>
+                      </span>
+
+                      <span className="font-mono text-xs font-bold text-[#1D1D1F] dark:text-white">
+                        {item.patient_name}
+                      </span>
+                      <span className="text-[11px] text-[#86868B]">({item.patient_phone})</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-[#86868B] flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {item.scheduled_for}
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        item.status === "sent"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                          : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
+                      }`}>
+                        {item.status === "sent" ? "✓ Sent" : "Scheduled"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-white dark:bg-[#1C1C1E] p-3 text-xs text-[#1D1D1F] dark:text-white border border-black/[0.04] dark:border-white/[0.04] font-mono whitespace-pre-line text-[11px]">
+                    {item.message_text}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleTriggerAutomation(item)}
+                      disabled={dispatchingId === item.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold shadow-sm active:scale-95 transition cursor-pointer"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      <span>{dispatchingId === item.id ? "Launching..." : "Send Now via WhatsApp"}</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-3 flex justify-between items-center text-xs text-[#86868B]">
+              <span>Powered by WhatsApp Direct Bridge • 0% Commission</span>
+              <button
+                type="button"
+                onClick={() => setShowAutomationsModal(false)}
+                className="rounded-full border border-black/[0.1] dark:border-white/[0.12] px-4 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition cursor-pointer"
               >
                 Close
               </button>

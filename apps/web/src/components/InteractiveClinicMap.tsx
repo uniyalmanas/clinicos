@@ -45,12 +45,29 @@ export default function InteractiveClinicMap({ doctors, activeDoctor, onSelectDo
   // Approximate relative canvas coordinates for Dehradun map simulation
   // Center: Clock Tower (lat: 30.3255, lng: 78.0436)
   const getMapCoordinates = (doc: MapDoctor) => {
-    if (doc.locality.includes("Rajpur")) {
+    const loc = (doc.locality || "").toLowerCase();
+    if (loc.includes("rajpur")) {
       return { x: 58, y: 28, distance: "1.2 km (4 mins)" };
-    } else if (doc.locality.includes("EC Road")) {
+    } else if (loc.includes("ec road")) {
       return { x: 68, y: 62, distance: "0.9 km (3 mins)" };
-    } else if (doc.locality.includes("Chakrata")) {
+    } else if (loc.includes("chakrata")) {
       return { x: 28, y: 44, distance: "2.6 km (8 mins)" };
+    } else if (loc.includes("ballupur")) {
+      return { x: 22, y: 36, distance: "3.5 km (11 mins)" };
+    } else if (loc.includes("dalanwala")) {
+      return { x: 74, y: 42, distance: "1.8 km (5 mins)" };
+    } else if (loc.includes("saharanpur")) {
+      return { x: 42, y: 78, distance: "3.1 km (10 mins)" };
+    } else if (loc.includes("subhash")) {
+      return { x: 52, y: 45, distance: "0.8 km (2 mins)" };
+    } else if (loc.includes("haridwar")) {
+      return { x: 72, y: 84, distance: "4.2 km (12 mins)" };
+    } else if (loc.includes("gms road")) {
+      return { x: 32, y: 65, distance: "3.8 km (10 mins)" };
+    } else if (loc.includes("patel nagar")) {
+      return { x: 40, y: 68, distance: "2.9 km (8 mins)" };
+    } else if (loc.includes("vasant vihar")) {
+      return { x: 24, y: 55, distance: "3.4 km (9 mins)" };
     }
     return { x: 50, y: 50, distance: "1.5 km" };
   };

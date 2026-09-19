@@ -17,6 +17,7 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.beds import router as beds_router
 from app.api.v1.pharmacy import router as pharmacy_router
 from app.api.v1.abdm import router as abdm_router
+from app.api.v1.marketplace import router as marketplace_router
 from app.db.init_db import init_database
 
 # Auto-initialize SQLite database tables and seeds on launch
@@ -57,6 +58,7 @@ app.include_router(documents_router, prefix=settings.API_V1_STR)
 app.include_router(beds_router, prefix=settings.API_V1_STR)
 app.include_router(pharmacy_router, prefix=settings.API_V1_STR)
 app.include_router(abdm_router, prefix=settings.API_V1_STR)
+app.include_router(marketplace_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():

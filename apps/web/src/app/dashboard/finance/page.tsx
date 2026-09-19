@@ -20,7 +20,12 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Pill,
-  Stethoscope
+  Stethoscope,
+  Users,
+  Send,
+  Copy,
+  Check,
+  Clock
 } from "lucide-react";
 
 export default function DashboardFinancePage() {
@@ -37,6 +42,79 @@ export default function DashboardFinancePage() {
   const [categoryBreakdown, setCategoryBreakdown] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Doctor Visiting Consultant Revenue Sharing State (Option C)
+  const [doctorPayouts, setDoctorPayouts] = useState<any[]>([
+    {
+      id: "payout-dr-rahul",
+      doctor_slug: "dr-rahul-sharma",
+      doctor_name: "Dr. Rahul Sharma",
+      specialty: "Dermatologist & Hair Specialist",
+      roster_type: "in_house",
+      roster_label: "Founder & Resident Lead",
+      schedule: "Daily OPD (Mon - Sat, 10 AM - 4 PM)",
+      split_percentage: 100.0,
+      clinic_percentage: 0.0,
+      patients_seen: 24,
+      consultation_fee: 600.0,
+      gross_collections: 14400.0,
+      doctor_share: 14400.0,
+      clinic_share: 0.0,
+      status: "settled",
+      payment_mode: "in_house_retention",
+      closing_sms: "Dr. Rahul Sharma, DermaCare Clinic Closing Summary: 24 OPD patients seen today. Total Collections: ₹14,400. All funds retained in clinic operating accounts. Have a great evening!",
+      whatsapp_url: "https://wa.me/919876543210?text=" + encodeURIComponent("Dr. Rahul Sharma, DermaCare Clinic Closing Summary: 24 OPD patients seen today. Total Collections: ₹14,400. All funds retained in clinic operating accounts. Have a great evening!")
+    },
+    {
+      id: "payout-dr-neha",
+      doctor_slug: "dr-neha-kapoor",
+      doctor_name: "Dr. Neha Kapoor",
+      specialty: "Pediatric Dermatology & Child Care",
+      roster_type: "visiting",
+      roster_label: "Visiting Specialist (80/20 Split)",
+      schedule: "Mon / Wed / Sat (4 PM - 7 PM)",
+      split_percentage: 80.0,
+      clinic_percentage: 20.0,
+      patients_seen: 14,
+      consultation_fee: 700.0,
+      gross_collections: 9800.0,
+      doctor_share: 7840.0,
+      clinic_share: 1960.0,
+      status: "pending",
+      payment_mode: "upi",
+      closing_sms: "Namaste Dr. Neha Kapoor. Today's OPD Closing Summary at DermaCare: 14 patients seen. Gross collections: ₹9,800. Your 80% Share: ₹7,840. Clinic Share: ₹1,960. Payout ready for UPI transfer. Thank you!",
+      whatsapp_url: "https://wa.me/919876543211?text=" + encodeURIComponent("Namaste Dr. Neha Kapoor. Today's OPD Closing Summary at DermaCare: 14 patients seen. Gross collections: ₹9,800. Your 80% Share: ₹7,840. Clinic Share: ₹1,960. Payout ready for UPI transfer. Thank you!")
+    },
+    {
+      id: "payout-dr-vikram",
+      doctor_slug: "dr-vikram-negi",
+      doctor_name: "Dr. Vikram Negi",
+      specialty: "Cosmetic & Plastic Surgery Specialist",
+      roster_type: "visiting",
+      roster_label: "Visiting Specialist (75/25 Split)",
+      schedule: "Tue / Thu / Sat (5 PM - 8 PM)",
+      split_percentage: 75.0,
+      clinic_percentage: 25.0,
+      patients_seen: 6,
+      consultation_fee: 1200.0,
+      gross_collections: 7200.0,
+      doctor_share: 5400.0,
+      clinic_share: 1800.0,
+      status: "pending",
+      payment_mode: "upi",
+      closing_sms: "Namaste Dr. Vikram Negi. Today's Surgical/OPD Closing Summary at DermaCare: 6 procedures/consults seen. Gross collections: ₹7,200. Your 75% Share: ₹5,400. Clinic Share: ₹1,800. Payout ready for UPI transfer. Thank you!",
+      whatsapp_url: "https://wa.me/919876543212?text=" + encodeURIComponent("Namaste Dr. Vikram Negi. Today's Surgical/OPD Closing Summary at DermaCare: 6 procedures/consults seen. Gross collections: ₹7,200. Your 75% Share: ₹5,400. Clinic Share: ₹1,800. Payout ready for UPI transfer. Thank you!")
+    }
+  ]);
+  const [doctorPayoutsSummary, setDoctorPayoutsSummary] = useState({
+    total_patients: 44,
+    total_gross_collections: 31400,
+    total_visiting_doctor_payouts: 13240,
+    total_clinic_retained: 18160
+  });
+  const [settlingDoctorSlug, setSettlingDoctorSlug] = useState<string | null>(null);
+  const [payoutToast, setPayoutToast] = useState<string | null>(null);
+  const [copiedDoctorId, setCopiedDoctorId] = useState<string | null>(null);
 
   // Form state
   const [category, setCategory] = useState("Consumables");
@@ -69,11 +147,60 @@ export default function DashboardFinancePage() {
         const settleJson = await settleRes.json();
         setSettlements(settleJson.settlements || []);
       }
+
+      const docRes = await fetch("http://localhost:8000/api/v1/clinic/doctor-payouts");
+      if (docRes.ok) {
+        const docJson = await docRes.json();
+        if (docJson.doctors) setDoctorPayouts(docJson.doctors);
+        if (docJson.summary) setDoctorPayoutsSummary(docJson.summary);
+      }
     } catch (e) {
       console.error("Error loading expenses ledger:", e);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSettleDoctorPayout = async (doc: any) => {
+    setSettlingDoctorSlug(doc.doctor_slug);
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/clinic/settle-doctor-payout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctor_slug: doc.doctor_slug,
+          doctor_name: doc.doctor_name,
+          amount: doc.doctor_share,
+          payment_mode: "upi",
+          notes: `Settled OPD payout for ${doc.patients_seen} patients`
+        })
+      });
+
+      if (res.ok) {
+        setDoctorPayouts(prev =>
+          prev.map(d => d.doctor_slug === doc.doctor_slug ? { ...d, status: "settled", payment_mode: "upi" } : d)
+        );
+        setPayoutToast(`Settled ₹${doc.doctor_share.toLocaleString("en-IN")} payout to ${doc.doctor_name} via UPI.`);
+        setTimeout(() => setPayoutToast(null), 4000);
+        fetchLedger();
+      }
+    } catch (e) {
+      console.error("Error settling doctor payout:", e);
+      // Optimistic fallback
+      setDoctorPayouts(prev =>
+        prev.map(d => d.doctor_slug === doc.doctor_slug ? { ...d, status: "settled", payment_mode: "upi" } : d)
+      );
+      setPayoutToast(`Settled ₹${doc.doctor_share.toLocaleString("en-IN")} payout to ${doc.doctor_name} (Local).`);
+      setTimeout(() => setPayoutToast(null), 4000);
+    } finally {
+      setSettlingDoctorSlug(null);
+    }
+  };
+
+  const handleCopyClosingSms = (doc: any) => {
+    navigator.clipboard.writeText(doc.closing_sms || "");
+    setCopiedDoctorId(doc.id);
+    setTimeout(() => setCopiedDoctorId(null), 2500);
   };
 
   useEffect(() => {
@@ -505,6 +632,170 @@ export default function DashboardFinancePage() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* 5. VISITING CONSULTANT REVENUE SHARING & DAILY DOCTOR PAYOUTS (OPTION C) */}
+      <div className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-4">
+        <div className="p-5 border-b border-black/[0.06] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-apple-blue/10 text-apple-blue dark:text-sky-300">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                  Visiting Consultant Revenue Splits & Daily Doctor Payouts
+                </h2>
+                <span className="rounded-full bg-apple-blue/10 text-apple-blue dark:text-sky-300 text-[10px] font-bold px-2 py-0.5">
+                  Automated OPD Split
+                </span>
+              </div>
+              <p className="text-xs text-[#86868B] mt-0.5">
+                Calculates doctor fee splits (e.g. 80/20) with 1-click WhatsApp closing SMS & automatic expense voucher recording.
+              </p>
+            </div>
+          </div>
+
+          {payoutToast && (
+            <div className="rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 px-3.5 py-1 text-xs font-bold animate-in fade-in flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>{payoutToast}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Aggregate KPI Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-5">
+          <div className="p-3.5 rounded-2xl bg-[#ECEEF2]/40 dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06]">
+            <span className="text-[10px] uppercase font-bold text-[#86868B]">Total OPD Patients</span>
+            <div className="text-xl font-black text-[#1D1D1F] dark:text-white mt-1">
+              {doctorPayoutsSummary.total_patients} Patients
+            </div>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-[#ECEEF2]/40 dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.06]">
+            <span className="text-[10px] uppercase font-bold text-[#86868B]">Gross Consultations</span>
+            <div className="text-xl font-black text-[#0071E3] dark:text-[#2997FF] mt-1">
+              ₹{doctorPayoutsSummary.total_gross_collections?.toLocaleString("en-IN")}
+            </div>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+            <span className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-300">Visiting Doctors Payout</span>
+            <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
+              ₹{doctorPayoutsSummary.total_visiting_doctor_payouts?.toLocaleString("en-IN")}
+            </div>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+            <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-300">Clinic Retained Facility Margin</span>
+            <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              ₹{doctorPayoutsSummary.total_clinic_retained?.toLocaleString("en-IN")}
+            </div>
+          </div>
+        </div>
+
+        {/* Doctors Breakdown Table */}
+        <div className="overflow-x-auto pb-2">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-black/[0.06] bg-[#ECEEF2]/40 text-[#86868B] dark:border-white/[0.06] dark:bg-white/[0.02]">
+              <tr>
+                <th className="px-5 py-3.5 font-bold">Doctor & Specialty</th>
+                <th className="px-4 py-3.5 font-bold">Roster & Contract</th>
+                <th className="px-4 py-3.5 font-bold text-center">OPD Patients</th>
+                <th className="px-4 py-3.5 font-bold text-right">Gross OPD</th>
+                <th className="px-4 py-3.5 font-bold text-right">Doctor Cut</th>
+                <th className="px-4 py-3.5 font-bold text-right">Clinic Cut</th>
+                <th className="px-4 py-3.5 font-bold text-center">Status</th>
+                <th className="px-5 py-3.5 font-bold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+              {doctorPayouts.map((doc) => (
+                <tr key={doc.id} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition">
+                  <td className="px-5 py-4">
+                    <div className="font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
+                      <Stethoscope className="h-3.5 w-3.5 text-apple-blue" />
+                      <span>{doc.doctor_name}</span>
+                    </div>
+                    <div className="text-[11px] text-[#86868B] mt-0.5">
+                      {doc.specialty}
+                    </div>
+                    <div className="text-[10px] text-[#86868B] font-mono mt-0.5">
+                      {doc.schedule}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      doc.roster_type === "in_house"
+                        ? "bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
+                    }`}>
+                      {doc.roster_label || (doc.roster_type === "in_house" ? "In-House" : `Visiting (${doc.split_percentage}%)`)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-center font-mono font-bold text-[#1D1D1F] dark:text-white">
+                    {doc.patients_seen}
+                  </td>
+                  <td className="px-4 py-4 text-right font-mono font-bold text-[#1D1D1F] dark:text-white">
+                    ₹{doc.gross_collections?.toLocaleString("en-IN")}
+                  </td>
+                  <td className="px-4 py-4 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
+                    ₹{doc.doctor_share?.toLocaleString("en-IN")}
+                  </td>
+                  <td className="px-4 py-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    ₹{doc.clinic_share?.toLocaleString("en-IN")}
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      doc.status === "settled"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                    }`}>
+                      {doc.status === "settled" ? "✓ Settled" : "⏳ Pending Payout"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      {doc.status !== "settled" && doc.roster_type === "visiting" && (
+                        <button
+                          type="button"
+                          onClick={() => handleSettleDoctorPayout(doc)}
+                          disabled={settlingDoctorSlug === doc.doctor_slug}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm active:scale-95 transition cursor-pointer"
+                        >
+                          <CreditCard className="h-3 w-3" />
+                          <span>{settlingDoctorSlug === doc.doctor_slug ? "Settling..." : `Pay ₹${doc.doctor_share}`}</span>
+                        </button>
+                      )}
+
+                      <a
+                        href={doc.whatsapp_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 text-[11px] font-bold transition active:scale-95 cursor-pointer"
+                        title="Send OPD Daily Closing SMS to Doctor via WhatsApp"
+                      >
+                        <Send className="h-3 w-3" />
+                        <span>SMS / WA</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopyClosingSms(doc)}
+                        className="rounded-lg p-1 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition"
+                        title="Copy Closing SMS Text"
+                      >
+                        {copiedDoctorId === doc.id ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

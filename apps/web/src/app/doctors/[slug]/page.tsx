@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import DoctorReviewsSection from "@/components/DoctorReviewsSection";
 import AIReceptionistWidget from "@/components/AIReceptionistWidget";
+import { DOCTORS_MAP, DEHRADUN_DOCTORS } from "@/data/doctors";
 
 // Server-side seed data map
 const SEED_DOCTORS: Record<string, any> = {
@@ -117,16 +118,12 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  return [
-    { slug: "dr-rahul-sharma" },
-    { slug: "dr-aditi-joshi" },
-    { slug: "dr-vikram-sethi" },
-  ];
+  return DEHRADUN_DOCTORS.map(d => ({ slug: d.slug }));
 }
 
 export default async function DoctorProfilePage({ params }: Props) {
   const { slug } = await params;
-  const doctor = SEED_DOCTORS[slug] || {
+  const doctor = DOCTORS_MAP[slug] || SEED_DOCTORS[slug] || {
     slug: slug,
     title: "Dr.",
     full_name: "Dr. Rahul Sharma",

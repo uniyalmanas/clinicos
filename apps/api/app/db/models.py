@@ -199,3 +199,39 @@ class PharmacyDispense(Base):
     status = Column(String, default="dispensed") # dispensed, pending, cancelled
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class MarketplaceInquiry(Base):
+    __tablename__ = "marketplace_inquiries"
+
+    id = Column(String, primary_key=True, index=True)
+    inquiry_token = Column(String, unique=True, index=True) # e.g. COS-MED-4912
+    inquiry_type = Column(String, index=True) # "medicine" or "lab_test"
+    patient_name = Column(String, nullable=False)
+    patient_phone = Column(String, nullable=False)
+    locality = Column(String, default="Rajpur Road, Dehradun")
+    target_entity_name = Column(String, nullable=False) # Pharmacy or Lab Name
+    target_entity_phone = Column(String, nullable=False)
+    items = Column(JSON, default=list) # [{name, qty, form, price}]
+    prescription_preview = Column(Text, nullable=True) # text or base64 data preview
+    notes = Column(Text, nullable=True)
+    channel = Column(String, default="whatsapp") # "whatsapp", "call", "counter_slip"
+    status = Column(String, default="dispatched") # "dispatched", "contacted", "fulfilled"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class PartnerApplication(Base):
+    __tablename__ = "partner_applications"
+
+    id = Column(String, primary_key=True, index=True)
+    partner_type = Column(String, index=True) # "pharmacy" or "diagnostic_lab"
+    business_name = Column(String, nullable=False)
+    contact_person = Column(String, nullable=False)
+    phone = Column(String, nullable=False)
+    whatsapp = Column(String, nullable=False)
+    locality = Column(String, nullable=False)
+    address = Column(String, nullable=False)
+    license_number = Column(String, nullable=True) # Drug License or NABL ID
+    home_service = Column(Boolean, default=True) # Home delivery / sample collection
+    is_verified = Column(Boolean, default=True)
+    status = Column(String, default="verified") # "pending", "verified", "rejected"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
