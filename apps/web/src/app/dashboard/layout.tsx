@@ -70,14 +70,12 @@ export default function DashboardLayout({
   };
 
   const navItems = [
-    { label: "OPD Overview", href: "/dashboard", icon: Building2 },
-    { label: "Reception Counter Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Chime" },
-    { label: "Doctor Chambers", href: "/dashboard/chambers", icon: Stethoscope, badge: "Live OPD" },
-    { label: "Inpatient Bed Matrix", href: "/dashboard/beds", icon: Bed, badge: "Wards" },
-    { label: "Patient EMR Records", href: "/dashboard/patients", icon: Users },
-    { label: "Clinic Cashflow & P&L", href: "/dashboard/finance", icon: CreditCard },
-    { label: "Pharmacy & Lab Orders", href: "/dashboard/pharmacy", icon: Pill },
-    { label: "Clinic Settings & QR", href: "/dashboard/settings", icon: Settings },
+    { label: "Reception Token Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Chime" },
+    { label: "Doctor Chamber (Speed Rx)", href: "/dashboard/chambers", icon: Stethoscope, badge: "OPD" },
+    { label: "Waiting Lounge Smart TV", href: "/display/waiting-room", icon: Building2, badge: "TV" },
+    { label: "Day Closing & Drawer Cash", href: "/dashboard/finance", icon: CreditCard, badge: "9 PM" },
+    { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
+    { label: "Patient History Vault", href: "/dashboard/patients", icon: Users },
   ];
 
   return (
