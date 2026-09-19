@@ -1135,7 +1135,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
       </section>
 
       {/* =====================================================================
-          6. CLINICAL EXPERTISE & SPECIALTIES GUIDE (APOLLO 24|7)
+          6. CLINICAL EXPERTISE & SPECIALTIES GUIDE (DOCSPHERE CLINICAL NETWORK)
       ===================================================================== */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#0B0C0E] border-t border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-6xl">
@@ -1146,13 +1146,13 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               Comprehensive Clinical Guide
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
-              Apollo 24|7 Specialities - Expertise You Can Trust
+              DocSphere Specialities — Clinical Expertise You Can Trust
             </h2>
             <p className="mt-4 text-sm sm:text-base text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-              A medical specialty is a specific area of medical practice that mainly focuses on a defined set of diseases, patients, philosophy, or skills. Examples include Paediatrics, Dermatology, Psychiatry, Gynaecology, and more.
+              A clinical specialty represents dedicated medical training focusing on specific organ systems, pathologies, and surgical procedures. DocSphere connects you directly with certified specialists across verified local OPD clinics with zero middleman markup.
             </p>
             <p className="mt-2 text-sm sm:text-base font-semibold text-[#1D1D1F] dark:text-white">
-              Apollo 24|7 offers advanced services for a range of medical specialities, including:
+              DocSphere features verified practitioners across essential medical specialities, including:
             </p>
           </div>
 
@@ -1162,10 +1162,10 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                Dermatology
+                Dermatology & Cosmetology
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                A specialised branch of medicine that focuses on hair, nails, and skin-related disorders. Dermatology also encompasses conditions that affect the thin lining of your mouth, eyelids, and nose.
+                Expert care for skin, hair, and nail conditions. Encompasses clinical evaluations for acne, eczema, fungal infections, hair loss, psoriasis, and non-invasive cosmetic treatments.
               </p>
             </div>
 
@@ -1175,37 +1175,37 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                 Obstetrics and Gynaecology
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                Two major medical specialities that focus on women’s reproductive health. Obstetrics involves care during pregnancy, childbirth and after-delivery, while gynaecology specialises in issues related to women’s reproductive health.
+                Dedicated healthcare across all stages of women’s reproductive health. Encompasses comprehensive prenatal checkups, high-risk pregnancy guidance, PCOS/PCOD management, and fertility advice.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                General Physician / Internal Medicine
+                General Medicine / Physician
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                General Physicians are highly experienced medical doctors who provide a broad range of non-surgical medical and health care to their patients. An internal medicine physician is a specified medical doctor who is highly proficient in internal medicine.
+                Board-certified physicians offering primary medical consultations, viral fever triage, preventive health checks, and ongoing medical management for hypertension and lifestyle diseases.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                Paediatrics
+                Paediatrics & Child Health
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                It majorly focuses on the health and medical care of children, infants, and young adults.
+                Focused medical care for infants, young children, and adolescents. Specializes in developmental milestones, vaccination schedules, nutritional guidance, and pediatric infections.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                Psychiatry
+                Psychiatry & Behavioral Health
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                A specialised area of medicine that focuses majorly on the detection, treatment, and prevention of emotional, behavioural, and mental health disorders.
+                Compassionate, evidence-based care for emotional and psychological well-being. Focuses on clinical management of anxiety, depression, sleep disorders, panic attacks, and chronic stress.
               </p>
             </div>
 
@@ -1215,27 +1215,27 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                 Neurology
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                It is a specific medical branch that focuses on diagnosing and treating nervous system disorders, which includes the brain, nerves, muscles, and blood vessels.
+                Specialized diagnosis and treatment of conditions affecting the brain, spine, and nervous system. Covers chronic migraines, neuropathy, tremors, epilepsy, and post-stroke recovery.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                Endocrinology
+                Endocrinology & Diabetology
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                A specific area of medicine that is related to the study of the endocrine system. The endocrine glands produce hormones that help monitor various functions in the body, including metabolism, growth, and development.
+                Targeted diagnosis and hormone therapy for the endocrine glands. Encompasses thyroid disorders, Type 1 & 2 diabetes management, insulin dose adjustment, and metabolic health.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                Cardiology
+                Cardiology & Heart Care
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                It is a specialty of internal medicine concerned with heart-related disorders. Cardiology focuses on detecting and treating electrophysiology, congenital heart defects, heart failure, coronary artery, valvular heart disease, and other related conditions.
+                Comprehensive cardiovascular health assessments. Covers hypertension regulation, chest discomfort evaluations, lipid profile review, ECG interpretation, and preventive cardiac wellness.
               </p>
             </div>
 
@@ -1245,63 +1245,63 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                 Gastroenterology / GI Medicine
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                A specific branch of medicine that mainly focuses on the functions and diseases of the digestive tract, liver bile ducts, gallbladder, and pancreas.
+                Clinical diagnosis and care for the digestive tract, stomach, intestines, liver, and pancreas. Manages chronic acidity, fatty liver, irritable bowel syndrome, and digestive discomfort.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                COVID Consult
+                Pulmonology & Chest Medicine
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                COVID-19 also known as novel coronavirus may trigger infections of the lower and upper respiratory tracts. If you are experiencing body ache, shortness of breath, dry cough, or fever, you must get an online consultation with the Apollo 24|7 experts.
+                Dedicated pulmonary care for respiratory tract and lung conditions. Expert treatment for persistent cough, asthma, allergic bronchitis, COPD, and post-viral breathing difficulty.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                Orthopaedics
+                Orthopaedics & Joint Care
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                A specific branch of medicine that majorly focuses on treating injuries and diseases related to the musculoskeletal system of the body.
+                Specialized clinical management for musculoskeletal conditions and injuries. Covers arthritis therapy, sports injury rehabilitation, fracture care, slip disc, and joint pain relief.
               </p>
             </div>
 
             <div className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-5 dark:border-white/10 dark:bg-[#161618]">
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#008778]" />
-                Family Physician
+                Family Physician & Primary Care
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                A medical doctor who provides care to people of all age groups and gender. A family physician specialises in diagnosing chronic conditions, checking for signs or symptoms, providing preventative care, and referring people to specialists, if needed.
+                Continuous, holistic healthcare for patients of all ages. Coordinates chronic illness monitoring, family preventive screenings, vaccine schedules, and timely specialty referrals.
               </p>
             </div>
 
           </div>
 
-          {/* Why Choose Online Consultation */}
+          {/* Why Choose DocSphere Consultation */}
           <div className="mt-14 rounded-3xl border border-gray-200/90 bg-gradient-to-br from-gray-50 via-white to-gray-50 p-6 sm:p-8 dark:border-white/10 dark:from-[#161618] dark:to-[#121214]">
             <h3 className="text-xl sm:text-2xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
-              Why Choose Online Consultation?
+              Why Consult Through DocSphere?
             </h3>
             <p className="mt-3 text-sm text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-              There are several ways to reach out to a doctor without the need to visit a hospital or clinic, all thanks to technology. With the online facility available, doctor consultations have become easier, which can help you get the right health care.
+              Experience transparent clinical care without waiting hours in crowded reception halls or paying aggregator booking surcharges. DocSphere connects patients directly with verified neighborhood clinics and independent practitioners.
             </p>
 
             <div className="mt-6">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#008778] dark:text-[#34D399]">
-                Benefits for choosing Apollo 24|7’s online doctor consultations:
+                Key advantages of the DocSphere clinical network:
               </h4>
 
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
-                  "Highly-qualified doctors are available 24x7 for you",
-                  "Emergency medical services are available",
-                  "Get online consultations within 15 minutes",
-                  "Affordable rates and personalised solutions",
-                  "Instant online consultations anytime, anywhere"
+                  "Verified NMC-registered specialists with published clinic fees",
+                  "Real-time live queue counter — wait from home, not crowded rooms",
+                  "Instant digital prescriptions delivered directly on WhatsApp",
+                  "Direct clinic payment via UPI or cash with zero platform commissions",
+                  "Prompt post-consult follow-up assistance and dosage guidance"
                 ].map((benefit, i) => (
                   <div key={i} className="flex items-start gap-2.5 rounded-xl bg-white p-3 border border-gray-100 dark:bg-white/5 dark:border-white/5 shadow-2xs">
                     <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
@@ -1316,10 +1316,10 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
             {/* When to Consult a Doctor */}
             <div className="mt-8 pt-6 border-t border-gray-200/80 dark:border-white/10">
               <h4 className="text-base font-bold text-[#1D1D1F] dark:text-white">
-                When to Consult a Doctor?
+                When to Consult a Specialist?
               </h4>
               <p className="mt-2 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                If your health issues are complicated and your general practitioner feels that it needs immediate medical attention from a specialised doctor, you may be recommended to one. You can also get an online consultation with a medical specialist if you aren’t satisfied with the results.
+                If your symptoms persist, require focused diagnostic workups, or your family doctor advises specialist intervention, booking a verified clinical consultation ensures timely attention. You can schedule direct OPD visits or quick triage with full medical record continuity.
               </p>
             </div>
           </div>
@@ -1330,10 +1330,10 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               How to Consult a Doctor?
             </h3>
             <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#008778] dark:text-[#34D399]">
-              Consult a doctor online with Apollo 24|7
+              Fast, Transparent Access to Verified Healthcare
             </p>
             <p className="mt-2 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-              Prioritise your health by choosing from 100+ medical specialities and 4000+ doctors online. Avail personalised healthcare solutions for any health concern with imperative online doctor consultations at Apollo 24|7.
+              Prioritize your health with instant access to qualified specialists across verified OPD clinics. Enjoy personalized clinical care with direct doctor appointments, real-time waiting tokens, and tamper-proof digital prescriptions.
             </p>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1342,23 +1342,23 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 dark:border-blue-900/30 dark:bg-blue-950/15">
                 <h4 className="text-sm font-bold text-[#0071E3] dark:text-[#2997FF] flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0071E3] text-[11px] font-bold text-white">✓</span>
-                  Steps to book an online doctor consultation:
+                  Steps to book an online consultation / triage:
                 </h4>
                 <ol className="mt-4 space-y-2.5 text-xs text-[#1D1D1F] dark:text-[#E5E5E7] font-medium">
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">1.</span> Choose the doctor
+                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">1.</span> Choose the specialty or doctor
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">2.</span> Book your appointment
+                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">2.</span> Select your preferred consultation slot
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">3.</span> Make the payment
+                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">3.</span> Complete direct appointment confirmation
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">4.</span> Be available in the consultation room on time
+                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">4.</span> Connect with the doctor on time
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">5.</span> Constant follow-ups via text till next 7 days
+                    <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">5.</span> Receive prescription & follow-up care on WhatsApp
                   </li>
                 </ol>
               </div>
@@ -1367,20 +1367,20 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-5 dark:border-emerald-900/30 dark:bg-emerald-950/15">
                 <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white">✓</span>
-                  How to consult a doctor offline through the Apollo 24|7 app or website?
+                  How to visit an in-person clinic through DocSphere:
                 </h4>
                 <ol className="mt-4 space-y-2.5 text-xs text-[#1D1D1F] dark:text-[#E5E5E7] font-medium">
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">1.</span> Choose the medical doctor
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">1.</span> Select the medical specialist or clinic
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">2.</span> Book your appointment
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">2.</span> Book your live counter token online
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">3.</span> Visit the medical doctor at clinic or hospital
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">3.</span> Track live queue status and arrive on schedule
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">4.</span> Make the payment
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">4.</span> Pay consultation fees directly to the clinic
                   </li>
                 </ol>
               </div>
