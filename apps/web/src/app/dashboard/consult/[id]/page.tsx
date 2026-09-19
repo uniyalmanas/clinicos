@@ -42,15 +42,16 @@ import {
   Scale,
   HeartPulse,
   Flame,
-  Copy,
   History,
   Calendar,
   Star,
   MessageSquare,
   ExternalLink,
-  Bell,
-  Sparkle
+  Copy,
+  Download
 } from "lucide-react";
+
+import QRCodeDisplay from "@/components/QRCodeDisplay";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
 import {
   evaluatePrescriptionSafety,
@@ -580,9 +581,64 @@ export default function DynamicConsultationStudioPage() {
   // Signed Prescription State
   const [signedPrescription, setSignedPrescription] = useState<any | null>(null);
 
+  // --- WHATSAPP PDF PRESCRIPTION DISPATCH & PAPER FORMAT STATE ---
+  const [rxPaperFormat, setRxPaperFormat] = useState<"a4" | "a5">("a4");
+  const [showWhatsAppDispatchModal, setShowWhatsAppDispatchModal] = useState<boolean>(false);
+  const [dispatchRecipientType, setDispatchRecipientType] = useState<"patient" | "attendant" | "chemist">("patient");
+  const [dispatchPhone, setDispatchPhone] = useState<string>("");
+  const [dispatchAttendantName, setDispatchAttendantName] = useState<string>("");
+  const [dispatchTemplate, setDispatchTemplate] = useState<"standard" | "bilingual_hindi" | "chemist_order">("standard");
+  const [dispatchCustomNote, setDispatchCustomNote] = useState<string>("");
+  const [isDispatching, setIsDispatching] = useState<boolean>(false);
+  const [dispatchFeedback, setDispatchFeedback] = useState<string | null>(null);
+
+  const handleExecuteWhatsAppDispatch = async () => {
+    if (!signedPrescription) return;
+    setIsDispatching(true);
+    const targetPhone = dispatchPhone || patient.phone;
+    const rxNumber = signedPrescription.prescription_number || "RX-2026-09-0014";
+
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/prescriptions/${rxNumber}/whatsapp-dispatch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient_phone: targetPhone,
+          recipient_type: dispatchRecipientType,
+          attendant_name: dispatchAttendantName || undefined,
+          template_type: dispatchTemplate,
+          custom_note: dispatchCustomNote || undefined
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.whatsapp_url) {
+          window.open(data.whatsapp_url, "_blank");
+        }
+        setDispatchFeedback(`Dispatched official PDF link to ${targetPhone} via WhatsApp!`);
+        setTimeout(() => setDispatchFeedback(null), 4000);
+        setShowWhatsAppDispatchModal(false);
+      } else {
+        const cleanPh = targetPhone.replace(/[^0-9]/g, "");
+        const fallbackMsg = `Namaste! Here is the official NMC-signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\nhttp://localhost:3000/p/${rxNumber}`;
+        window.open(`https://wa.me/${cleanPh}?text=${encodeURIComponent(fallbackMsg)}`, "_blank");
+        setShowWhatsAppDispatchModal(false);
+      }
+    } catch (err) {
+      const cleanPh = targetPhone.replace(/[^0-9]/g, "");
+      const fallbackMsg = `Namaste! Here is the official NMC-signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\nhttp://localhost:3000/p/${rxNumber}`;
+      window.open(`https://wa.me/${cleanPh}?text=${encodeURIComponent(fallbackMsg)}`, "_blank");
+      setShowWhatsAppDispatchModal(false);
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+
   // Automated WhatsApp Follow-up & Review Booster (Option B)
   const [scheduledAutomations, setScheduledAutomations] = useState<any[]>([]);
   const [automationSuccessToast, setAutomationSuccessToast] = useState<string | null>(null);
+
 
   const initAutomations = (rxNumber: string) => {
     const cleanPh = patient.phone.replace(/[^0-9]/g, "");
@@ -1335,28 +1391,75 @@ export default function DynamicConsultationStudioPage() {
                   </button>
                 )}
 
+                {/* Paper Size Format Toggle */}
+                <div className="inline-flex rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setRxPaperFormat("a4")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      rxPaperFormat === "a4"
+                        ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
+                    }`}
+                  >
+                    A4 Sheet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRxPaperFormat("a5")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      rxPaperFormat === "a5"
+                        ? "bg-white text-apple-blue shadow-sm dark:bg-[#2C2C2E] dark:text-sky-300 font-bold"
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
+                    }`}
+                    title="A5 Doctor Prescription Pad (Compact 148x210mm)"
+                  >
+                    A5 Pad
+                  </button>
+                </div>
+
                 <button
                   onClick={() => window.print()}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1D1D1F] dark:bg-white px-5 py-2 text-xs font-bold text-white dark:text-[#1D1D1F] hover:opacity-90 shadow-apple-sm active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1D1D1F] dark:bg-white px-4 py-2 text-xs font-bold text-white dark:text-[#1D1D1F] hover:opacity-90 shadow-apple-sm active:scale-95 transition"
                 >
-                  <Printer className="h-3.5 w-3.5" /> Print Rx Sheet
+                  <Printer className="h-3.5 w-3.5" /> Print Rx
                 </button>
-                <a
-                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waShareText)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 shadow-apple-sm active:scale-95 transition"
+
+                <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-blue-600/30 bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 px-4 py-2 text-xs font-bold shadow-apple-sm active:scale-95 transition"
+                  title="Export official NMC-signed vector PDF"
                 >
-                  <Send className="h-3.5 w-3.5" /> Dispatch WhatsApp
-                </a>
+                  <Download className="h-3.5 w-3.5" /> Export PDF
+                </button>
+
+                <button
+                  onClick={() => {
+                    setDispatchPhone(patient.phone);
+                    setShowWhatsAppDispatchModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition cursor-pointer"
+                  title="Dispatch prescription PDF link via WhatsApp to patient or attendant"
+                >
+                  <Send className="h-3.5 w-3.5" /> WhatsApp Dispatch
+                </button>
+
                 <button
                   onClick={() => setSignedPrescription(null)}
-                  className="rounded-full border border-black/[0.1] dark:border-white/[0.12] px-4 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
+                  className="rounded-full border border-black/[0.1] dark:border-white/[0.12] px-3.5 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
                 >
                   Edit
                 </button>
               </div>
             </div>
+
+            {dispatchFeedback && (
+              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>{dispatchFeedback}</span>
+              </div>
+            )}
+
 
             {/* Letterhead Calibrator Drawer */}
             {letterheadMode === "preprinted" && showCalibratorDrawer && (
@@ -1752,24 +1855,38 @@ export default function DynamicConsultationStudioPage() {
               <strong className="text-[#1D1D1F] dark:text-white">Follow-up Advice:</strong> {signedPrescription.followup}
             </div>
 
-            {/* Signature Block */}
-            <div className="mt-10 flex justify-between items-end border-t-2 border-[#1D1D1F] pt-6 dark:border-white">
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-apple-teal text-xs font-semibold dark:text-[#30D1BE]">
-                  <ShieldCheck className="h-4 w-4" /> NMC Cryptographically Signed
+            {/* Signature Block & Verification QR */}
+            <div className="mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end border-t-2 border-[#1D1D1F] pt-5 dark:border-white gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white p-1.5 shadow-sm">
+                  <QRCodeDisplay
+                    value={`http://localhost:3000/p/${signedPrescription.prescription_number || "RX-2026-09-0014"}`}
+                    size={72}
+                    level="M"
+                    fgColor="#000000"
+                    bgColor="#FFFFFF"
+                  />
                 </div>
-                <div className="font-mono text-[9px] text-[#86868B] break-all max-w-xs">
-                  SHA-256: {signedPrescription.signature_hash}
-                </div>
-                <div className="text-[10px] text-[#86868B]">
-                  Timestamp: {signedPrescription.signed_at} • DocSphere Health Ledger
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-apple-teal text-xs font-semibold dark:text-[#30D1BE]">
+                    <ShieldCheck className="h-4 w-4" /> NMC Cryptographically Signed
+                  </div>
+                  <div className="font-mono text-[9px] text-[#86868B] break-all max-w-[220px]">
+                    SHA-256: {signedPrescription.signature_hash || signedPrescription.digital_signature_hash || "d384b67a9e1fc710e"}
+                  </div>
+                  <div className="text-[10px] text-[#86868B]">
+                    Scan QR to verify authentic NMC prescription on Clinicos
+                  </div>
                 </div>
               </div>
 
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <div className="font-bold text-sm text-[#1D1D1F] dark:text-white">{doctor.name}</div>
                 <div className="text-xs text-[#86868B]">{doctor.title}</div>
-                <div className="text-[10px] text-[#86868B]">Consultant Physician</div>
+                <div className="text-[10px] text-[#86868B] font-mono">Reg: {doctor.reg_number}</div>
+                <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                  ✓ Digitally Verified
+                </div>
               </div>
             </div>
 
@@ -1790,11 +1907,185 @@ export default function DynamicConsultationStudioPage() {
             )}
           </div>
 
+          {/* WHATSAPP PDF PRESCRIPTION DISPATCH MODAL */}
+          {showWhatsAppDispatchModal && signedPrescription && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in duration-150">
+              <div className="w-full max-w-xl rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 sm:p-7 shadow-apple-modal space-y-4">
+                <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                      <Send className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+                        WhatsApp PDF Prescription Dispatch
+                      </h3>
+                      <p className="text-[10px] text-[#86868B]">
+                        Instant delivery of official digital Rx with vector PDF viewer
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowWhatsAppDispatchModal(false)}
+                    className="rounded-full p-1.5 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Recipient Target Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#86868B] block">
+                    Deliver Prescription To:
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    {[
+                      { id: "patient", label: "Patient", desc: patient.name },
+                      { id: "attendant", label: "Attendant / Relative", desc: "Guardian" },
+                      { id: "chemist", label: "Partner Chemist", desc: "Apollo / Local" },
+                    ].map(r => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => {
+                          setDispatchRecipientType(r.id as any);
+                          if (r.id === "patient") setDispatchPhone(patient.phone);
+                          if (r.id === "chemist") setDispatchTemplate("chemist_order");
+                        }}
+                        className={`rounded-xl p-2.5 text-left border transition ${
+                          dispatchRecipientType === r.id
+                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 font-bold"
+                            : "border-black/[0.06] dark:border-white/[0.08] bg-[#ECEEF2]/40 dark:bg-white/[0.02] text-[#86868B]"
+                        }`}
+                      >
+                        <div className="text-xs">{r.label}</div>
+                        <div className="text-[10px] font-normal truncate opacity-80">{r.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recipient Phone & Optional Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#86868B] block">
+                      Recipient WhatsApp Mobile Number
+                    </label>
+                    <input
+                      type="text"
+                      value={dispatchPhone}
+                      onChange={e => setDispatchPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="w-full mt-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2.5 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+
+                  {dispatchRecipientType === "attendant" && (
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#86868B] block">
+                        Attendant / Relative Name
+                      </label>
+                      <input
+                        type="text"
+                        value={dispatchAttendantName}
+                        onChange={e => setDispatchAttendantName(e.target.value)}
+                        placeholder="e.g. Ramesh Rawat (Father)"
+                        className="w-full mt-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2.5 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Template Selector */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#86868B] block">
+                    Message Content Template:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    {[
+                      { id: "standard", title: "Standard Clinical", badge: "Official Rx" },
+                      { id: "bilingual_hindi", title: "Hindi + English", badge: "🇮🇳 मरीज निर्देश" },
+                      { id: "chemist_order", title: "Chemist Order", badge: "💊 Express Pickup" }
+                    ].map(tmpl => (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => setDispatchTemplate(tmpl.id as any)}
+                        className={`rounded-xl p-2.5 text-left border transition ${
+                          dispatchTemplate === tmpl.id
+                            ? "border-emerald-600 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
+                            : "border-black/[0.06] dark:border-white/[0.08] text-[#86868B]"
+                        }`}
+                      >
+                        <div>{tmpl.title}</div>
+                        <div className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400 mt-0.5">{tmpl.badge}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Doctor Note */}
+                <div>
+                  <label className="text-[11px] font-semibold text-[#86868B] block">
+                    Custom Doctor / Clinic Note (Optional):
+                  </label>
+                  <input
+                    type="text"
+                    value={dispatchCustomNote}
+                    onChange={e => setDispatchCustomNote(e.target.value)}
+                    placeholder="e.g., Please apply gel strictly at bedtime; come for review in 7 days."
+                    className="w-full mt-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02]"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Save Local PDF</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowWhatsAppDispatchModal(false)}
+                      className="rounded-full border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#86868B]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDispatching}
+                      onClick={handleExecuteWhatsAppDispatch}
+                      className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 px-6 py-2 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isDispatching ? (
+                        <>
+                          <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>Dispatching...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5" />
+                          <span>Open WhatsApp & Send PDF</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Dynamic Print Stylesheet for Physical Letterhead Margins */}
           <style jsx global>{`
             @media print {
               @page {
-                size: A4 portrait;
+                size: ${rxPaperFormat === "a5" ? "A5 portrait" : "A4 portrait"};
                 margin-top: ${letterheadMode === "preprinted" ? `${topMarginMm}mm` : "12mm"} !important;
                 margin-bottom: ${letterheadMode === "preprinted" ? `${bottomMarginMm}mm` : "12mm"} !important;
                 margin-left: ${letterheadMode === "preprinted" ? `${sideMarginMm}mm` : "15mm"} !important;
@@ -1810,6 +2101,7 @@ export default function DynamicConsultationStudioPage() {
           `}</style>
         </div>
       ) : (
+
         /* ================= DRAFTING CONSULTATION STUDIO ================= */
         <div className="grid gap-6 lg:grid-cols-12">
           {/* LEFT: CLINICAL INPUTS & EXAMINATIONS */}

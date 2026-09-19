@@ -25,8 +25,11 @@ import {
   Star,
   Send,
   Calendar,
-  X
+  X,
+  Download
 } from "lucide-react";
+import QRCodeDisplay from "@/components/QRCodeDisplay";
+
 
 // Web Audio API chime generator
 function playTokenCallChime() {
@@ -439,13 +442,23 @@ export default function DashboardDeskPage() {
             </span>
           </button>
 
+          <Link
+            href="/dashboard/standee"
+            className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:bg-blue-500/20 active:scale-95 transition"
+            title="Design & Print Front Desk Acrylic Tent Cards & Posters"
+          >
+            <QrCode className="h-4 w-4" />
+            <span>🖨️ Standee Studio</span>
+          </Link>
+
           <button
             onClick={() => setShowQrModal(true)}
             className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-4 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition"
           >
             <QrCode className="h-4 w-4 text-apple-blue" />
-            <span>Counter QR Stand</span>
+            <span>Counter QR</span>
           </button>
+
 
           <button
             onClick={() => setShowWalkInModal(true)}
@@ -710,30 +723,44 @@ export default function DashboardDeskPage() {
 
       {/* QR STAND MODAL */}
       {showQrModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className="w-full max-w-sm rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-7 text-center shadow-apple-modal">
-            <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
-              Counter Stand QR
-            </h3>
-            <p className="text-xs text-[#86868B] mt-1">
-              Place at reception counter for 1-tap patient token self-check-in
-            </p>
-            <div className="mx-auto my-6 flex h-44 w-44 items-center justify-center rounded-[20px] bg-[#ECEEF2]/70 p-3 border border-black/[0.04] dark:bg-[#2C2C2E] dark:border-white/[0.06]">
-              <QrCode className="h-36 w-36 text-[#1D1D1F] dark:text-white" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="w-full max-w-sm rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-7 text-center shadow-apple-modal space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
+                Reception Counter QR Stand
+              </h3>
+              <p className="text-xs text-[#86868B] mt-0.5">
+                Scan to track live queue token on phone or self check-in
+              </p>
             </div>
+
+            <div className="mx-auto my-2 flex items-center justify-center">
+              <QRCodeDisplay
+                value="http://localhost:3000/waiting-room?clinic=derma-care"
+                size={180}
+                level="H"
+                fgColor="#000000"
+                bgColor="#FFFFFF"
+                showDownloadBtn={true}
+                downloadFilename="derma-care-counter-qr"
+                centerBadgeText="TOKEN QR"
+              />
+            </div>
+
             <div className="text-xs font-mono font-medium text-apple-blue">
-              clinicos.in/book?doctor=dr-rahul-sharma
+              clinicos.in/waiting-room?clinic=derma-care
             </div>
-            <div className="mt-6 flex gap-2.5">
-              <button
-                onClick={() => window.print()}
-                className="flex-1 rounded-full bg-[#1D1D1F] dark:bg-white py-2.5 text-xs font-semibold text-white dark:text-[#1D1D1F] shadow-apple-sm active:scale-95 transition"
+
+            <div className="pt-2 flex flex-col gap-2">
+              <Link
+                href="/dashboard/standee"
+                className="w-full rounded-full bg-[#0071E3] hover:bg-[#0077ED] py-2.5 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition text-center"
               >
-                <Printer className="inline h-3.5 w-3.5 mr-1" /> Print Stand
-              </button>
+                🖨️ Open Full Standee Studio (A5 Tent / A4) ➔
+              </Link>
               <button
                 onClick={() => setShowQrModal(false)}
-                className="flex-1 rounded-full border border-black/[0.1] dark:border-white/[0.12] py-2.5 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
+                className="w-full rounded-full border border-black/[0.1] dark:border-white/[0.12] py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
               >
                 Close
               </button>
@@ -741,6 +768,7 @@ export default function DashboardDeskPage() {
           </div>
         </div>
       )}
+
 
       {/* ⚡ OPTION B: AUTOMATED WHATSAPP FOLLOW-UP & GOOGLE REVIEW MODAL */}
       {showAutomationsModal && (

@@ -135,9 +135,38 @@ In India, healthcare software is broken into two extremes:
   - Automatically notifies the Clinic Desk (`/api/v1/clinic/complete-token`) and schedules follow-up automations.
 - **Integrated Patient Document Vault:**
   - Instant access to patient lab reports, blood panels, and past prescriptions via `PatientDocumentsManager`.
-- **1-Click WhatsApp & SMS Dispatch:**
-  - Generates a pre-filled `wa.me` intent URL to send the digital prescription link directly to the patient's WhatsApp.
-  - High-fidelity printable layout formatted for physical A4 clinic letterhead printers (`/p/[id]`).
+- **📄 WhatsApp PDF Prescription Exporter & Doctor Signature Calibration:**
+  - **1-Click Vector PDF Exporter:** Generates an official, print-calibrated single-page digital PDF prescription with doctor credentials, vitals badges, generic pharmacopeia salt names, and doctor signature block.
+  - **Dual Physical Paper Presets:** Switch between **Standard A4 Sheet** and **Compact A5 Prescription Pad** (148 × 210 mm — saves 50% clinic paper and fits standard medical envelopes).
+  - **High-Density Vector Verification QR:** Every prescription renders an authentic vector SVG QR code that links directly to the public verification portal (`/p/[id]`) for chemist authentication.
+  - **Interactive WhatsApp Dispatch Console (`POST /api/v1/prescriptions/{rx_number}/whatsapp-dispatch`):**
+    - Instant dispatch to Patient, Attendant/Guardian, or Chemist.
+    - 3 Pre-configured message templates: *Standard Clinical Delivery*, *Bilingual Hindi (+ English) Dosage Directions*, and *Chemist Express Order*.
+    - Option for custom clinic notes and 1-click launch of WhatsApp Web or mobile app (`wa.me`).
+
+---
+
+### 2. 🖨️ Front Desk Acrylic Standee Studio & Printable Tent Cards
+*Location:* [`apps/web/src/app/dashboard/standee/page.tsx`](file:///D:/medic-sept-2026/apps/web/src/app/dashboard/standee/page.tsx) & [`clinic/standee`](file:///D:/medic-sept-2026/apps/web/src/app/clinic/standee/page.tsx)
+
+- **Acrylic Tabletop Tent Cards & Wall Posters:** Built specifically for clinic reception counters and waiting room notice boards. Generates high-resolution 300 DPI vector QR printouts ready to insert into standard plastic acrylic stands.
+- **3 Physical Paper Formats:**
+  - **A5 Tabletop Tent Card (148 × 210 mm):** Standard double-fold or single-sheet acrylic desk standee.
+  - **A4 Reception Wall Poster (210 × 297 mm):** Large-format clinic entrance door and waiting lounge signage.
+  - **4×6 Inch Counter Badge (102 × 152 mm):** Compact acrylic table photo stand.
+- **4 Real-Time Action Targets:**
+  1. **📱 Live Token Queue Tracker (Zero-App):** Patients scan with their phone camera to watch live queue progression, allowing them to wait comfortably outside in their car or nearby cafe.
+  2. **⚡ Express Walk-in Priority Token:** Patients bypass the reception queue by scanning and self-registering their token in 15 seconds.
+  3. **⭐ Google 5-Star Review & Feedback:** Direct 1-tap scan to leave verified Google Maps ratings for the attending doctor.
+  4. **📶 Clinic High-Speed Wi-Fi Instant Join:** Generates standard Wi-Fi barcode format (`WIFI:T:WPA;S:...;P:...;;`) allowing waiting patients to point their smartphone camera and immediately join clinic Wi-Fi without typing passwords.
+- **4 Visual Aesthetic Themes:**
+  - *Sapphire Medical:* Clean Apple Blue with hospital-grade contrast.
+  - *Emerald Health:* Holistic mint and clinical sage tones.
+  - *Obsidian Luxury:* Midnight charcoal with amber/gold accents for aesthetic and dental clinics.
+  - *Eco Mono Laser Print Mode:* Ink-saving pure black-and-white vector layout optimized for standard clinic desk laser printers.
+- **Acrylic Trim & Fold Markers:** Optional dashed boundary guides assisting reception staff in trimming and folding sheets into acrylic stands.
+- **1-Click Actions:** Instant browser print with print stylesheet (`@page { size: portrait; margin: 10mm; }`), PNG high-res download, and direct patient link copy.
+
 
 ---
 
@@ -431,7 +460,8 @@ clinicos-monorepo/
 │           │   │   ├── finance/            # Expense, cashflow & shift settlements audit
 │           │   │   ├── patients/           # EMR Patient directory
 │           │   │   ├── pharmacy/           # Dispensary & lab orders
-│           │   │   └── settings/           # Clinic profile & billing settings
+│           │   │   ├── settings/           # Clinic profile & billing settings
+│           │   │   └── standee/            # Front desk acrylic tent card & poster studio
 │           │   ├── display/
 │           │   │   └── waiting-room/       # Smart TV Wall Queue Display & Audio Chime
 │           │   ├── doctor/                 # Standalone doctor queue & consult
@@ -448,6 +478,7 @@ clinicos-monorepo/
 │           │   ├── InteractiveHeroSearch.tsx   # Instant specialty & locality search
 │           │   ├── InteractivePlayground.tsx   # Live product interactive demo
 │           │   ├── PatientDocumentsManager.tsx # Document & lab report manager
+│           │   ├── QRCodeDisplay.tsx           # Vector SVG QR Code with 300 DPI supersampling
 │           │   └── ThemeToggle.tsx             # Light/Dark mode switcher
 │           └── data/
 │               ├── medicines.ts            # Indian pharmacopeia formulary
@@ -501,6 +532,7 @@ All API routes are served under the `/api/v1` namespace:
 | | `POST` | `/api/v1/beds/status` | Quick toggle bed status (vacant, maintenance) |
 | **Prescriptions**| `POST`| `/api/v1/prescriptions/generate` | Generate NMC-compliant prescription with SHA-256 |
 | | `GET` | `/api/v1/prescriptions/{rx_number}`| View tamper-proof prescription record |
+| | `POST` | `/api/v1/prescriptions/{rx_number}/whatsapp-dispatch` | Generate formatted WhatsApp PDF dispatch payload & deep link |
 | | `POST` | `/api/v1/prescriptions/scribe` | AI Clinical Voice & Dictation Scribe parser |
 | | `POST` | `/api/v1/prescriptions/check-ddi` | Real-time Drug-Drug Interaction safety analysis |
 | **ABDM Gateway** | `POST` | `/api/v1/abdm/m1/care-context/link` | Link consultation/Rx to patient ABHA ID |
