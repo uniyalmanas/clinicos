@@ -17,6 +17,7 @@ import {
   Receipt,
   FileText
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function ClinicExpensesPage() {
   const [expenses, setExpenses] = useState<any[]>([
@@ -94,7 +95,7 @@ export default function ClinicExpensesPage() {
     setDescription("");
 
     // Backend sync in background
-    fetch("http://localhost:8000/api/v1/expenses", {
+    fetch(`${API_BASE_URL}/api/v1/expenses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -26,6 +26,7 @@ import {
   ChevronRight,
   TrendingDown
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 interface PettyExpense {
   id: string;
@@ -100,17 +101,17 @@ export default function ShiftSettlementPage() {
   useEffect(() => {
     async function loadDeskData() {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/clinic/desk-queue");
+        const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
         if (res.ok) {
           const json = await res.json();
           if (json.collections) {
-            const upi = Number(json.collections.upi) || 16200;
-            const cash = Number(json.collections.cash) || 9000;
-            const pts = Number(json.total_tokens_today) || 42;
+            const upi = Number(json.collections.upi) || 0;
+            const cash = Number(json.collections.cash) || 0;
+            const pts = Number(json.total_tokens_today) || 0;
             setUpiAmount(upi);
             setCashExpected(cash);
             setGrossCollections(upi + cash);
-            setTotalPatients(pts > 0 ? pts : 42);
+            setTotalPatients(pts);
           }
         }
       } catch (e) {
@@ -118,7 +119,7 @@ export default function ShiftSettlementPage() {
       }
 
       try {
-        const stlRes = await fetch("http://localhost:8000/api/v1/clinic/settlements");
+        const stlRes = await fetch(`${API_BASE_URL}/api/v1/clinic/settlements`);
         if (stlRes.ok) {
           const stlJson = await stlRes.json();
           if (stlJson.settlements) {
@@ -222,7 +223,7 @@ export default function ShiftSettlementPage() {
     };
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/clinic/settle-shift", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/settle-shift`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
