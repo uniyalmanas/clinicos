@@ -42,3 +42,10 @@ yarn-error.log*
 *.sln
 *.sw?
 Thumbs.db
+
+# SQLite & Database storage
+*.db
+*.sqlite
+*.sqlite3
+clinicos.db
+
