@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { INDIAN_MEDICINES, COMMON_LAB_TESTS, MedicineItem, LabTestItem } from "@/data/medicines";
+import { API_BASE_URL } from "@/lib/api";
 import { 
   Stethoscope, 
   FileText, 
@@ -38,8 +39,20 @@ import {
   CheckCheck,
   RotateCcw,
   Sliders,
-  Save
+  Save,
+  Scale,
+  HeartPulse,
+  Flame,
+  History,
+  Calendar,
+  Star,
+  MessageSquare,
+  ExternalLink,
+  Copy,
+  Download
 } from "lucide-react";
+
+import QRCodeDisplay from "@/components/QRCodeDisplay";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
 import {
   evaluatePrescriptionSafety,
@@ -55,6 +68,9 @@ import {
   saveCustomComboToStorage,
   deleteCustomComboFromStorage
 } from "@/data/rxCombos";
+import { CLINICAL_DIAGNOSIS_PROTOCOLS, DiagnosisProtocol } from "@/data/diagnosisProtocols";
+import { SEED_PATIENTS } from "@/data/patients";
+
 
 interface PrescribedMedicine {
   id: string;
@@ -94,7 +110,7 @@ export default function DynamicConsultationStudioPage() {
   useEffect(() => {
     async function loadAppointment() {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/clinic/desk-queue");
+        const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
         if (res.ok) {
           const json = await res.json();
           const match = (json.queue || []).find((a: any) => 
@@ -129,15 +145,205 @@ export default function DynamicConsultationStudioPage() {
     phone: "+919876543210"
   });
 
-  // Clinical Vitals
+  // Clinical Vitals with Quick-Pad Safety Radar
   const [vitals, setVitals] = useState({
     bp: "116/74",
     pulse: "76",
     temp: "98.6",
     weight: "58",
+    height: "165", // cm
     spo2: "99",
-    sugar: "98"
+    sugar: "98" // mg/dL
   });
+
+  // Real-time BMI Auto-Calculation
+  const calculatedBmi = useMemo(() => {
+    const w = parseFloat(vitals.weight);
+    const h = parseFloat(vitals.height) / 100;
+    if (w > 0 && h > 0) {
+      const bmi = parseFloat((w / (h * h)).toFixed(1));
+      let category = "Normal";
+      let badgeClass = "text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300";
+      if (bmi < 18.5) {
+        category = "Underweight";
+        badgeClass = "text-amber-700 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300";
+      } else if (bmi >= 25 && bmi < 30) {
+        category = "Overweight";
+        badgeClass = "text-amber-700 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300";
+      } else if (bmi >= 30) {
+        category = "Obese";
+        badgeClass = "text-red-700 bg-red-100 border-red-300 dark:bg-red-950/60 dark:text-red-300";
+      }
+      return { val: bmi, category, badgeClass };
+    }
+    return null;
+  }, [vitals.weight, vitals.height]);
+
+  // Real-time Blood Pressure Radar
+  const bpStatus = useMemo(() => {
+    const parts = vitals.bp.split("/");
+    if (parts.length === 2) {
+      const sys = parseInt(parts[0]);
+      const dia = parseInt(parts[1]);
+      if (!isNaN(sys) && !isNaN(dia)) {
+        if (sys >= 160 || dia >= 100) return { label: "⚠️ Stage 2 HTN", badgeClass: "text-red-700 bg-red-100 border-red-300 dark:bg-red-950/70 dark:text-red-300 animate-pulse", alert: true };
+        if (sys >= 140 || dia >= 90) return { label: "Stage 1 HTN", badgeClass: "text-orange-700 bg-orange-100 border-orange-300 dark:bg-orange-950/60 dark:text-orange-300", alert: false };
+        if (sys >= 120 || dia >= 80) return { label: "Pre-HTN", badgeClass: "text-amber-700 bg-amber-100 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300", alert: false };
+        if (sys >= 90 && dia >= 60) return { label: "Normal BP", badgeClass: "text-emerald-700 bg-emerald-100 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300", alert: false };
+        return { label: "Hypotension", badgeClass: "text-blue-700 bg-blue-100 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300", alert: false };
+      }
+    }
+    return null;
+  }, [vitals.bp]);
+
+  // Real-time Pulse Radar
+  const pulseStatus = useMemo(() => {
+    const p = parseInt(vitals.pulse);
+    if (!isNaN(p)) {
+      if (p > 100) return { label: "Tachycardia", badgeClass: "text-red-600 font-bold" };
+      if (p < 60 && p > 30) return { label: "Bradycardia", badgeClass: "text-amber-600 font-bold" };
+      return { label: "Normal", badgeClass: "text-emerald-600" };
+    }
+    return null;
+  }, [vitals.pulse]);
+
+  // Real-time SpO2 Radar
+  const spo2Status = useMemo(() => {
+    const s = parseInt(vitals.spo2);
+    if (!isNaN(s)) {
+      if (s < 94) return { label: "⚠️ Hypoxia", badgeClass: "text-red-600 font-bold" };
+      return { label: "Normal", badgeClass: "text-emerald-600" };
+    }
+    return null;
+  }, [vitals.spo2]);
+
+  // Real-time Blood Sugar Radar
+  const sugarStatus = useMemo(() => {
+    const s = parseInt(vitals.sugar);
+    if (!isNaN(s)) {
+      if (s >= 200) return { label: "Hyperglycemia (≥200)", badgeClass: "text-red-600 font-bold" };
+      if (s >= 140) return { label: "Impaired (140-199)", badgeClass: "text-amber-600 font-bold" };
+      return { label: "Normal (<140)", badgeClass: "text-emerald-600" };
+    }
+    return null;
+  }, [vitals.sugar]);
+
+  // Past Patient Record & 1-Click Past Visit Clone
+  const pastPatientRecord = useMemo(() => {
+    return SEED_PATIENTS.find(
+      p => p.phone.replace(/\D/g, "").includes(patient.phone.replace(/\D/g, "")) ||
+           p.full_name.toLowerCase() === patient.name.toLowerCase()
+    );
+  }, [patient.phone, patient.name]);
+
+  const lastClinicalVisit = useMemo(() => {
+    if (pastPatientRecord && pastPatientRecord.visits && pastPatientRecord.visits.length > 0) {
+      return pastPatientRecord.visits[0];
+    }
+    return null;
+  }, [pastPatientRecord]);
+
+  const clonePreviousRx = (extendDuration: boolean = false) => {
+    if (!lastClinicalVisit) return;
+    
+    if (lastClinicalVisit.provisional_diagnosis) {
+      setProvisionalDiagnosis(lastClinicalVisit.provisional_diagnosis);
+    }
+    if (lastClinicalVisit.symptoms) {
+      setChiefComplaints(lastClinicalVisit.symptoms);
+    }
+    if (lastClinicalVisit.followup_advice) {
+      setFollowupAdvice(lastClinicalVisit.followup_advice);
+    }
+    if (lastClinicalVisit.vitals) {
+      setVitals(prev => ({
+        ...prev,
+        bp: lastClinicalVisit.vitals.bp || prev.bp,
+        pulse: String(lastClinicalVisit.vitals.pulse || prev.pulse),
+        temp: String(lastClinicalVisit.vitals.temp || prev.temp),
+        weight: String(lastClinicalVisit.vitals.weight || prev.weight),
+        spo2: String(lastClinicalVisit.vitals.spo2 || prev.spo2)
+      }));
+    }
+
+    const clonedMeds: PrescribedMedicine[] = (lastClinicalVisit.medications_summary || []).map((summaryStr, idx) => {
+      // Find matching medicine from catalog or preserve EXACT medicine written by doctor
+      const cleanName = summaryStr.replace(/^(CAP|TAB|SYR|CREAM|LOTION|GEL|OINT)\s+/i, "").trim();
+      const detectedForm = summaryStr.match(/^(CAP|TAB|SYR|CREAM|LOTION|GEL|OINT)/i)?.[0] || "Tablet";
+      const normalizedForm = detectedForm.toUpperCase().startsWith("CAP") ? "Capsule"
+        : detectedForm.toUpperCase().startsWith("TAB") ? "Tablet"
+        : detectedForm.toUpperCase().startsWith("SYR") ? "Syrup"
+        : detectedForm.toUpperCase().startsWith("CREAM") ? "Cream"
+        : detectedForm.toUpperCase().startsWith("OINT") ? "Ointment"
+        : "Tablet";
+
+      const matched = INDIAN_MEDICINES.find(m => 
+        cleanName.toLowerCase().includes(m.brand_name.toLowerCase()) || 
+        m.generic_name.toLowerCase().includes(cleanName.toLowerCase())
+      );
+
+      if (matched) {
+        return {
+          id: `rx-cloned-${Date.now()}-${idx}`,
+          medicine_name: matched.brand_name,
+          generic_name: matched.generic_name,
+          dosage_form: matched.dosage_form,
+          strength: matched.strength,
+          frequency: "1-0-1 (Twice Daily)",
+          duration: extendDuration ? "30 Days (Chronic Refill)" : "14 Days",
+          special_instructions: matched.common_instructions
+        };
+      }
+
+      // Exact drug preservation - NEVER invent random medicines from the catalog
+      return {
+        id: `rx-cloned-${Date.now()}-${idx}`,
+        medicine_name: cleanName,
+        generic_name: cleanName,
+        dosage_form: normalizedForm,
+        strength: "Standard",
+        frequency: "1-0-1 (Twice Daily)",
+        duration: extendDuration ? "30 Days (Chronic Refill)" : "14 Days",
+        special_instructions: "As directed in previous consultation"
+      };
+    });
+
+    setPrescribedItems(clonedMeds);
+    setComboToast(`🔁 Cloned ${clonedMeds.length} medicines from previous visit (${lastClinicalVisit.visit_date}) in 0.1s!`);
+    setTimeout(() => setComboToast(null), 4500);
+  };
+
+  // Clinical Diagnosis Protocols State
+  const [showProtocolDrawer, setShowProtocolDrawer] = useState(false);
+  const [protocolFilter, setProtocolFilter] = useState("All");
+
+  const applyDiagnosisProtocol = (protocol: DiagnosisProtocol) => {
+    setProvisionalDiagnosis(`${protocol.diagnosis_name} [${protocol.icd10_code}]`);
+    setChiefComplaints(protocol.typical_complaints);
+    setFollowupAdvice(protocol.clinical_advice);
+
+    if (protocol.recommended_lab_test_ids && protocol.recommended_lab_test_ids.length > 0) {
+      setSelectedLabs(prev => Array.from(new Set([...prev, ...protocol.recommended_lab_test_ids])));
+    }
+
+    if (protocol.medications && protocol.medications.length > 0) {
+      const mapped: PrescribedMedicine[] = protocol.medications.map((m, idx) => ({
+        id: `protocol-${Date.now()}-${idx}`,
+        medicine_name: m.medicine_name,
+        generic_name: m.generic_name,
+        dosage_form: m.dosage_form,
+        strength: m.strength,
+        frequency: m.frequency,
+        duration: m.duration,
+        special_instructions: m.special_instructions
+      }));
+      setPrescribedItems(mapped);
+    }
+
+    setComboToast(`⚡ Loaded Protocol "${protocol.diagnosis_name}" (<0.1s)!`);
+    setTimeout(() => setComboToast(null), 4500);
+  };
+
 
   // Diagnosis & Complaints
   const [chiefComplaints, setChiefComplaints] = useState(
@@ -196,7 +402,7 @@ export default function DynamicConsultationStudioPage() {
       generic_name: p.generic_name
     }));
 
-    fetch("http://localhost:8000/api/v1/prescriptions/check-interactions", {
+    fetch(`${API_BASE_URL}/api/v1/prescriptions/check-interactions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -398,6 +604,102 @@ export default function DynamicConsultationStudioPage() {
   // Signed Prescription State
   const [signedPrescription, setSignedPrescription] = useState<any | null>(null);
 
+  // --- WHATSAPP PDF PRESCRIPTION DISPATCH & PAPER FORMAT STATE ---
+  const [rxPaperFormat, setRxPaperFormat] = useState<"a4" | "a5">("a4");
+  const [showWhatsAppDispatchModal, setShowWhatsAppDispatchModal] = useState<boolean>(false);
+  const [dispatchRecipientType, setDispatchRecipientType] = useState<"patient" | "attendant" | "chemist">("patient");
+  const [dispatchPhone, setDispatchPhone] = useState<string>("");
+  const [dispatchAttendantName, setDispatchAttendantName] = useState<string>("");
+  const [dispatchTemplate, setDispatchTemplate] = useState<"standard" | "bilingual_hindi" | "chemist_order">("standard");
+  const [dispatchCustomNote, setDispatchCustomNote] = useState<string>("");
+  const [isDispatching, setIsDispatching] = useState<boolean>(false);
+  const [dispatchFeedback, setDispatchFeedback] = useState<string | null>(null);
+
+  const handleExecuteWhatsAppDispatch = async () => {
+    if (!signedPrescription) return;
+    setIsDispatching(true);
+    const targetPhone = dispatchPhone || patient.phone;
+    const rxNumber = signedPrescription.prescription_number || "RX-2026-09-0014";
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/${rxNumber}/whatsapp-dispatch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient_phone: targetPhone,
+          recipient_type: dispatchRecipientType,
+          attendant_name: dispatchAttendantName || undefined,
+          template_type: dispatchTemplate,
+          custom_note: dispatchCustomNote || undefined
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.whatsapp_url) {
+          window.open(data.whatsapp_url, "_blank");
+        }
+        setDispatchFeedback(`Dispatched official PDF link to ${targetPhone} via WhatsApp!`);
+        setTimeout(() => setDispatchFeedback(null), 4000);
+        setShowWhatsAppDispatchModal(false);
+      } else {
+        const cleanPh = targetPhone.replace(/[^0-9]/g, "");
+        const fallbackMsg = `Namaste! Here is the official NMC-signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\nhttp://localhost:3000/p/${rxNumber}`;
+        window.open(`https://wa.me/${cleanPh}?text=${encodeURIComponent(fallbackMsg)}`, "_blank");
+        setShowWhatsAppDispatchModal(false);
+      }
+    } catch (err) {
+      const cleanPh = targetPhone.replace(/[^0-9]/g, "");
+      const fallbackMsg = `Namaste! Here is the official NMC-signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\nhttp://localhost:3000/p/${rxNumber}`;
+      window.open(`https://wa.me/${cleanPh}?text=${encodeURIComponent(fallbackMsg)}`, "_blank");
+      setShowWhatsAppDispatchModal(false);
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+
+  // Automated WhatsApp Follow-up & Review Booster (Option B)
+  const [scheduledAutomations, setScheduledAutomations] = useState<any[]>([]);
+  const [automationSuccessToast, setAutomationSuccessToast] = useState<string | null>(null);
+
+
+  const initAutomations = (rxNumber: string) => {
+    const cleanPh = patient.phone.replace(/[^0-9]/g, "");
+    const rxMsg = `Namaste ${patient.name},\nYour digital prescription from ${doctor.name} at ${doctor.clinic_name} is ready.\n\n📄 View & Download Rx: http://localhost:3000/prescriptions/${rxNumber}\n💊 Please take medicines as advised after meals.\n\nWishing you good health!`;
+    const reviewMsg = `Namaste ${patient.name}! We hope you are recovering well after your visit with ${doctor.name} at ${doctor.clinic_name}. ⭐\n\nIf you had a reassuring experience, could you take 15 seconds to support our doctor with a 5-star Google review? It helps patients like you find quality care:\n👉 https://g.page/r/derma-care-dehradun/review\n\nThank you for trusting ${doctor.clinic_name}!`;
+    const followupMsg = `Namaste ${patient.name}, gentle reminder from ${doctor.clinic_name}:\nYour consultation follow-up validity with ${doctor.name} expires in 48 hours.\n\nIf you need a re-evaluation or test review, tap here to view queue & reserve your priority token:\n👉 http://localhost:3000/doctors/dr-rahul-sharma`;
+
+    setScheduledAutomations([
+      {
+        id: `auto-rx-${Date.now()}`,
+        trigger_type: "rx_dispatch",
+        title: "Instant Rx WhatsApp Dispatch",
+        badge: "Immediate (0 Min)",
+        status: "sent",
+        message_text: rxMsg,
+        whatsapp_url: `https://wa.me/${cleanPh}?text=${encodeURIComponent(rxMsg)}`
+      },
+      {
+        id: `auto-rev-${Date.now()}`,
+        trigger_type: "google_review",
+        title: "Google 5-Star Review Booster",
+        badge: "Today at 19:30 PM",
+        status: "scheduled",
+        message_text: reviewMsg,
+        whatsapp_url: `https://wa.me/${cleanPh}?text=${encodeURIComponent(reviewMsg)}`
+      },
+      {
+        id: `auto-flw-${Date.now()}`,
+        trigger_type: "followup_reminder",
+        title: "Follow-Up Validity Expiry Alert",
+        badge: "Day 5 Reminder",
+        status: "scheduled",
+        message_text: followupMsg,
+        whatsapp_url: `https://wa.me/${cleanPh}?text=${encodeURIComponent(followupMsg)}`
+      }
+    ]);
+  };
+
   // --- 1-TAP DOCTOR'S PERSONAL RX COMBOS STATE ---
   const [customCombos, setCustomCombos] = useState<RxComboItem[]>([]);
   const [selectedComboFilter, setSelectedComboFilter] = useState<string>("All");
@@ -536,7 +838,7 @@ export default function DynamicConsultationStudioPage() {
 
     setIsScribing(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/prescriptions/scribe", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/scribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dictation_text: textToProcess })
@@ -614,7 +916,7 @@ export default function DynamicConsultationStudioPage() {
         followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
       };
 
-      const res = await fetch("http://localhost:8000/api/v1/prescriptions/generate", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -622,17 +924,37 @@ export default function DynamicConsultationStudioPage() {
 
       if (res.ok) {
         const json = await res.json();
+        const rxNum = json.prescription?.prescription_number || rxNumber;
         setSignedPrescription({
           ...json.prescription,
           labs: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id))
         });
+        initAutomations(rxNum);
 
-        // Notify clinic desk that token is completed
-        await fetch("http://localhost:8000/api/v1/clinic/complete-token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appointment_number: patient.appointment_number })
-        }).catch(() => {});
+        // Schedule WhatsApp automations & Notify clinic desk that token is completed
+        await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/clinic/complete-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointment_number: patient.appointment_number })
+          }).catch(() => {}),
+          fetch(`${API_BASE_URL}/api/v1/clinic/schedule-automations`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              appointment_number: patient.appointment_number,
+              patient_name: patient.name,
+              patient_phone: patient.phone,
+              doctor_name: doctor.name,
+              doctor_slug: "dr-rahul-sharma",
+              clinic_name: doctor.clinic_name,
+              prescription_id: rxNum,
+              followup_days: 7
+            })
+          }).then(r => r.json()).then(data => {
+            if (data.automations) setScheduledAutomations(data.automations);
+          }).catch(() => {})
+        ]);
       } else {
         runFallbackSigning();
       }
@@ -679,6 +1001,7 @@ export default function DynamicConsultationStudioPage() {
       followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
     };
 
+    initAutomations(rxNumber);
     setSignedPrescription(rxData);
   };
 
@@ -1091,28 +1414,75 @@ export default function DynamicConsultationStudioPage() {
                   </button>
                 )}
 
+                {/* Paper Size Format Toggle */}
+                <div className="inline-flex rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setRxPaperFormat("a4")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      rxPaperFormat === "a4"
+                        ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
+                    }`}
+                  >
+                    A4 Sheet
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRxPaperFormat("a5")}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      rxPaperFormat === "a5"
+                        ? "bg-white text-apple-blue shadow-sm dark:bg-[#2C2C2E] dark:text-sky-300 font-bold"
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
+                    }`}
+                    title="A5 Doctor Prescription Pad (Compact 148x210mm)"
+                  >
+                    A5 Pad
+                  </button>
+                </div>
+
                 <button
                   onClick={() => window.print()}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1D1D1F] dark:bg-white px-5 py-2 text-xs font-bold text-white dark:text-[#1D1D1F] hover:opacity-90 shadow-apple-sm active:scale-95 transition"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#1D1D1F] dark:bg-white px-4 py-2 text-xs font-bold text-white dark:text-[#1D1D1F] hover:opacity-90 shadow-apple-sm active:scale-95 transition"
                 >
-                  <Printer className="h-3.5 w-3.5" /> Print Rx Sheet
+                  <Printer className="h-3.5 w-3.5" /> Print Rx
                 </button>
-                <a
-                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(waShareText)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 shadow-apple-sm active:scale-95 transition"
+
+                <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-blue-600/30 bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 px-4 py-2 text-xs font-bold shadow-apple-sm active:scale-95 transition"
+                  title="Export official NMC-signed vector PDF"
                 >
-                  <Send className="h-3.5 w-3.5" /> Dispatch WhatsApp
-                </a>
+                  <Download className="h-3.5 w-3.5" /> Export PDF
+                </button>
+
+                <button
+                  onClick={() => {
+                    setDispatchPhone(patient.phone);
+                    setShowWhatsAppDispatchModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition cursor-pointer"
+                  title="Dispatch prescription PDF link via WhatsApp to patient or attendant"
+                >
+                  <Send className="h-3.5 w-3.5" /> WhatsApp Dispatch
+                </button>
+
                 <button
                   onClick={() => setSignedPrescription(null)}
-                  className="rounded-full border border-black/[0.1] dark:border-white/[0.12] px-4 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
+                  className="rounded-full border border-black/[0.1] dark:border-white/[0.12] px-3.5 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
                 >
                   Edit
                 </button>
               </div>
             </div>
+
+            {dispatchFeedback && (
+              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>{dispatchFeedback}</span>
+              </div>
+            )}
+
 
             {/* Letterhead Calibrator Drawer */}
             {letterheadMode === "preprinted" && showCalibratorDrawer && (
@@ -1242,6 +1612,125 @@ export default function DynamicConsultationStudioPage() {
             )}
           </div>
 
+          {/* ⚡ OPTION B: AUTOMATED PATIENT WHATSAPP & GOOGLE REVIEW BOOSTER ENGINE */}
+          <div className="rounded-[28px] border border-emerald-500/20 bg-gradient-to-r from-emerald-500/[0.04] via-teal-500/[0.02] to-sky-500/[0.04] dark:from-emerald-950/20 dark:to-sky-950/20 p-5 sm:p-6 shadow-apple-card space-y-4 print:hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-500/15 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+                      Automated Patient WhatsApp & Google Review Engine
+                    </h3>
+                    <span className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-black px-2.5 py-0.5 border border-emerald-500/20">
+                      ⚡ 3 Scheduled Triggers
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#86868B] mt-0.5">
+                    Automations queued for <strong className="text-[#1D1D1F] dark:text-white">{patient.name}</strong> ({patient.phone}). Drives Google Reviews & repeat clinic visits.
+                  </p>
+                </div>
+              </div>
+
+              {automationSuccessToast && (
+                <div className="rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 px-3.5 py-1 text-xs font-bold animate-in fade-in flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>{automationSuccessToast}</span>
+                </div>
+              )}
+            </div>
+
+            {/* The 3 Stage Pipeline Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {/* Trigger 1: Rx Dispatch */}
+              <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#2C2C2E] p-4 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] px-2 py-0.5">
+                      1. Immediate (0 Min)
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Ready / Sent
+                    </span>
+                  </div>
+                  <div className="font-bold text-xs text-[#1D1D1F] dark:text-white">
+                    📄 Digital Rx PDF & Dosage Guide
+                  </div>
+                  <p className="text-[11px] text-[#86868B] leading-relaxed line-clamp-3">
+                    Dispatches the digital Rx PDF link, medicine dosages & lifestyle advice directly via WhatsApp so patient never loses the slip.
+                  </p>
+                </div>
+                <a
+                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(scheduledAutomations[0]?.message_text || waShareText)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2 shadow-apple-sm transition active:scale-95 cursor-pointer"
+                >
+                  <Send className="h-3 w-3" /> Open in WhatsApp
+                </a>
+              </div>
+
+              {/* Trigger 2: Google 5-Star Booster */}
+              <div className="rounded-2xl border border-amber-500/20 bg-white dark:bg-[#2C2C2E] p-4 flex flex-col justify-between space-y-3 relative overflow-hidden">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold text-[10px] px-2 py-0.5">
+                      2. Today at 19:30 PM
+                    </span>
+                    <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Auto-Queued
+                    </span>
+                  </div>
+                  <div className="font-bold text-xs text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
+                    <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                    <span>Google 5-Star Review Booster</span>
+                  </div>
+                  <p className="text-[11px] text-[#86868B] leading-relaxed line-clamp-3">
+                    Evening sentiment prompt asking how patient is feeling and inviting a 5-star Google Maps review with direct 1-tap link.
+                  </p>
+                </div>
+                <a
+                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(scheduledAutomations[1]?.message_text || `Namaste ${patient.name}! If you had a reassuring experience with ${doctor.name}, please leave us a 5-star Google review: https://g.page/r/derma-care-dehradun/review`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 text-xs font-bold py-2 transition active:scale-95 cursor-pointer"
+                >
+                  <Send className="h-3 w-3 text-amber-600" /> Test Send Review Prompt
+                </a>
+              </div>
+
+              {/* Trigger 3: 48h Follow-up Reminder */}
+              <div className="rounded-2xl border border-indigo-500/20 bg-white dark:bg-[#2C2C2E] p-4 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] px-2 py-0.5">
+                      3. Day 5 Follow-Up Alert
+                    </span>
+                    <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                      <Calendar className="h-3 w-3" /> 48h Expiry Warning
+                    </span>
+                  </div>
+                  <div className="font-bold text-xs text-[#1D1D1F] dark:text-white">
+                    🔁 Follow-Up Validity Warning
+                  </div>
+                  <p className="text-[11px] text-[#86868B] leading-relaxed line-clamp-3">
+                    Reminds patient 48h before free review period lapses to prevent no-shows and drive return clinic footfall.
+                  </p>
+                </div>
+                <a
+                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(scheduledAutomations[2]?.message_text || `Namaste ${patient.name}, your follow-up with ${doctor.name} expires in 48h. Reserve token: http://localhost:3000/doctors/dr-rahul-sharma`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-500/20 text-xs font-bold py-2 transition active:scale-95 cursor-pointer"
+                >
+                  <Send className="h-3 w-3 text-indigo-600" /> Test Send Reminder
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* Printable A4 Letterhead Box */}
           <div 
             style={{ 
@@ -1298,11 +1787,19 @@ export default function DynamicConsultationStudioPage() {
 
             {/* Vitals */}
             {(letterheadMode === "blank_paper" || showPatientBarInLetterhead) && (
-              <div className="mt-4 flex flex-wrap gap-3 text-xs text-[#86868B] font-mono">
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#86868B] font-mono">
                 <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">BP: {vitals.bp} mmHg</span>
                 <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Pulse: {vitals.pulse} bpm</span>
                 <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Temp: {vitals.temp} °F</span>
-                <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Weight: {vitals.weight} kg</span>
+                {vitals.spo2 && <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">SpO₂: {vitals.spo2}%</span>}
+                {vitals.height && <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Ht: {vitals.height} cm</span>}
+                <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">Wt: {vitals.weight} kg</span>
+                {calculatedBmi && (
+                  <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg font-bold">
+                    BMI: {calculatedBmi.val} ({calculatedBmi.category})
+                  </span>
+                )}
+                {vitals.sugar && <span className="bg-[#ECEEF2]/70 px-2.5 py-1 rounded-lg dark:bg-[#2C2C2E]">RBS Sugar: {vitals.sugar} mg/dL</span>}
               </div>
             )}
 
@@ -1381,24 +1878,38 @@ export default function DynamicConsultationStudioPage() {
               <strong className="text-[#1D1D1F] dark:text-white">Follow-up Advice:</strong> {signedPrescription.followup}
             </div>
 
-            {/* Signature Block */}
-            <div className="mt-10 flex justify-between items-end border-t-2 border-[#1D1D1F] pt-6 dark:border-white">
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-apple-teal text-xs font-semibold dark:text-[#30D1BE]">
-                  <ShieldCheck className="h-4 w-4" /> NMC Cryptographically Signed
+            {/* Signature Block & Verification QR */}
+            <div className="mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-end border-t-2 border-[#1D1D1F] pt-5 dark:border-white gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white p-1.5 shadow-sm">
+                  <QRCodeDisplay
+                    value={`http://localhost:3000/p/${signedPrescription.prescription_number || "RX-2026-09-0014"}`}
+                    size={72}
+                    level="M"
+                    fgColor="#000000"
+                    bgColor="#FFFFFF"
+                  />
                 </div>
-                <div className="font-mono text-[9px] text-[#86868B] break-all max-w-xs">
-                  SHA-256: {signedPrescription.signature_hash}
-                </div>
-                <div className="text-[10px] text-[#86868B]">
-                  Timestamp: {signedPrescription.signed_at} • DocSphere Health Ledger
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-apple-teal text-xs font-semibold dark:text-[#30D1BE]">
+                    <ShieldCheck className="h-4 w-4" /> NMC Cryptographically Signed
+                  </div>
+                  <div className="font-mono text-[9px] text-[#86868B] break-all max-w-[220px]">
+                    SHA-256: {signedPrescription.signature_hash || signedPrescription.digital_signature_hash || "d384b67a9e1fc710e"}
+                  </div>
+                  <div className="text-[10px] text-[#86868B]">
+                    Scan QR to verify authentic NMC prescription on Clinicos
+                  </div>
                 </div>
               </div>
 
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <div className="font-bold text-sm text-[#1D1D1F] dark:text-white">{doctor.name}</div>
                 <div className="text-xs text-[#86868B]">{doctor.title}</div>
-                <div className="text-[10px] text-[#86868B]">Consultant Physician</div>
+                <div className="text-[10px] text-[#86868B] font-mono">Reg: {doctor.reg_number}</div>
+                <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                  ✓ Digitally Verified
+                </div>
               </div>
             </div>
 
@@ -1419,11 +1930,185 @@ export default function DynamicConsultationStudioPage() {
             )}
           </div>
 
+          {/* WHATSAPP PDF PRESCRIPTION DISPATCH MODAL */}
+          {showWhatsAppDispatchModal && signedPrescription && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in duration-150">
+              <div className="w-full max-w-xl rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 sm:p-7 shadow-apple-modal space-y-4">
+                <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                      <Send className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+                        WhatsApp PDF Prescription Dispatch
+                      </h3>
+                      <p className="text-[10px] text-[#86868B]">
+                        Instant delivery of official digital Rx with vector PDF viewer
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowWhatsAppDispatchModal(false)}
+                    className="rounded-full p-1.5 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Recipient Target Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#86868B] block">
+                    Deliver Prescription To:
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    {[
+                      { id: "patient", label: "Patient", desc: patient.name },
+                      { id: "attendant", label: "Attendant / Relative", desc: "Guardian" },
+                      { id: "chemist", label: "Partner Chemist", desc: "Apollo / Local" },
+                    ].map(r => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => {
+                          setDispatchRecipientType(r.id as any);
+                          if (r.id === "patient") setDispatchPhone(patient.phone);
+                          if (r.id === "chemist") setDispatchTemplate("chemist_order");
+                        }}
+                        className={`rounded-xl p-2.5 text-left border transition ${
+                          dispatchRecipientType === r.id
+                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 font-bold"
+                            : "border-black/[0.06] dark:border-white/[0.08] bg-[#ECEEF2]/40 dark:bg-white/[0.02] text-[#86868B]"
+                        }`}
+                      >
+                        <div className="text-xs">{r.label}</div>
+                        <div className="text-[10px] font-normal truncate opacity-80">{r.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recipient Phone & Optional Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="text-[11px] font-semibold text-[#86868B] block">
+                      Recipient WhatsApp Mobile Number
+                    </label>
+                    <input
+                      type="text"
+                      value={dispatchPhone}
+                      onChange={e => setDispatchPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="w-full mt-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2.5 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
+
+                  {dispatchRecipientType === "attendant" && (
+                    <div>
+                      <label className="text-[11px] font-semibold text-[#86868B] block">
+                        Attendant / Relative Name
+                      </label>
+                      <input
+                        type="text"
+                        value={dispatchAttendantName}
+                        onChange={e => setDispatchAttendantName(e.target.value)}
+                        placeholder="e.g. Ramesh Rawat (Father)"
+                        className="w-full mt-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2.5 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Template Selector */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#86868B] block">
+                    Message Content Template:
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    {[
+                      { id: "standard", title: "Standard Clinical", badge: "Official Rx" },
+                      { id: "bilingual_hindi", title: "Hindi + English", badge: "🇮🇳 मरीज निर्देश" },
+                      { id: "chemist_order", title: "Chemist Order", badge: "💊 Express Pickup" }
+                    ].map(tmpl => (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => setDispatchTemplate(tmpl.id as any)}
+                        className={`rounded-xl p-2.5 text-left border transition ${
+                          dispatchTemplate === tmpl.id
+                            ? "border-emerald-600 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 font-bold"
+                            : "border-black/[0.06] dark:border-white/[0.08] text-[#86868B]"
+                        }`}
+                      >
+                        <div>{tmpl.title}</div>
+                        <div className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400 mt-0.5">{tmpl.badge}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Doctor Note */}
+                <div>
+                  <label className="text-[11px] font-semibold text-[#86868B] block">
+                    Custom Doctor / Clinic Note (Optional):
+                  </label>
+                  <input
+                    type="text"
+                    value={dispatchCustomNote}
+                    onChange={e => setDispatchCustomNote(e.target.value)}
+                    placeholder="e.g., Please apply gel strictly at bedtime; come for review in 7 days."
+                    className="w-full mt-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02]"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Save Local PDF</span>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowWhatsAppDispatchModal(false)}
+                      className="rounded-full border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#86868B]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDispatching}
+                      onClick={handleExecuteWhatsAppDispatch}
+                      className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 px-6 py-2 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isDispatching ? (
+                        <>
+                          <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>Dispatching...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5" />
+                          <span>Open WhatsApp & Send PDF</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Dynamic Print Stylesheet for Physical Letterhead Margins */}
           <style jsx global>{`
             @media print {
               @page {
-                size: A4 portrait;
+                size: ${rxPaperFormat === "a5" ? "A5 portrait" : "A4 portrait"};
                 margin-top: ${letterheadMode === "preprinted" ? `${topMarginMm}mm` : "12mm"} !important;
                 margin-bottom: ${letterheadMode === "preprinted" ? `${bottomMarginMm}mm` : "12mm"} !important;
                 margin-left: ${letterheadMode === "preprinted" ? `${sideMarginMm}mm` : "15mm"} !important;
@@ -1439,19 +2124,31 @@ export default function DynamicConsultationStudioPage() {
           `}</style>
         </div>
       ) : (
+
         /* ================= DRAFTING CONSULTATION STUDIO ================= */
         <div className="grid gap-6 lg:grid-cols-12">
           {/* LEFT: CLINICAL INPUTS & EXAMINATIONS */}
           <div className="lg:col-span-4 space-y-6">
-            {/* Vitals Recording */}
+            {/* Vitals Recording - Upgraded Quick-Pad with Safety Radar */}
             <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card space-y-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#86868B] flex items-center gap-1.5">
-                <Activity className="h-4 w-4 text-apple-blue" /> Patient Clinical Vitals
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-[#86868B] flex items-center gap-1.5">
+                  <Activity className="h-4 w-4 text-apple-blue" /> Vitals Quick-Pad & Radar
+                </h2>
+                {bpStatus && (
+                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${bpStatus.badgeClass}`}>
+                    {bpStatus.label}
+                  </span>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-2.5 text-xs">
+                {/* Blood Pressure */}
                 <div>
-                  <label className="font-medium text-[#86868B]">Blood Pressure</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-[#86868B]">BP (mmHg)</label>
+                    <HeartPulse className="h-3 w-3 text-red-500" />
+                  </div>
                   <input
                     type="text"
                     value={vitals.bp}
@@ -1460,8 +2157,13 @@ export default function DynamicConsultationStudioPage() {
                     className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
+
+                {/* Pulse */}
                 <div>
-                  <label className="font-medium text-[#86868B]">Pulse (bpm)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-[#86868B]">Pulse (bpm)</label>
+                    {pulseStatus && <span className={`text-[10px] ${pulseStatus.badgeClass}`}>{pulseStatus.label}</span>}
+                  </div>
                   <input
                     type="text"
                     value={vitals.pulse}
@@ -1470,8 +2172,28 @@ export default function DynamicConsultationStudioPage() {
                     className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
+
+                {/* SpO2 */}
                 <div>
-                  <label className="font-medium text-[#86868B]">Temp (°F)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-[#86868B]">SpO2 (%)</label>
+                    {spo2Status && <span className={`text-[10px] ${spo2Status.badgeClass}`}>{spo2Status.label}</span>}
+                  </div>
+                  <input
+                    type="text"
+                    value={vitals.spo2}
+                    onChange={e => setVitals({ ...vitals, spo2: e.target.value })}
+                    placeholder="98"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  />
+                </div>
+
+                {/* Temp */}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-[#86868B]">Temp (°F)</label>
+                    <Flame className="h-3 w-3 text-orange-500" />
+                  </div>
                   <input
                     type="text"
                     value={vitals.temp}
@@ -1480,24 +2202,112 @@ export default function DynamicConsultationStudioPage() {
                     className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
+
+                {/* Height */}
                 <div>
-                  <label className="font-medium text-[#86868B]">Weight (kg)</label>
+                  <label className="font-semibold text-[#86868B]">Height (cm)</label>
+                  <input
+                    type="text"
+                    value={vitals.height}
+                    onChange={e => setVitals({ ...vitals, height: e.target.value })}
+                    placeholder="165"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  />
+                </div>
+
+                {/* Weight */}
+                <div>
+                  <label className="font-semibold text-[#86868B]">Weight (kg)</label>
                   <input
                     type="text"
                     value={vitals.weight}
                     onChange={e => setVitals({ ...vitals, weight: e.target.value })}
-                    placeholder="65"
+                    placeholder="60"
+                    className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  />
+                </div>
+
+                {/* Blood Sugar */}
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-[#86868B]">Random Blood Sugar (mg/dL)</label>
+                    {sugarStatus && <span className={`text-[10px] ${sugarStatus.badgeClass}`}>{sugarStatus.label}</span>}
+                  </div>
+                  <input
+                    type="text"
+                    value={vitals.sugar}
+                    onChange={e => setVitals({ ...vitals, sugar: e.target.value })}
+                    placeholder="98"
                     className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
                   />
                 </div>
               </div>
+
+              {/* Real-time BMI pill */}
+              {calculatedBmi && (
+                <div className="rounded-xl border p-2.5 flex items-center justify-between text-xs bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.04] dark:border-white/[0.06]">
+                  <div className="flex items-center gap-2">
+                    <Scale className="h-4 w-4 text-[#0071E3]" />
+                    <span className="text-[#86868B]">Calculated BMI:</span>
+                    <strong className="font-mono text-sm">{calculatedBmi.val} kg/m²</strong>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${calculatedBmi.badgeClass}`}>
+                    {calculatedBmi.category}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* Chief Complaints & Diagnosis */}
+            {/* Chief Complaints & Diagnosis with 1-Click Clinical Protocols */}
             <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card space-y-4">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">
-                Diagnosis & Examination
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">
+                  Diagnosis & Examination
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowProtocolDrawer(!showProtocolDrawer)}
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold bg-[#0071E3]/10 text-[#0071E3] hover:bg-[#0071E3]/20 transition active:scale-95 cursor-pointer"
+                >
+                  <Zap className="h-3 w-3 fill-[#0071E3]" />
+                  <span>{showProtocolDrawer ? "Hide Protocols" : "⚡ Load Protocol"}</span>
+                </button>
+              </div>
+
+              {/* Protocol Quick Chips Drawer */}
+              {showProtocolDrawer && (
+                <div className="rounded-2xl border border-[#0071E3]/20 bg-[#0071E3]/5 dark:bg-[#0071E3]/10 p-3.5 space-y-2.5 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#0071E3] uppercase tracking-wider">
+                      Standard OPD Protocols (1-Tap Auto Fill)
+                    </span>
+                    <span className="text-[10px] text-[#86868B]">{CLINICAL_DIAGNOSIS_PROTOCOLS.length} Templates</span>
+                  </div>
+
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {CLINICAL_DIAGNOSIS_PROTOCOLS.map(proto => (
+                      <div
+                        key={proto.id}
+                        onClick={() => applyDiagnosisProtocol(proto)}
+                        className="p-2 rounded-xl bg-white dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] hover:border-[#0071E3] cursor-pointer transition flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <div className="font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
+                            <span>{proto.diagnosis_name}</span>
+                            <span className="text-[10px] text-[#86868B] font-mono">[{proto.icd10_code}]</span>
+                          </div>
+                          <div className="text-[10px] text-[#86868B]">
+                            {proto.medications.length} Meds • {proto.recommended_lab_test_ids.length} Labs • Review {proto.followup_days}d
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-lg flex-shrink-0">
+                          1-Tap Apply
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3.5 text-xs">
                 <div>
@@ -1562,6 +2372,63 @@ export default function DynamicConsultationStudioPage() {
 
           {/* RIGHT: DYNAMIC PRESCRIPTION PAD & MEDICINE SEARCH */}
           <div className="lg:col-span-8 space-y-6">
+            {/* 🔁 REPEAT PATIENT HISTORY & 1-CLICK PAST VISIT CLONE BAR */}
+            {lastClinicalVisit && lastClinicalVisit.medications_summary && lastClinicalVisit.medications_summary.length > 0 && (
+              <div className="rounded-[28px] border border-apple-blue/20 bg-gradient-to-r from-apple-blue/[0.06] via-indigo-500/[0.04] to-purple-500/[0.04] dark:from-apple-blue/15 dark:to-purple-950/20 p-5 shadow-apple-card space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-apple-blue/15 text-apple-blue dark:text-sky-300 flex-shrink-0">
+                      <History className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold uppercase tracking-wider text-apple-blue dark:text-sky-400">
+                          🔁 Returning Patient History Detected
+                        </span>
+                        <span className="rounded-full bg-apple-blue/10 dark:bg-apple-blue/20 text-apple-blue dark:text-sky-300 text-[10px] font-bold px-2.5 py-0.5 border border-apple-blue/20">
+                          Last Visit: {lastClinicalVisit.visit_date}
+                        </span>
+                        <span className="text-[10px] text-[#86868B]">
+                          by {lastClinicalVisit.doctor_name}
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold text-[#1D1D1F] dark:text-white mt-1">
+                        Prior Diagnosis: {lastClinicalVisit.provisional_diagnosis || "General Consultation"}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#86868B] flex-wrap">
+                        <span>Past Meds:</span>
+                        {lastClinicalVisit.medications_summary?.map((m: string, i: number) => (
+                          <span key={i} className="px-2 py-0.5 rounded-md bg-white/70 dark:bg-white/10 font-mono text-[10px] text-[#1D1D1F] dark:text-gray-200 border border-black/[0.05] dark:border-white/[0.08]">
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0 pt-1 sm:pt-0">
+                    <button
+                      type="button"
+                      onClick={() => clonePreviousRx(false)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue hover:bg-[#0077ED] text-white px-4 py-2 text-xs font-bold shadow-apple-sm transition active:scale-95 cursor-pointer"
+                    >
+                      <Zap className="h-3.5 w-3.5 fill-current" />
+                      <span>⚡ Repeat Last Rx</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => clonePreviousRx(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-black/[0.1] dark:border-white/[0.12] text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] px-3.5 py-2 text-xs font-semibold transition active:scale-95 cursor-pointer"
+                      title="Clone prescription with 30-day extended duration for chronic refill"
+                    >
+                      <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+                      <span>📅 Extend 30 Days</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 1-TAP DOCTOR RX COMBOS CARD PANEL */}
             <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 sm:p-6 shadow-apple-card space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

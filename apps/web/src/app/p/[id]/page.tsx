@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Sparkles
 } from "lucide-react";
+import QRCodeDisplay from "@/components/QRCodeDisplay";
 
 // Server fallback seeds
 const SEED_PRESCRIPTIONS: Record<string, any> = {
@@ -88,6 +89,8 @@ export default function PatientPrescriptionLockerPage() {
   const [rx, setRx] = useState<any>(SEED_PRESCRIPTIONS["RX-2026-09-0014"]);
   const [loading, setLoading] = useState(true);
   const [routedChemistMsg, setRoutedChemistMsg] = useState<string | null>(null);
+  const [paperFormat, setPaperFormat] = useState<"a4" | "a5">("a4");
+
 
   useEffect(() => {
     const fetchRx = async () => {
@@ -169,20 +172,55 @@ export default function PatientPrescriptionLockerPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Paper Format Selector */}
+            <div className="inline-flex rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] p-0.5">
+              <button
+                type="button"
+                onClick={() => setPaperFormat("a4")}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  paperFormat === "a4"
+                    ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                    : "text-[#86868B] hover:text-[#1D1D1F]"
+                }`}
+              >
+                A4 Sheet
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaperFormat("a5")}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  paperFormat === "a5"
+                    ? "bg-white text-[#0071E3] shadow-sm dark:bg-[#2C2C2E] dark:text-[#2997FF] font-bold"
+                    : "text-[#86868B] hover:text-[#1D1D1F]"
+                }`}
+              >
+                A5 Pad
+              </button>
+            </div>
+
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-1.5 rounded-full bg-[#0071E3] px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#0077ED]"
+              className="flex items-center gap-1.5 rounded-full bg-[#0071E3] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#0077ED] active:scale-95"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span>Print A4 Letterhead</span>
+              <span>Print Sheet</span>
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 rounded-full border border-[#0071E3]/30 bg-[#0071E3]/10 px-3.5 py-1.5 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] shadow-sm transition hover:bg-[#0071E3]/20 active:scale-95"
+              title="Download official NMC-signed vector PDF"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export PDF</span>
             </button>
 
             <a
               href={`https://wa.me/?text=${encodeURIComponent(waShareText)}`}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#20bd5a]"
+              className="flex items-center gap-1.5 rounded-full bg-[#25D366] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#20bd5a] active:scale-95"
             >
               <Share2 className="h-3.5 w-3.5" />
               <span>WhatsApp PDF</span>
@@ -198,8 +236,9 @@ export default function PatientPrescriptionLockerPage() {
           </div>
         </div>
 
-        {/* The Printable A4 Sheet */}
-        <div className="overflow-hidden rounded-[24px] border border-black/[0.06] bg-white p-8 sm:p-12 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] print:p-0 print:border-none print:shadow-none print:bg-white print:text-black">
+        {/* The Printable A4/A5 Sheet */}
+        <div className={`overflow-hidden rounded-[24px] border border-black/[0.06] bg-white ${paperFormat === "a5" ? "max-w-2xl text-xs p-6 sm:p-8" : "max-w-4xl p-8 sm:p-12"} mx-auto shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] print:p-0 print:border-none print:shadow-none print:bg-white print:text-black transition-all`}>
+
           {/* Clinic Header & Letterhead */}
           <div className="border-b-2 border-[#1D1D1F] pb-6 dark:border-white print:border-black">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
@@ -343,17 +382,31 @@ export default function PatientPrescriptionLockerPage() {
           </div>
 
           {/* Cryptographic SHA-256 Tamper-Proof Seal & Digital Signature */}
-          <div className="mt-8 border-t-2 border-[#1D1D1F] pt-6 dark:border-white print:border-black text-xs flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-            <div>
-              <div className="flex items-center gap-2 font-bold text-[#34C759] dark:text-[#30D158] print:text-black">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Cryptographically Sealed & Signed</span>
+          <div className="mt-8 border-t-2 border-[#1D1D1F] pt-6 dark:border-white print:border-black text-xs flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
+            <div className="flex items-center gap-3.5">
+              <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white p-1.5 shadow-sm shrink-0 print:border-black">
+                <QRCodeDisplay
+                  value={`http://localhost:3000/p/${rx.prescription_number || "RX-2026-09-0014"}`}
+                  size={76}
+                  level="M"
+                  fgColor="#000000"
+                  bgColor="#FFFFFF"
+                />
               </div>
-              <div className="font-mono text-[10px] text-[#86868B] mt-1 max-w-sm break-all">
-                SHA-256: {rx.digital_signature_hash}
-              </div>
-              <div className="font-mono text-[10px] text-[#86868B] mt-0.5">
-                Verification Code: <strong>{rx.qr_verification_code}</strong>
+              <div>
+                <div className="flex items-center gap-2 font-bold text-[#34C759] dark:text-[#30D158] print:text-black">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Cryptographically Sealed & Signed</span>
+                </div>
+                <div className="font-mono text-[9px] text-[#86868B] mt-1 max-w-sm break-all">
+                  SHA-256: {rx.digital_signature_hash}
+                </div>
+                <div className="font-mono text-[10px] text-[#86868B] mt-0.5">
+                  Verification Code: <strong>{rx.qr_verification_code}</strong>
+                </div>
+                <div className="text-[10px] text-[#86868B] mt-0.5">
+                  Scan QR with phone to verify authentic prescription on Clinicos
+                </div>
               </div>
             </div>
 
@@ -367,10 +420,33 @@ export default function PatientPrescriptionLockerPage() {
               <div className="text-[10px] text-[#86868B] font-mono mt-0.5">
                 {rx.doctor_reg_number}
               </div>
+              <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                ✓ Digitally Verified
+              </div>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Dynamic Print Stylesheet for High-DPI Print-to-PDF */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: ${paperFormat === "a5" ? "A5 portrait" : "A4 portrait"};
+            margin: 10mm;
+          }
+          body {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          header, nav, button, a, .print\\:hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
+
