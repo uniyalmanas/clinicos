@@ -882,36 +882,37 @@ function SearchDiscoveryContent() {
                       key={doc.slug}
                       onMouseEnter={() => setActiveDoctor(doc)}
                       onClick={() => setActiveDoctor(doc)}
-                      className={`group relative rounded-2xl border bg-white dark:bg-[#1C1C1E] p-4 sm:p-4.5 shadow-xs transition-all duration-150 cursor-pointer hover:shadow-md ${
+                      className={`group relative rounded-2xl border bg-white dark:bg-[#1C1C1E] p-3 sm:p-3.5 shadow-xs transition-all duration-150 cursor-pointer hover:shadow-md ${
                         isSelected
                           ? "border-[#0071E3] ring-2 ring-[#0071E3]/25 shadow-md"
                           : "border-[#E5E7EB] hover:border-gray-300 dark:border-white/10 dark:hover:border-white/25"
                       }`}
                     >
-                      <div className="flex flex-col lg:flex-row items-start justify-between gap-3.5">
-                        {/* Left Block: Doctor Portrait + Comprehensive Clinical Details */}
-                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                          {/* Doctor Portrait with Online Indicator */}
+                      {/* Top Horizontal Section: Doctor Details on Left, Booking Box on Right */}
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                        {/* Left: Doctor Portrait + Clinical Details */}
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {/* Doctor Portrait */}
                           <div className="relative shrink-0">
                             <DoctorPortrait
                               name={doc.full_name}
                               avatarUrl={doc.avatar_url}
                               gender={doc.gender}
-                              className="h-20 w-20 sm:h-22 sm:w-22 rounded-xl"
+                              className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl"
                             />
                             {doc.online_available && (
-                              <span className="absolute -bottom-1 -right-1 flex items-center gap-1 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
+                              <span className="absolute -bottom-1 -right-1 flex items-center gap-1 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[8.5px] font-bold text-white shadow-xs">
                                 <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
                                 <span>Online</span>
                               </span>
                             )}
                           </div>
 
-                          {/* Profile Details (Richer Information for Patients) */}
-                          <div className="min-w-0 flex-1 space-y-1">
-                            {/* Row 1: Doctor Name, Info Icon, NMC Badge, Rating */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white group-hover:text-[#0071E3] transition truncate">
+                          {/* Middle: Doctor Details */}
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            {/* Line 1: Doctor Name, Info, NMC Badge, Rating */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white group-hover:text-[#0071E3] transition truncate">
                                 {doc.full_name}
                               </h3>
                               <button
@@ -928,124 +929,100 @@ function SearchDiscoveryContent() {
 
                               {/* NMC Medical Registration Pill */}
                               {doc.nmc_reg_no && (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/40">
-                                  <CheckCircle2 className="h-2.5 w-2.5 text-sky-600" />
+                                <span className="inline-flex items-center gap-1 rounded bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.2 text-[9.5px] font-semibold text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/40">
+                                  <CheckCircle2 className="h-2 w-2 text-sky-600" />
                                   <span>{doc.nmc_reg_no}</span>
                                 </span>
                               )}
 
                               {/* Patient Satisfaction Rating */}
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/40">
+                              <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800/40">
                                 <ThumbsUp className="h-2.5 w-2.5 fill-emerald-600" />
                                 <span>{Math.round(doc.rating * 19)}% ({doc.total_reviews} Patients)</span>
                               </span>
                             </div>
 
-                            {/* Row 2: Speciality & Experience */}
-                            <div className="flex items-center gap-2 flex-wrap text-xs">
+                            {/* Line 2: Speciality, Experience & Qualifications */}
+                            <div className="flex items-center gap-1.5 flex-wrap text-xs pt-0.5">
                               <span className="font-bold text-[#0071E3] dark:text-[#38BDF8]">
                                 {doc.specialization}
                               </span>
                               <span className="text-gray-300 dark:text-white/20">•</span>
                               <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                {doc.years_of_experience} Yrs Experience
+                                {doc.years_of_experience} Yrs Exp
+                              </span>
+                              <span className="text-gray-300 dark:text-white/20">•</span>
+                              <span className="text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate uppercase tracking-tight max-w-[200px] sm:max-w-xs">
+                                {doc.qualification_summary}
                               </span>
                             </div>
 
-                            {/* Row 3: Medical Degrees */}
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1 uppercase tracking-tight">
-                              {doc.qualification_summary}
-                            </p>
-
-                            {/* Row 4: Clinic Name, Locality, Distance & Live Wait */}
-                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 flex-wrap pt-0.5">
-                              <span className="flex items-center gap-1 font-medium text-gray-800 dark:text-gray-200">
-                                <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                                <span className="truncate max-w-[220px]">{doc.clinic_name}</span>
+                            {/* Line 3: Clinic Location, Distance, Wait Time & Languages */}
+                            <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 flex-wrap pt-0.5">
+                              <span className="flex items-center gap-1 font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px] sm:max-w-xs">
+                                <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
+                                <span>{doc.clinic_name} ({doc.locality})</span>
                               </span>
-                              <span className="text-gray-300 dark:text-white/20">•</span>
-                              <span>{doc.locality} {doc.distance_km ? `(${doc.distance_km})` : ""}</span>
+                              {doc.distance_km && (
+                                <>
+                                  <span className="text-gray-300 dark:text-white/20">•</span>
+                                  <span className="text-gray-500 font-medium">{doc.distance_km}</span>
+                                </>
+                              )}
                               <span className="text-gray-300 dark:text-white/20">•</span>
                               <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 <span>{doc.wait_time}</span>
                               </span>
-                            </div>
-
-                            {/* Row 5: Languages Spoken */}
-                            {doc.languages && doc.languages.length > 0 && (
-                              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 pt-0.5">
-                                <Languages className="h-3 w-3 text-gray-400 shrink-0" />
-                                <span>Speaks: {doc.languages.join(", ")}</span>
-                              </div>
-                            )}
-
-                            {/* Row 6: Clinical Treatments / Conditions Chips */}
-                            {doc.services && doc.services.length > 0 && (
-                              <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                                {doc.services.map((service, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="inline-block rounded-md bg-gray-100 dark:bg-white/5 px-2 py-0.5 text-[10.5px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10"
-                                  >
-                                    {service}
+                              {doc.languages && doc.languages.length > 0 && (
+                                <>
+                                  <span className="text-gray-300 dark:text-white/20 hidden md:inline">•</span>
+                                  <span className="text-gray-500 dark:text-gray-400 hidden md:inline">
+                                    Speaks: {doc.languages.join(", ")}
                                   </span>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Row 7: Verified Patient Testimonial Quote */}
-                            {doc.patient_story_snippet && (
-                              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-[#F8FAFC] dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 px-2.5 py-1.5 text-[11.5px] text-gray-600 dark:text-gray-300 italic">
-                                <MessageSquareQuote className="h-3.5 w-3.5 text-[#0071E3] shrink-0 not-italic mt-0.5" />
-                                <span className="line-clamp-1 not-italic text-gray-700 dark:text-gray-200">
-                                  "{doc.patient_story_snippet}"
-                                </span>
-                              </div>
-                            )}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        {/* Right Block: Slot Availability, Fee & Action CTAs */}
-                        <div className="flex flex-row lg:flex-col items-end justify-between lg:justify-center gap-2 text-right shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-gray-100 dark:border-white/10 w-full lg:w-auto lg:min-w-[155px] xl:min-w-[170px]">
+                        {/* Right: Guarantee, Next Slot, Price & Action Button */}
+                        <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-1.5 text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-white/10 w-full sm:w-auto sm:min-w-[145px] xl:min-w-[160px]">
                           {/* Guarantee Badge */}
                           {doc.on_time_guarantee ? (
-                            <span className="rounded bg-[#08214D] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                            <span className="rounded bg-[#08214D] px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-white">
                               ON TIME GUARANTEE
                             </span>
                           ) : (
-                            <span className="rounded bg-emerald-900/90 px-2 py-0.5 text-[9px] font-bold text-emerald-100">
+                            <span className="rounded bg-emerald-900/90 px-1.5 py-0.5 text-[8.5px] font-bold text-emerald-100">
                               VERIFIED CLINIC
                             </span>
                           )}
 
                           {/* Next Available Slot Indicator */}
-                          <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-1 text-left w-full lg:w-auto">
-                            <div className="text-[9.5px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                          <div className="rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-1.5 py-0.5 text-left w-full sm:w-auto">
+                            <div className="text-[9px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
                               <Clock className="h-2.5 w-2.5 text-emerald-600" />
-                              <span>Next Slot</span>
-                            </div>
-                            <div className="text-[10.5px] font-bold text-emerald-900 dark:text-emerald-200 mt-0.5">
-                              {doc.next_available_slot || "Available Today"}
+                              <span>Next: <strong className="text-emerald-950 dark:text-emerald-200 font-extrabold">{doc.next_available_slot || "Today"}</strong></span>
                             </div>
                           </div>
 
                           {/* Fee & Zero Markup */}
                           <div className="text-right">
-                            <div className="text-lg sm:text-xl font-black text-gray-900 dark:text-white font-mono">
+                            <div className="text-base sm:text-lg font-black text-gray-900 dark:text-white font-mono leading-tight">
                               ₹{doc.consultation_fee}
                             </div>
-                            <div className="text-[9.5px] text-gray-400 dark:text-gray-500 font-medium">
+                            <div className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">
                               Zero Platform Fee
                             </div>
                           </div>
 
                           {/* Action Buttons: Clinic Visit & Video Consult */}
-                          <div className="flex flex-col gap-1 w-full">
+                          <div className="flex items-center sm:flex-col gap-1 w-full">
                             <Link
                               href={`/book?doctor=${doc.slug}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="w-full inline-flex items-center justify-center rounded-lg bg-[#0071E3] px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#0077ED] transition active:scale-95"
+                              className="flex-1 sm:w-full inline-flex items-center justify-center rounded-lg bg-[#0071E3] px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#0077ED] transition active:scale-95 text-center"
                             >
                               Book Clinic Visit
                             </Link>
@@ -1053,7 +1030,7 @@ function SearchDiscoveryContent() {
                               <Link
                                 href={`/book?doctor=${doc.slug}&mode=video`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full inline-flex items-center justify-center rounded-lg border border-[#0071E3] bg-white px-2.5 py-1 text-[10.5px] font-bold text-[#0071E3] hover:bg-[#EFF6FF] dark:bg-transparent dark:border-[#38BDF8] dark:text-[#38BDF8] dark:hover:bg-white/5 transition active:scale-95"
+                                className="flex-1 sm:w-full inline-flex items-center justify-center rounded-lg border border-[#0071E3] bg-white px-2 py-1 text-[10.5px] font-bold text-[#0071E3] hover:bg-[#EFF6FF] dark:bg-transparent dark:border-[#38BDF8] dark:text-[#38BDF8] dark:hover:bg-white/5 transition active:scale-95 text-center"
                               >
                                 Video Consult
                               </Link>
@@ -1061,6 +1038,38 @@ function SearchDiscoveryContent() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Bottom Row: Services Tags on Left & Patient Review Quote on Right (Single Horizontal Row) */}
+                      {((doc.services && doc.services.length > 0) || doc.patient_story_snippet) && (
+                        <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 overflow-hidden">
+                          {/* Left: Horizontal Services Chips */}
+                          {doc.services && doc.services.length > 0 && (
+                            <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none py-0.5">
+                              <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 shrink-0">
+                                Focus:
+                              </span>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {doc.services.map((service, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-block rounded bg-gray-100 dark:bg-white/5 px-1.5 py-0.5 text-[9.5px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 whitespace-nowrap"
+                                  >
+                                    {service}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Right: Patient Testimonial Quote in Single Horizontal Line */}
+                          {doc.patient_story_snippet && (
+                            <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 italic truncate min-w-0 max-w-full sm:max-w-xs md:max-w-sm lg:max-w-md">
+                              <MessageSquareQuote className="h-3 w-3 text-[#0071E3] shrink-0 not-italic" />
+                              <span className="truncate">"{doc.patient_story_snippet}"</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })
