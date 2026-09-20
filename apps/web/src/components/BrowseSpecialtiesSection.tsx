@@ -1492,7 +1492,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                 href={`/book?specialty=${encodeURIComponent(selectedSpecialtyModal.slug)}`}
                 className="flex-1 rounded-full border border-gray-300 py-3 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/20 dark:text-white dark:hover:bg-white/5 transition"
               >
-                Book Instant Token
+                Book Appointment
               </Link>
             </div>
           </div>

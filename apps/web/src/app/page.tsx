@@ -92,13 +92,13 @@ export default function HomePage() {
               href="/book" 
               className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
             >
-              Instant Token
+              Book Appointment
             </Link>
             <Link 
               href="/patient/portal" 
               className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
             >
-              Prescription Locker
+              My Prescriptions &amp; Reports
             </Link>
           </nav>
 
@@ -293,7 +293,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
-                    <span>Passwordless health locker on WhatsApp</span>
+                    <span>Passwordless prescriptions &amp; reports on WhatsApp</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <CheckCircle2 className="h-4 w-4 text-[#30D158]" />
@@ -307,7 +307,7 @@ export default function HomePage() {
                   href="/patient/portal" 
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF9500] hover:underline dark:text-[#FF9F0A]"
                 >
-                  Explore Patient Locker <ArrowRight className="h-3.5 w-3.5" />
+                  View Prescriptions &amp; Reports <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>

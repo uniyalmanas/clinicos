@@ -26,22 +26,28 @@ export default function SpecialtiesPage() {
 
           <nav className="hidden items-center gap-1 sm:flex rounded-full bg-black/[0.04] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06]">
             <Link 
-              href="/specialties" 
-              className="rounded-full px-4 py-1.5 text-xs font-semibold bg-white text-[#1D1D1F] dark:bg-white/10 dark:text-white transition shadow-sm"
-            >
-              Specialties
-            </Link>
-            <Link 
               href="/search" 
               className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
             >
               Find Doctors
             </Link>
             <Link 
+              href="/specialties" 
+              className="rounded-full px-4 py-1.5 text-xs font-semibold bg-white text-[#1D1D1F] dark:bg-white/10 dark:text-white transition shadow-sm"
+            >
+              Specialties
+            </Link>
+            <Link 
+              href="/book" 
+              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
+            >
+              Book Appointment
+            </Link>
+            <Link 
               href="/patient/portal" 
               className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
             >
-              Patient Locker
+              My Prescriptions &amp; Reports
             </Link>
             <Link 
               href="/dashboard" 

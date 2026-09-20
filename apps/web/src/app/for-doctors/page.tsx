@@ -131,7 +131,7 @@ export default function ForDoctorsPage() {
       actionText: "Launch Standee Studio",
       features: [
         "Print-ready vectors for A5, A4, and counter tent standees",
-        "Dual-QR technology: Instant Token Check-in + 5-Star Google Review capture",
+        "Dual-QR technology: Fast Appointment Check-in + 5-Star Google Review capture",
         "Personalized with clinic logo, doctor registration number, and UPI VPA",
         "Zero app download required for patients — works on any phone browser",
         "Dramatically accelerates patient intake during morning peak rush"

@@ -107,7 +107,7 @@ export default function InteractivePlayground() {
               : "text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white"
           }`}
         >
-          <Smartphone className="h-3.5 w-3.5 text-[#FF9500] dark:text-[#FF9F0A]" /> WhatsApp Locker
+          <Smartphone className="h-3.5 w-3.5 text-[#FF9500] dark:text-[#FF9F0A]" /> Prescriptions &amp; Reports
         </button>
 
         <button
@@ -275,7 +275,7 @@ export default function InteractivePlayground() {
                   Patient WhatsApp Delivery
                 </span>
                 <h3 className="mt-1.5 text-lg font-bold text-[#1D1D1F] dark:text-white tracking-tight">
-                  Passwordless WhatsApp Prescription Locker & Dosage Reminders
+                  Passwordless WhatsApp Prescriptions &amp; Dosage Reminders
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
                   Zero app downloads. Secure direct link sent via WhatsApp.
@@ -285,7 +285,7 @@ export default function InteractivePlayground() {
                 href="/patient/portal"
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
               >
-                View Live Patient Locker <ArrowRight className="h-3.5 w-3.5" />
+                Open Prescriptions &amp; Reports <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 

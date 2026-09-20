@@ -64,7 +64,7 @@ export default function PatientPortalPage() {
                 <Smartphone className="h-5 w-5" />
               </div>
               <div>
-                <span className="font-bold tracking-tight text-[#1D1D1F] dark:text-white">Patient Health Locker</span>
+                <span className="font-bold tracking-tight text-[#1D1D1F] dark:text-white">My Prescriptions &amp; Reports</span>
                 <span className="ml-2 rounded-full bg-apple-teal/10 px-2.5 py-0.5 text-[10px] font-medium text-apple-teal dark:text-[#30D1BE]">
                   Passwordless WhatsApp Portal
                 </span>
@@ -139,7 +139,7 @@ export default function PatientPortalPage() {
 
             <div className="flex items-center gap-1.5 text-xs font-medium text-apple-teal bg-apple-teal/10 px-3.5 py-1.5 rounded-full dark:text-[#30D1BE]">
               <ShieldCheck className="h-4 w-4" />
-              <span>DPDP Encrypted Locker</span>
+              <span>DPDP Encrypted Records</span>
             </div>
           </div>
 
