@@ -1083,7 +1083,7 @@ function SearchDiscoveryContent() {
           <aside
             className={`${
               viewMode === "split"
-                ? "w-full lg:w-[420px] xl:w-[480px] 2xl:w-[540px] shrink-0"
+                ? "w-full lg:w-[355px] xl:w-[410px] 2xl:w-[460px] shrink-0"
                 : viewMode === "map"
                 ? "flex-1 min-w-0"
                 : "hidden"
