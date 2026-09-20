@@ -287,6 +287,8 @@ export default function GoogleTerrainMap({
       className={`relative overflow-hidden font-sans border border-[#D1D5DB] dark:border-white/10 shadow-lg ${
         isFullscreen
           ? "fixed inset-0 z-50 h-screen w-screen rounded-none"
+          : className?.includes("h-")
+          ? "w-full rounded-2xl"
           : "h-[620px] w-full rounded-2xl"
       } ${className}`}
     >
