@@ -758,32 +758,32 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
             </span>
           </div>
 
-          {/* 6-Column Grid (20% enlarged buttons to fill screen) */}
-          <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-3.5">
+          {/* Responsive Grid with 10% enlarged tabs and reduced internal padding */}
+          <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3">
             {filteredSpecialties.map((item) => {
               const IconComponent = item.icon;
               return (
                 <div
                   key={item.id}
                   onClick={() => setSelectedSpecialtyModal(item)}
-                  className="group relative flex items-center gap-3 rounded-2xl border border-gray-200/90 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-[#008778] dark:hover:border-[#34D399] hover:shadow-lg hover:-translate-y-0.5 cursor-pointer dark:border-white/10 dark:bg-[#18181B] h-[80px]"
+                  className="group relative flex items-center gap-2.5 rounded-2xl border border-gray-200/90 bg-white px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all duration-150 hover:border-[#008778] dark:hover:border-[#34D399] hover:shadow-md hover:-translate-y-0.5 cursor-pointer dark:border-white/10 dark:bg-[#18181B] h-[88px] min-h-[88px]"
                 >
-                  {/* 20% Larger Icon Container (56px) */}
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-[#EBF7F5] p-2 transition-transform group-hover:scale-105 group-hover:bg-[#DEF2EE] dark:bg-white/10 dark:group-hover:bg-white/15 [&>svg]:w-full [&>svg]:h-full shadow-2xs">
+                  {/* Optimized Icon Container */}
+                  <div className="flex h-12 w-12 sm:h-13 sm:w-13 flex-shrink-0 items-center justify-center rounded-xl bg-[#EBF7F5] p-1.5 transition-transform group-hover:scale-105 group-hover:bg-[#DEF2EE] dark:bg-white/10 dark:group-hover:bg-white/15 [&>svg]:w-full [&>svg]:h-full shadow-2xs">
                     <IconComponent />
                   </div>
 
-                  {/* 20% Larger Typography & Badges */}
-                  <div className="flex-1 min-w-0 pr-1">
-                    <h3 className="text-[13px] sm:text-[14.5px] font-extrabold text-[#1D1D1F] dark:text-white leading-snug truncate group-hover:text-[#008778] dark:group-hover:text-[#34D399] transition">
+                  {/* Fully Readable Typography & Badges */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[13px] sm:text-[14px] font-extrabold text-[#1D1D1F] dark:text-white leading-snug line-clamp-2 group-hover:text-[#008778] dark:group-hover:text-[#34D399] transition">
                       {item.shortName}
                     </h3>
-                    <div className="mt-1 flex items-center gap-1.5 text-xs text-[#86868B] dark:text-[#8E8E93] truncate">
-                      <span className="font-bold text-[#0071E3] dark:text-[#2997FF]">
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
+                      <span className="font-bold text-[#0071E3] dark:text-[#2997FF] shrink-0 text-[11px] sm:text-xs">
                         {item.doctorCount} Doctors
                       </span>
-                      <span>•</span>
-                      <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/70 px-1.5 py-0.5 rounded text-[11px]">
+                      <span className="text-gray-300 dark:text-white/20">•</span>
+                      <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/70 px-1.5 py-0.2 rounded text-[10.5px] shrink-0">
                         0% Fee
                       </span>
                     </div>
