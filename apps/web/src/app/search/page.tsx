@@ -13,19 +13,21 @@ import {
   Navigation, 
   ShieldCheck, 
   Clock, 
-  SlidersHorizontal,
-  ArrowRight,
-  Sparkles,
-  Map as MapIcon,
-  LayoutGrid,
-  Info,
-  Check,
-  X,
-  ThumbsUp,
-  ChevronDown,
-  Layers,
-  Filter,
-  CheckCircle2
+  SlidersHorizontal, 
+  ArrowRight, 
+  Sparkles, 
+  Map as MapIcon, 
+  LayoutGrid, 
+  Info, 
+  Check, 
+  X, 
+  ThumbsUp, 
+  ChevronDown, 
+  Layers, 
+  Filter, 
+  CheckCircle2,
+  MessageSquareQuote,
+  Languages
 } from "lucide-react";
 import GoogleTerrainMap, { DoctorMapItem } from "@/components/GoogleTerrainMap";
 
@@ -52,7 +54,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Male",
     avatar_url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
     lat: 30.3421,
-    lng: 78.0512
+    lng: 78.0512,
+    languages: ["English", "Hindi"],
+    services: ["Acid Reflux (GERD)", "Liver Cirrhosis", "Colonoscopy", "Fatty Liver Care"],
+    next_available_slot: "Today, 04:30 PM",
+    patient_story_snippet: "Dr. Sureka diagnosed my chronic abdominal pain accurately in one consultation. Very calm and reassuring.",
+    distance_km: "1.4 km",
+    nmc_reg_no: "UK-48912/2009"
   },
   {
     slug: "dr-harish-k-c",
@@ -73,7 +81,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Male",
     avatar_url: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=300&auto=format&fit=crop&q=80",
     lat: 30.3204,
-    lng: 78.0489
+    lng: 78.0489,
+    languages: ["English", "Hindi", "Kannada"],
+    services: ["IBD & Ulcerative Colitis", "Gastritis", "Endoscopy", "Hepatitis Care"],
+    next_available_slot: "Today, 05:15 PM",
+    patient_story_snippet: "Very empathetic specialist. Provided actionable diet and lifestyle advice rather than rushing into tests.",
+    distance_km: "2.1 km",
+    nmc_reg_no: "UK-39218/2011"
   },
   {
     slug: "dr-rahul-sharma",
@@ -94,7 +108,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Male",
     avatar_url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=300&auto=format&fit=crop&q=80",
     lat: 30.3255,
-    lng: 78.0436
+    lng: 78.0436,
+    languages: ["English", "Hindi"],
+    services: ["Acne & Scar Laser", "PRP Hair Loss Therapy", "Eczema Treatment", "Chemical Peels"],
+    next_available_slot: "Today, 04:00 PM",
+    patient_story_snippet: "Remarkable improvement in my stubborn acne within 3 weeks. Does not push expensive cosmetics.",
+    distance_km: "0.8 km",
+    nmc_reg_no: "UK-51204/2012"
   },
   {
     slug: "dr-aditi-joshi",
@@ -115,7 +135,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Female",
     avatar_url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&auto=format&fit=crop&q=80",
     lat: 30.3218,
-    lng: 78.0495
+    lng: 78.0495,
+    languages: ["English", "Hindi", "Garhwali"],
+    services: ["Painless Root Canal (RCT)", "Ceramic Crowns", "Teeth Whitening", "Laser Dentistry"],
+    next_available_slot: "Today, 03:45 PM",
+    patient_story_snippet: "Zero pain during the root canal procedure. Clinic is spotless and maintains exceptional sterilization.",
+    distance_km: "1.1 km",
+    nmc_reg_no: "UK-61984/2016"
   },
   {
     slug: "dr-vikram-sethi",
@@ -136,7 +162,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Male",
     avatar_url: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=300&auto=format&fit=crop&q=80",
     lat: 30.3342,
-    lng: 78.0125
+    lng: 78.0125,
+    languages: ["English", "Hindi", "Punjabi"],
+    services: ["Newborn Care & NICU Followup", "Childhood Immunization", "Asthma & Allergies", "Growth Monitoring"],
+    next_available_slot: "Today, 05:00 PM",
+    patient_story_snippet: "Dr. Sethi is wonderfully gentle with babies. Never rushes and explains every dose patiently to anxious parents.",
+    distance_km: "3.2 km",
+    nmc_reg_no: "UK-44129/2009"
   },
   {
     slug: "dr-priya-nair",
@@ -157,7 +189,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Female",
     avatar_url: "https://images.unsplash.com/photo-1594824813589-38b4d8d1e0d4?w=300&auto=format&fit=crop&q=80",
     lat: 30.3381,
-    lng: 78.0512
+    lng: 78.0512,
+    languages: ["English", "Hindi", "Malayalam"],
+    services: ["2D Echocardiography", "Preventive Heart Check", "Hypertension Clinic", "Post-Angioplasty Care"],
+    next_available_slot: "Today, 04:45 PM",
+    patient_story_snippet: "Dr. Nair accurately detected an early arrhythmia that previous doctors overlooked. Extremely competent.",
+    distance_km: "1.6 km",
+    nmc_reg_no: "UK-47890/2010"
   },
   {
     slug: "dr-arvind-rawat",
@@ -178,7 +216,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Male",
     avatar_url: "https://images.unsplash.com/photo-1614608682850-e0d6ed316d47?w=300&auto=format&fit=crop&q=80",
     lat: 30.3152,
-    lng: 78.0321
+    lng: 78.0321,
+    languages: ["English", "Hindi", "Garhwali"],
+    services: ["Type 2 Diabetes Reversal", "Thyroid Disorders", "Dengue & Viral Fevers", "Elderly Geriatric Care"],
+    next_available_slot: "Today, 03:30 PM",
+    patient_story_snippet: "Our trusted family physician for over a decade. Prescribes minimum medications and solves problems quickly.",
+    distance_km: "2.4 km",
+    nmc_reg_no: "UK-38761/2008"
   },
   {
     slug: "dr-meenakshi-sundaram",
@@ -199,7 +243,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Female",
     avatar_url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&auto=format&fit=crop&q=80",
     lat: 30.3211,
-    lng: 78.0562
+    lng: 78.0562,
+    languages: ["English", "Hindi", "Tamil"],
+    services: ["High-Risk Pregnancy", "PCOS / PCOD Reversal", "Infertility Evaluation", "Menopause Care"],
+    next_available_slot: "Today, 05:30 PM",
+    patient_story_snippet: "Guided me with supreme confidence and calm through an anxious high-risk pregnancy. Forever thankful.",
+    distance_km: "1.9 km",
+    nmc_reg_no: "UK-42198/2009"
   },
   {
     slug: "dr-rajesh-semwal",
@@ -220,7 +270,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Male",
     avatar_url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=300&auto=format&fit=crop&q=80",
     lat: 30.3395,
-    lng: 78.0089
+    lng: 78.0089,
+    languages: ["English", "Hindi"],
+    services: ["Robotic Knee Replacement", "Sciatica & Slip Disc", "Sports Ligament (ACL)", "Arthritis Management"],
+    next_available_slot: "Tomorrow, 10:00 AM",
+    patient_story_snippet: "My mother walked pain-free 12 days after knee replacement. Clear advice without false promises.",
+    distance_km: "3.5 km",
+    nmc_reg_no: "UK-31298/2006"
   },
   {
     slug: "dr-amit-bansal",
@@ -241,7 +297,13 @@ const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
     gender: "Male",
     avatar_url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
     lat: 30.3274,
-    lng: 78.0415
+    lng: 78.0415,
+    languages: ["English", "Hindi"],
+    services: ["Endoscopic Sinus Surgery", "Tympanoplasty (Ear Drum)", "Tonsillitis & Adenoid", "Vertigo Treatment"],
+    next_available_slot: "Today, 04:15 PM",
+    patient_story_snippet: "Cured my chronic sinus blockage and vertigo completely. Clear diagnosis and transparent fees.",
+    distance_km: "1.0 km",
+    nmc_reg_no: "UK-53412/2013"
   }
 ];
 
@@ -564,53 +626,53 @@ function SearchDiscoveryContent() {
         <div className="flex flex-col lg:flex-row gap-3 h-full overflow-hidden items-stretch">
 
           {/* ===================================================================
-              LEFT SIDEBAR: FILTERS (PINNED & STICKY ON LEFT)
+              LEFT SIDEBAR: FILTERS (PINNED & STICKY ON LEFT - SLIM & COMPACT)
           =================================================================== */}
-          <aside className="w-full lg:w-[220px] xl:w-[240px] shrink-0 h-full flex flex-col overflow-hidden">
+          <aside className="w-full lg:w-[170px] xl:w-[185px] shrink-0 h-full flex flex-col overflow-hidden">
             <div className="h-full flex flex-col rounded-2xl bg-white dark:bg-[#1C1C1E] border border-[#E5E7EB] dark:border-white/10 shadow-xs overflow-hidden">
               {/* Header: Filters & Clear All */}
-              <div className="flex items-center justify-between px-3.5 py-3 border-b border-gray-100 dark:border-white/10 shrink-0">
-                <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                  <Filter className="h-3.5 w-3.5 text-[#0071E3]" />
+              <div className="flex items-center justify-between px-2.5 py-2.5 border-b border-gray-100 dark:border-white/10 shrink-0">
+                <h2 className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1">
+                  <Filter className="h-3 w-3 text-[#0071E3]" />
                   <span>Filters</span>
                 </h2>
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="text-xs font-bold text-[#0071E3] hover:underline transition"
+                  className="text-[11px] font-bold text-[#0071E3] hover:underline transition"
                 >
                   Clear All
                 </button>
               </div>
 
               {/* Scrollable Filter Options */}
-              <div className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3.5 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto px-2.5 py-2.5 space-y-3 scrollbar-thin">
                 {/* Active Filter Chips */}
                 {(modeOnline || cityFilter || selectedSpecialty !== "All" || expRanges.length > 0) && (
                   <div className="flex flex-wrap gap-1 pb-2 border-b border-gray-100 dark:border-white/10">
                     {modeOnline && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#60A5FA]">
+                      <span className="inline-flex items-center gap-0.5 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-1.5 py-0.2 text-[9px] font-bold text-[#0071E3] dark:text-[#60A5FA]">
                         <span>ONLINE</span>
                         <button type="button" onClick={() => setModeOnline(false)} className="hover:opacity-75">
-                          <X className="h-2.5 w-2.5" />
+                          <X className="h-2 w-2" />
                         </button>
                       </span>
                     )}
 
                     {cityFilter && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#60A5FA]">
-                        <span className="truncate max-w-[100px]">{cityFilter}</span>
+                      <span className="inline-flex items-center gap-0.5 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-1.5 py-0.2 text-[9px] font-bold text-[#0071E3] dark:text-[#60A5FA]">
+                        <span className="truncate max-w-[80px]">{cityFilter}</span>
                         <button type="button" onClick={() => setCityFilter("")} className="hover:opacity-75 shrink-0">
-                          <X className="h-2.5 w-2.5" />
+                          <X className="h-2 w-2" />
                         </button>
                       </span>
                     )}
 
                     {selectedSpecialty !== "All" && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#60A5FA]">
-                        <span className="truncate max-w-[100px]">{selectedSpecialty}</span>
+                      <span className="inline-flex items-center gap-0.5 rounded-full border border-[#0071E3] bg-[#EFF6FF] dark:bg-[#0071E3]/20 px-1.5 py-0.2 text-[9px] font-bold text-[#0071E3] dark:text-[#60A5FA]">
+                        <span className="truncate max-w-[80px]">{selectedSpecialty}</span>
                         <button type="button" onClick={() => setSelectedSpecialty("All")} className="hover:opacity-75 shrink-0">
-                          <X className="h-2.5 w-2.5" />
+                          <X className="h-2 w-2" />
                         </button>
                       </span>
                     )}
@@ -618,11 +680,11 @@ function SearchDiscoveryContent() {
                     {expRanges.map((exp) => (
                       <span
                         key={exp}
-                        className="inline-flex items-center gap-1 rounded-full border border-gray-300 dark:border-white/20 bg-gray-50 dark:bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-gray-700 dark:text-gray-300"
+                        className="inline-flex items-center gap-0.5 rounded-full border border-gray-300 dark:border-white/20 bg-gray-50 dark:bg-white/5 px-1.5 py-0.2 text-[9px] font-semibold text-gray-700 dark:text-gray-300"
                       >
                         <span>{exp} Yrs</span>
                         <button type="button" onClick={() => toggleArrayItem(expRanges, exp, setExpRanges)} className="hover:opacity-75">
-                          <X className="h-2.5 w-2.5" />
+                          <X className="h-2 w-2" />
                         </button>
                       </span>
                     ))}
@@ -630,26 +692,26 @@ function SearchDiscoveryContent() {
                 )}
 
                 {/* 1. Mode of Consult */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                <div className="space-y-1.5">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Mode of Consult
                   </h3>
-                  <div className="space-y-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-                    <label className="flex items-center gap-2 cursor-pointer hover:text-[#0071E3]">
+                  <div className="space-y-1 text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#0071E3]">
                       <input
                         type="checkbox"
                         checked={modeOnline}
                         onChange={(e) => setModeOnline(e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                        className="h-3 w-3 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
                       />
                       <span>Online Consult</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer hover:text-[#0071E3]">
+                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#0071E3]">
                       <input
                         type="checkbox"
                         checked={modePhysical}
                         onChange={(e) => setModePhysical(e.target.checked)}
-                        className="h-3.5 w-3.5 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                        className="h-3 w-3 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
                       />
                       <span>In-Clinic Visit</span>
                     </label>
@@ -657,18 +719,18 @@ function SearchDiscoveryContent() {
                 </div>
 
                 {/* 2. Experience (In Years) */}
-                <div className="space-y-2 pt-2.5 border-t border-gray-100 dark:border-white/10">
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-white/10">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Experience
                   </h3>
-                  <div className="space-y-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <div className="space-y-1 text-[11px] font-medium text-gray-700 dark:text-gray-300">
                     {["0-5", "6-10", "11-16"].map((range) => (
-                      <label key={range} className="flex items-center gap-2 cursor-pointer hover:text-[#0071E3]">
+                      <label key={range} className="flex items-center gap-1.5 cursor-pointer hover:text-[#0071E3]">
                         <input
                           type="checkbox"
                           checked={expRanges.includes(range)}
                           onChange={() => toggleArrayItem(expRanges, range, setExpRanges)}
-                          className="h-3.5 w-3.5 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                          className="h-3 w-3 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
                         />
                         <span>{range} Years</span>
                       </label>
@@ -676,28 +738,28 @@ function SearchDiscoveryContent() {
                     <button
                       type="button"
                       onClick={() => toggleArrayItem(expRanges, "16+", setExpRanges)}
-                      className={`text-xs font-bold transition flex items-center gap-1 ${
+                      className={`text-[11px] font-bold transition flex items-center gap-1 ${
                         expRanges.includes("16+") ? "text-[#0071E3]" : "text-[#0071E3] hover:underline"
                       }`}
                     >
-                      {expRanges.includes("16+") ? "✓ 16+ Years Selected" : "+ 16+ Years"}
+                      {expRanges.includes("16+") ? "✓ 16+ Years" : "+ 16+ Years"}
                     </button>
                   </div>
                 </div>
 
                 {/* 3. Fees (In Rupees) */}
-                <div className="space-y-2 pt-2.5 border-t border-gray-100 dark:border-white/10">
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-white/10">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Fee Budget
                   </h3>
-                  <div className="space-y-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <div className="space-y-1 text-[11px] font-medium text-gray-700 dark:text-gray-300">
                     {["100-500", "500-1000", "1000+"].map((fee) => (
-                      <label key={fee} className="flex items-center gap-2 cursor-pointer hover:text-[#0071E3]">
+                      <label key={fee} className="flex items-center gap-1.5 cursor-pointer hover:text-[#0071E3]">
                         <input
                           type="checkbox"
                           checked={feeRanges.includes(fee)}
                           onChange={() => toggleArrayItem(feeRanges, fee, setFeeRanges)}
-                          className="h-3.5 w-3.5 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                          className="h-3 w-3 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
                         />
                         <span>₹{fee}</span>
                       </label>
@@ -706,18 +768,18 @@ function SearchDiscoveryContent() {
                 </div>
 
                 {/* 4. Gender */}
-                <div className="space-y-2 pt-2.5 border-t border-gray-100 dark:border-white/10">
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-white/10">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Gender
                   </h3>
-                  <div className="space-y-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <div className="space-y-1 text-[11px] font-medium text-gray-700 dark:text-gray-300">
                     {["Male", "Female"].map((gender) => (
-                      <label key={gender} className="flex items-center gap-2 cursor-pointer hover:text-[#0071E3]">
+                      <label key={gender} className="flex items-center gap-1.5 cursor-pointer hover:text-[#0071E3]">
                         <input
                           type="checkbox"
                           checked={selectedGenders.includes(gender)}
                           onChange={() => toggleArrayItem(selectedGenders, gender, setSelectedGenders)}
-                          className="h-3.5 w-3.5 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
+                          className="h-3 w-3 rounded border-gray-300 text-[#0071E3] accent-[#0071E3]"
                         />
                         <span>{gender} Doctors</span>
                       </label>
@@ -726,14 +788,14 @@ function SearchDiscoveryContent() {
                 </div>
 
                 {/* 5. Speciality Selector */}
-                <div className="space-y-2 pt-2.5 border-t border-gray-100 dark:border-white/10">
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-900 dark:text-white">
+                <div className="space-y-1.5 pt-2 border-t border-gray-100 dark:border-white/10">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     Speciality
                   </h3>
                   <select
                     value={selectedSpecialty}
                     onChange={(e) => setSelectedSpecialty(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-900 focus:border-[#0071E3] focus:outline-none dark:border-white/15 dark:bg-[#2C2C2E] dark:text-white"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-1.5 py-1 text-[11px] font-medium text-gray-900 focus:border-[#0071E3] focus:outline-none dark:border-white/15 dark:bg-[#2C2C2E] dark:text-white"
                   >
                     <option value="All">All Specialities</option>
                     <option value="Gastroenterology">Gastroenterology</option>
@@ -750,8 +812,8 @@ function SearchDiscoveryContent() {
               </div>
 
               {/* Direct Booking Promise Footer */}
-              <div className="px-3 py-2 border-t border-gray-100 dark:border-white/10 text-[11px] text-[#008778] font-semibold flex items-center gap-1.5 shrink-0 bg-gray-50/50 dark:bg-white/5">
-                <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+              <div className="px-2.5 py-1.5 border-t border-gray-100 dark:border-white/10 text-[10px] text-[#008778] font-semibold flex items-center gap-1 shrink-0 bg-gray-50/50 dark:bg-white/5">
+                <ShieldCheck className="h-3 w-3 shrink-0" />
                 <span>0% Markup Direct Fee</span>
               </div>
             </div>
@@ -820,27 +882,36 @@ function SearchDiscoveryContent() {
                       key={doc.slug}
                       onMouseEnter={() => setActiveDoctor(doc)}
                       onClick={() => setActiveDoctor(doc)}
-                      className={`group relative rounded-xl border bg-white dark:bg-[#1C1C1E] p-3 sm:p-3.5 shadow-2xs transition-all duration-150 cursor-pointer ${
+                      className={`group relative rounded-2xl border bg-white dark:bg-[#1C1C1E] p-4 sm:p-4.5 shadow-xs transition-all duration-150 cursor-pointer hover:shadow-md ${
                         isSelected
-                          ? "border-[#0071E3] ring-2 ring-[#0071E3]/20 shadow-sm"
-                          : "border-[#E5E7EB] hover:border-gray-300 dark:border-white/10 dark:hover:border-white/20"
+                          ? "border-[#0071E3] ring-2 ring-[#0071E3]/25 shadow-md"
+                          : "border-[#E5E7EB] hover:border-gray-300 dark:border-white/10 dark:hover:border-white/25"
                       }`}
                     >
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        {/* Left: Compact Doctor Portrait + Details */}
-                        <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <DoctorPortrait
-                            name={doc.full_name}
-                            avatarUrl={doc.avatar_url}
-                            gender={doc.gender}
-                            className="h-14 w-14 sm:h-16 sm:w-16"
-                          />
+                      <div className="flex flex-col lg:flex-row items-start justify-between gap-3.5">
+                        {/* Left Block: Doctor Portrait + Comprehensive Clinical Details */}
+                        <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                          {/* Doctor Portrait with Online Indicator */}
+                          <div className="relative shrink-0">
+                            <DoctorPortrait
+                              name={doc.full_name}
+                              avatarUrl={doc.avatar_url}
+                              gender={doc.gender}
+                              className="h-20 w-20 sm:h-22 sm:w-22 rounded-xl"
+                            />
+                            {doc.online_available && (
+                              <span className="absolute -bottom-1 -right-1 flex items-center gap-1 rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
+                                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                                <span>Online</span>
+                              </span>
+                            )}
+                          </div>
 
-                          {/* Middle: Doctor Details (Compact & Dense) */}
-                          <div className="min-w-0 flex-1 space-y-0.5">
-                            {/* Line 1: Doctor Name + Info + Thumbs Up Rating */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white group-hover:text-[#0071E3] transition truncate">
+                          {/* Profile Details (Richer Information for Patients) */}
+                          <div className="min-w-0 flex-1 space-y-1">
+                            {/* Row 1: Doctor Name, Info Icon, NMC Badge, Rating */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white group-hover:text-[#0071E3] transition truncate">
                                 {doc.full_name}
                               </h3>
                               <button
@@ -850,66 +921,144 @@ function SearchDiscoveryContent() {
                                   setInfoModalDoctor(doc);
                                 }}
                                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition p-0.5"
-                                title="View credentials"
+                                title="View medical registration & credentials"
                               >
                                 <Info className="h-3.5 w-3.5" />
                               </button>
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded">
+
+                              {/* NMC Medical Registration Pill */}
+                              {doc.nmc_reg_no && (
+                                <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/40">
+                                  <CheckCircle2 className="h-2.5 w-2.5 text-sky-600" />
+                                  <span>{doc.nmc_reg_no}</span>
+                                </span>
+                              )}
+
+                              {/* Patient Satisfaction Rating */}
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/40">
                                 <ThumbsUp className="h-2.5 w-2.5 fill-emerald-600" />
-                                <span>{Math.round(doc.rating * 19)}%</span>
+                                <span>{Math.round(doc.rating * 19)}% ({doc.total_reviews} Patients)</span>
                               </span>
                             </div>
 
-                            {/* Line 2: Specialization & Experience */}
-                            <p className="text-xs font-semibold text-[#4338CA] dark:text-[#818CF8] truncate">
-                              {doc.specialization} • {doc.years_of_experience} Yrs Exp
-                            </p>
+                            {/* Row 2: Speciality & Experience */}
+                            <div className="flex items-center gap-2 flex-wrap text-xs">
+                              <span className="font-bold text-[#0071E3] dark:text-[#38BDF8]">
+                                {doc.specialization}
+                              </span>
+                              <span className="text-gray-300 dark:text-white/20">•</span>
+                              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                {doc.years_of_experience} Yrs Experience
+                              </span>
+                            </div>
 
-                            {/* Line 3: Qualification */}
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate uppercase tracking-tight">
+                            {/* Row 3: Medical Degrees */}
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1 uppercase tracking-tight">
                               {doc.qualification_summary}
                             </p>
 
-                            {/* Line 4: Clinic Name, Locality & Live Wait Time */}
-                            <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 pt-0.5 truncate">
-                              <span className="flex items-center gap-1 truncate max-w-[200px] sm:max-w-xs">
-                                <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
-                                <span>{doc.clinic_name} ({doc.locality})</span>
+                            {/* Row 4: Clinic Name, Locality, Distance & Live Wait */}
+                            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 flex-wrap pt-0.5">
+                              <span className="flex items-center gap-1 font-medium text-gray-800 dark:text-gray-200">
+                                <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                <span className="truncate max-w-[220px]">{doc.clinic_name}</span>
                               </span>
                               <span className="text-gray-300 dark:text-white/20">•</span>
-                              <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 shrink-0">
+                              <span>{doc.locality} {doc.distance_km ? `(${doc.distance_km})` : ""}</span>
+                              <span className="text-gray-300 dark:text-white/20">•</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 <span>{doc.wait_time}</span>
                               </span>
                             </div>
+
+                            {/* Row 5: Languages Spoken */}
+                            {doc.languages && doc.languages.length > 0 && (
+                              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 pt-0.5">
+                                <Languages className="h-3 w-3 text-gray-400 shrink-0" />
+                                <span>Speaks: {doc.languages.join(", ")}</span>
+                              </div>
+                            )}
+
+                            {/* Row 6: Clinical Treatments / Conditions Chips */}
+                            {doc.services && doc.services.length > 0 && (
+                              <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                                {doc.services.map((service, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-block rounded-md bg-gray-100 dark:bg-white/5 px-2 py-0.5 text-[10.5px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10"
+                                  >
+                                    {service}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Row 7: Verified Patient Testimonial Quote */}
+                            {doc.patient_story_snippet && (
+                              <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-[#F8FAFC] dark:bg-white/[0.03] border border-gray-100 dark:border-white/5 px-2.5 py-1.5 text-[11.5px] text-gray-600 dark:text-gray-300 italic">
+                                <MessageSquareQuote className="h-3.5 w-3.5 text-[#0071E3] shrink-0 not-italic mt-0.5" />
+                                <span className="line-clamp-1 not-italic text-gray-700 dark:text-gray-200">
+                                  "{doc.patient_story_snippet}"
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        {/* Right: Guarantee Badge, Price & Compact Action Button */}
-                        <div className="flex sm:flex-col items-end justify-between sm:justify-center gap-1.5 text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-white/10 w-full sm:w-auto sm:min-w-[135px]">
+                        {/* Right Block: Slot Availability, Fee & Action CTAs */}
+                        <div className="flex flex-row lg:flex-col items-end justify-between lg:justify-center gap-2 text-right shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-gray-100 dark:border-white/10 w-full lg:w-auto lg:min-w-[155px] xl:min-w-[170px]">
+                          {/* Guarantee Badge */}
                           {doc.on_time_guarantee ? (
                             <span className="rounded bg-[#08214D] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
                               ON TIME GUARANTEE
                             </span>
                           ) : (
-                            <span className="rounded bg-emerald-900/90 px-1.5 py-0.5 text-[9px] font-bold text-emerald-100">
-                              VERIFIED
+                            <span className="rounded bg-emerald-900/90 px-2 py-0.5 text-[9px] font-bold text-emerald-100">
+                              VERIFIED CLINIC
                             </span>
                           )}
 
-                          {/* Fee */}
-                          <div className="text-base sm:text-lg font-black text-gray-900 dark:text-white font-mono">
-                            ₹{doc.consultation_fee}
+                          {/* Next Available Slot Indicator */}
+                          <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-1 text-left w-full lg:w-auto">
+                            <div className="text-[9.5px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                              <Clock className="h-2.5 w-2.5 text-emerald-600" />
+                              <span>Next Slot</span>
+                            </div>
+                            <div className="text-[10.5px] font-bold text-emerald-900 dark:text-emerald-200 mt-0.5">
+                              {doc.next_available_slot || "Available Today"}
+                            </div>
                           </div>
 
-                          {/* Action Button */}
-                          <Link
-                            href={`/book?doctor=${doc.slug}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center justify-center rounded-lg bg-[#0071E3] px-3.5 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#0077ED] transition active:scale-95"
-                          >
-                            Book Consult
-                          </Link>
+                          {/* Fee & Zero Markup */}
+                          <div className="text-right">
+                            <div className="text-lg sm:text-xl font-black text-gray-900 dark:text-white font-mono">
+                              ₹{doc.consultation_fee}
+                            </div>
+                            <div className="text-[9.5px] text-gray-400 dark:text-gray-500 font-medium">
+                              Zero Platform Fee
+                            </div>
+                          </div>
+
+                          {/* Action Buttons: Clinic Visit & Video Consult */}
+                          <div className="flex flex-col gap-1 w-full">
+                            <Link
+                              href={`/book?doctor=${doc.slug}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full inline-flex items-center justify-center rounded-lg bg-[#0071E3] px-3 py-1.5 text-xs font-bold text-white shadow-2xs hover:bg-[#0077ED] transition active:scale-95"
+                            >
+                              Book Clinic Visit
+                            </Link>
+                            {doc.online_available && (
+                              <Link
+                                href={`/book?doctor=${doc.slug}&mode=video`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-full inline-flex items-center justify-center rounded-lg border border-[#0071E3] bg-white px-2.5 py-1 text-[10.5px] font-bold text-[#0071E3] hover:bg-[#EFF6FF] dark:bg-transparent dark:border-[#38BDF8] dark:text-[#38BDF8] dark:hover:bg-white/5 transition active:scale-95"
+                              >
+                                Video Consult
+                              </Link>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

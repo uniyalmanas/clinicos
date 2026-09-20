@@ -40,6 +40,13 @@ export interface DoctorMapItem {
   gender?: string;
   lat: number;
   lng: number;
+  // Patient-centric rich clinical details
+  services?: string[];
+  languages?: string[];
+  next_available_slot?: string;
+  patient_story_snippet?: string;
+  distance_km?: string;
+  nmc_reg_no?: string;
 }
 
 interface Props {
