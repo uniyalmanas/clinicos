@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SEED_PATIENTS, PatientProfile } from "@/data/patients";
+import { usePatientSession } from "@/lib/patientSession";
 import { 
   Smartphone, 
   Stethoscope, 
@@ -22,20 +23,95 @@ import {
   Send,
   AlertCircle,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Ticket,
+  Building2,
+  MapPin,
+  ChevronRight,
+  LogOut,
+  Search,
+  Check
 } from "lucide-react";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
 
 export default function PatientPortalPage() {
+  const { session, isLoggedIn, logout, login } = usePatientSession();
+  
+  // State for phone input lookup
+  const [lookupPhone, setLookupPhone] = useState("");
   const [phone, setPhone] = useState("+919123456780");
   const [currentPatient, setCurrentPatient] = useState<PatientProfile>(SEED_PATIENTS[0]);
   const [alarmSetMessage, setAlarmSetMessage] = useState<string | null>(null);
   const [forwardedChemistMsg, setForwardedChemistMsg] = useState<string | null>(null);
 
+  // Synchronize from session on mount or change
+  useEffect(() => {
+    if (session && session.phone) {
+      setPhone(session.phone);
+      const cleanPhone = session.phone.replace(/[^0-9]/g, "");
+      const match = SEED_PATIENTS.find(p => p.phone.replace(/[^0-9]/g, "") === cleanPhone);
+
+      if (match) {
+        setCurrentPatient(match);
+      } else {
+        // Synthesize dynamic patient profile for the active session
+        setCurrentPatient({
+          id: session.id,
+          full_name: session.full_name,
+          phone: session.phone,
+          age: session.age || 32,
+          gender: (session.gender as any) || "Male",
+          blood_group: "O+",
+          chronic_allergies: [],
+          known_conditions: [],
+          emergency_contact: session.phone,
+          registered_at: session.created_at?.split("T")[0] || new Date().toISOString().split("T")[0],
+          total_visits: session.active_booking ? 1 : 0,
+          visits: session.active_booking ? [
+            {
+              visit_id: `vis-${session.active_booking.appointment_number}`,
+              visit_date: session.active_booking.appointment_date,
+              doctor_name: session.active_booking.doctor_name,
+              doctor_specialization: session.active_booking.specialization || "Medical Specialist",
+              clinic_name: session.active_booking.clinic_name,
+              provisional_diagnosis: "OPD Consultation & Clinical Assessment",
+              vitals: { bp: "120/80", pulse: 72, temp: 98.6, weight: 65, spo2: 99 },
+              symptoms: "Scheduled OPD Walk-In Consultation",
+              prescription_number: session.active_booking.appointment_number,
+              medications_summary: ["Pending Chamber Consultation"],
+              lab_orders: [],
+              followup_advice: "Arrive at clinic 10-15 minutes prior to token call."
+            }
+          ] : []
+        });
+      }
+    }
+  }, [session]);
+
   const handlePhoneLookup = (targetPhone: string) => {
     setPhone(targetPhone);
-    const found = SEED_PATIENTS.find(p => p.phone === targetPhone) || SEED_PATIENTS[0];
+    const cleanTarget = targetPhone.replace(/[^0-9]/g, "");
+    const found = SEED_PATIENTS.find(p => p.phone.replace(/[^0-9]/g, "") === cleanTarget) || SEED_PATIENTS[0];
     setCurrentPatient(found);
+    
+    // Also update session to this patient
+    login({
+      id: found.id,
+      full_name: found.full_name,
+      phone: found.phone,
+      age: found.age,
+      gender: found.gender,
+      created_at: new Date().toISOString(),
+      last_active: new Date().toISOString(),
+    });
+  };
+
+  const handleManualPhoneSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (lookupPhone.trim()) {
+      handlePhoneLookup(lookupPhone.trim());
+      setLookupPhone("");
+    }
   };
 
   const setMedicationAlarm = (medicineName: string, timeStr: string) => {
@@ -44,7 +120,7 @@ export default function PatientPortalPage() {
   };
 
   const forwardToChemist = (rxNumber: string) => {
-    setForwardedChemistMsg(`💊 Prescription #${rxNumber} routed to Apollo Pharmacy (Rajpur Road). They will prepare generic generic strips for pickup.`);
+    setForwardedChemistMsg(`💊 Prescription #${rxNumber} routed to Apollo Pharmacy (Rajpur Road). Generic strips will be prepared for pickup.`);
     setTimeout(() => setForwardedChemistMsg(null), 5000);
   };
 
@@ -66,13 +142,22 @@ export default function PatientPortalPage() {
               <div>
                 <span className="font-bold tracking-tight text-[#1D1D1F] dark:text-white">My Prescriptions &amp; Reports</span>
                 <span className="ml-2 rounded-full bg-apple-teal/10 px-2.5 py-0.5 text-[10px] font-medium text-apple-teal dark:text-[#30D1BE]">
-                  Passwordless WhatsApp Portal
+                  Personal Health Vault
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            {isLoggedIn && (
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="hidden sm:inline-flex items-center gap-1 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-3 py-1 text-xs font-medium text-[#86868B] hover:text-rose-600 transition"
+              >
+                <LogOut className="h-3 w-3" /> Switch Patient
+              </button>
+            )}
             <ThemeToggle />
           </div>
         </div>
@@ -95,30 +180,58 @@ export default function PatientPortalPage() {
           </div>
         )}
 
-        {/* QUICK PATIENT SWITCHER */}
-        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 shadow-apple-card">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-[#1D1D1F] dark:text-white">
-              Demo Patient Profile Switcher:
-            </span>
-            <span className="text-[#86868B] text-[11px]">Click to view family health records:</span>
+        {/* =====================================================================
+            TODAY'S ACTIVE OPD TOKEN CALLOUT (If booked via JIT flow)
+        ===================================================================== */}
+        {session?.active_booking && (
+          <div className="rounded-[28px] border border-apple-amber/30 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/10 p-6 shadow-apple-card">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white font-mono font-bold text-2xl shadow-sm">
+                  #{session.active_booking.token_number}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-300">
+                      ⚡ Active OPD Live Token
+                    </span>
+                    <span className="text-[11px] text-[#86868B] font-mono">
+                      {session.active_booking.appointment_number}
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                    Consultation with {session.active_booking.doctor_name}
+                  </h2>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-gray-400" />
+                    {session.active_booking.clinic_name} • {session.active_booking.clinic_address}
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Shift: <strong>{session.active_booking.time_slot}</strong> • Fee: ₹{session.active_booking.fee_amount} (Pay at clinic counter)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex sm:flex-col gap-2">
+                <Link
+                  href={`/book?doctor=${session.active_booking.doctor_slug}`}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-full bg-apple-blue hover:bg-[#0077ED] px-4 py-2 text-xs font-bold text-white shadow-xs transition"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Track Chamber Queue</span>
+                </Link>
+
+                <Link
+                  href="/book"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] px-4 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-black/[0.03] transition"
+                >
+                  <Ticket className="h-3.5 w-3.5" />
+                  <span>Book Another Doctor</span>
+                </Link>
+              </div>
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {SEED_PATIENTS.map(p => (
-              <button
-                key={p.id}
-                onClick={() => handlePhoneLookup(p.phone)}
-                className={`rounded-full px-4 py-1.5 text-xs font-medium transition active:scale-95 ${
-                  currentPatient.id === p.id
-                    ? "bg-apple-blue text-white shadow-apple-sm"
-                    : "border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
-                }`}
-              >
-                {p.full_name} ({p.gender[0]}, {p.age}y)
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* PATIENT PROFILE CARD */}
         <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card">
@@ -133,13 +246,13 @@ export default function PatientPortalPage() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-[#86868B]">
-                Registered Mobile: <strong className="text-[#1D1D1F] dark:text-white font-medium">{currentPatient.phone}</strong> • {currentPatient.age} Years • {currentPatient.gender}
+                Registered WhatsApp: <strong className="text-[#1D1D1F] dark:text-white font-medium">{currentPatient.phone}</strong> • {currentPatient.age} Years • {currentPatient.gender}
               </p>
             </div>
 
             <div className="flex items-center gap-1.5 text-xs font-medium text-apple-teal bg-apple-teal/10 px-3.5 py-1.5 rounded-full dark:text-[#30D1BE]">
               <ShieldCheck className="h-4 w-4" />
-              <span>DPDP Encrypted Records</span>
+              <span>DPDP Encrypted Vault</span>
             </div>
           </div>
 
@@ -147,10 +260,10 @@ export default function PatientPortalPage() {
           <div className="mt-4 flex flex-wrap gap-2.5 text-xs">
             <div className="rounded-full bg-apple-red/10 px-3 py-1 text-apple-red flex items-center gap-1.5 font-medium">
               <AlertCircle className="h-4 w-4" />
-              <span>Allergies: {currentPatient.chronic_allergies.join(", ") || "None"}</span>
+              <span>Allergies: {currentPatient.chronic_allergies.length > 0 ? currentPatient.chronic_allergies.join(", ") : "None Recorded"}</span>
             </div>
             <div className="rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-3 py-1 text-[#1D1D1F] dark:text-[#F5F5F7] flex items-center gap-1.5 font-medium">
-              <span>Conditions: {currentPatient.known_conditions.join(", ") || "Healthy"}</span>
+              <span>Conditions: {currentPatient.known_conditions.length > 0 ? currentPatient.known_conditions.join(", ") : "Healthy Profile"}</span>
             </div>
           </div>
         </div>
@@ -187,7 +300,7 @@ export default function PatientPortalPage() {
             {/* MEDICINES & ALARM CONTROLS */}
             <div className="space-y-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">
-                Daily Dosage Schedule & Alarm Reminders
+                Daily Dosage Schedule &amp; Alarm Reminders
               </span>
 
               <div className="space-y-2.5">
@@ -208,7 +321,7 @@ export default function PatientPortalPage() {
 
                     <button
                       onClick={() => setMedicationAlarm(med, "09:00 PM (Night)")}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue/10 hover:bg-apple-blue/20 text-apple-blue dark:text-sky-300 px-3.5 py-1.5 text-xs font-semibold transition active:scale-95"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue/10 hover:bg-apple-blue/20 text-apple-blue dark:text-sky-300 px-3.5 py-1.5 text-xs font-semibold transition active:scale-95 cursor-pointer"
                     >
                       <Bell className="h-3.5 w-3.5" />
                       <span>Set Daily Alarm</span>
@@ -223,7 +336,7 @@ export default function PatientPortalPage() {
               <div>
                 <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4 text-apple-teal" />
-                  <span>Partner Pharmacy & Lab Pickup (Dehradun Network)</span>
+                  <span>Partner Pharmacy &amp; Lab Pickup (Dehradun Network)</span>
                 </div>
                 <p className="text-[11px] text-[#86868B] mt-0.5">
                   Forward prescribed generics to Apollo Pharmacy (Rajpur Road) with zero markup or book home blood sample pickup.
@@ -233,13 +346,13 @@ export default function PatientPortalPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => forwardToChemist(activeRx.prescription_number)}
-                  className="rounded-full bg-apple-blue hover:bg-[#0077ED] px-4 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition whitespace-nowrap"
+                  className="rounded-full bg-apple-blue hover:bg-[#0077ED] px-4 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition whitespace-nowrap cursor-pointer"
                 >
                   Forward to Local Chemist
                 </button>
                 <button
                   onClick={() => alert("Diagnostic home sample collection requested for Dehradun address!")}
-                  className="rounded-full border border-black/[0.1] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-4 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition whitespace-nowrap"
+                  className="rounded-full border border-black/[0.1] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-4 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition whitespace-nowrap cursor-pointer"
                 >
                   Book Lab Collection
                 </button>
@@ -289,6 +402,49 @@ export default function PatientPortalPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* QUICK FAMILY MEMBER SWITCHER & LOOKUP */}
+        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 shadow-apple-card space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-[#1D1D1F] dark:text-white">
+              Family Member Health Vault Switcher:
+            </span>
+            <span className="text-[#86868B] text-[11px]">Instant 1-click passwordless access:</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {SEED_PATIENTS.map(p => (
+              <button
+                key={p.id}
+                onClick={() => handlePhoneLookup(p.phone)}
+                className={`rounded-full px-4 py-1.5 text-xs font-medium transition active:scale-95 cursor-pointer ${
+                  currentPatient.phone === p.phone
+                    ? "bg-apple-blue text-white shadow-apple-sm"
+                    : "border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                }`}
+              >
+                {p.full_name} ({p.gender[0]}, {p.age}y)
+              </button>
+            ))}
+          </div>
+
+          {/* Manual Phone Lookup Form */}
+          <form onSubmit={handleManualPhoneSubmit} className="pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center gap-2">
+            <input
+              type="tel"
+              value={lookupPhone}
+              onChange={(e) => setLookupPhone(e.target.value)}
+              placeholder="Lookup by mobile number (+91 98765 43210)..."
+              className="flex-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/60 dark:bg-black/40 px-3 py-1.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 font-mono"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-apple-blue px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#0077ED] transition"
+            >
+              Lookup Vault
+            </button>
+          </form>
         </div>
       </main>
     </div>

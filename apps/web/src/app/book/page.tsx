@@ -37,6 +37,7 @@ import {
   SPECIALTY_CATEGORIES, 
   DEHRADUN_LOCALITIES 
 } from "@/data/doctors";
+import { usePatientSession, updateActiveBooking } from "@/lib/patientSession";
 
 // Normalizes query string specialty into standard category
 function normalizeSpecialty(input: string): string {
@@ -162,6 +163,9 @@ function BookingExperience() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("All");
   const [selectedLocality, setSelectedLocality] = useState<string>("All");
 
+  // Active patient session (JIT registration)
+  const { session } = usePatientSession();
+
   // Booking Form fields
   const [appointmentDate, setAppointmentDate] = useState<string>("today");
   const [slotType, setSlotType] = useState<string>("live_token");
@@ -171,6 +175,24 @@ function BookingExperience() {
   const [patientAge, setPatientAge] = useState("");
   const [patientGender, setPatientGender] = useState("unspecified");
   const [symptoms, setSymptoms] = useState("");
+
+  // Auto-prefill if patient already has a session
+  useEffect(() => {
+    if (session) {
+      if (session.full_name && !patientName) {
+        setPatientName(session.full_name);
+      }
+      if (session.phone && (patientPhone === "+91 " || patientPhone === "+91")) {
+        setPatientPhone(session.phone);
+      }
+      if (session.age && !patientAge) {
+        setPatientAge(session.age.toString());
+      }
+      if (session.gender && patientGender === "unspecified") {
+        setPatientGender(session.gender);
+      }
+    }
+  }, [session]);
 
   // Live queue status for selected doctor
   const [liveQueue, setLiveQueue] = useState<{
@@ -427,6 +449,22 @@ function BookingExperience() {
       if (res.ok) {
         const data = await res.json();
         setBookingConfirmed(data);
+
+        // Auto-register / link patient session into Personal Health Vault
+        updateActiveBooking({
+          appointment_number: data.appointment?.appointment_number || `APT-${selectedDoc.slug.slice(3, 8).toUpperCase()}-${100 + calculatedNextToken}`,
+          token_number: data.appointment?.token_number || calculatedNextToken,
+          doctor_name: selectedDoc.full_name,
+          doctor_slug: selectedDoc.slug,
+          specialization: selectedDoc.specialization,
+          clinic_name: selectedDoc.clinic_name,
+          clinic_address: selectedDoc.clinic_address,
+          time_slot: slotLabel,
+          appointment_date: formattedDate,
+          fee_amount: selectedDoc.consultation_fee,
+          booked_at: new Date().toISOString()
+        }, patientName.trim(), `+91${cleanPhone.slice(-10)}`);
+
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         fallbackConfirmation(calculatedNextToken, slotLabel, formattedDate, cleanPhone);
@@ -456,6 +494,21 @@ function BookingExperience() {
       `📍 *Clinic:* ${selectedDoc.clinic_address}\n` +
       `💰 *Consultation Fee:* ₹${selectedDoc.consultation_fee} (Pay at counter via Cash/UPI)\n\n` +
       `_Please arrive 10-15 minutes prior to your turn._`;
+
+    // Auto-register / link patient session into Personal Health Vault
+    updateActiveBooking({
+      appointment_number: `APT-${selectedDoc.slug.slice(3, 8).toUpperCase()}-${100 + assignedToken}`,
+      token_number: assignedToken,
+      doctor_name: selectedDoc.full_name,
+      doctor_slug: selectedDoc.slug,
+      specialization: selectedDoc.specialization,
+      clinic_name: selectedDoc.clinic_name,
+      clinic_address: selectedDoc.clinic_address,
+      time_slot: slotLabel,
+      appointment_date: dateStr,
+      fee_amount: selectedDoc.consultation_fee,
+      booked_at: new Date().toISOString()
+    }, patientName.trim(), `+91${phoneNum}`);
 
     setBookingConfirmed({
       status: "confirmed",
@@ -582,13 +635,38 @@ function BookingExperience() {
                 </div>
               </div>
 
+              {/* Personal Patient Vault Activation Callout */}
+              <div className="rounded-[20px] border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 flex items-start gap-3 text-xs">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                  <ShieldCheck className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                    <span>Personal Health Vault Activated</span>
+                    <span className="rounded-full bg-emerald-200/60 dark:bg-emerald-800/40 px-2 py-0.2 text-[10px] font-semibold text-emerald-800 dark:text-emerald-200">
+                      Passwordless
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800/80 dark:text-emerald-400/90 mt-0.5">
+                    Your digital OPD token, upcoming prescriptions, and dosage reminders are now linked to <strong>{bookingConfirmed.appointment.patient_phone}</strong>.
+                  </p>
+                </div>
+              </div>
+
               {/* Action Buttons */}
               <div className="space-y-3 pt-2">
+                <Link
+                  href="/patient/portal"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-apple-blue hover:bg-[#0077ED] py-3.5 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
+                >
+                  <Sparkles className="h-4 w-4" /> Open My Prescriptions &amp; Reports (Vault)
+                </Link>
+
                 <a
                   href={bookingConfirmed.whatsapp_notification_link}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 py-3.5 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 py-3 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
                 >
                   <Share2 className="h-4 w-4" /> Open Confirmation in WhatsApp
                 </a>

@@ -6,6 +6,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import InteractiveHeroSearch from "@/components/InteractiveHeroSearch";
 import InteractivePlayground from "@/components/InteractivePlayground";
 import BrowseSpecialtiesSection from "@/components/BrowseSpecialtiesSection";
+import SiteHeader from "@/components/SiteHeader";
 import { 
   Stethoscope, 
   Building2, 
@@ -59,63 +60,8 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#ECEEF2] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7]">
-      {/* 1. APPLE TRANSLUCENT NAVIGATION BAR */}
-      <header className="sticky top-0 z-50 w-full border-b border-black/[0.06] bg-[#ECEEF2]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#0071E3] text-white shadow-sm transition group-hover:scale-105">
-                <Stethoscope className="h-5 w-5" />
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-bold tracking-tight text-[#1D1D1F] dark:text-white">DocSphere</span>
-                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">ClinicOS</span>
-              </div>
-            </Link>
-          </div>
-
-          {/* Patient-Centric Navigation */}
-          <nav className="hidden items-center gap-1 sm:flex rounded-full bg-black/[0.04] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06]">
-            <Link 
-              href="/search" 
-              className="rounded-full px-4 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-white dark:text-white dark:hover:bg-white/10 transition shadow-sm"
-            >
-              Find Doctors
-            </Link>
-            <Link 
-              href="/specialties" 
-              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
-            >
-              Specialties
-            </Link>
-            <Link 
-              href="/book" 
-              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
-            >
-              Book Appointment
-            </Link>
-            <Link 
-              href="/patient/portal" 
-              className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition"
-            >
-              My Prescriptions &amp; Reports
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            
-            {/* Direct Switch to Provider Suite */}
-            <Link
-              href="/for-doctors"
-              className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-50/80 px-4 py-2 text-xs font-bold text-[#0071E3] hover:bg-blue-100 dark:border-blue-500/40 dark:bg-blue-950/40 dark:text-[#2997FF] dark:hover:bg-blue-900/40 transition shadow-2xs group"
-            >
-              <span>For Doctors &amp; Clinics</span>
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* 1. ADAPTIVE NAVIGATION BAR (JIT Patient Session + Provider Entrance) */}
+      <SiteHeader />
 
       {/* 2. APPLE HERO SECTION */}
       <section className="relative px-4 pt-16 pb-20 sm:px-6 lg:px-8">
