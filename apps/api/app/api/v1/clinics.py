@@ -101,14 +101,52 @@ SEED_CLINICS = {
     }
 }
 
+def get_all_clinics_map() -> dict:
+    clinics = dict(SEED_CLINICS)
+    clinics.update(CLINICS_DATABASE)
+    
+    from app.api.v1.doctors import SEED_DOCTORS
+    for doc in SEED_DOCTORS.values():
+        c_slug = doc.get("clinic_slug")
+        if c_slug and c_slug not in clinics:
+            clinics[c_slug] = {
+                "id": f"c-{c_slug}",
+                "slug": c_slug,
+                "name": doc.get("clinic_name", "Medical Centre"),
+                "tagline": f"Specialized {doc.get('specialization', 'Medical')} Care Clinic",
+                "about": f"Verified clinical centre providing evidence-based {doc.get('specialization', 'healthcare')} services in Dehradun.",
+                "phone": doc.get("phone", "+919876543210"),
+                "whatsapp_number": doc.get("phone", "+919876543210"),
+                "address_line": doc.get("clinic_address", "Dehradun"),
+                "city": "Dehradun",
+                "state": "Uttarakhand",
+                "postal_code": "248001",
+                "facilities": ["Full AC", "Digital Records", "Wheelchair Accessible", "UPI Soundbox"],
+                "opening_hours": {
+                    "Monday - Saturday": doc.get("opd_timings", "10:00 AM - 08:00 PM"),
+                    "Sunday": "Closed"
+                },
+                "status": "active",
+                "doctors": [
+                    {
+                        "full_name": doc.get("full_name"),
+                        "slug": doc.get("slug"),
+                        "specialization": doc.get("specialization"),
+                        "qualification_summary": doc.get("qualification_summary"),
+                        "consultation_fee": doc.get("consultation_fee")
+                    }
+                ]
+            }
+    return clinics
+
 @router.get("", response_model=List[dict])
 def list_clinics():
-    all_clinics = {**SEED_CLINICS, **CLINICS_DATABASE}
+    all_clinics = get_all_clinics_map()
     return list(all_clinics.values())
 
 @router.get("/{slug}")
 def get_clinic_profile(slug: str):
-    all_clinics = {**SEED_CLINICS, **CLINICS_DATABASE}
+    all_clinics = get_all_clinics_map()
     clinic = all_clinics.get(slug)
     if not clinic:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Clinic profile not found.")

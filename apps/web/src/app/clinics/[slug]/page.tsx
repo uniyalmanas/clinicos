@@ -15,126 +15,24 @@ import {
   Sparkles
 } from "lucide-react";
 
-const SEED_CLINICS: Record<string, any> = {
-  "derma-care-dehradun": {
-    slug: "derma-care-dehradun",
-    name: "Derma Care Skin & Laser Centre",
-    tagline: "Advanced Dermatology & Cosmetic Laser Solutions",
-    about: "State of the art skin clinic specializing in acne, laser hair removal, eczema, and chemical peels with FDA-approved laser technology.",
-    phone: "+919876543210",
-    whatsapp_number: "+919876543210",
-    gstin: "05AAAAA0000A1Z5",
-    address_line: "14, Rajpur Road, Near Ashley Hall",
-    city: "Dehradun",
-    state: "Uttarakhand",
-    postal_code: "248001",
-    facilities: ["Full AC", "Laser Suite", "High-speed WiFi", "Wheelchair Accessible", "UPI Soundbox"],
-    opening_hours: {
-      "Monday - Friday": "10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM",
-      "Saturday": "10:00 AM - 04:00 PM",
-      "Sunday": "Closed"
-    },
-    doctors: [
-      {
-        full_name: "Dr. Rahul Sharma",
-        slug: "dr-rahul-sharma",
-        specialization: "Dermatologist",
-        qualification_summary: "MBBS, MD (Dermatology)",
-        consultation_fee: 600.00
-      }
-    ]
-  },
-  "smile-craft-dental": {
-    slug: "smile-craft-dental",
-    name: "Smile Craft Multi-Speciality Dental",
-    tagline: "Gentle, Precision Dental Care & Implants",
-    about: "Modern digital dental practice offering painless root canals, invisible aligners, dental implants and pediatric dentistry.",
-    phone: "+919876543211",
-    whatsapp_number: "+919876543211",
-    gstin: "05BBBBB0000B1Z6",
-    address_line: "42, EC Road, Near Survey Chowk",
-    city: "Dehradun",
-    state: "Uttarakhand",
-    postal_code: "248001",
-    facilities: ["Full AC", "Digital RVG X-Ray", "Autoclave Sterilization", "WiFi"],
-    opening_hours: {
-      "Monday - Saturday": "10:00 AM - 01:30 PM, 04:30 PM - 08:00 PM",
-      "Sunday": "Emergency Only"
-    },
-    doctors: [
-      {
-        full_name: "Dr. Aditi Joshi",
-        slug: "dr-aditi-joshi",
-        specialization: "Dentist",
-        qualification_summary: "BDS, MDS (Endodontics)",
-        consultation_fee: 400.00
-      }
-    ]
-  },
-  "dron-child-clinic": {
-    slug: "dron-child-clinic",
-    name: "Dron Child & Newborn Health Centre",
-    tagline: "Complete Pediatric Care & Vaccination Hub",
-    about: "Dedicated child health clinic offering newborn monitoring, immunizations, and pediatric emergency care.",
-    phone: "+919876543212",
-    whatsapp_number: "+919876543212",
-    gstin: "05CCCCC0000C1Z7",
-    address_line: "88, Chakrata Road, Near Ballupur Chowk",
-    city: "Dehradun",
-    state: "Uttarakhand",
-    postal_code: "248001",
-    facilities: ["Vaccine Cold Chain", "Nebulization Station", "Child Play Area", "Full AC"],
-    opening_hours: {
-      "Monday - Saturday": "09:30 AM - 01:00 PM, 05:00 PM - 08:30 PM",
-      "Sunday": "10:00 AM - 01:00 PM"
-    },
-    doctors: [
-      {
-        full_name: "Dr. Vikram Sethi",
-        slug: "dr-vikram-sethi",
-        specialization: "Pediatrician",
-        qualification_summary: "MBBS, DCH, DNB",
-        consultation_fee: 500.00
-      }
-    ]
-  }
-};
+import { notFound } from "next/navigation";
+import { DEHRADUN_CLINICS, CLINICS_MAP } from "@/data/clinics";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  return [
-    { slug: "derma-care-dehradun" },
-    { slug: "smile-craft-dental" },
-    { slug: "dron-child-clinic" },
-  ];
+  return DEHRADUN_CLINICS.map(c => ({ slug: c.slug }));
 }
 
 export default async function ClinicProfilePage({ params }: Props) {
   const { slug } = await params;
-  const clinic = SEED_CLINICS[slug] || {
-    slug: slug,
-    name: "Derma Care Skin & Laser Centre",
-    tagline: "Advanced Clinical Healthcare",
-    about: "Providing modern healthcare services in Dehradun.",
-    address_line: "14, Rajpur Road",
-    city: "Dehradun",
-    state: "Uttarakhand",
-    phone: "+919876543210",
-    facilities: ["Full AC", "WiFi", "Wheelchair Accessible"],
-    opening_hours: { "All Days": "10:00 AM - 08:00 PM" },
-    doctors: [
-      {
-        full_name: "Dr. Rahul Sharma",
-        slug: "dr-rahul-sharma",
-        specialization: "Dermatologist",
-        qualification_summary: "MBBS, MD",
-        consultation_fee: 600
-      }
-    ]
-  };
+  const clinic = CLINICS_MAP[slug];
+
+  if (!clinic) {
+    notFound();
+  }
 
   const fullAddress = `${clinic.address_line}, ${clinic.city}, ${clinic.state}`;
 
@@ -256,11 +154,18 @@ export default async function ClinicProfilePage({ params }: Props) {
               </div>
 
               <div className="mt-6 space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <Link
+                  href={`/book?clinic=${clinic.slug}`}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-apple-blue py-3 text-xs font-bold text-white shadow-apple-sm hover:bg-[#0077ED] transition"
+                >
+                  <Calendar className="h-4 w-4" /> Book Appointment / Live Token
+                </Link>
+
                 <a
                   href={`tel:${clinic.phone}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-xs font-bold text-white shadow-md hover:bg-brand-700"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-black/[0.05] transition"
                 >
-                  <Phone className="h-4 w-4" /> Call Clinic Reception
+                  <Phone className="h-4 w-4 text-apple-teal dark:text-[#30D1BE]" /> Call Clinic Reception
                 </a>
 
                 <a

@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     
     # AI Gateway
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
+    # Database & Supabase Integration (Plug & Play)
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     
     class Config:
         case_sensitive = True

@@ -30,6 +30,7 @@ import {
   Languages
 } from "lucide-react";
 import GoogleTerrainMap, { DoctorMapItem } from "@/components/GoogleTerrainMap";
+import { usePatientSession } from "@/lib/patientSession";
 
 // ============================================================================
 // COMPREHENSIVE DOCTORS DIRECTORY (Matches Screenshot & Dehradun Topography)
@@ -392,6 +393,7 @@ function normalizeSpecialty(input: string): string {
 }
 
 function SearchDiscoveryContent() {
+  const { session, isLoggedIn } = usePatientSession();
   const searchParams = useSearchParams();
   const urlSpecialty = searchParams.get("specialty") || searchParams.get("category") || "";
   const urlQuery = searchParams.get("query") || searchParams.get("q") || "";
@@ -612,6 +614,25 @@ function SearchDiscoveryContent() {
             </div>
 
             <ThemeToggle />
+
+            {/* Patient Account Pill (If registered / booked) */}
+            {isLoggedIn && session && (
+              <Link
+                href="/patient/portal"
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition shadow-2xs"
+                title="Open My Health Vault"
+              >
+                <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white text-[9px] font-bold">
+                  {session.full_name[0]?.toUpperCase() || "P"}
+                </div>
+                <span className="hidden sm:inline max-w-[85px] truncate">{session.full_name.split(" ")[0]}</span>
+                {session.active_booking && (
+                  <span className="rounded-full bg-emerald-600 px-1.5 py-0.2 text-[9px] font-bold text-white">
+                    #{session.active_booking.token_number}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
       </header>
