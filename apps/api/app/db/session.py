@@ -1,6 +1,15 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+
+# Explicitly load .env from apps/api/.env or current working directory
+env_file = Path(__file__).resolve().parents[2] / ".env"
+if env_file.exists():
+    load_dotenv(dotenv_path=env_file, override=True)
+else:
+    load_dotenv(override=True)
 
 # Database URL configuration (Supports Supabase PostgreSQL & local SQLite fallback)
 env_db_url = os.getenv("DATABASE_URL", "").strip()

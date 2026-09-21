@@ -6,9 +6,10 @@ from app.db.models import (
 from datetime import date, datetime, timedelta
 import uuid
 
-def init_database():
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
+def init_database(custom_engine=None, custom_session_factory=None):
+    active_engine = custom_engine if custom_engine is not None else engine
+    Base.metadata.create_all(bind=active_engine)
+    db = custom_session_factory() if custom_session_factory is not None else SessionLocal()
 
     try:
         # Check if doctors are already seeded
