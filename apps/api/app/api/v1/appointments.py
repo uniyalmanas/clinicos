@@ -71,6 +71,41 @@ APPOINTMENTS_DB = {
     }
 }
 
+@router.get("", response_model=List[Dict[str, Any]])
+def list_appointments(
+    doctor_slug: Optional[str] = None,
+    patient_phone: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(AppointmentModel)
+    if doctor_slug:
+        query = query.filter(AppointmentModel.doctor_slug == doctor_slug)
+    if patient_phone:
+        query = query.filter(AppointmentModel.patient_phone == patient_phone)
+    records = query.all()
+    if records:
+        return [
+            {
+                "id": r.id,
+                "appointment_number": r.appointment_number,
+                "doctor_slug": r.doctor_slug,
+                "doctor_name": r.doctor_name,
+                "clinic_name": r.clinic_name,
+                "patient_name": r.patient_name,
+                "patient_phone": r.patient_phone,
+                "appointment_date": r.appointment_date,
+                "time_slot": r.time_slot,
+                "token_number": r.token_number,
+                "status": r.status,
+                "fee_amount": r.fee_amount,
+                "payment_status": r.payment_status,
+                "payment_mode": r.payment_mode,
+                "symptoms_description": r.symptoms_description
+            }
+            for r in records
+        ]
+    return list(APPOINTMENTS_DB.values())
+
 @router.get("/live-queue")
 def get_live_queue(doctor_slug: str = "dr-rahul-sharma"):
     doctor_appointments = [
