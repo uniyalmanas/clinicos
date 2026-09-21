@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Star, ShieldCheck, MessageSquare, ThumbsUp, PlusCircle, CheckCircle2, Clock, User, X } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 interface ReviewItem {
   id: string;
@@ -43,7 +44,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
 
   const loadReviews = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/reviews?doctor_slug=${doctorSlug}`);
+      const res = await fetch(`${API_BASE_URL}/api/v1/reviews?doctor_slug=${doctorSlug}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -65,7 +66,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/reviews", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -14,6 +14,7 @@ import {
   Calendar,
   AlertCircle
 } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 export interface DocumentItem {
   id: string;
@@ -47,7 +48,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
 
   const loadDocs = async () => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/documents?patient_phone=${encodeURIComponent(patientPhone)}`);
+      const res = await fetch(`${API_BASE_URL}/api/v1/documents?patient_phone=${encodeURIComponent(patientPhone)}`);
       if (res.ok) {
         const json = await res.json();
         setDocuments(json.documents || []);
@@ -69,7 +70,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
 
     setUploading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/documents/upload", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/documents/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
