@@ -12,135 +12,62 @@ def init_database(custom_engine=None, custom_session_factory=None):
     db = custom_session_factory() if custom_session_factory is not None else SessionLocal()
 
     try:
-        # Check if doctors are already seeded
-        if db.query(Doctor).count() == 0:
-            doc1 = Doctor(
-                id=str(uuid.uuid4()),
-                slug="dr-rahul-sharma",
-                title="Dr.",
-                full_name="Dr. Rahul Sharma",
-                medical_council_reg_number="UKMC-8942-2012",
-                medical_council_state="Uttarakhand Medical Council",
-                qualification_summary="MBBS, MD (Dermatology, Venereology & Leprosy)",
-                specialization="Dermatologist",
-                sub_specializations=["Acne Specialist", "Cosmetic Laser Surgery", "Hair Loss Therapy"],
-                years_of_experience=12,
-                languages_spoken=["English", "Hindi"],
-                bio="Dr. Rahul Sharma is a senior consultant dermatologist with over 12 years of clinical expertise in treating chronic acne, psoriasis, and laser aesthetic procedures. Committed to personalized, evidence-based skincare.",
-                consultation_fee=600.0,
-                followup_fee=300.0,
-                followup_validity_days=7,
-                services_offered=[
-                    {"name": "Skin & Scalp Consultation", "fee": 600},
-                    {"name": "Chemical Peel & Acne Treatment", "fee": 1500},
-                    {"name": "Laser Scar Reduction", "fee": 2500},
-                    {"name": "PRP Hair Loss Therapy", "fee": 3500}
-                ],
-                verification_status="verified",
-                rating=4.9,
-                total_reviews=142,
-                clinic_id="clinic-derma-care-01",
-                clinic_name="Derma Care Skin & Laser Centre",
-                clinic_slug="derma-care-dehradun",
-                clinic_address="14, Rajpur Road, Near Ashley Hall, Dehradun",
-                opd_timings="Mon - Sat: 10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM",
-                phone="+919876543210"
-            )
+        # Seed Clinics (20 verified Dehradun clinics)
+        from app.api.v1.clinics import get_all_clinics_map
+        clinics_map = get_all_clinics_map()
+        for c_slug, c in clinics_map.items():
+            if not db.query(Clinic).filter(Clinic.slug == c_slug).first():
+                cln = Clinic(
+                    id=c.get("id", f"c-{c_slug}"),
+                    slug=c_slug,
+                    name=c.get("name", c_slug.replace("-", " ").title()),
+                    phone=c.get("phone", "+919876543210"),
+                    address_line=c.get("address_line", "Dehradun"),
+                    city=c.get("city", "Dehradun"),
+                    state=c.get("state", "Uttarakhand"),
+                    postal_code=c.get("postal_code", "248001"),
+                    facilities=c.get("facilities", ["Full AC", "Digital Records", "WiFi"]),
+                    opening_hours=c.get("opening_hours", {"weekdays": "10:00 AM - 08:00 PM"}),
+                    status=c.get("status", "active")
+                )
+                db.add(cln)
 
-            doc2 = Doctor(
-                id=str(uuid.uuid4()),
-                slug="dr-aditi-joshi",
-                title="Dr.",
-                full_name="Dr. Aditi Joshi",
-                medical_council_reg_number="UDC-4120-2016",
-                medical_council_state="Uttarakhand Dental Council",
-                qualification_summary="BDS, MDS (Endodontics)",
-                specialization="Dentist",
-                sub_specializations=["Painless Root Canal", "Cosmetic Veneers", "Dental Implants"],
-                years_of_experience=8,
-                languages_spoken=["English", "Hindi", "Garhwali"],
-                bio="Dr. Aditi Joshi is a leading endodontist known for painless single-sitting root canals and digital smile design in Dehradun.",
-                consultation_fee=400.0,
-                followup_fee=0.0,
-                followup_validity_days=7,
-                services_offered=[
-                    {"name": "Dental Checkup & Digital X-Ray", "fee": 400},
-                    {"name": "Single Sitting Painless RCT", "fee": 3000},
-                    {"name": "Teeth Whitening", "fee": 3500},
-                    {"name": "Dental Implants Consultation", "fee": 800}
-                ],
-                verification_status="verified",
-                rating=4.8,
-                total_reviews=98,
-                clinic_id="clinic-smile-craft-02",
-                clinic_name="Smile Craft Multi-Speciality Dental",
-                clinic_slug="smile-craft-dental",
-                clinic_address="42, EC Road, Near Survey Chowk, Dehradun",
-                opd_timings="Mon - Sat: 10:00 AM - 01:30 PM, 04:30 PM - 08:00 PM",
-                phone="+919876543211"
-            )
-
-            doc3 = Doctor(
-                id=str(uuid.uuid4()),
-                slug="dr-vikram-sethi",
-                title="Dr.",
-                full_name="Dr. Vikram Sethi",
-                medical_council_reg_number="UKMC-6214-2009",
-                medical_council_state="Uttarakhand Medical Council",
-                qualification_summary="MBBS, DCH, DNB (Pediatrics)",
-                specialization="Pediatrician",
-                sub_specializations=["Newborn Intensive Care", "Childhood Asthma", "Vaccination"],
-                years_of_experience=15,
-                languages_spoken=["English", "Hindi"],
-                bio="Senior child specialist providing gentle, compassionate pediatric healthcare, newborn care, and complete childhood immunization schedules.",
-                consultation_fee=500.0,
-                followup_fee=200.0,
-                followup_validity_days=5,
-                services_offered=[
-                    {"name": "Child OPD Consultation", "fee": 500},
-                    {"name": "Vaccination Administration", "fee": 200},
-                    {"name": "Growth & Milestones Assessment", "fee": 600}
-                ],
-                verification_status="verified",
-                rating=4.95,
-                total_reviews=210,
-                clinic_id="clinic-dron-child-03",
-                clinic_name="Dron Child & Newborn Health Centre",
-                clinic_slug="dron-child-clinic",
-                clinic_address="88, Chakrata Road, Near Ballupur Chowk, Dehradun",
-                opd_timings="Mon - Sat: 09:30 AM - 01:00 PM, 05:00 PM - 08:30 PM",
-                phone="+919876543212"
-            )
-
-            db.add_all([doc1, doc2, doc3])
-
-        # Seed Clinics
-        if db.query(Clinic).count() == 0:
-            cln1 = Clinic(
-                id="clinic-derma-care-01",
-                slug="derma-care-dehradun",
-                name="Derma Care Skin & Laser Centre",
-                phone="+919876543210",
-                address_line="14, Rajpur Road, Near Ashley Hall",
-                city="Dehradun",
-                state="Uttarakhand",
-                postal_code="248001",
-                facilities=["Air Conditioned", "Laser Suite", "Digital Pharmacy", "Wheelchair Friendly", "Parking"],
-                opening_hours={"weekdays": "10:00 AM - 08:30 PM", "sunday": "Closed"}
-            )
-            cln2 = Clinic(
-                id="clinic-smile-craft-02",
-                slug="smile-craft-dental",
-                name="Smile Craft Multi-Speciality Dental",
-                phone="+919876543211",
-                address_line="42, EC Road, Near Survey Chowk",
-                city="Dehradun",
-                state="Uttarakhand",
-                postal_code="248001",
-                facilities=["Digital RVG X-Ray", "Sterilization Autoclave", "Patient Lounge", "WiFi"],
-                opening_hours={"weekdays": "10:00 AM - 08:00 PM", "sunday": "10:00 AM - 01:00 PM"}
-            )
-            db.add_all([cln1, cln2])
+        # Seed Doctors (20 verified Dehradun specialists)
+        from app.api.v1.doctors import SEED_DOCTORS
+        for d_slug, doc_data in SEED_DOCTORS.items():
+            if not db.query(Doctor).filter(Doctor.slug == d_slug).first():
+                c_slug = doc_data.get("clinic_slug", "")
+                c_info = clinics_map.get(c_slug, {})
+                c_id = c_info.get("id", f"c-{c_slug}") if c_slug else None
+                
+                doc = Doctor(
+                    id=doc_data.get("id", str(uuid.uuid4())),
+                    slug=d_slug,
+                    title=doc_data.get("title", "Dr."),
+                    full_name=doc_data.get("full_name", d_slug.replace("-", " ").title()),
+                    medical_council_reg_number=doc_data.get("medical_council_reg_number", "UKMC-REG-2026"),
+                    medical_council_state=doc_data.get("medical_council_state", "Uttarakhand Medical Council"),
+                    qualification_summary=doc_data.get("qualification_summary", "MBBS"),
+                    specialization=doc_data.get("specialization", "General Medicine"),
+                    sub_specializations=doc_data.get("sub_specializations", []),
+                    years_of_experience=doc_data.get("years_of_experience", 10),
+                    languages_spoken=doc_data.get("languages_spoken", ["English", "Hindi"]),
+                    bio=doc_data.get("bio", ""),
+                    consultation_fee=float(doc_data.get("consultation_fee", 500.0)),
+                    followup_fee=float(doc_data.get("followup_fee", 200.0)),
+                    followup_validity_days=int(doc_data.get("followup_validity_days", 7)),
+                    services_offered=doc_data.get("services_offered", []),
+                    verification_status=doc_data.get("verification_status", "verified"),
+                    rating=float(doc_data.get("rating", 4.9)),
+                    total_reviews=int(doc_data.get("total_reviews", 50)),
+                    clinic_id=c_id,
+                    clinic_name=doc_data.get("clinic_name", c_info.get("name", "")),
+                    clinic_slug=c_slug,
+                    clinic_address=doc_data.get("clinic_address", c_info.get("address_line", "Dehradun")),
+                    opd_timings=doc_data.get("opd_timings", "Mon - Sat: 10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM"),
+                    phone=doc_data.get("phone", "+919876543210")
+                )
+                db.add(doc)
 
         # Seed Appointments for today
         today_str = str(date.today())
