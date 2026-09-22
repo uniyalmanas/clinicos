@@ -7,7 +7,12 @@ import uuid
 
 from app.db.session import get_db
 from sqlalchemy.orm import Session
-from app.db.models import Doctor as DoctorModel, Clinic as ClinicModel
+from app.db.models import (
+    ClinicMembership,
+    Clinic as ClinicModel,
+    Doctor as DoctorModel,
+    UserAccount,
+)
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
@@ -114,9 +119,26 @@ def publish_onboarding_profile(payload: PublishRequest, db: Session = Depends(ge
                 postal_code=cln.get("postal_code", "248001"),
                 facilities=["AC", "Wheelchair Accessible", "WiFi"],
                 opening_hours=cln.get("opening_hours", {"all_days": "10:00 AM - 08:00 PM"}),
-                status="active"
+                status="active",
+                subscription_status="trial",
+                subscription_plan="starter",
             )
             db.add(db_clinic)
+            db.flush()
+
+        owner = db.query(UserAccount).filter(UserAccount.phone == payload.phone).first()
+        if owner:
+            membership = db.query(ClinicMembership).filter(
+                ClinicMembership.user_id == owner.id,
+                ClinicMembership.clinic_id == db_clinic.id,
+            ).first()
+            if not membership:
+                db.add(ClinicMembership(
+                    id=str(uuid.uuid4()),
+                    user_id=owner.id,
+                    clinic_id=db_clinic.id,
+                    role="clinic_admin",
+                ))
 
         db_doctor = db.query(DoctorModel).filter(DoctorModel.slug == doc_slug).first()
         if not db_doctor:

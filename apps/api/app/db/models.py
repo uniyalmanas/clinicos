@@ -1,6 +1,31 @@
-from sqlalchemy import Column, String, Integer, Float, Boolean, Text, DateTime, JSON
+from sqlalchemy import Column, String, Integer, Float, Boolean, Text, DateTime, JSON, ForeignKey
 from datetime import datetime
 from app.db.session import Base
+
+
+class UserAccount(Base):
+    __tablename__ = "user_accounts"
+
+    id = Column(String, primary_key=True, index=True)
+    phone = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, unique=True, nullable=True, index=True)
+    password_hash = Column(String, nullable=False)
+    full_name = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="patient")
+    is_verified = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ClinicMembership(Base):
+    __tablename__ = "clinic_memberships"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("user_accounts.id"), nullable=False, index=True)
+    clinic_id = Column(String, ForeignKey("clinics.id"), nullable=False, index=True)
+    role = Column(String, nullable=False, default="staff")
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class Doctor(Base):
     __tablename__ = "doctors"
@@ -46,6 +71,9 @@ class Clinic(Base):
     facilities = Column(JSON, default=list)
     opening_hours = Column(JSON, default=dict)
     status = Column(String, default="active")
+    subscription_status = Column(String, default="trial", index=True)
+    subscription_plan = Column(String, default="starter")
+    subscription_expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Appointment(Base):
@@ -54,6 +82,7 @@ class Appointment(Base):
     id = Column(String, primary_key=True, index=True)
     appointment_number = Column(String, unique=True, index=True)
     doctor_slug = Column(String, index=True)
+    clinic_id = Column(String, ForeignKey("clinics.id"), nullable=True, index=True)
     doctor_name = Column(String)
     clinic_name = Column(String)
     patient_name = Column(String, nullable=False)
@@ -74,6 +103,7 @@ class Prescription(Base):
     id = Column(String, primary_key=True, index=True)
     prescription_number = Column(String, unique=True, index=True)
     appointment_number = Column(String, index=True)
+    clinic_id = Column(String, ForeignKey("clinics.id"), nullable=True, index=True)
     doctor_name = Column(String)
     doctor_reg_number = Column(String)
     clinic_name = Column(String)
@@ -97,6 +127,7 @@ class PatientDocument(Base):
 
     id = Column(String, primary_key=True, index=True)
     patient_phone = Column(String, index=True)
+    clinic_id = Column(String, ForeignKey("clinics.id"), nullable=True, index=True)
     patient_name = Column(String)
     document_type = Column(String, default="Lab Report") # Lab Report, Blood Test, Radiology X-Ray, Previous Rx, Discharge Summary
     title = Column(String, nullable=False)
@@ -110,6 +141,7 @@ class Review(Base):
 
     id = Column(String, primary_key=True, index=True)
     doctor_slug = Column(String, index=True)
+    clinic_id = Column(String, ForeignKey("clinics.id"), nullable=True, index=True)
     patient_name = Column(String)
     rating = Column(Float, default=5.0)
     waiting_time_rating = Column(Float, default=5.0)

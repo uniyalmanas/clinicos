@@ -1,13 +1,42 @@
 from app.db.session import engine, SessionLocal, Base
 from app.db.models import (
-    Doctor, Clinic, Appointment, Prescription, PatientDocument, Review, Expense, 
+    UserAccount, ClinicMembership, Doctor, Clinic, Appointment, Prescription, PatientDocument, Review, Expense,
     ClinicWard, ClinicBed, PharmacyItem, PharmacyDispense
 )
+from app.core.security import get_password_hash
+from sqlalchemy import inspect, text
 from datetime import date, datetime, timedelta
 import uuid
 
+
+def migrate_tenant_columns(active_engine):
+    columns = {
+        "clinics": {
+            "subscription_status": "VARCHAR(32)",
+            "subscription_plan": "VARCHAR(32)",
+            "subscription_expires_at": "TIMESTAMP",
+        },
+        "user_accounts": {"role": "VARCHAR(32)"},
+        "appointments": {"clinic_id": "VARCHAR(255)"},
+        "prescriptions": {"clinic_id": "VARCHAR(255)"},
+        "patient_documents": {"clinic_id": "VARCHAR(255)"},
+        "reviews": {"clinic_id": "VARCHAR(255)"},
+    }
+    inspector = inspect(active_engine)
+    with active_engine.begin() as connection:
+        for table_name, table_columns in columns.items():
+            if not inspector.has_table(table_name):
+                continue
+            existing = {column["name"] for column in inspector.get_columns(table_name)}
+            for column_name, column_type in table_columns.items():
+                if column_name not in existing:
+                    connection.execute(text(
+                        f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+                    ))
+
 def init_database(custom_engine=None, custom_session_factory=None):
     active_engine = custom_engine if custom_engine is not None else engine
+    migrate_tenant_columns(active_engine)
     Base.metadata.create_all(bind=active_engine)
     db = custom_session_factory() if custom_session_factory is not None else SessionLocal()
 
@@ -603,6 +632,53 @@ def init_database(custom_engine=None, custom_session_factory=None):
                 created_at=datetime.utcnow() - timedelta(hours=2)
             )
             db.add(bill1)
+
+        default_clinic = db.query(Clinic).filter(Clinic.slug == "derma-care-dehradun").first()
+        db.query(Clinic).filter(Clinic.subscription_status.is_(None)).update({
+            Clinic.subscription_status: "trial",
+            Clinic.subscription_plan: "starter",
+        }, synchronize_session=False)
+        if default_clinic:
+            for model in (Appointment, Prescription, PatientDocument, Review):
+                db.query(model).filter(model.clinic_id.is_(None)).update(
+                    {model.clinic_id: default_clinic.id},
+                    synchronize_session=False,
+                )
+        seed_accounts = [
+            ("11111111-1111-1111-1111-111111111111", "+919876543210", "dr.rahul@clinicos.in", "Dr. Rahul Sharma", "doctor"),
+            ("22222222-2222-2222-2222-222222222222", "+919876543211", "dr.aditi@clinicos.in", "Dr. Aditi Joshi", "doctor"),
+            ("55555555-5555-5555-5555-555555555555", "+919876543214", "pooja@dermacare.in", "Pooja Verma (Reception)", "staff"),
+            ("77777777-7777-7777-7777-777777777777", "+919876543215", "admin@clinicos.in", "ClinicOS Platform Admin", "clinic_admin"),
+            ("66666666-6666-6666-6666-666666666661", "+919123456780", "amit.rawat@gmail.com", "Amit Rawat", "patient"),
+        ]
+        for user_id, phone, email, full_name, role in seed_accounts:
+            user = db.query(UserAccount).filter(UserAccount.phone == phone).first()
+            if not user:
+                user = UserAccount(
+                    id=user_id,
+                    phone=phone,
+                    email=email,
+                    password_hash=get_password_hash("Password@123"),
+                    full_name=full_name,
+                    role=role,
+                    is_verified=True,
+                )
+                db.add(user)
+                db.flush()
+            elif user.role != role:
+                user.role = role
+            if default_clinic and role != "patient" and role != "clinic_admin":
+                membership = db.query(ClinicMembership).filter(
+                    ClinicMembership.user_id == user.id,
+                    ClinicMembership.clinic_id == default_clinic.id,
+                ).first()
+                if not membership:
+                    db.add(ClinicMembership(
+                        id=str(uuid.uuid4()),
+                        user_id=user.id,
+                        clinic_id=default_clinic.id,
+                        role=role,
+                    ))
 
         db.commit()
         print("ClinicOS Database initialized and seeded successfully!")

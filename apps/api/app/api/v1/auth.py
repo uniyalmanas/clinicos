@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.schemas.auth import UserRegister, UserLogin, TokenResponse, UserProfile
 from app.core.security import get_password_hash, verify_password, create_access_token, decode_access_token
+from app.db.session import get_db
+from app.db.models import Clinic, UserAccount, ClinicMembership
+from sqlalchemy.orm import Session
 import uuid
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -60,53 +63,75 @@ USERS_DB = {
 }
 
 @router.post("/register", response_model=TokenResponse)
-def register(user_in: UserRegister):
-    if user_in.phone in USERS_DB:
+def register(user_in: UserRegister, db: Session = Depends(get_db)):
+    if db.query(UserAccount).filter(UserAccount.phone == user_in.phone).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A user with this phone number already exists."
         )
     
     new_id = str(uuid.uuid4())
-    user_record = {
-        "id": new_id,
-        "phone": user_in.phone,
-        "email": user_in.email,
-        "password_hash": get_password_hash(user_in.password),
-        "full_name": user_in.full_name,
-        "role": user_in.role,
-        "is_verified": False
-    }
-    USERS_DB[user_in.phone] = user_record
+    user_record = UserAccount(
+        id=new_id,
+        phone=user_in.phone,
+        email=user_in.email,
+        password_hash=get_password_hash(user_in.password),
+        full_name=user_in.full_name,
+        role=user_in.role,
+        is_verified=False,
+    )
+    db.add(user_record)
+    if user_in.clinic_id:
+        db.add(ClinicMembership(
+            id=str(uuid.uuid4()),
+            user_id=new_id,
+            clinic_id=user_in.clinic_id,
+            role=user_in.role,
+        ))
+    db.commit()
     
-    token = create_access_token(subject=new_id, role=user_in.role)
+    token = create_access_token(subject=new_id, role=user_in.role, clinic_id=user_in.clinic_id)
     return TokenResponse(
         access_token=token,
         role=user_in.role,
         user_id=new_id,
         full_name=user_in.full_name,
-        phone=user_in.phone
+        phone=user_in.phone,
+        clinic_id=user_in.clinic_id,
     )
 
 @router.post("/login", response_model=TokenResponse)
-def login(credentials: UserLogin):
-    user = USERS_DB.get(credentials.phone)
-    if not user or not verify_password(credentials.password, user["password_hash"]):
+def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(UserAccount).filter(
+        UserAccount.phone == credentials.phone,
+        UserAccount.is_active.is_(True),
+    ).first()
+    if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid phone number or password."
         )
     
-    token = create_access_token(subject=user["id"], role=user["role"])
+    membership = db.query(ClinicMembership).filter(
+        ClinicMembership.user_id == user.id,
+        ClinicMembership.is_active.is_(True),
+    ).first()
+    role = membership.role if membership else user.role
+    clinic_id = membership.clinic_id if membership else None
+    token = create_access_token(subject=user.id, role=role, clinic_id=clinic_id)
     return TokenResponse(
         access_token=token,
-        role=user["role"],
-        user_id=user["id"],
-        full_name=user["full_name"],
-        phone=user["phone"]
+        role=role,
+        user_id=user.id,
+        full_name=user.full_name,
+        phone=user.phone,
+        clinic_id=clinic_id,
     )
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+) -> dict:
     payload = decode_access_token(credentials.credentials)
     if not payload:
         raise HTTPException(
@@ -114,9 +139,25 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             detail="Invalid or expired authentication token."
         )
     user_id = payload.get("sub")
-    for u in USERS_DB.values():
-        if u["id"] == user_id:
-            return u
+    user = db.query(UserAccount).filter(
+        UserAccount.id == user_id,
+        UserAccount.is_active.is_(True),
+    ).first()
+    if user:
+        membership = db.query(ClinicMembership).filter(
+            ClinicMembership.user_id == user.id,
+            ClinicMembership.is_active.is_(True),
+        ).first()
+        return {
+            "id": user.id,
+            "phone": user.phone,
+            "email": user.email,
+            "password_hash": user.password_hash,
+            "full_name": user.full_name,
+            "role": membership.role if membership else user.role,
+            "clinic_id": membership.clinic_id if membership else payload.get("clinic_id"),
+            "is_verified": user.is_verified,
+        }
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
 @router.get("/me", response_model=UserProfile)
@@ -127,7 +168,9 @@ def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user.get("email"),
         full_name=current_user["full_name"],
         role=current_user["role"],
-        is_verified=current_user["is_verified"]
+        is_verified=current_user["is_verified"],
+        clinic_id=current_user.get("clinic_id"),
+        membership_role=current_user.get("role"),
     )
     
 def require_roles(*allowed_roles: str):
@@ -139,3 +182,20 @@ def require_roles(*allowed_roles: str):
             )
         return current_user
     return role_dependency
+
+
+def require_active_tenant(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+    clinic_id = current_user.get("clinic_id")
+    if not clinic_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="A clinic membership is required for this operation.",
+        )
+
+    clinic = db.query(Clinic).filter(Clinic.id == clinic_id).first()
+    if not clinic or clinic.status != "active":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This clinic tenant is not active.")
+    if clinic.subscription_status not in {"trial", "active"}:
+        raise HTTPException(status_code=status.HTTP_402_PAYMENT_REQUIRED, detail="This clinic subscription is not active.")
+    current_user["tenant"] = clinic
+    return current_user

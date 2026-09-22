@@ -12,6 +12,7 @@ Usage:
 import os
 import sys
 from pathlib import Path
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 # Ensure UTF-8 output on Windows consoles
 if hasattr(sys.stdout, "reconfigure"):
@@ -34,15 +35,48 @@ if env_file.exists():
 else:
     load_dotenv(override=True)
 
+def normalize_database_url(raw_url: str) -> str:
+    if not raw_url:
+        return raw_url
+
+    url = raw_url.strip()
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    parsed_url = urlsplit(url)
+    query_params = [
+        (key, value) for key, value in parse_qsl(parsed_url.query, keep_blank_values=True)
+        if key.lower() != "pgbouncer"
+    ]
+
+    encoded_user = quote(parsed_url.username or "", safe="")
+    encoded_password = quote(parsed_url.password or "", safe="")
+    encoded_host = parsed_url.hostname or ""
+    if ":" in encoded_host and not encoded_host.startswith("["):
+        encoded_host = f"[{encoded_host}]"
+    if parsed_url.port:
+        encoded_host = f"{encoded_host}:{parsed_url.port}"
+
+    encoded_netloc = encoded_user
+    if parsed_url.password is not None:
+        encoded_netloc = f"{encoded_netloc}:{encoded_password}"
+    encoded_netloc = f"{encoded_netloc}@{encoded_host}"
+
+    return urlunsplit(parsed_url._replace(
+        netloc=encoded_netloc,
+        query=urlencode(query_params)
+    ))
+
+
 def get_database_url():
     # 1. Check command-line argument
     if len(sys.argv) > 1 and sys.argv[1].strip():
-        return sys.argv[1].strip()
+        return normalize_database_url(sys.argv[1].strip())
 
     # 2. Check environment variable
     env_url = os.getenv("DATABASE_URL", "").strip()
     if env_url:
-        return env_url
+        return normalize_database_url(env_url)
 
     return None
 

@@ -7,6 +7,7 @@ class UserRegister(BaseModel):
     password: str = Field(..., min_length=6)
     email: Optional[EmailStr] = None
     role: str = Field(default="patient", pattern="^(patient|doctor|clinic_admin|staff)$")
+    clinic_id: Optional[str] = None
 
 class UserLogin(BaseModel):
     phone: str
@@ -19,6 +20,7 @@ class TokenResponse(BaseModel):
     user_id: str
     full_name: str
     phone: str
+    clinic_id: Optional[str] = None
 
 class UserProfile(BaseModel):
     id: str
@@ -27,6 +29,8 @@ class UserProfile(BaseModel):
     full_name: str
     role: str
     is_verified: bool
+    clinic_id: Optional[str] = None
+    membership_role: Optional[str] = None
 
 class OTPRequest(BaseModel):
     phone: str

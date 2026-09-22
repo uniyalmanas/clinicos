@@ -8,8 +8,9 @@ import uuid
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from app.db.models import ClinicWard, ClinicBed
+from app.api.v1.auth import require_active_tenant
 
-router = APIRouter(prefix="/beds", tags=["Inpatient Beds & Ward Matrix"])
+router = APIRouter(prefix="/beds", tags=["Inpatient Beds & Ward Matrix"], dependencies=[Depends(require_active_tenant)])
 
 # Pydantic Schemas
 class AdmitPatientRequest(BaseModel):

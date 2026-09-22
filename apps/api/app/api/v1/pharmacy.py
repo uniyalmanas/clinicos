@@ -7,8 +7,9 @@ import uuid
 
 from app.db.session import get_db
 from app.db.models import PharmacyItem, PharmacyDispense, Prescription
+from app.api.v1.auth import require_active_tenant
 
-router = APIRouter(prefix="/pharmacy", tags=["Pharmacy"])
+router = APIRouter(prefix="/pharmacy", tags=["Pharmacy"], dependencies=[Depends(require_active_tenant)])
 
 class PharmacyItemCreate(BaseModel):
     clinic_slug: str = "derma-care-dehradun"

@@ -7,8 +7,9 @@ import uuid
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from app.db.models import Expense as ExpenseModel, Appointment as AppointmentModel, PharmacyDispense as PharmacyDispenseModel
+from app.api.v1.auth import require_active_tenant
 
-router = APIRouter(prefix="/expenses", tags=["Clinic Expenses & P&L Ledger"])
+router = APIRouter(prefix="/expenses", tags=["Clinic Expenses & P&L Ledger"], dependencies=[Depends(require_active_tenant)])
 
 class CreateExpenseRequest(BaseModel):
     clinic_slug: str = "derma-care-dehradun"

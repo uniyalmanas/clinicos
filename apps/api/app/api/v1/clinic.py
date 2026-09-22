@@ -10,13 +10,14 @@ import uuid
 import os
 
 from app.api.v1.appointments import APPOINTMENTS_DB
+from app.api.v1.auth import require_active_tenant
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from app.db.models import Appointment, Expense, ClinicEodClosing
 
 APP_BASE_URL = os.getenv("APP_BASE_URL", "https://clinicos.in")
 
-router = APIRouter(prefix="/clinic", tags=["Clinic Front Desk & Real-Time Operations"])
+router = APIRouter(prefix="/clinic", tags=["Clinic Front Desk & Real-Time Operations"], dependencies=[Depends(require_active_tenant)])
 
 # Connected SSE subscribers for real-time token broadcasting
 SUBSCRIBERS: List[asyncio.Queue] = []
