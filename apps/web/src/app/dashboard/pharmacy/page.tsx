@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import { 
   Pill, 
   Microscope, 
@@ -116,6 +117,7 @@ export default function DashboardPharmacyPage() {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [paymentMode, setPaymentMode] = useState<"cash" | "upi" | "card">("upi");
   const [isDispensing, setIsDispensing] = useState(false);
+  const [dispenseError, setDispenseError] = useState<string | null>(null);
 
   // Receipt Modal
   const [activeReceipt, setActiveReceipt] = useState<any | null>(null);
@@ -183,8 +185,8 @@ export default function DashboardPharmacyPage() {
     setIsLoadingInventory(true);
     try {
       const url = inventoryFilter === "all" 
-        ? "http://localhost:8000/api/v1/pharmacy/inventory"
-        : `http://localhost:8000/api/v1/pharmacy/inventory?filter_type=${inventoryFilter}`;
+        ? `${API_BASE_URL}/api/v1/pharmacy/inventory`
+        : `${API_BASE_URL}/api/v1/pharmacy/inventory?filter_type=${inventoryFilter}`;
       
       const res = await fetch(url);
       if (res.ok) {
@@ -206,8 +208,8 @@ export default function DashboardPharmacyPage() {
     setIsLoadingQueue(true);
     try {
       const [queueRes, billsRes] = await Promise.all([
-        fetch("http://localhost:8000/api/v1/pharmacy/prescriptions-queue"),
-        fetch("http://localhost:8000/api/v1/pharmacy/bills")
+        fetch(`${API_BASE_URL}/api/v1/pharmacy/prescriptions-queue`),
+        fetch(`${API_BASE_URL}/api/v1/pharmacy/bills`)
       ]);
 
       if (queueRes.ok) {
@@ -313,7 +315,7 @@ export default function DashboardPharmacyPage() {
   const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://localhost:8000/api/v1/pharmacy/inventory", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/inventory`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newBatchForm)
@@ -332,7 +334,7 @@ export default function DashboardPharmacyPage() {
   const handleUpdateStock = async () => {
     if (!selectedItemForStock) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/pharmacy/inventory/${selectedItemForStock.id}/stock`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/inventory/${selectedItemForStock.id}/stock`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ new_stock: Number(newStockInput) })
@@ -348,6 +350,7 @@ export default function DashboardPharmacyPage() {
 
   // Open Dispense POS Modal from prescription queue
   const handleOpenDispenseModal = (rx: any) => {
+    setDispenseError(null);
     setSelectedRxForDispense(rx);
     
     // Auto-map prescription items to available inventory batches
@@ -393,7 +396,7 @@ export default function DashboardPharmacyPage() {
         payment_mode: paymentMode
       };
 
-      const res = await fetch("http://localhost:8000/api/v1/pharmacy/dispense", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/dispense`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -406,26 +409,11 @@ export default function DashboardPharmacyPage() {
         fetchInventory();
         fetchQueueAndBills();
       } else {
-        // Local receipt fallback
-        const mockBill = {
-          bill_number: "BILL-PHARM-2026-9999",
-          prescription_number: selectedRxForDispense.prescription_number,
-          patient_name: selectedRxForDispense.patient_name,
-          patient_phone: selectedRxForDispense.patient_phone,
-          doctor_name: selectedRxForDispense.doctor_name,
-          items: dispenseItems,
-          subtotal: dispenseItems.reduce((acc, i) => acc + i.total, 0),
-          discount: discountAmount,
-          gst_amount: dispenseItems.reduce((acc, i) => acc + (i.total * (i.gst_rate / 100)), 0),
-          total_amount: dispenseItems.reduce((acc, i) => acc + i.total, 0) - discountAmount,
-          payment_mode: paymentMode,
-          created_at: new Date().toISOString()
-        };
-        setSelectedRxForDispense(null);
-        setActiveReceipt(mockBill);
+        const errorBody = await res.json().catch(() => null);
+        setDispenseError(errorBody?.detail || "Dispensing failed. No receipt was created.");
       }
     } catch {
-      // Local fallback
+      setDispenseError("The pharmacy service is unavailable. No receipt was created.");
     } finally {
       setIsDispensing(false);
     }
@@ -1321,6 +1309,11 @@ export default function DashboardPharmacyPage() {
             </div>
 
             <div className="mt-4 max-h-[320px] overflow-y-auto space-y-3">
+              {dispenseError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                  {dispenseError}
+                </div>
+              )}
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-black/[0.06] bg-[#ECEEF2]/40 text-[#86868B] dark:border-white/[0.06]">
                   <tr>

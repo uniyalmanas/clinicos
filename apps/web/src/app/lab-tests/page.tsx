@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
 import { DIAGNOSTIC_LAB_TESTS, DEHRADUN_LABS, DiagnosticLabTest, DiagnosticLabCenter } from "@/data/labTests";
 import {
@@ -159,7 +160,7 @@ ClinicOS is a 0% commission local healthcare platform connecting Dehradun patien
     const tokenStr = `COS-LAB-${tokenNum}`;
 
     try {
-      await fetch("http://127.0.0.1:8000/api/v1/marketplace/inquiries", {
+      await fetch(`${API_BASE_URL}/api/v1/marketplace/inquiries`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

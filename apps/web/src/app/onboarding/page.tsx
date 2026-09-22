@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { API_BASE_URL } from "@/lib/api";
 import { 
   Sparkles, 
   Stethoscope, 
@@ -84,7 +85,7 @@ export default function OnboardingPage() {
   const handleExtract = async () => {
     setIsExtracting(true);
     try {
-      const res = await fetch("http://localhost:8000/api/v1/onboarding/extract", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/onboarding/extract`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -150,7 +151,7 @@ export default function OnboardingPage() {
     setIsPublishing(true);
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/onboarding/publish", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/onboarding/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

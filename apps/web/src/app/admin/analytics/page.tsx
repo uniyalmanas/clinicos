@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
   BarChart3, 
@@ -50,7 +51,7 @@ interface AnalyticsData {
   tenants: TenantRecord[];
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+const API_BASE = `${API_BASE_URL}/api/v1`;
 
 export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData>({
@@ -108,7 +109,7 @@ export default function AdminAnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/admin/analytics`);
+      const res = await fetch(`${API_BASE}/admin/analytics`, { headers: getAuthHeaders() });
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -170,7 +171,7 @@ export default function AdminAnalyticsPage() {
     try {
       await fetch(`${API_BASE}/admin/subscription`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
           clinic_slug: clinicSlug,
           action

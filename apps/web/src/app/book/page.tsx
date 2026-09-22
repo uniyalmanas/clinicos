@@ -30,6 +30,7 @@ import {
   Info
 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
+import { getDoctors } from "@/lib/clinic-data";
 import { 
   DEHRADUN_DOCTORS, 
   DOCTORS_MAP, 
@@ -211,54 +212,16 @@ function BookingExperience() {
     let isMounted = true;
     async function fetchApiDoctors() {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/doctors`);
-        if (res.ok) {
-          const apiDocs = await res.json();
-          if (Array.isArray(apiDocs) && apiDocs.length > 0 && isMounted) {
-            // Merge with local list, avoiding duplicates by slug
-            const slugMap = new Map<string, DoctorProfile>();
-            DEHRADUN_DOCTORS.forEach(d => slugMap.set(d.slug, d));
-            apiDocs.forEach((d: any) => {
-              if (slugMap.has(d.slug)) {
-                slugMap.set(d.slug, { ...slugMap.get(d.slug)!, ...d });
-              } else {
-                slugMap.set(d.slug, {
-                  slug: d.slug,
-                  full_name: d.full_name,
-                  title: d.title || "Dr.",
-                  specialization: d.specialization,
-                  category: d.specialization,
-                  category_color: "blue",
-                  qualification_summary: d.qualification_summary || "Certified Medical Specialist",
-                  medical_council_reg_number: d.medical_council_reg_number || "REG-VERIFIED",
-                  medical_council_state: d.medical_council_state || "Uttarakhand",
-                  years_of_experience: d.years_of_experience || 10,
-                  languages_spoken: d.languages_spoken || ["English", "Hindi"],
-                  bio: d.bio || "",
-                  consultation_fee: d.consultation_fee || 500,
-                  followup_fee: d.followup_fee || 200,
-                  followup_validity_days: d.followup_validity_days || 7,
-                  services: (d.services_offered || []).map((s: any) => s.name || s),
-                  services_offered: d.services_offered || [],
-                  symptoms: [],
-                  rating: d.rating || 4.9,
-                  total_reviews: d.total_reviews || 100,
-                  clinic_name: d.clinic_name || "Care Clinic",
-                  clinic_slug: d.clinic_slug || "care-clinic",
-                  clinic_address: d.clinic_address || "Dehradun",
-                  locality: "Dehradun",
-                  opd_timings: d.opd_timings || "Mon - Sat: 10:00 AM - 08:00 PM",
-                  next_token: 4,
-                  wait_time: "10-15 mins",
-                  phone: d.phone || "+919876543210",
-                  lat: 30.3165,
-                  lng: 78.0322,
-                  verified: true
-                });
-              }
-            });
-            setDoctorsList(Array.from(slugMap.values()));
-          }
+        const liveDoctors = await getDoctors();
+        if (Array.isArray(liveDoctors) && liveDoctors.length > 0 && isMounted) {
+          const slugMap = new Map<string, DoctorProfile>();
+          DEHRADUN_DOCTORS.forEach(d => slugMap.set(d.slug, d));
+
+          liveDoctors.forEach((doctor: DoctorProfile) => {
+            slugMap.set(doctor.slug, { ...slugMap.get(doctor.slug)!, ...doctor });
+          });
+
+          setDoctorsList(Array.from(slugMap.values()));
         }
       } catch (e) {
         // Fallback silently to DEHRADUN_DOCTORS

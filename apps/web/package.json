@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.10",
     "@types/leaflet": "^1.9.22",
     "@types/qrcode": "^1.5.6",
     "clsx": "^2.1.1",

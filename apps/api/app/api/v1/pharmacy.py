@@ -184,6 +184,27 @@ def get_prescriptions_queue(clinic_slug: str = "derma-care-dehradun", db: Sessio
 
 @router.post("/dispense")
 def dispense_prescription(payload: DispenseRequest, db: Session = Depends(get_db)):
+    if not payload.items:
+        raise HTTPException(status_code=400, detail="At least one medicine item is required to dispense a prescription.")
+
+    if payload.discount < 0:
+        raise HTTPException(status_code=400, detail="Discount cannot be negative.")
+
+    prescription = None
+    if payload.prescription_number:
+        prescription = db.query(Prescription).filter(
+            Prescription.prescription_number == payload.prescription_number
+        ).first()
+        if not prescription:
+            raise HTTPException(status_code=404, detail="Prescription not found.")
+
+        existing_dispense = db.query(PharmacyDispense).filter(
+            PharmacyDispense.prescription_number == payload.prescription_number,
+            PharmacyDispense.status == "dispensed"
+        ).first()
+        if existing_dispense:
+            raise HTTPException(status_code=409, detail="This prescription has already been dispensed.")
+
     subtotal = sum(i.total for i in payload.items)
     gst_total = sum(round((i.total * (i.gst_rate / 100)), 2) for i in payload.items)
     total_amount = round(subtotal - payload.discount + gst_total, 2)
@@ -192,7 +213,8 @@ def dispense_prescription(payload: DispenseRequest, db: Session = Depends(get_db
     bill_count = db.query(PharmacyDispense).count() + 1
     bill_number = f"BILL-PHARM-2026-{bill_count:04d}"
 
-    # Deduct stock from inventory
+    inventory_updates = []
+    requested_by_item: Dict[str, int] = {}
     for item in payload.items:
         # Match by id or batch_number
         db_item = None
@@ -200,9 +222,22 @@ def dispense_prescription(payload: DispenseRequest, db: Session = Depends(get_db
             db_item = db.query(PharmacyItem).filter(PharmacyItem.id == item.item_id).first()
         if not db_item and item.batch_number:
             db_item = db.query(PharmacyItem).filter(PharmacyItem.batch_number == item.batch_number).first()
-        
-        if db_item:
-            db_item.current_stock = max(0, db_item.current_stock - item.quantity)
+
+        if not db_item:
+            raise HTTPException(status_code=404, detail=f"Inventory batch not found for {item.brand_name}.")
+        if item.quantity <= 0:
+            raise HTTPException(status_code=400, detail=f"Quantity must be positive for {item.brand_name}.")
+        requested_by_item[db_item.id] = requested_by_item.get(db_item.id, 0) + item.quantity
+        if db_item.current_stock < requested_by_item[db_item.id]:
+            raise HTTPException(status_code=409, detail=f"Insufficient stock for {db_item.brand_name}.")
+        if db_item.expiry_date <= str(date.today()):
+            raise HTTPException(status_code=409, detail=f"Cannot dispense expired batch {db_item.batch_number}.")
+
+        inventory_updates.append((db_item, item.quantity))
+
+    # Apply stock deductions only after every item has passed validation.
+    for db_item, quantity in inventory_updates:
+        db_item.current_stock -= quantity
 
     new_bill = PharmacyDispense(
         id=str(uuid.uuid4()),

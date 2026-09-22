@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import { 
   Bed, 
   Building2, 
@@ -103,7 +104,7 @@ export default function DashboardBedsPage() {
   const fetchBeds = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/beds");
+      const res = await fetch(`${API_BASE_URL}/api/v1/beds`);
       if (res.ok) {
         const data = await res.json();
         setBeds(data.beds || []);
@@ -306,7 +307,7 @@ export default function DashboardBedsPage() {
     if (!admitModalBed) return;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/beds/admit", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/beds/admit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -375,7 +376,7 @@ export default function DashboardBedsPage() {
     if (!dischargeModalBed) return;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/beds/discharge", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/beds/discharge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -440,7 +441,7 @@ export default function DashboardBedsPage() {
   // Quick 1-click status toggling (e.g. mark bed as ready after maintenance)
   const handleQuickStatusChange = async (bedId: string, newStatus: string) => {
     try {
-      await fetch("http://127.0.0.1:8000/api/v1/beds/status", {
+      await fetch(`${API_BASE_URL}/api/v1/beds/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bed_id: bedId, status: newStatus })

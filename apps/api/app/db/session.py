@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -18,6 +19,32 @@ if env_db_url:
     # Normalize postgres:// to postgresql:// for SQLAlchemy compatibility
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
+
+    # Supabase pooler URLs may include pgbouncer=true, but psycopg2 does not
+    # accept that as a libpq connection option.
+    parsed_url = urlsplit(env_db_url)
+    query_params = [
+        (key, value) for key, value in parse_qsl(parsed_url.query, keep_blank_values=True)
+        if key.lower() != "pgbouncer"
+    ]
+
+    # Encode credentials so passwords containing URL-reserved characters such
+    # as @ cannot be mistaken for part of the hostname by SQLAlchemy.
+    encoded_user = quote(parsed_url.username or "", safe="")
+    encoded_password = quote(parsed_url.password or "", safe="")
+    encoded_host = parsed_url.hostname or ""
+    if ":" in encoded_host and not encoded_host.startswith("["):
+        encoded_host = f"[{encoded_host}]"
+    if parsed_url.port:
+        encoded_host = f"{encoded_host}:{parsed_url.port}"
+    encoded_netloc = encoded_user
+    if parsed_url.password is not None:
+        encoded_netloc = f"{encoded_netloc}:{encoded_password}"
+    encoded_netloc = f"{encoded_netloc}@{encoded_host}"
+    env_db_url = urlunsplit(parsed_url._replace(
+        netloc=encoded_netloc,
+        query=urlencode(query_params)
+    ))
     
     DATABASE_URL = env_db_url
     engine = create_engine(

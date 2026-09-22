@@ -6,6 +6,7 @@ from app.api.v1.onboarding import DOCTORS_DATABASE
 from app.db.session import get_db
 from sqlalchemy.orm import Session
 from app.db.models import Doctor as DoctorModel
+from app.api.v1.auth import require_roles
 
 router = APIRouter(prefix="/admin", tags=["SuperAdmin Governance & Analytics"])
 
@@ -56,7 +57,7 @@ TENANTS_DB = [
 ]
 
 @router.get("/analytics")
-def get_platform_analytics():
+def get_platform_analytics(current_user: dict = Depends(require_roles("clinic_admin"))):
     # Calculate Verified Paid MRR
     active_tenants = [t for t in TENANTS_DB if t["subscription_status"] == "active"]
     paid_mrr = sum(t["monthly_rate"] for t in active_tenants)
@@ -79,7 +80,7 @@ def get_platform_analytics():
     }
 
 @router.get("/verifications")
-def list_doctor_verifications(db: Session = Depends(get_db)):
+def list_doctor_verifications(db: Session = Depends(get_db), current_user: dict = Depends(require_roles("clinic_admin"))):
     db_docs = db.query(DoctorModel).all()
     results = []
     seen_slugs = set()
@@ -115,7 +116,7 @@ def list_doctor_verifications(db: Session = Depends(get_db)):
     return results
 
 @router.post("/verify")
-def verify_doctor(payload: VerifyDoctorRequest, db: Session = Depends(get_db)):
+def verify_doctor(payload: VerifyDoctorRequest, db: Session = Depends(get_db), current_user: dict = Depends(require_roles("clinic_admin"))):
     # 1. Update in SQLite DB if present
     db_doc = db.query(DoctorModel).filter(DoctorModel.slug == payload.doctor_slug).first()
     if db_doc:
@@ -140,7 +141,7 @@ def verify_doctor(payload: VerifyDoctorRequest, db: Session = Depends(get_db)):
     }
 
 @router.post("/subscription")
-def update_subscription(payload: SubscriptionActionRequest):
+def update_subscription(payload: SubscriptionActionRequest, current_user: dict = Depends(require_roles("clinic_admin"))):
     tenant = next((t for t in TENANTS_DB if t["clinic_slug"] == payload.clinic_slug), None)
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant clinic not found.")

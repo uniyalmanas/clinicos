@@ -39,6 +39,15 @@ USERS_DB = {
         "role": "staff",
         "is_verified": True
     },
+    "+919876543215": {
+        "id": "77777777-7777-7777-7777-777777777777",
+        "phone": "+919876543215",
+        "email": "admin@clinicos.in",
+        "password_hash": SEED_PASSWORD_HASH,
+        "full_name": "ClinicOS Platform Admin",
+        "role": "clinic_admin",
+        "is_verified": True
+    },
     "+919123456780": {
         "id": "66666666-6666-6666-6666-666666666661",
         "phone": "+919123456780",
@@ -120,3 +129,13 @@ def get_me(current_user: dict = Depends(get_current_user)):
         role=current_user["role"],
         is_verified=current_user["is_verified"]
     )
+    
+def require_roles(*allowed_roles: str):
+    def role_dependency(current_user: dict = Depends(get_current_user)) -> dict:
+        if current_user.get("role") not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action."
+            )
+        return current_user
+    return role_dependency

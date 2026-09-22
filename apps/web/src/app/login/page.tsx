@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { 
   Stethoscope, 
@@ -19,13 +20,12 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+const API_BASE = `${API_BASE_URL}/api/v1`;
 
 export default function LoginPage() {
   const router = useRouter();
   const [phone, setPhone] = useState("+919876543210");
   const [password, setPassword] = useState("Password@123");
-  const [role, setRole] = useState<"doctor" | "staff" | "admin">("doctor");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -48,12 +48,18 @@ export default function LoginPage() {
 
       const data = await res.json();
       localStorage.setItem("clinicos_token", data.access_token);
-      localStorage.setItem("clinicos_user", JSON.stringify(data.user));
+      const user = {
+        id: data.user_id,
+        phone: data.phone,
+        full_name: data.full_name,
+        role: data.role,
+      };
+      localStorage.setItem("clinicos_user", JSON.stringify(user));
 
       // Role-based routing
-      if (data.user.role === "doctor") {
+      if (data.role === "doctor") {
         router.push("/doctor/queue");
-      } else if (data.user.role === "staff") {
+      } else if (data.role === "staff") {
         router.push("/clinic/desk");
       } else {
         router.push("/admin/analytics");
@@ -65,7 +71,7 @@ export default function LoginPage() {
     }
   };
 
-  const quickLoginAs = (userRole: "doctor" | "staff" | "admin", targetUrl: string) => {
+  const quickLoginAs = async (userRole: "doctor" | "staff" | "admin", targetUrl: string) => {
     if (userRole === "doctor") {
       setPhone("+919876543210");
       setPassword("Password@123");
@@ -73,10 +79,38 @@ export default function LoginPage() {
       setPhone("+919876543214");
       setPassword("Password@123");
     } else {
-      setPhone("+919876543210");
+      setPhone("+919876543215");
       setPassword("Password@123");
     }
-    router.push(targetUrl);
+
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      const credentials = userRole === "doctor"
+        ? { phone: "+919876543210", password: "Password@123" }
+        : userRole === "staff"
+          ? { phone: "+919876543214", password: "Password@123" }
+          : { phone: "+919876543215", password: "Password@123" };
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials)
+      });
+      if (!res.ok) throw new Error("Demo account login failed.");
+      const data = await res.json();
+      localStorage.setItem("clinicos_token", data.access_token);
+      localStorage.setItem("clinicos_user", JSON.stringify({
+        id: data.user_id,
+        phone: data.phone,
+        full_name: data.full_name,
+        role: data.role,
+      }));
+      router.push(targetUrl);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Demo account login failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

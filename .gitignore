@@ -49,3 +49,6 @@ Thumbs.db
 *.sqlite3
 clinicos.db
 
+
+.vercel
+.env*

@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
   Pill, 
@@ -21,52 +22,64 @@ import {
   FileText
 } from "lucide-react";
 
+interface PharmacyOrder {
+  order_id: string;
+  prescription_number: string;
+  patient_name: string;
+  patient_phone: string;
+  doctor_name: string;
+  doctor_council_reg: string;
+  clinic_name: string;
+  items: Array<{ name: string; qty: string; instructions: string }>;
+  order_status: "pending_assembly" | "dispensed";
+  signature_hash: string;
+  total_inr: number | null;
+  timestamp: string;
+}
+
 export default function PharmacyConsolePage() {
-  const [orders, setOrders] = useState([
-    {
-      order_id: "ORD-PHARM-881",
-      prescription_number: "RX-2026-09-0014",
-      patient_name: "Amit Rawat",
-      patient_phone: "+91 91234 56780",
-      doctor_name: "Dr. Rahul Sharma (MD Derm)",
-      doctor_council_reg: "UKMC-8942-2012",
-      clinic_name: "Derma Care Skin & Laser Centre (14, Rajpur Road)",
-      items: [
-        { name: "CAP DOXYCYCLINE 100MG", qty: "10 capsules", instructions: "1-0-1 After Food" },
-        { name: "TRETINOIN 0.05% CREAM", qty: "1 tube (20g)", instructions: "0-0-1 Night" },
-        { name: "CLINDAMYCIN 1% GEL", qty: "1 tube (15g)", instructions: "1-0-0 Morning" }
-      ],
-      order_status: "ready_for_pickup",
-      signature_hash: "d384b6f79a9e1fc710e",
-      total_inr: 340,
-      timestamp: "10:40 AM Today"
-    },
-    {
-      order_id: "ORD-PHARM-882",
-      prescription_number: "RX-2026-09-0021",
-      patient_name: "Priya Singh",
-      patient_phone: "+91 91234 56781",
-      doctor_name: "Dr. Rahul Sharma (MD Derm)",
-      doctor_council_reg: "UKMC-8942-2012",
-      clinic_name: "Derma Care Skin & Laser Centre (14, Rajpur Road)",
-      items: [
-        { name: "TAB CETIRIZINE 10MG", qty: "10 tablets", instructions: "0-0-1 Night" },
-        { name: "CLINDAMYCIN 1% GEL", qty: "1 tube (15g)", instructions: "1-0-1 Twice Daily" }
-      ],
-      order_status: "pending_assembly",
-      signature_hash: "a99c42b10ef7831d490",
-      total_inr: 185,
-      timestamp: "11:15 AM Today"
-    }
-  ]);
+  const [orders, setOrders] = useState<PharmacyOrder[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const updateStatus = (orderId: string, nextStatus: string, label: string) => {
-    setOrders(orders.map(o => o.order_id === orderId ? { ...o, order_status: nextStatus } : o));
-    setToastMsg(`Order #${orderId}: ${label}`);
-    setTimeout(() => setToastMsg(null), 4000);
-  };
+  useEffect(() => {
+    async function loadPrescriptionQueue() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/pharmacy/prescriptions-queue`);
+        if (!response.ok) throw new Error("Unable to load prescription queue");
+        const data = await response.json();
+        const liveOrders: PharmacyOrder[] = (Array.isArray(data.queue) ? data.queue : []).map((item: any) => ({
+          order_id: `RX-${item.prescription_number}`,
+          prescription_number: item.prescription_number,
+          patient_name: item.patient_name,
+          patient_phone: item.patient_phone || "Phone unavailable",
+          doctor_name: item.doctor_name || "Doctor unavailable",
+          doctor_council_reg: "Verified in prescription",
+          clinic_name: "Clinic prescription queue",
+          items: Array.isArray(item.items) ? item.items.map((medicine: any) => ({
+            name: medicine.medicine_name || medicine.generic_name || "Medicine",
+            qty: `${medicine.duration_days || 1} days`,
+            instructions: `${medicine.dosage_frequency || "As directed"} ${medicine.timing_relation || ""}`.trim()
+          })) : [],
+          order_status: item.is_dispensed ? "dispensed" : "pending_assembly",
+          signature_hash: "Verified prescription signature",
+          total_inr: null,
+          timestamp: item.created_at ? new Date(item.created_at).toLocaleString() : "Recently issued"
+        }));
+        setOrders(liveOrders);
+        setLoadError(null);
+      } catch (error) {
+        console.error("Pharmacy queue load failed:", error);
+        setLoadError("The live prescription queue is temporarily unavailable.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPrescriptionQueue();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] flex flex-col">
@@ -109,18 +122,24 @@ export default function PharmacyConsolePage() {
           </div>
         )}
 
+        {loadError && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+            {loadError}
+          </div>
+        )}
+
         {/* METRICS */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#1E2638] dark:bg-[#111726]">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Incoming Orders Today</span>
-            <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{orders.length}</div>
+            <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{isLoading ? "-" : orders.length}</div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">From Derma Care & Smile Craft clinics</p>
           </div>
 
           <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-5 shadow-sm dark:border-emerald-900/40 dark:bg-[#111726]">
             <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Ready for Counter Pickup</span>
             <div className="mt-2 text-3xl font-black text-emerald-700 dark:text-emerald-400">
-              {orders.filter(o => o.order_status === "ready_for_pickup").length}
+              {orders.filter(o => o.order_status === "dispensed").length}
             </div>
             <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">Patients notified via WhatsApp</p>
           </div>
@@ -139,7 +158,15 @@ export default function PharmacyConsolePage() {
           </h2>
 
           <div className="space-y-4">
-            {orders.map(order => (
+            {isLoading ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-[#1E2638] dark:bg-[#111726]">
+                Loading live prescription queue...
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-[#1E2638] dark:bg-[#111726]">
+                No prescriptions are currently waiting for pharmacy fulfillment.
+              </div>
+            ) : orders.map(order => (
               <div
                 key={order.order_id}
                 className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-[#1E2638] dark:bg-[#111726] space-y-4"
@@ -154,11 +181,11 @@ export default function PharmacyConsolePage() {
                         Rx #{order.prescription_number}
                       </span>
                       <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                        order.order_status === "ready_for_pickup"
+                        order.order_status === "dispensed"
                           ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border dark:border-emerald-800/40"
                           : "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 dark:border dark:border-amber-800/40"
                       }`}>
-                        {order.order_status === "ready_for_pickup" ? "Ready for Counter Pickup" : "Awaiting Packaging"}
+                        {order.order_status === "dispensed" ? "Dispensed" : "Awaiting Packaging"}
                       </span>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -204,18 +231,9 @@ export default function PharmacyConsolePage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => updateStatus(order.order_id, "ready_for_pickup", "Marked Ready for Pickup")}
-                      className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition"
-                    >
-                      <Check className="inline h-3.5 w-3.5 mr-1" /> Ready for Pickup
-                    </button>
-                    <button
-                      onClick={() => updateStatus(order.order_id, "dispatched", "Dispatched for Doorstep Delivery")}
-                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-200 dark:hover:bg-[#1C2846]"
-                    >
-                      <Truck className="inline h-3.5 w-3.5 mr-1" /> Out for Delivery
-                    </button>
+                    <span className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-300">
+                      Dispensing is recorded through the pharmacy billing workflow
+                    </span>
                     <Link
                       href={`/p/${order.prescription_number}`}
                       target="_blank"

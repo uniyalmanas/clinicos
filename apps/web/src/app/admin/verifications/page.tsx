@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { API_BASE_URL, getAuthHeaders } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
   ShieldCheck, 
@@ -32,7 +33,7 @@ interface DoctorRecord {
   verification_status: "verified" | "pending" | "rejected";
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+const API_BASE = `${API_BASE_URL}/api/v1`;
 
 export default function AdminVerificationsPage() {
   const [doctors, setDoctors] = useState<DoctorRecord[]>([
@@ -76,7 +77,7 @@ export default function AdminVerificationsPage() {
   const fetchDoctors = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/admin/verifications`);
+      const res = await fetch(`${API_BASE}/admin/verifications`, { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -107,7 +108,7 @@ export default function AdminVerificationsPage() {
     try {
       await fetch(`${API_BASE}/admin/verify`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({
           doctor_slug: slug,
           verification_status: newStatus,

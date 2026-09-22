@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useRef } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
 import { getEnrichedMedicines, EnrichedMedicine } from "@/data/medicines";
 import { DEHRADUN_PHARMACIES, LocalPharmacy } from "@/data/pharmacies";
@@ -234,7 +235,7 @@ Could you please confirm availability and deliver / pack this order?
 ClinicOS delivers direct neighborhood patient orders to local pharmacies with *0% commission*.
 
 🎁 *Want to receive more direct orders in Dehradun?*
-👉 Claim your free Verified Pharmacy Profile here: http://localhost:3000/partner
+👉 Claim your free Verified Pharmacy Profile here: ${typeof window !== "undefined" ? window.location.origin : "https://clinicos.in"}/partner
 (Takes 30 seconds • 100% Free Forever • Verified Partner Badge)`;
 
     // Log inquiry to backend API
@@ -242,7 +243,7 @@ ClinicOS delivers direct neighborhood patient orders to local pharmacies with *0
     const tokenStr = `COS-MED-${tokenNum}`;
 
     try {
-      await fetch("http://127.0.0.1:8000/api/v1/marketplace/inquiries", {
+      await fetch(`${API_BASE_URL}/api/v1/marketplace/inquiries`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

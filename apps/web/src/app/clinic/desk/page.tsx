@@ -60,45 +60,38 @@ function playTokenCallChime() {
 }
 
 export default function ReceptionDeskPage() {
-  const [queue, setQueue] = useState<any[]>([
-    {
-      appointment_number: "APT-DERMA-101",
-      token_number: 1,
-      patient_name: "Amit Rawat",
-      patient_phone: "+919123456780",
-      time_slot: "10:15 AM",
-      status: "completed",
-      fee_amount: 600,
-      payment_status: "paid",
-      payment_mode: "upi"
-    },
-    {
-      appointment_number: "APT-DERMA-102",
-      token_number: 2,
-      patient_name: "Priya Singh",
-      patient_phone: "+919123456781",
-      time_slot: "10:30 AM",
-      status: "in_consultation",
-      fee_amount: 600,
-      payment_status: "paid",
-      payment_mode: "cash"
-    },
-    {
-      appointment_number: "APT-DERMA-103",
-      token_number: 3,
-      patient_name: "Rohit Pant",
-      patient_phone: "+919123456782",
-      time_slot: "10:45 AM",
-      status: "in_waiting",
-      fee_amount: 600,
-      payment_status: "pending",
-      payment_mode: "upi"
-    }
-  ]);
-
-  const [activeToken, setActiveToken] = useState<number>(2);
+  const [queue, setQueue] = useState<any[]>([]);
+  const [activeToken, setActiveToken] = useState<number | null>(null);
   const [showWalkInModal, setShowWalkInModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isLoadingQueue, setIsLoadingQueue] = useState(true);
+  const [queueError, setQueueError] = useState<string | null>(null);
+
+  const refreshQueue = async () => {
+    try {
+      setIsLoadingQueue(true);
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+      if (!res.ok) {
+        throw new Error("Failed to load queue");
+      }
+      const data = await res.json();
+      const nextQueue = Array.isArray(data.queue) ? data.queue : [];
+      setQueue(nextQueue);
+      setActiveToken(data.active_chamber_token ?? null);
+      setQueueError(null);
+    } catch (error) {
+      console.error("Queue refresh failed:", error);
+      setQueueError("Live queue unavailable right now. Showing last known state.");
+    } finally {
+      setIsLoadingQueue(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshQueue();
+    const interval = setInterval(refreshQueue, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Walk-in form state
   const [newPatientName, setNewPatientName] = useState("");
@@ -113,84 +106,117 @@ export default function ReceptionDeskPage() {
   const upiCollected = queue.filter(q => q.payment_status === "paid" && q.payment_mode === "upi").reduce((acc, q) => acc + q.fee_amount, 0);
 
   // Call Next Token Action
-  const handleCallToken = (aptNumber: string, tokenNum: number) => {
+  const handleCallToken = async (aptNumber: string, tokenNum: number) => {
     playTokenCallChime();
     setActiveToken(tokenNum);
-    setQueue(prev => prev.map(item => {
-      if (item.appointment_number === aptNumber) {
-        return { ...item, status: "in_consultation" };
-      }
-      if (item.status === "in_consultation") {
-        return { ...item, status: "completed" };
-      }
-      return item;
-    }));
 
-    // Trigger API call in background
-    fetch(`${API_BASE_URL}/api/v1/clinic/call-token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appointment_number: aptNumber })
-    }).catch(() => {});
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/call-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointment_number: aptNumber })
+      });
+      if (!res.ok) {
+        throw new Error("Call-token API failed");
+      }
+      await refreshQueue();
+    } catch (error) {
+      console.error("Call token failed:", error);
+      setQueue(prev => prev.map(item => {
+        if (item.appointment_number === aptNumber) {
+          return { ...item, status: "in_consultation" };
+        }
+        if (item.status === "in_consultation") {
+          return { ...item, status: "completed" };
+        }
+        return item;
+      }));
+    }
   };
 
   // Complete Token Action
-  const handleCompleteToken = (aptNumber: string) => {
-    setQueue(prev => prev.map(item => {
-      if (item.appointment_number === aptNumber) {
-        return { ...item, status: "completed" };
+  const handleCompleteToken = async (aptNumber: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/complete-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointment_number: aptNumber })
+      });
+      if (!res.ok) {
+        throw new Error("Complete-token API failed");
       }
-      return item;
-    }));
+      await refreshQueue();
+    } catch (error) {
+      console.error("Complete token failed:", error);
+      setQueue(prev => prev.map(item => {
+        if (item.appointment_number === aptNumber) {
+          return { ...item, status: "completed" };
+        }
+        return item;
+      }));
+    }
   };
 
   // Toggle Payment Mode/Status
-  const handleTogglePayment = (aptNumber: string, mode: "cash" | "upi") => {
-    setQueue(prev => prev.map(item => {
-      if (item.appointment_number === aptNumber) {
-        return { ...item, payment_status: "paid", payment_mode: mode };
+  const handleTogglePayment = async (aptNumber: string, mode: "cash" | "upi") => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/update-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointment_number: aptNumber,
+          payment_status: "paid",
+          payment_mode: mode
+        })
+      });
+      if (!res.ok) {
+        throw new Error("Payment update failed");
       }
-      return item;
-    }));
+      await refreshQueue();
+    } catch (error) {
+      console.error("Payment update failed:", error);
+      setQueue(prev => prev.map(item => {
+        if (item.appointment_number === aptNumber) {
+          return { ...item, payment_status: "paid", payment_mode: mode };
+        }
+        return item;
+      }));
+    }
   };
 
   // Submit Walk-in
-  const handleAddWalkIn = (e: React.FormEvent) => {
+  const handleAddWalkIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatientName.trim() || newPatientPhone.length < 10) {
       alert("Please enter patient name and 10-digit phone number.");
       return;
     }
 
-    const assignedToken = queue.length + 1;
-    const newApt = {
-      appointment_number: `APT-WALKIN-${100 + assignedToken}`,
-      token_number: assignedToken,
-      patient_name: newPatientName,
-      patient_phone: newPatientPhone,
-      time_slot: `Walk-In Token #${assignedToken}`,
-      status: "in_waiting",
-      fee_amount: newFee,
-      payment_status: "paid",
-      payment_mode: newPaymentMode
-    };
+    try {
+      const payload = {
+        doctor_slug: "dr-rahul-sharma",
+        patient_name: newPatientName.trim(),
+        patient_phone: newPatientPhone,
+        payment_mode: newPaymentMode,
+        fee_amount: newFee
+      };
 
-    setQueue([...queue, newApt]);
-    setNewPatientName("");
-    setNewPatientPhone("+91");
-    setShowWalkInModal(false);
-
-    // Call API
-    fetch(`${API_BASE_URL}/api/v1/clinic/walk-in`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        patient_name: newApt.patient_name,
-        patient_phone: newApt.patient_phone,
-        payment_mode: newApt.payment_mode,
-        fee_amount: newApt.fee_amount
-      })
-    }).catch(() => {});
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/walk-in`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error("Walk-in registration failed");
+      }
+      setNewPatientName("");
+      setNewPatientPhone("+91");
+      setShowWalkInModal(false);
+      await refreshQueue();
+    } catch (error) {
+      console.error("Walk-in registration failed:", error);
+      alert("The walk-in API rejected the request. Retry once the backend is healthy.");
+    }
   };
 
   return (
@@ -266,7 +292,7 @@ export default function ReceptionDeskPage() {
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-black text-slate-900 dark:text-white">
-                #{activeToken}
+                {activeToken !== null ? `#${activeToken}` : "--"}
               </span>
               <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
                 <span className="relative flex h-2 w-2">
@@ -342,6 +368,12 @@ export default function ReceptionDeskPage() {
             </button>
           </div>
 
+          {queueError && (
+            <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs font-medium text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+              {queueError}
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
               <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-slate-800/50 dark:text-slate-400">
@@ -356,7 +388,19 @@ export default function ReceptionDeskPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {queue.map((item) => (
+                {isLoadingQueue ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                      Loading live queue...
+                    </td>
+                  </tr>
+                ) : queue.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                      No appointments found for today yet.
+                    </td>
+                  </tr>
+                ) : queue.map((item) => (
                   <tr
                     key={item.appointment_number}
                     className={`transition hover:bg-slate-50/80 dark:hover:bg-slate-800/30 ${

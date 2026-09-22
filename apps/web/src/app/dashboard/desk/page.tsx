@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import { 
   Building2, 
   UserCheck, 
@@ -175,7 +176,7 @@ export default function DashboardDeskPage() {
   const fetchAutomations = async () => {
     try {
       setLoadingAutomations(true);
-      const res = await fetch("http://127.0.0.1:8000/api/v1/clinic/automations");
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/automations`);
       if (res.ok) {
         const json = await res.json();
         if (json.automations) setAutomationsList(json.automations);
@@ -190,7 +191,7 @@ export default function DashboardDeskPage() {
   const handleTriggerAutomation = async (auto: any) => {
     setDispatchingId(auto.id);
     try {
-      await fetch(`http://127.0.0.1:8000/api/v1/clinic/trigger-automation/${auto.id}`, {
+      await fetch(`${API_BASE_URL}/api/v1/clinic/trigger-automation/${auto.id}`, {
         method: "POST"
       }).catch(() => {});
       setAutomationsList(prev =>
@@ -228,7 +229,7 @@ export default function DashboardDeskPage() {
   useEffect(() => {
     let evtSource: EventSource | null = null;
     try {
-      evtSource = new EventSource("http://127.0.0.1:8000/api/v1/clinic/stream");
+      evtSource = new EventSource(`${API_BASE_URL}/api/v1/clinic/stream`);
       evtSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
@@ -306,7 +307,7 @@ export default function DashboardDeskPage() {
     const aptItem = queue.find(q => q.token_number === tokenNumber);
     if (aptItem?.appointment_number) {
       try {
-        await fetch("http://127.0.0.1:8000/api/v1/clinic/call-token", {
+        await fetch(`${API_BASE_URL}/api/v1/clinic/call-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ appointment_number: aptItem.appointment_number })
@@ -334,7 +335,7 @@ export default function DashboardDeskPage() {
     if (!walkInName || !walkInPhone) return;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/v1/clinic/walk-in", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/walk-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

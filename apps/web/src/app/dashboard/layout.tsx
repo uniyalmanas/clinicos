@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
   Stethoscope, 
@@ -28,8 +29,25 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chimePlaying, setChimePlaying] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("clinicos_token");
+    if (!token) {
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    setAuthChecked(true);
+  }, [pathname, router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("clinicos_token");
+    localStorage.removeItem("clinicos_user");
+    router.replace("/login");
+  };
 
   // Web Audio chime for quick counter alert (Apple style clean tone)
   const playCounterChime = () => {
@@ -77,6 +95,14 @@ export default function DashboardLayout({
     { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
     { label: "Patient History Vault", href: "/dashboard/patients", icon: Users },
   ];
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#ECEEF2] text-xs text-[#86868B] dark:bg-black dark:text-[#8E8E93]">
+        Checking clinic access...
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#ECEEF2] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7]">
@@ -157,7 +183,8 @@ export default function DashboardLayout({
               </div>
             </div>
             <Link
-              href="/"
+              href="/login"
+              onClick={handleLogout}
               title="Return to Public Home"
               className="p-1 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
             >

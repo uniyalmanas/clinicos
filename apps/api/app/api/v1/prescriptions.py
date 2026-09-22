@@ -11,7 +11,8 @@ APP_BASE_URL = os.getenv("APP_BASE_URL", "https://clinicos.in")
 
 from app.db.session import get_db
 from sqlalchemy.orm import Session
-from app.db.models import Prescription as PrescriptionModel
+from app.db.models import Appointment as AppointmentModel, Prescription as PrescriptionModel
+from app.api.v1.appointments import APPOINTMENTS_DB
 from app.ai.clinical_scribe import parse_clinical_dictation
 from app.ai.ddi_engine import check_drug_interactions
 
@@ -115,7 +116,31 @@ PRESCRIPTIONS_DB: Dict[str, Any] = {
 
 @router.post("/generate")
 def generate_prescription(payload: GeneratePrescriptionRequest, db: Session = Depends(get_db)):
-    rx_id = f"RX-2026-09-{len(PRESCRIPTIONS_DB) + 15:04d}"
+    appointment = APPOINTMENTS_DB.get(payload.appointment_number)
+    db_appointment = db.query(AppointmentModel).filter(
+        AppointmentModel.appointment_number == payload.appointment_number
+    ).first()
+
+    if not appointment and not db_appointment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="The appointment linked to this prescription does not exist."
+        )
+
+    appointment_name = (appointment or {}).get("patient_name") or getattr(db_appointment, "patient_name", None)
+    appointment_phone = (appointment or {}).get("patient_phone") or getattr(db_appointment, "patient_phone", None)
+    if appointment_name and appointment_name.strip().lower() != payload.patient_name.strip().lower():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Patient name does not match the linked appointment."
+        )
+    if appointment_phone and appointment_phone.replace(" ", "") != payload.patient_phone.replace(" ", ""):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Patient phone does not match the linked appointment."
+        )
+
+    rx_id = f"RX-{datetime.now().strftime('%Y-%m')}-{uuid.uuid4().hex[:8].upper()}"
     
     # 1. Cryptographic Tamper-Proof SHA-256 Signature Hash
     raw_hash_content = (
@@ -150,10 +175,7 @@ def generate_prescription(payload: GeneratePrescriptionRequest, db: Session = De
         "qr_verification_code": qr_code
     }
 
-    # In-memory sync
-    PRESCRIPTIONS_DB[rx_id] = prescription_record
-
-    # Persist to Database
+    # Persist the prescription and close the linked consultation in one transaction.
     try:
         db_rx = PrescriptionModel(
             id=str(uuid.uuid4()),
@@ -177,10 +199,20 @@ def generate_prescription(payload: GeneratePrescriptionRequest, db: Session = De
             qr_verification_code=qr_code
         )
         db.add(db_rx)
+        if db_appointment:
+            db_appointment.status = "completed"
         db.commit()
     except Exception as e:
         db.rollback()
-        print("DB save warning:", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Prescription could not be saved. Please retry without issuing a duplicate prescription."
+        ) from e
+
+    # Keep the queue response immediately consistent with the committed record.
+    if appointment:
+        appointment["status"] = "completed"
+    PRESCRIPTIONS_DB[rx_id] = prescription_record
 
     # 2. WhatsApp Notification Deep-Link
     medicines_summary = ", ".join([f"{item.medicine_name} ({item.dosage_frequency})" for item in payload.items])

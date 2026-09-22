@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useParams } from "next/navigation";
 import { 
@@ -95,7 +96,7 @@ export default function PatientPrescriptionLockerPage() {
   useEffect(() => {
     const fetchRx = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/v1/prescriptions/${rawId}`);
+        const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/${rawId}`);
         if (res.ok) {
           const data = await res.json();
           setRx(data);
@@ -113,11 +114,15 @@ export default function PatientPrescriptionLockerPage() {
     fetchRx();
   }, [rawId]);
 
+  const publicPrescriptionUrl = typeof window === "undefined"
+    ? `https://clinicos.in/p/${rx.prescription_number || rawId}`
+    : `${window.location.origin}/p/${rx.prescription_number || rawId}`;
+
   const waShareText = `🏥 *Verified Digital Prescription - ${rx.doctor_name}*\n` +
     `Patient: ${rx.patient_name}\n` +
     `Rx Number: #${rx.prescription_number}\n` +
     `Diagnosis: ${rx.provisional_diagnosis}\n\n` +
-    `🔗 View & Download Official A4 Document: https://clinicos.in/p/${rx.prescription_number}\n` +
+    `🔗 View & Download Official A4 Document: ${publicPrescriptionUrl}\n` +
     `🔒 Cryptographic Hash: ${rx.digital_signature_hash?.slice(0, 16)}...`;
 
   const handleRouteToPharmacy = () => {

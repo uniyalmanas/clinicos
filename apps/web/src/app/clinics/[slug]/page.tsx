@@ -16,19 +16,20 @@ import {
 } from "lucide-react";
 
 import { notFound } from "next/navigation";
-import { DEHRADUN_CLINICS, CLINICS_MAP } from "@/data/clinics";
+import { getClinicBySlug, getClinics } from "@/lib/clinic-data";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  return DEHRADUN_CLINICS.map(c => ({ slug: c.slug }));
+  const clinics = await getClinics();
+  return clinics.map(c => ({ slug: c.slug }));
 }
 
 export default async function ClinicProfilePage({ params }: Props) {
   const { slug } = await params;
-  const clinic = CLINICS_MAP[slug];
+  const clinic = await getClinicBySlug(slug);
 
   if (!clinic) {
     notFound();

@@ -86,6 +86,7 @@ interface PrescribedMedicine {
 export default function DynamicConsultationStudioPage() {
   const params = useParams();
   const appointmentId = (params?.id as string) || "APT-DERMA-102";
+  const [isLoadingPatient, setIsLoadingPatient] = useState(true);
 
   // Patient Demographic Information
   const [patient, setPatient] = useState({
@@ -109,28 +110,53 @@ export default function DynamicConsultationStudioPage() {
   // Fetch real appointment details if available
   useEffect(() => {
     async function loadAppointment() {
+      setIsLoadingPatient(true);
+
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
-        if (res.ok) {
-          const json = await res.json();
-          const match = (json.queue || []).find((a: any) => 
-            a.appointment_number === appointmentId || a.token_number === Number(appointmentId)
-          );
-          if (match) {
-            setPatient(prev => ({
-              ...prev,
-              name: match.patient_name || prev.name,
-              phone: match.patient_phone || prev.phone,
-              token_number: match.token_number || prev.token_number,
-              appointment_number: match.appointment_number || prev.appointment_number,
-            }));
-            if (match.symptoms_description) {
-              setChiefComplaints(match.symptoms_description);
-            }
+        const queueRes = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+        const appointmentsRes = await fetch(`${API_BASE_URL}/api/v1/appointments`);
+
+        const queueJson = queueRes.ok ? await queueRes.json() : null;
+        const appointmentsJson = appointmentsRes.ok ? await appointmentsRes.json() : null;
+
+        const candidates: any[] = [
+          ...(Array.isArray(queueJson?.queue) ? queueJson.queue : []),
+          ...(Array.isArray(appointmentsJson) ? appointmentsJson : [])
+        ];
+
+        const match = candidates.find((a: any) => {
+          const normalizedId = String(appointmentId ?? "").trim();
+          const tokenId = Number(normalizedId);
+          const appointmentNumber = String(a?.appointment_number || "").trim();
+          const patientPhone = String(a?.patient_phone || "").trim();
+          const patientName = String(a?.patient_name || "").trim();
+
+          if (!normalizedId) return false;
+          if (appointmentNumber && appointmentNumber === normalizedId) return true;
+          if (!Number.isNaN(tokenId) && Number(a?.token_number) === tokenId) return true;
+          if (patientPhone && normalizedId.replace(/\D/g, "") === patientPhone.replace(/\D/g, "")) return true;
+          if (patientName && normalizedId.toLowerCase() === patientName.toLowerCase()) return true;
+          return false;
+        });
+
+        if (match) {
+          setPatient(prev => ({
+            ...prev,
+            name: match.patient_name || prev.name,
+            phone: match.patient_phone || prev.phone,
+            token_number: match.token_number || prev.token_number,
+            appointment_number: match.appointment_number || prev.appointment_number,
+            allergies: prev.allergies,
+          }));
+
+          if (match.symptoms_description) {
+            setChiefComplaints(match.symptoms_description);
           }
         }
       } catch (e) {
         // Fallback to initial state
+      } finally {
+        setIsLoadingPatient(false);
       }
     }
     loadAppointment();
@@ -1019,6 +1045,11 @@ export default function DynamicConsultationStudioPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold tracking-tight text-[#1D1D1F] dark:text-white">{patient.name}</h1>
+              {isLoadingPatient && (
+                <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300">
+                  Live queue
+                </span>
+              )}
               <span className="rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-2.5 py-0.5 text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
                 {patient.age}Y / {patient.gender}
               </span>

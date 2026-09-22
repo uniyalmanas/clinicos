@@ -18,19 +18,20 @@ import {
 } from "lucide-react";
 import DoctorReviewsSection from "@/components/DoctorReviewsSection";
 import AIReceptionistWidget from "@/components/AIReceptionistWidget";
-import { DOCTORS_MAP, DEHRADUN_DOCTORS } from "@/data/doctors";
+import { getDoctorBySlug, getDoctors } from "@/lib/clinic-data";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  return DEHRADUN_DOCTORS.map(d => ({ slug: d.slug }));
+  const doctors = await getDoctors();
+  return doctors.map(d => ({ slug: d.slug }));
 }
 
 export default async function DoctorProfilePage({ params }: Props) {
   const { slug } = await params;
-  const doctor = DOCTORS_MAP[slug];
+  const doctor = await getDoctorBySlug(slug);
 
   if (!doctor) {
     notFound();
