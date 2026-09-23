@@ -14,7 +14,9 @@ import {
   RefreshCw, 
   HeartHandshake,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Printer,
+  FileText
 } from "lucide-react";
 
 interface ExerciseItem {
@@ -71,6 +73,7 @@ export default function RehabDashboardPage() {
   // Modals
   const [newPlanModal, setNewPlanModal] = useState(false);
   const [logSessionModal, setLogSessionModal] = useState(false);
+  const [handoutModalOpen, setHandoutModalOpen] = useState(false);
 
   // New Plan form
   const [newPtName, setNewPtName] = useState("");
@@ -347,13 +350,22 @@ export default function RehabDashboardPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => setLogSessionModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs shadow-sm transition"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Log Next Session ({selectedPlan.completed_sessions + 1})</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setHandoutModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] text-[#1D1D1F] dark:text-white font-medium text-xs hover:bg-black/5 transition"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    <span>Home Handout</span>
+                  </button>
+                  <button
+                    onClick={() => setLogSessionModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs shadow-sm transition"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Log Next Session ({selectedPlan.completed_sessions + 1})</span>
+                  </button>
+                </div>
               </div>
 
               {/* Diagnosis & Clinical Goals Card */}
@@ -695,6 +707,118 @@ export default function RehabDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: Printable Home Exercise Handout */}
+      {handoutModalOpen && selectedPlan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-2xl my-8 rounded-[28px] border border-black/[0.08] bg-white p-8 shadow-2xl dark:border-white/[0.1] dark:bg-[#1C1C1E] space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-black/[0.06] dark:border-white/[0.08] print:hidden">
+              <span className="text-xs font-semibold uppercase tracking-wider text-rose-600">
+                Official Home Rehabilitation Prescription
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/[0.05] dark:bg-white/[0.05] text-xs font-medium hover:bg-black/10"
+                >
+                  <Printer className="h-4 w-4" /> Print Handout
+                </button>
+                <button onClick={() => setHandoutModalOpen(false)} className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
+                  <X className="h-5 w-5 text-[#86868B]" />
+                </button>
+              </div>
+            </div>
+
+            {/* Handout Sheet Content */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-start border-b-2 border-rose-500 pb-4">
+                <div>
+                  <h2 className="text-xl font-black text-[#1D1D1F] dark:text-white">CLINICOS PHYSICAL REHABILITATION</h2>
+                  <p className="text-xs text-[#86868B]">Department of Physical Therapy & Musculoskeletal Recovery</p>
+                </div>
+                <div className="text-right font-mono text-xs">
+                  <div className="font-bold text-rose-600">REHAB-{selectedPlan.id.slice(0, 8).toUpperCase()}</div>
+                  <div className="text-[#86868B] text-[11px]">
+                    Date: {new Date().toLocaleDateString("en-IN")}
+                  </div>
+                </div>
+              </div>
+
+              {/* Patient Card */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.06] text-xs">
+                <div>
+                  <div className="text-[#86868B] text-[10px] uppercase font-semibold">Patient Name</div>
+                  <div className="font-bold text-[#1D1D1F] dark:text-white mt-0.5">{selectedPlan.patient_name}</div>
+                </div>
+                <div>
+                  <div className="text-[#86868B] text-[10px] uppercase font-semibold">Contact</div>
+                  <div className="font-mono text-[#1D1D1F] dark:text-white mt-0.5">{selectedPlan.patient_phone}</div>
+                </div>
+                <div>
+                  <div className="text-[#86868B] text-[10px] uppercase font-semibold">Attending Physiotherapist</div>
+                  <div className="font-semibold text-[#1D1D1F] dark:text-white mt-0.5">{selectedPlan.therapist_name}</div>
+                </div>
+              </div>
+
+              {/* Diagnosis */}
+              <div className="p-3 rounded-xl bg-rose-500/10 text-rose-800 dark:text-rose-200 text-xs font-semibold">
+                Diagnosed Musculoskeletal Condition: {selectedPlan.condition_diagnosed}
+              </div>
+
+              {/* Prescribed Exercises Table */}
+              <div className="space-y-3">
+                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white border-b pb-1">
+                  Prescribed Daily Home Exercise Regimen (Conduct Twice Daily):
+                </div>
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b text-[#86868B] text-[11px] font-semibold">
+                      <th className="py-2">Exercise Name</th>
+                      <th className="py-2 text-center">Dosage</th>
+                      <th className="py-2">Technique & Instructions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+                    <tr>
+                      <td className="py-2.5 font-semibold text-[#1D1D1F] dark:text-white">1. Codman Pendulum Exercises</td>
+                      <td className="py-2.5 text-center font-mono font-bold text-rose-600">3 sets × 15 reps</td>
+                      <td className="py-2.5 text-[#515154] dark:text-[#A1A1A6]">Lean forward, let arm dangle freely with gravity. Make gentle clockwise/anti-clockwise circles without tensing.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 font-semibold text-[#1D1D1F] dark:text-white">2. Finger Ladder Wall Climbs</td>
+                      <td className="py-2.5 text-center font-mono font-bold text-rose-600">3 sets × 10 reps</td>
+                      <td className="py-2.5 text-[#515154] dark:text-[#A1A1A6]">Face the wall, slowly walk fingers upwards to maximum pain-free elevation. Hold 5 seconds at the top.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 font-semibold text-[#1D1D1F] dark:text-white">3. Theraband External Rotations</td>
+                      <td className="py-2.5 text-center font-mono font-bold text-rose-600">3 sets × 12 reps</td>
+                      <td className="py-2.5 text-[#515154] dark:text-[#A1A1A6]">Keep elbow pinned at 90 degrees to ribcage. Rotate forearm outward against band resistance slowly.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Precautions */}
+              <div className="p-3 rounded-xl border border-black/[0.06] dark:border-white/[0.08] text-[11px] space-y-1 text-[#515154] dark:text-[#A1A1A6]">
+                <div className="font-bold text-[#1D1D1F] dark:text-white">Clinical Precautions:</div>
+                <div>• Do not perform jerking motions or push beyond sharp pain (VAS &gt; 5). Mild stretch sensation is normal.</div>
+                <div>• Apply warm fermentation for 10 minutes prior to exercise and cold ice pack if soreness occurs.</div>
+              </div>
+
+              {/* Signature Block */}
+              <div className="pt-6 flex justify-between items-end border-t border-black/[0.1] dark:border-white/[0.1]">
+                <div className="text-[10px] text-[#86868B]">
+                  Next Clinical Follow-up: <strong>Within 7 days</strong>
+                </div>
+                <div className="text-right">
+                  <div className="font-serif italic font-bold text-base">{selectedPlan.therapist_name}</div>
+                  <div className="text-[10px] text-[#86868B]">Consultant Physiotherapist</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -16,7 +16,10 @@ import {
   Printer,
   X,
   RefreshCw,
-  QrCode
+  QrCode,
+  Cpu,
+  Zap,
+  Cable
 } from "lucide-react";
 import { COMMON_LAB_TESTS } from "@/data/medicines";
 
@@ -61,6 +64,11 @@ export default function LabDashboardPage() {
   const [resultModalOrder, setResultModalOrder] = useState<DiagnosticOrder | null>(null);
   const [reportModalOrder, setReportModalOrder] = useState<DiagnosticOrder | null>(null);
   const [newOrderModal, setNewOrderModal] = useState(false);
+  const [machineModalOpen, setMachineModalOpen] = useState(false);
+  const [machineStream, setMachineStream] = useState("");
+  const [selectedTargetOrder, setSelectedTargetOrder] = useState("");
+  const [serialStatus, setSerialStatus] = useState<string | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
 
   // New Order Form state
   const [newPtName, setNewPtName] = useState("");
@@ -223,6 +231,85 @@ export default function LabDashboardPage() {
     }
   };
 
+  const loadSampleAstm = () => {
+    setSelectedTargetOrder("LAB-2026-002");
+    setMachineStream(`H|\\^&|||Sysmex^XN-550|||||||P|1
+P|1||||Amit Rawat||19920512|M
+O|1|LAB-2026-002||^^^CBC|||||||A
+R|1|^^^WBC|7.4|10*3/uL|4.0-11.0|N||F
+R|2|^^^RBC|4.85|10*6/uL|4.5-5.9|N||F
+R|3|^^^HGB|14.6|g/dL|13.0-17.0|N||F
+R|4|^^^HCT|43.2|%|40.0-50.0|N||F
+R|5|^^^PLT|265|10*3/uL|150-450|N||F
+R|6|^^^NEUT|64.2|%|40.0-75.0|N||F
+R|7|^^^LYMPH|28.5|%|20.0-45.0|N||F
+L|1|N`);
+  };
+
+  const loadSampleHl7 = () => {
+    setSelectedTargetOrder("LAB-2026-003");
+    setMachineStream(`MSH|^~\\&|MINDRAY^BC-5000|LAB|CLINICOS|HOSPITAL|20260923143000||ORU^R01|MSG0001|P|2.3.1
+PID|1||+919123456782||Rohit Pant||19940710|M
+OBR|1|LAB-2026-003||CBC^Complete Blood Count
+OBX|1|NM|WBC^Total Leukocyte Count||8.1|/cumm|4000-11000|N|||F
+OBX|2|NM|HGB^Hemoglobin||15.1|g/dL|13.0-17.0|N|||F
+OBX|3|NM|PLT^Platelet Count||210000|/cumm|150000-450000|N|||F
+OBX|4|NM|ESR^ESR Westergren||8|mm/1st hr|0-15|N|||F`);
+  };
+
+  const handleConnectWebSerial = async () => {
+    try {
+      if (typeof window === "undefined" || !("serial" in navigator)) {
+        alert("Web Serial API is not supported in this browser environment. Please use Google Chrome/Microsoft Edge or paste raw ASTM/HL7 stream.");
+        return;
+      }
+      setSerialStatus("Requesting COM port access...");
+      const port = await (navigator as any).serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      setSerialStatus("Connected! Listening to RS-232 analyzer port...");
+
+      const textDecoder = new TextDecoderStream();
+      port.readable.pipeTo(textDecoder.writable);
+      const reader = textDecoder.readable.getReader();
+
+      let accumulated = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+          accumulated += value;
+          setMachineStream(accumulated);
+        }
+      }
+    } catch (e: any) {
+      setSerialStatus(`Serial error: ${e.message}`);
+    }
+  };
+
+  const handleMachineImport = async () => {
+    if (!machineStream.trim()) return;
+    try {
+      setImportLoading(true);
+      const res = await fetch("/api/lab/machine-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          raw_stream: machineStream,
+          order_number: selectedTargetOrder || undefined
+        })
+      });
+      if (res.ok) {
+        setMachineModalOpen(false);
+        setMachineStream("");
+        fetchOrders();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   // Filtered orders
   const filteredOrders = orders.filter(o => 
     o.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -261,6 +348,13 @@ export default function LabDashboardPage() {
             title="Refresh Orders"
           >
             <RefreshCw className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setMachineModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-700 dark:text-purple-300 font-medium text-xs hover:bg-purple-500/20 transition"
+          >
+            <Cpu className="h-4 w-4" />
+            <span>Machine Import (ASTM/HL7)</span>
           </button>
           <button
             onClick={() => setNewOrderModal(true)}
@@ -886,6 +980,104 @@ export default function LabDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: Machine Serial Analyzer Import (ASTM / HL7 / RS-232) */}
+      {machineModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="w-full max-w-2xl rounded-[28px] border border-black/[0.08] bg-white p-6 shadow-2xl dark:border-white/[0.1] dark:bg-[#1C1C1E] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Cpu className="h-5 w-5 text-purple-600" />
+                <h3 className="font-bold text-base text-[#1D1D1F] dark:text-white">
+                  Analyzer Machine Serial Import (ASTM / HL7)
+                </h3>
+              </div>
+              <button onClick={() => setMachineModalOpen(false)} className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
+                <X className="h-5 w-5 text-[#86868B]" />
+              </button>
+            </div>
+
+            {/* Quick Actions Bar */}
+            <div className="flex flex-wrap gap-2 text-xs">
+              <button
+                type="button"
+                onClick={handleConnectWebSerial}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-sm transition"
+              >
+                <Cable className="h-4 w-4" />
+                <span>Connect Live COM Port (Web Serial)</span>
+              </button>
+              <button
+                type="button"
+                onClick={loadSampleAstm}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] font-medium hover:bg-black/5"
+              >
+                <Zap className="h-3.5 w-3.5 text-amber-500" />
+                <span>Load Sample ASTM (Sysmex)</span>
+              </button>
+              <button
+                type="button"
+                onClick={loadSampleHl7}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] font-medium hover:bg-black/5"
+              >
+                <Zap className="h-3.5 w-3.5 text-blue-500" />
+                <span>Load Sample HL7 (Mindray)</span>
+              </button>
+            </div>
+
+            {serialStatus && (
+              <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-800 dark:text-purple-300 text-xs font-mono">
+                {serialStatus}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#86868B] mb-1">
+                Target Lab Requisition Ref (Optional - extracted from stream if present)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. LAB-2026-002"
+                value={selectedTargetOrder}
+                onChange={(e) => setSelectedTargetOrder(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] font-mono text-xs outline-none focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-[#86868B] mb-1">
+                Raw Serial Stream Dump (ASTM E1394 or HL7 v2.x MLLP)
+              </label>
+              <textarea
+                rows={8}
+                value={machineStream}
+                onChange={(e) => setMachineStream(e.target.value)}
+                placeholder="Paste incoming analyzer data stream here or connect via RS-232 COM port..."
+                className="w-full p-3 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.02] font-mono text-[11.5px] leading-relaxed outline-none focus:border-purple-500"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setMachineModalOpen(false)}
+                className="px-4 py-2 rounded-xl border border-black/[0.08] dark:border-white/[0.1] text-xs font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={importLoading || !machineStream.trim()}
+                onClick={handleMachineImport}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5"
+              >
+                {importLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                <span>Parse & Ingest Into LIS</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
