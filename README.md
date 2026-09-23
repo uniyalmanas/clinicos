@@ -47,15 +47,14 @@ The front page (`/`) implements an uncluttered, patient-first hierarchy optimize
 
 ---
 
-## 🤖 DocSphere AI Consultant Agent (Groq LPU Powered)
+## 🎙️ DocSphere Voice & Chat Assistant (Voice-to-Text)
 
-Built with high-speed Groq LPU inference (`qwen/qwen3.8-27b` / `openai/gpt-oss-20b`) and a resilient clinical rule engine fallback:
+Instant, client-side medical assistant for patients in Dehradun with zero external latency or API failures:
 
-- **Floating Patient Assistant**: A compact pill widget (`DocSphere AI: Triage, Planning & Booking`) with active pulse indicators accessible across all devices.
-- **3-in-1 Patient Capabilities**:
-  1. **Clinical Triage & Specialist Recommendation**: Evaluates patient symptoms and directs them to the correct medical specialty (e.g., toothache ➔ Endodontics, skin lesions ➔ Dermatology, child fever ➔ Pediatrics).
-  2. **Visit Care Planning**: Explains what to expect, pre-visit checklist advice, and highlights transparent ₹0-markup fees (₹400–₹600).
-  3. **Direct 1-Click Interactive Booking**: Automatically outputs embedded **Doctor Action Cards** in the conversation with doctor qualifications, clinic address, direct consultation fee, and instant 1-click booking link (`/book?doctor=<slug>`).
+- **Compact Floating Action Button**: A minimal 44px circular trigger (`w-11 h-11`) with an active green pulse dot that never clutters the screen.
+- **Voice-to-Text Dictation (🎙️ Web Speech API)**: Tap the microphone to dictate symptoms in natural speech; transcribes in real-time with acoustic chimes and live recording indicators.
+- **Non-Fullscreen Floating Drawer**: Opens as a sleek, non-intrusive popup card (`340px × 450px`, max 70% viewport height) keeping the majority of the page visible.
+- **Instant Intent Matching & 1-Click Booking**: Quickly resolves questions on doctor specialties (Dermatology, Dentistry, Pediatrics, Ortho, ENT, General Medicine), OPD timings, ₹0-markup fees, and provides direct 1-click booking action buttons.
 
 ---
 

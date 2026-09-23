@@ -231,7 +231,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 px-4 py-2 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] transition cursor-pointer active:scale-95"
             >
               <Sparkles className="h-3.5 w-3.5 text-[#0071E3] dark:text-[#2997FF]" />
-              <span>Not sure which specialist to see? Ask DocSphere AI Consultant →</span>
+              <span>Not sure which specialist to see? Ask DocSphere Assistant (Voice &amp; Chat) →</span>
             </button>
           </div>
 
