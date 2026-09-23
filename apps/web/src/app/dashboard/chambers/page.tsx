@@ -88,7 +88,7 @@ export default function DashboardChambersPage() {
       osc2.start(now + 0.2);
       osc2.stop(now + 0.8);
 
-      setChimeMsg(`🔔 Called Token #${tokenNum} into ${chamberName}!`);
+      setChimeMsg(`Called Token #${tokenNum} into ${chamberName}!`);
       setTimeout(() => setChimeMsg(null), 3500);
     } catch (e) {
       console.error(e);

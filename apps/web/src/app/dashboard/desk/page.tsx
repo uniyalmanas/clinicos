@@ -249,7 +249,7 @@ export default function DashboardDeskPage() {
                 return item;
               })
             );
-            setCalledTokenMsg(`🔔 Live Broadcast: Token #${data.token_number} (${data.patient_name}) called`);
+            setCalledTokenMsg(`Live Broadcast: Token #${data.token_number} (${data.patient_name}) called`);
             setTimeout(() => setCalledTokenMsg(null), 5000);
           } else if (payload.event === "walk_in_registered") {
             const data = payload.data;
@@ -449,7 +449,7 @@ export default function DashboardDeskPage() {
             title="Launch Smart TV Waiting Room Wall Display"
           >
             <Tv className="h-4 w-4" />
-            <span>📺 Waiting Room TV</span>
+            <span>Waiting Room TV</span>
           </Link>
 
           <Link
@@ -458,7 +458,7 @@ export default function DashboardDeskPage() {
             title="Shift Day-Closing Cash Settlement"
           >
             <Receipt className="h-4 w-4" />
-            <span>💵 Settle Shift</span>
+            <span>Settle Shift</span>
           </Link>
 
           <button
@@ -470,7 +470,7 @@ export default function DashboardDeskPage() {
             title="View scheduled WhatsApp follow-ups & Google review boosters"
           >
             <Sparkles className="h-4 w-4" />
-            <span>⚡ WhatsApp Follow-ups</span>
+            <span>WhatsApp Follow-ups</span>
             <span className="rounded-full bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.2">
               {automationsList.filter(a => a.status === "scheduled").length}
             </span>
@@ -482,7 +482,7 @@ export default function DashboardDeskPage() {
             title="Design & Print Front Desk Acrylic Tent Cards & Posters"
           >
             <QrCode className="h-4 w-4" />
-            <span>🖨️ Standee Studio</span>
+            <span>Standee Studio</span>
           </Link>
 
           <button
