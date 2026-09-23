@@ -6,7 +6,7 @@ import postgres from "postgres";
  */
 
 const DEFAULT_DATABASE_URL =
-  "postgresql://postgres.yokxobybxdhmqijnipyx:Manas%4012RYZEN@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+  "postgresql://postgres.yokxobybxdhmqijnipyx:Manas%4012RYZEN@aws-1-ap-south-1.pooler.supabase.com:6543/postgres";
 
 const getDatabaseUrl = (): string => {
   const raw = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
@@ -24,10 +24,10 @@ declare global {
 export const sql =
   global.__postgres_sql ||
   postgres(connectionString, {
-    ssl: "require",
-    max: 3,
+    ssl: { rejectUnauthorized: false },
+    max: 5,
     idle_timeout: 20,
-    connect_timeout: 30,
+    connect_timeout: 20,
     prepare: false, // Recommended for pgbouncer/transaction poolers
   });
 
