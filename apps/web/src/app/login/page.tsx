@@ -66,9 +66,9 @@ export default function LoginPage() {
       } else if (data.role === "staff") {
         router.push("/dashboard/desk");
       } else if (data.role === "super_admin") {
-        router.push("/admin");
+        router.push("/superadmin");
       } else {
-        router.push("/admin");
+        router.push("/dashboard");
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Login failed. Please check credentials.");
@@ -229,9 +229,8 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <button
-                type="button"
-                onClick={() => quickLoginAs("superadmin", "/admin")}
+              <Link
+                href="/superadmin"
                 className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50/50 p-3 text-left shadow-sm transition hover:border-purple-500 hover:bg-purple-50 dark:border-purple-900/50 dark:bg-purple-950/20"
               >
                 <div className="flex items-center gap-2.5">
@@ -239,19 +238,19 @@ export default function LoginPage() {
                     <ShieldCheck className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900 dark:text-white">Master Super Admin (superadmin)</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">Master Super Admin (localhost:3000/superadmin)</div>
                     <div className="text-[10px] text-slate-500">Fleet Control, SaaS Billing & Telemetry • Pass: Manas@12</div>
                   </div>
                 </div>
                 <ArrowRight className="h-4 w-4 text-purple-600" />
-              </button>
+              </Link>
             </div>
           </div>
 
           <div className="relative flex items-center justify-center">
             <div className="border-t border-slate-200 w-full dark:border-slate-800"></div>
             <span className="bg-slate-50 px-3 text-[11px] uppercase font-semibold text-slate-400 dark:bg-slate-950">
-              Or Sign In with Credentials
+              Or Sign In with Mobile Number
             </span>
           </div>
 
@@ -264,29 +263,17 @@ export default function LoginPage() {
             )}
 
             <div>
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Mobile Number, Username, or Email
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPhone("superadmin");
-                    setPassword("Manas@12");
-                  }}
-                  className="text-[10px] text-purple-600 hover:underline font-semibold"
-                >
-                  Fill superadmin
-                </button>
-              </div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                Mobile Number (India)
+              </label>
               <div className="relative mt-1">
                 <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <input
-                  type="text"
+                  type="tel"
                   required
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  placeholder="superadmin or +919876543210"
+                  placeholder="+919876543210"
                   className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs font-mono shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 />
               </div>
