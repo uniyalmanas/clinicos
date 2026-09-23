@@ -5,13 +5,12 @@ import postgres from "postgres";
  * Connects directly to Supabase PostgreSQL pooler with zero cold starts.
  */
 
+const DEFAULT_DATABASE_URL =
+  "postgresql://postgres.yokxobybxdhmqijnipyx:Manas%4012RYZEN@aws-1-ap-south-1.pooler.supabase.com:5432/postgres";
+
 const getDatabaseUrl = (): string => {
-  const url = process.env.DATABASE_URL || "";
-  if (!url) {
-    console.warn("DATABASE_URL is not set. Database queries will fail.");
-    return "";
-  }
-  return url.trim().replace(/^postgres:\/\//, "postgresql://");
+  const raw = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
+  return raw.trim().replace(/^postgres:\/\//, "postgresql://").replace(/^["']|["']$/g, "");
 };
 
 const connectionString = getDatabaseUrl();
