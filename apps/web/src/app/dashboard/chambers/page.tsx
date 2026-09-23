@@ -112,7 +112,7 @@ export default function DashboardChambersPage() {
             slug: d.slug,
             full_name: d.full_name,
             specialization: d.specialization || "General Specialist",
-            registration_number: d.registration_number || (idx === 0 ? "UKMC-8942-2012" : "UDC-4120-2016"),
+            registration_number: d.registration_number || (idx === 0 ? "NMC Reg. UKMC-8942-2012 (Uttarakhand Medical Council)" : "State Dental Council Reg. UDC-4120-2016 (Uttarakhand Dental Council)"),
             consultation_fee: Number(d.consultation_fee) || 600,
             chamber_name: `Chamber ${idx + 1} • ${d.specialization?.split(" ")[0] || "OPD"}`
           }));
@@ -127,7 +127,7 @@ export default function DashboardChambersPage() {
             slug: "dr-rahul-sharma",
             full_name: "Dr. Rahul Sharma",
             specialization: "Dermatology & Skin Care",
-            registration_number: "UKMC-8942-2012",
+            registration_number: "NMC Reg. UKMC-8942-2012 (Uttarakhand Medical Council)",
             consultation_fee: 600,
             chamber_name: "Chamber 1 • Dermatology & Skin"
           },
@@ -136,7 +136,7 @@ export default function DashboardChambersPage() {
             slug: "dr-aditi-joshi",
             full_name: "Dr. Aditi Joshi",
             specialization: "Multi-Speciality Dental & Implants",
-            registration_number: "UDC-4120-2016",
+            registration_number: "State Dental Council Reg. UDC-4120-2016 (Uttarakhand Dental Council)",
             consultation_fee: 500,
             chamber_name: "Chamber 2 • Dental & Oral Care"
           }
