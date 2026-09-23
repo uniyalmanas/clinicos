@@ -43,14 +43,17 @@ export async function POST(req: Request) {
 
     // Lookup active clinic membership if applicable
     const memberships = await sql`
-      SELECT clinic_id, role
-      FROM clinic_memberships
-      WHERE user_id = ${user.id} AND is_active = true
+      SELECT cm.clinic_id, cm.role, c.name as clinic_name, c.slug as clinic_slug
+      FROM clinic_memberships cm
+      LEFT JOIN clinics c ON c.id = cm.clinic_id
+      WHERE cm.user_id = ${user.id} AND cm.is_active = true
       LIMIT 1
     `;
 
     const activeRole = memberships.length > 0 ? memberships[0].role : user.role;
     const clinicId = memberships.length > 0 ? memberships[0].clinic_id : null;
+    const clinicName = memberships.length > 0 ? memberships[0].clinic_name : null;
+    const clinicSlug = memberships.length > 0 ? memberships[0].clinic_slug : null;
 
     const token = signAccessToken({
       sub: user.id,
@@ -68,6 +71,8 @@ export async function POST(req: Request) {
       full_name: user.full_name,
       phone: user.phone,
       clinic_id: clinicId,
+      clinic_name: clinicName,
+      clinic_slug: clinicSlug,
     });
 
     // Also set standard HttpOnly cookie for seamless SSR session

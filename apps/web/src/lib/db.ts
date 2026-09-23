@@ -26,9 +26,9 @@ export const sql =
   global.__postgres_sql ||
   postgres(connectionString, {
     ssl: "require",
-    max: 5,
-    idle_timeout: 5,
-    connect_timeout: 10,
+    max: 3,
+    idle_timeout: 20,
+    connect_timeout: 30,
     prepare: false, // Recommended for pgbouncer/transaction poolers
   });
 

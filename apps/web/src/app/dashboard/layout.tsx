@@ -37,12 +37,19 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chimePlaying, setChimePlaying] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("clinicos_token");
     if (!token) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
       return;
+    }
+    const userStr = localStorage.getItem("clinicos_user");
+    if (userStr) {
+      try {
+        setCurrentUser(JSON.parse(userStr));
+      } catch (e) {}
     }
     setAuthChecked(true);
   }, [pathname, router]);
@@ -134,10 +141,12 @@ export default function DashboardLayout({
           {/* Active Clinic Badge */}
           <div className="mt-3 rounded-[14px] bg-white p-2.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.08] shadow-apple-sm">
             <div className="flex items-center justify-between text-xs font-bold text-[#1D1D1F] dark:text-white">
-              <span>Derma Care Skin & Laser</span>
+              <span className="truncate">{currentUser?.clinic_name || "Derma Care Skin & Laser"}</span>
               <span className="flex h-2 w-2 rounded-full bg-[#30D158] animate-pulse"></span>
             </div>
-            <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-0.5">14, Rajpur Road • 2 Doctors Active</p>
+            <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-0.5 truncate">
+              {currentUser?.full_name ? `${currentUser.full_name} (${currentUser.role})` : "Active Clinic Workspace"}
+            </p>
           </div>
         </div>
 

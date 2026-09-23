@@ -55,6 +55,8 @@ export default function LoginPage() {
         full_name: data.full_name,
         role: data.role,
         clinic_id: data.clinic_id || null,
+        clinic_name: data.clinic_name || null,
+        clinic_slug: data.clinic_slug || null,
       };
       localStorage.setItem("clinicos_user", JSON.stringify(user));
 
