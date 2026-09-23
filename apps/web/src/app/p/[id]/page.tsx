@@ -25,6 +25,7 @@ import {
   Sparkles
 } from "lucide-react";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
+import BackButton from "@/components/BackButton";
 
 // Server fallback seeds
 const SEED_PRESCRIPTIONS: Record<string, any> = {
@@ -136,13 +137,7 @@ export default function PatientPrescriptionLockerPage() {
       <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-[#ECEEF2]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80 print:hidden">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <Link 
-              href="/" 
-              className="inline-flex items-center gap-1.5 rounded-full p-2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-xs font-semibold">Home</span>
-            </Link>
+            <BackButton fallbackUrl="/dashboard" label="Back" />
           </div>
 
           <div className="flex items-center gap-3">

@@ -30,6 +30,7 @@ import {
   Info
 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
+import BackButton from "@/components/BackButton";
 import { getDoctors } from "@/lib/clinic-data";
 import { 
   DEHRADUN_DOCTORS, 
@@ -176,6 +177,7 @@ function BookingExperience() {
   const [patientAge, setPatientAge] = useState("");
   const [patientGender, setPatientGender] = useState("unspecified");
   const [symptoms, setSymptoms] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"pay_at_clinic" | "pay_online">("pay_at_clinic");
 
   // Auto-prefill if patient already has a session
   useEffect(() => {
@@ -405,7 +407,9 @@ function BookingExperience() {
           appointment_date: formattedDate,
           time_slot: slotLabel,
           consultation_type: consultationMode,
-          symptoms_description: symptoms.trim() || undefined
+          symptoms_description: symptoms.trim() || undefined,
+          payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
+          payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash"
         })
       });
 
@@ -425,6 +429,8 @@ function BookingExperience() {
           time_slot: slotLabel,
           appointment_date: formattedDate,
           fee_amount: selectedDoc.consultation_fee,
+          payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
+          payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash",
           booked_at: new Date().toISOString()
         }, patientName.trim(), `+91${cleanPhone.slice(-10)}`);
 
@@ -470,6 +476,8 @@ function BookingExperience() {
       time_slot: slotLabel,
       appointment_date: dateStr,
       fee_amount: selectedDoc.consultation_fee,
+      payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
+      payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash",
       booked_at: new Date().toISOString()
     }, patientName.trim(), `+91${phoneNum}`);
 
@@ -485,7 +493,9 @@ function BookingExperience() {
         clinic_address: selectedDoc.clinic_address,
         time_slot: slotLabel,
         appointment_date: dateStr,
-        fee_amount: selectedDoc.consultation_fee
+        fee_amount: selectedDoc.consultation_fee,
+        payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
+        payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash"
       },
       whatsapp_notification_link: `https://wa.me/91${phoneNum}?text=${encodeURIComponent(waText)}`,
       message: `Your appointment is confirmed! Token Number is #${assignedToken}.`
@@ -507,12 +517,7 @@ function BookingExperience() {
                 <ArrowLeft className="h-4 w-4" /> Change Doctor
               </button>
             ) : (
-              <Link 
-                href="/search" 
-                className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition"
-              >
-                <ArrowLeft className="h-4 w-4" /> Doctor Directory
-              </Link>
+              <BackButton fallbackUrl="/search" label="Back" />
             )}
 
             <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
@@ -948,6 +953,53 @@ function BookingExperience() {
                   </div>
                 </div>
 
+                {/* 5. Payment Preference */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-[#1D1D1F] dark:text-white block">
+                    5. Payment Method
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("pay_at_clinic")}
+                      className={`rounded-2xl border p-3.5 text-left text-xs transition cursor-pointer ${
+                        paymentMethod === "pay_at_clinic"
+                          ? "border-apple-blue bg-apple-blue/5 dark:bg-apple-blue/10 ring-1 ring-apple-blue"
+                          : "border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.04]"
+                      }`}
+                    >
+                      <div className="font-semibold text-[#1D1D1F] dark:text-white flex items-center justify-between">
+                        <span>🏥 Pay at Clinic Counter</span>
+                        {paymentMethod === "pay_at_clinic" && <CheckCircle2 className="h-4 w-4 text-apple-blue" />}
+                      </div>
+                      <p className="mt-1 text-[11px] text-[#86868B]">
+                        Pay ₹{selectedDoc.consultation_fee} via Cash or counter UPI when you arrive for your turn.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("pay_online")}
+                      className={`rounded-2xl border p-3.5 text-left text-xs transition cursor-pointer ${
+                        paymentMethod === "pay_online"
+                          ? "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10 ring-1 ring-emerald-500"
+                          : "border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.04]"
+                      }`}
+                    >
+                      <div className="font-semibold text-[#1D1D1F] dark:text-white flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          ⚡ Pay Online Now
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-bold">Fast Track</span>
+                        </span>
+                        {paymentMethod === "pay_online" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+                      </div>
+                      <p className="mt-1 text-[11px] text-[#86868B]">
+                        Instant UPI / Cards. Priority token check-in, skips reception billing counter.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Cost Breakdown Summary */}
                 <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.02] p-4 text-xs space-y-2">
                   <div className="flex justify-between text-[#86868B]">
@@ -959,8 +1011,10 @@ function BookingExperience() {
                     <span className="text-apple-teal font-semibold">₹0 (Free)</span>
                   </div>
                   <div className="flex justify-between border-t border-black/[0.06] dark:border-white/[0.06] pt-2 font-bold text-[#1D1D1F] dark:text-white">
-                    <span>Pay at Clinic Counter:</span>
-                    <span className="text-base text-apple-blue font-mono">₹{selectedDoc.consultation_fee}</span>
+                    <span>{paymentMethod === "pay_online" ? "Total Payable Online:" : "Pay at Clinic Counter:"}</span>
+                    <span className={`text-base font-mono ${paymentMethod === "pay_online" ? "text-emerald-600 dark:text-emerald-400" : "text-apple-blue"}`}>
+                      ₹{selectedDoc.consultation_fee}
+                    </span>
                   </div>
                 </div>
 
@@ -978,7 +1032,9 @@ function BookingExperience() {
                   ) : (
                     <>
                       <Check className="h-4 w-4" /> 
-                      Confirm Token #{liveQueue?.next_token_available || selectedDoc.next_token || 4} &amp; Receive WhatsApp Pass
+                      {paymentMethod === "pay_online"
+                        ? `Pay ₹${selectedDoc.consultation_fee} Online & Confirm Token #${liveQueue?.next_token_available || selectedDoc.next_token || 4}`
+                        : `Confirm Token #${liveQueue?.next_token_available || selectedDoc.next_token || 4} & Receive WhatsApp Pass`}
                     </>
                   )}
                 </button>

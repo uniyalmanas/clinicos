@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
   Building2, 
@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export default function DashboardOverviewPage() {
-  const [activeQueue] = useState([
+  const [activeQueue, setActiveQueue] = useState<any[]>([
     {
       token: 1,
       patient_name: "Amit Rawat",
@@ -46,28 +46,69 @@ export default function DashboardOverviewPage() {
       time: "10:45 AM",
       fee: 600,
       payment: "Cash Pending"
-    },
-    {
-      token: 4,
-      patient_name: "Kavita Joshi",
-      phone: "+91 98765 11111",
-      doctor: "Dr. Aditi Joshi (Chamber 2)",
-      status: "in_consultation",
-      time: "11:00 AM",
-      fee: 400,
-      payment: "UPI Paid"
-    },
-    {
-      token: 5,
-      patient_name: "Master Aarav Sethi",
-      phone: "+91 98765 22222",
-      doctor: "Dr. Vikram Sethi (Visiting)",
-      status: "waiting",
-      time: "11:15 AM",
-      fee: 500,
-      payment: "Cash Pending"
     }
   ]);
+
+  const [metrics, setMetrics] = useState({
+    footfall: 14,
+    waitingCount: 3,
+    avgWaitMins: 11,
+    grossCollections: 7800,
+    upiCollections: 6000,
+    cashCollections: 1800,
+    marginPct: 61.4,
+  });
+
+  const [activeConsultation, setActiveConsultation] = useState<any>(null);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [deskRes, expRes] = await Promise.all([
+          fetch("/api/clinic/desk-queue").then(r => r.ok ? r.json() : null),
+          fetch("/api/expenses").then(r => r.ok ? r.json() : null),
+        ]);
+
+        if (deskRes?.queue && deskRes.queue.length > 0) {
+          const mapped = deskRes.queue.map((q: any) => ({
+            token: q.token_number,
+            appointment_number: q.appointment_number,
+            patient_name: q.patient_name,
+            phone: q.patient_phone,
+            doctor: `${q.doctor_name || "Dr. Rahul Sharma"} (Chamber 1)`,
+            status: q.status,
+            time: q.time_slot || "Live Queue",
+            fee: q.fee_amount || 600,
+            payment: q.payment_status === "paid" ? `${(q.payment_mode || "UPI").toUpperCase()} Paid` : "Cash Pending",
+          }));
+          setActiveQueue(mapped);
+
+          const inConsult = deskRes.queue.find((q: any) => q.status === "in_consultation");
+          if (inConsult) setActiveConsultation(inConsult);
+
+          setMetrics(prev => ({
+            ...prev,
+            footfall: deskRes.queue.length,
+            waitingCount: deskRes.waiting_count || prev.waitingCount,
+            grossCollections: deskRes.financials?.total_collected || prev.grossCollections,
+            upiCollections: deskRes.financials?.upi_collected || prev.upiCollections,
+            cashCollections: deskRes.financials?.cash_collected || prev.cashCollections,
+          }));
+        }
+
+        if (expRes?.kpis) {
+          setMetrics(prev => ({
+            ...prev,
+            grossCollections: expRes.kpis.gross_collections || prev.grossCollections,
+            marginPct: expRes.kpis.profit_margin_pct || prev.marginPct,
+          }));
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+    }
+    loadData();
+  }, []);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -82,7 +123,7 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3 text-3xl font-extrabold text-[#1D1D1F] dark:text-white font-mono tracking-tight">
-            14 <span className="text-xs font-normal text-[#86868B] dark:text-[#8E8E93]">Patients</span>
+            {metrics.footfall} <span className="text-xs font-normal text-[#86868B] dark:text-[#8E8E93]">Patients</span>
           </div>
           <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#34C759] dark:text-[#30D158] font-semibold">
             <TrendingUp className="h-3.5 w-3.5" />
@@ -99,10 +140,10 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3 text-3xl font-extrabold text-[#1D1D1F] dark:text-white font-mono tracking-tight">
-            3 <span className="text-xs font-normal text-[#86868B] dark:text-[#8E8E93]">Waiting</span>
+            {metrics.waitingCount} <span className="text-xs font-normal text-[#86868B] dark:text-[#8E8E93]">Waiting</span>
           </div>
           <div className="mt-2.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
-            Avg. wait time: <strong className="text-[#1D1D1F] dark:text-white">11 mins</strong>
+            Avg. wait time: <strong className="text-[#1D1D1F] dark:text-white">{metrics.avgWaitMins} mins</strong>
           </div>
         </div>
 
@@ -115,12 +156,12 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3 text-3xl font-extrabold text-[#1D1D1F] dark:text-white font-mono tracking-tight">
-            ₹7,800
+            ₹{metrics.grossCollections.toLocaleString("en-IN")}
           </div>
           <div className="mt-2.5 flex items-center gap-2 text-xs text-[#86868B] dark:text-[#8E8E93]">
-            <span className="text-[#34C759] dark:text-[#30D158] font-semibold">₹6,000 UPI</span>
+            <span className="text-[#34C759] dark:text-[#30D158] font-semibold">₹{metrics.upiCollections.toLocaleString("en-IN")} UPI</span>
             <span>•</span>
-            <span className="font-semibold text-[#1D1D1F] dark:text-white">₹1,800 Cash</span>
+            <span className="font-semibold text-[#1D1D1F] dark:text-white">₹{metrics.cashCollections.toLocaleString("en-IN")} Cash</span>
           </div>
         </div>
 
@@ -133,7 +174,7 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
           <div className="mt-3 text-3xl font-extrabold text-[#1D1D1F] dark:text-white font-mono tracking-tight">
-            61.4%
+            {metrics.marginPct}%
           </div>
           <div className="mt-2.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
             Net In-hand after rent & staff
@@ -162,7 +203,9 @@ export default function DashboardOverviewPage() {
           <div className="mt-4 rounded-[16px] bg-[#ECEEF2]/70 p-3.5 dark:bg-[#2C2C2E]">
             <div className="flex items-center justify-between text-xs">
               <span className="text-[#86868B] dark:text-[#8E8E93]">Current Patient:</span>
-              <span className="font-bold text-[#1D1D1F] dark:text-white">Priya Singh (Token #2)</span>
+              <span className="font-bold text-[#1D1D1F] dark:text-white">
+                {activeConsultation?.patient_name ? `${activeConsultation.patient_name} (Token #${activeConsultation.token_number})` : "Priya Singh (Token #2)"}
+              </span>
             </div>
             <div className="mt-1 flex items-center justify-between text-[11px] text-[#86868B] dark:text-[#8E8E93]">
               <span>Provisional Dx: Allergic Contact Dermatitis</span>
@@ -172,7 +215,7 @@ export default function DashboardOverviewPage() {
 
           <div className="mt-5 flex gap-2">
             <Link
-              href="/dashboard/consult/APT-DERMA-102"
+              href={`/dashboard/consult/${activeConsultation?.appointment_number || "APT-DERMA-102"}`}
               className="flex-1 rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-apple-sm hover:bg-[#0077ED] active:scale-95 transition"
             >
               Open Consultation Studio ℞

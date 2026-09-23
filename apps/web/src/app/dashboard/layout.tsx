@@ -88,12 +88,15 @@ export default function DashboardLayout({
   };
 
   const navItems = [
-    { label: "Reception Token Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Chime" },
-    { label: "Doctor Chamber (Speed Rx)", href: "/dashboard/chambers", icon: Stethoscope, badge: "OPD" },
-    { label: "Waiting Lounge Smart TV", href: "/display/waiting-room", icon: Building2, badge: "TV" },
-    { label: "Day Closing & Drawer Cash", href: "/dashboard/finance", icon: CreditCard, badge: "9 PM" },
-    { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
+    { label: "Clinic Overview", href: "/dashboard", icon: Stethoscope },
+    { label: "Reception Token Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Live" },
+    { label: "Doctor Chambers", href: "/dashboard/chambers", icon: Stethoscope, badge: "OPD" },
+    { label: "Waiting Lounge TV", href: "/waiting-room", icon: Building2, badge: "Display" },
+    { label: "Pharmacy & Dispense", href: "/dashboard/pharmacy", icon: Pill, badge: "POS" },
+    { label: "Inpatient Beds & Wards", href: "/dashboard/beds", icon: Bed },
+    { label: "Day Closing & Finance", href: "/dashboard/finance", icon: CreditCard, badge: "EOD" },
     { label: "Patient History Vault", href: "/dashboard/patients", icon: Users },
+    { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
   ];
 
   if (!authChecked) {

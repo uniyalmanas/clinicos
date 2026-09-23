@@ -85,7 +85,7 @@ export default function OnboardingPage() {
   const handleExtract = async () => {
     setIsExtracting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/onboarding/extract`, {
+      const res = await fetch("/api/onboarding/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -151,7 +151,7 @@ export default function OnboardingPage() {
     setIsPublishing(true);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/onboarding/publish`, {
+      const res = await fetch("/api/onboarding/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -164,24 +164,24 @@ export default function OnboardingPage() {
 
       if (res.ok) {
         const json = await res.json();
+        if (json.access_token) {
+          localStorage.setItem("clinicos_token", json.access_token);
+          localStorage.setItem("clinicos_user", JSON.stringify({
+            id: json.doctor_id,
+            phone: phone,
+            full_name: extractedData.doctor.full_name,
+            role: "doctor",
+            clinic_id: json.clinic_id
+          }));
+        }
         setPublishedResult(json);
       } else {
-        // Local simulation fallback
-        const slug = extractedData.doctor.full_name.toLowerCase().replace(/[^a-z0-9]/g, "-");
-        setPublishedResult({
-          status: "published",
-          doctor_url: `/doctors/dr-rahul-sharma`,
-          clinic_url: `/clinics/derma-care-dehradun`,
-          message: `Congratulations ${extractedData.doctor.full_name}! Your clinic is now live.`
-        });
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.detail || "Publishing failed. Please check credentials and try again.");
       }
-    } catch (e) {
-      setPublishedResult({
-        status: "published",
-        doctor_url: `/doctors/dr-rahul-sharma`,
-        clinic_url: `/clinics/derma-care-dehradun`,
-        message: `Congratulations ${extractedData.doctor.full_name}! Your clinic is now live.`
-      });
+    } catch (e: any) {
+      console.error("Onboarding publish error:", e);
+      alert(e.message || "Failed to publish profile to database.");
     } finally {
       setIsPublishing(false);
     }
@@ -215,7 +215,7 @@ export default function OnboardingPage() {
               Your Clinic is Officially Online!
             </h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-              {publishedResult.message} Your professional doctor profile and digital clinic page have been generated and published.
+              {publishedResult.message} Your professional doctor profile and digital clinic page are now live in the central directory.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -226,10 +226,16 @@ export default function OnboardingPage() {
                 <Stethoscope className="h-4 w-4" /> View Live Doctor Profile
               </Link>
               <Link
+                href="/dashboard"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-emerald-700"
+              >
+                Launch OPD Console
+              </Link>
+              <Link
                 href={publishedResult.clinic_url}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
-                <Building2 className="h-4 w-4" /> View Digital Clinic Page
+                <Building2 className="h-4 w-4" /> Digital Clinic Page
               </Link>
             </div>
           </div>

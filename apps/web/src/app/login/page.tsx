@@ -19,8 +19,9 @@ import {
   BarChart3
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import BackButton from "@/components/BackButton";
 
-const API_BASE = `${API_BASE_URL}/api/v1`;
+const API_BASE = "/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,14 +54,15 @@ export default function LoginPage() {
         phone: data.phone,
         full_name: data.full_name,
         role: data.role,
+        clinic_id: data.clinic_id || null,
       };
       localStorage.setItem("clinicos_user", JSON.stringify(user));
 
-      // Role-based routing
+      // Role-based canonical routing
       if (data.role === "doctor") {
-        router.push("/doctor/queue");
+        router.push("/dashboard");
       } else if (data.role === "staff") {
-        router.push("/clinic/desk");
+        router.push("/dashboard/desk");
       } else {
         router.push("/admin/analytics");
       }
@@ -96,7 +98,10 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials)
       });
-      if (!res.ok) throw new Error("Demo account login failed.");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Demo account login failed.");
+      }
       const data = await res.json();
       localStorage.setItem("clinicos_token", data.access_token);
       localStorage.setItem("clinicos_user", JSON.stringify({
@@ -104,6 +109,7 @@ export default function LoginPage() {
         phone: data.phone,
         full_name: data.full_name,
         role: data.role,
+        clinic_id: data.clinic_id || null,
       }));
       router.push(targetUrl);
     } catch (err: any) {
@@ -119,9 +125,7 @@ export default function LoginPage() {
       <header className="border-b border-slate-200 bg-white/95 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/95">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <Link href="/" className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
+            <BackButton fallbackUrl="/" label="Back" />
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
                 <Stethoscope className="h-5 w-5" />

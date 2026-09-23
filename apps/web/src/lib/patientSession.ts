@@ -13,6 +13,8 @@ export interface ActiveBooking {
   time_slot: string;
   appointment_date: string;
   fee_amount: number;
+  payment_status?: string;
+  payment_mode?: string;
   booked_at: string;
 }
 

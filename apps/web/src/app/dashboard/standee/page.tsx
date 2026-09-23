@@ -56,10 +56,12 @@ export default function StandeeGeneratorPage() {
 
   // Compute QR Destination URL & Content based on purpose
   const { qrValue, headerTitle, headerHindi, instructionText, instructionHindi, badgeText } = useMemo(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://clinicos.in";
+
     switch (purpose) {
       case "live_queue":
         return {
-          qrValue: "http://localhost:3000/waiting-room?clinic=derma-care",
+          qrValue: `${origin}/waiting-room?clinic=derma-care`,
           headerTitle: "Scan to Track Your Token",
           headerHindi: "अपने मोबाइल पर लाइव टोकन देखें",
           instructionText: "Scan with your phone camera to watch live queue progression. You can relax in your car or a nearby cafe without missing your turn!",
@@ -68,7 +70,7 @@ export default function StandeeGeneratorPage() {
         };
       case "express_booking":
         return {
-          qrValue: "http://localhost:3000/book?clinic=derma-care",
+          qrValue: `${origin}/book?clinic=derma-care`,
           headerTitle: "Skip Front Desk Line & Book Token",
           headerHindi: "बिना लाइन में लगे तुरंत डिजिटल टोकन लें",
           instructionText: "Scan to reserve an immediate priority walk-in consultation token directly on your phone in under 15 seconds.",

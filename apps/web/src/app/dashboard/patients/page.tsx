@@ -34,53 +34,21 @@ export default function DashboardPatientsPage() {
   const [activeTab, setActiveTab] = useState<"emr" | "documents">("emr");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sync real appointments into patients list
+  // Sync real patient EMR records from database
   useEffect(() => {
     async function loadRealPatients() {
       setIsLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+        const res = await fetch("/api/patients");
         if (res.ok) {
           const json = await res.json();
-          const queue = json.queue || [];
-          
-          // Merge unique patients from queue
-          const queuePatients: PatientProfile[] = queue.map((q: any) => ({
-            id: `pt-${q.appointment_number}`,
-            full_name: q.patient_name,
-            phone: q.patient_phone,
-            gender: "Male",
-            age: 28,
-            blood_group: "B+",
-            chronic_allergies: [],
-            known_conditions: q.symptoms_description ? [q.symptoms_description] : [],
-            registered_at: "Today",
-            total_visits: 1,
-            visits: [
-              {
-                visit_id: `vis-${q.appointment_number}`,
-                visit_date: "Today",
-                doctor_name: q.doctor_name || "Dr. Rahul Sharma",
-                doctor_specialization: "General OPD",
-                clinic_name: "Derma Care Skin & Laser Centre",
-                provisional_diagnosis: q.symptoms_description || "Outpatient Consultation",
-                vitals: { bp: "120/80", pulse: 74, temp: 98.6, spo2: 99, weight: 65 },
-                medications_summary: ["Consultation In Progress"],
-                followup_advice: "Follow doctor's advice",
-                prescription_number: "RX-2026-09-0014"
-              }
-            ]
-          }));
-
-          const existingPhones = new Set(SEED_PATIENTS.map(p => p.phone));
-          const newUnique = queuePatients.filter(p => !existingPhones.has(p.phone));
-          
-          if (newUnique.length > 0) {
-            setPatients([...newUnique, ...SEED_PATIENTS]);
+          if (json.patients && json.patients.length > 0) {
+            setPatients(json.patients);
+            setSelectedPatient(json.patients[0]);
           }
         }
       } catch (e) {
-        // Use seed
+        // Fallback to seed
       } finally {
         setIsLoading(false);
       }

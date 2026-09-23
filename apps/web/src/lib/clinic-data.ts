@@ -1,3 +1,4 @@
+import { sql } from "@/lib/db";
 import { supabase, supabaseReady } from "@/lib/supabase";
 import { DEHRADUN_DOCTORS, DoctorProfile } from "@/data/doctors";
 import { DEHRADUN_CLINICS, ClinicProfile } from "@/data/clinics";
@@ -88,7 +89,7 @@ const normalizeClinic = (row: any): ClinicProfile => ({
   facilities: Array.isArray(row?.facilities) ? row.facilities.map((item: unknown) => toString(item, "Facility")) : [],
   opening_hours:
     typeof row?.opening_hours === "object" && row?.opening_hours
-      ? row.opening_hours
+      ? row?.opening_hours
       : {
           "Monday - Saturday": "10:00 AM - 08:00 PM",
           Sunday: "Closed"
@@ -103,59 +104,85 @@ const normalizeClinic = (row: any): ClinicProfile => ({
 });
 
 export async function getDoctors(): Promise<DoctorProfile[]> {
-  if (!supabaseReady || !supabase) {
-    return fallbackDoctors;
+  try {
+    const data = await sql`SELECT * FROM doctors ORDER BY full_name`;
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map(normalizeDoctor);
+    }
+  } catch (err) {
+    console.warn("Direct DB fetch for doctors failed, using fallback:", err);
   }
-
-  const { data, error } = await supabase.from("doctors").select("*").order("full_name");
-  if (error || !Array.isArray(data)) {
-    return fallbackDoctors;
-  }
-
-  return data.map(normalizeDoctor);
+  return fallbackDoctors;
 }
 
 export async function getDoctorBySlug(slug: string): Promise<DoctorProfile | undefined> {
-  const doctors = await getDoctors();
-  return doctors.find((doctor) => doctor.slug.toLowerCase() === slug.toLowerCase());
+  const cleanSlug = slug.toLowerCase().trim();
+  try {
+    const rows = await sql`SELECT * FROM doctors WHERE lower(slug) = ${cleanSlug} LIMIT 1`;
+    if (rows && rows.length > 0) {
+      return normalizeDoctor(rows[0]);
+    }
+  } catch (err) {
+    console.warn("Direct DB fetch for doctor by slug failed:", err);
+  }
+  return fallbackDoctors.find((doctor) => doctor.slug.toLowerCase() === cleanSlug);
 }
 
 export async function getClinics(): Promise<ClinicProfile[]> {
-  if (!supabaseReady || !supabase) {
-    return fallbackClinics;
+  try {
+    const clinicsData = await sql`SELECT * FROM clinics ORDER BY name`;
+    const doctorRows = await sql`SELECT * FROM doctors`;
+    if (Array.isArray(clinicsData) && clinicsData.length > 0) {
+      return clinicsData.map((clinicRow: any) => {
+        const relatedDoctors = (Array.isArray(doctorRows) ? doctorRows : [])
+          .filter((doctorRow: any) => {
+            const sameClinicSlug = toString(doctorRow?.clinic_slug, "") === toString(clinicRow?.slug, "");
+            const sameClinicId = toString(doctorRow?.clinic_id, "") === toString(clinicRow?.id, "");
+            return sameClinicSlug || sameClinicId;
+          })
+          .map((doctorRow: any) => ({
+            full_name: toString(doctorRow?.full_name, "Doctor"),
+            slug: toString(doctorRow?.slug, doctorRow?.id || "doctor-slug"),
+            specialization: toString(doctorRow?.specialization, "General Physician"),
+            qualification_summary: toString(doctorRow?.qualification_summary, "Verified specialist"),
+            consultation_fee: toNumber(doctorRow?.consultation_fee, 500)
+          }));
+
+        return {
+          ...normalizeClinic(clinicRow),
+          doctors: relatedDoctors.length > 0 ? relatedDoctors : normalizeClinic(clinicRow).doctors
+        };
+      });
+    }
+  } catch (err) {
+    console.warn("Direct DB fetch for clinics failed, using fallback:", err);
   }
-
-  const { data: clinicsData, error: clinicsError } = await supabase.from("clinics").select("*");
-  if (clinicsError || !Array.isArray(clinicsData)) {
-    return fallbackClinics;
-  }
-
-  const { data: doctorsData } = await supabase.from("doctors").select("*");
-  const doctorRows = Array.isArray(doctorsData) ? doctorsData : [];
-
-  return clinicsData.map((clinicRow: any) => {
-    const relatedDoctors = doctorRows
-      .filter((doctorRow: any) => {
-        const sameClinicSlug = toString(doctorRow?.clinic_slug, "") === toString(clinicRow?.slug, "");
-        const sameClinicId = toString(doctorRow?.clinic_id, "") === toString(clinicRow?.id, "");
-        return sameClinicSlug || sameClinicId;
-      })
-      .map((doctorRow: any) => ({
-        full_name: toString(doctorRow?.full_name, "Doctor"),
-        slug: toString(doctorRow?.slug, doctorRow?.id || "doctor-slug"),
-        specialization: toString(doctorRow?.specialization, "General Physician"),
-        qualification_summary: toString(doctorRow?.qualification_summary, "Verified specialist"),
-        consultation_fee: toNumber(doctorRow?.consultation_fee, 500)
-      }));
-
-    return {
-      ...normalizeClinic(clinicRow),
-      doctors: relatedDoctors.length > 0 ? relatedDoctors : normalizeClinic(clinicRow).doctors
-    };
-  });
+  return fallbackClinics;
 }
 
 export async function getClinicBySlug(slug: string): Promise<ClinicProfile | undefined> {
-  const clinics = await getClinics();
-  return clinics.find((clinic) => clinic.slug.toLowerCase() === slug.toLowerCase());
+  const cleanSlug = slug.toLowerCase().trim();
+  try {
+    const rows = await sql`SELECT * FROM clinics WHERE lower(slug) = ${cleanSlug} LIMIT 1`;
+    if (rows && rows.length > 0) {
+      const clinicRow = rows[0];
+      const relatedDoctors = await sql`
+        SELECT * FROM doctors
+        WHERE lower(clinic_slug) = ${cleanSlug} OR clinic_id = ${clinicRow.id}
+      `;
+      return {
+        ...normalizeClinic(clinicRow),
+        doctors: relatedDoctors.map((d: any) => ({
+          full_name: toString(d.full_name, "Doctor"),
+          slug: toString(d.slug, d.id || "doctor-slug"),
+          specialization: toString(d.specialization, "General Physician"),
+          qualification_summary: toString(d.qualification_summary, "Verified specialist"),
+          consultation_fee: toNumber(d.consultation_fee, 500)
+        }))
+      };
+    }
+  } catch (err) {
+    console.warn("Direct DB fetch for clinic by slug failed:", err);
+  }
+  return fallbackClinics.find((clinic) => clinic.slug.toLowerCase() === cleanSlug);
 }

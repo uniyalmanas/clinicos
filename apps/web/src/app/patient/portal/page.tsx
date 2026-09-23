@@ -33,6 +33,7 @@ import {
   Check
 } from "lucide-react";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
+import BackButton from "@/components/BackButton";
 
 export default function PatientPortalPage() {
   const { session, isLoggedIn, logout, login } = usePatientSession();
@@ -44,57 +45,63 @@ export default function PatientPortalPage() {
   const [alarmSetMessage, setAlarmSetMessage] = useState<string | null>(null);
   const [forwardedChemistMsg, setForwardedChemistMsg] = useState<string | null>(null);
 
-  // Synchronize from session on mount or change
+  // Synchronize from live database or session on mount
   useEffect(() => {
-    if (session && session.phone) {
-      setPhone(session.phone);
-      const cleanPhone = session.phone.replace(/[^0-9]/g, "");
-      const match = SEED_PATIENTS.find(p => p.phone.replace(/[^0-9]/g, "") === cleanPhone);
+    async function syncPatient() {
+      const activePhone = session?.phone || phone;
+      if (!activePhone) return;
 
+      const cleanPhone = activePhone.replace(/[^0-9]/g, "");
+      try {
+        const res = await fetch(`/api/patients/${encodeURIComponent(cleanPhone)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.patient && json.patient.visits?.length > 0) {
+            setCurrentPatient(json.patient);
+            setPhone(json.patient.phone);
+            return;
+          }
+        }
+      } catch (e) {
+        // Fallback to seed or session
+      }
+
+      const match = SEED_PATIENTS.find(p => p.phone.replace(/[^0-9]/g, "") === cleanPhone);
       if (match) {
         setCurrentPatient(match);
-      } else {
-        // Synthesize dynamic patient profile for the active session
-        setCurrentPatient({
-          id: session.id,
-          full_name: session.full_name,
-          phone: session.phone,
-          age: session.age || 32,
-          gender: (session.gender as any) || "Male",
-          blood_group: "O+",
-          chronic_allergies: [],
-          known_conditions: [],
-          emergency_contact: session.phone,
-          registered_at: session.created_at?.split("T")[0] || new Date().toISOString().split("T")[0],
-          total_visits: session.active_booking ? 1 : 0,
-          visits: session.active_booking ? [
-            {
-              visit_id: `vis-${session.active_booking.appointment_number}`,
-              visit_date: session.active_booking.appointment_date,
-              doctor_name: session.active_booking.doctor_name,
-              doctor_specialization: session.active_booking.specialization || "Medical Specialist",
-              clinic_name: session.active_booking.clinic_name,
-              provisional_diagnosis: "OPD Consultation & Clinical Assessment",
-              vitals: { bp: "120/80", pulse: 72, temp: 98.6, weight: 65, spo2: 99 },
-              symptoms: "Scheduled OPD Walk-In Consultation",
-              prescription_number: session.active_booking.appointment_number,
-              medications_summary: ["Pending Chamber Consultation"],
-              lab_orders: [],
-              followup_advice: "Arrive at clinic 10-15 minutes prior to token call."
-            }
-          ] : []
-        });
       }
     }
+    syncPatient();
   }, [session]);
 
-  const handlePhoneLookup = (targetPhone: string) => {
+  const handlePhoneLookup = async (targetPhone: string) => {
     setPhone(targetPhone);
     const cleanTarget = targetPhone.replace(/[^0-9]/g, "");
+
+    try {
+      const res = await fetch(`/api/patients/${encodeURIComponent(cleanTarget)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.patient) {
+          setCurrentPatient(json.patient);
+          login({
+            id: json.patient.id,
+            full_name: json.patient.full_name,
+            phone: json.patient.phone,
+            age: json.patient.age,
+            gender: json.patient.gender,
+            created_at: new Date().toISOString(),
+            last_active: new Date().toISOString(),
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      // Fallback
+    }
+
     const found = SEED_PATIENTS.find(p => p.phone.replace(/[^0-9]/g, "") === cleanTarget) || SEED_PATIENTS[0];
     setCurrentPatient(found);
-    
-    // Also update session to this patient
     login({
       id: found.id,
       full_name: found.full_name,
@@ -132,9 +139,7 @@ export default function PatientPortalPage() {
       <header className="sticky top-0 z-40 apple-glass border-b border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/" className="rounded-full p-2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
+            <BackButton fallbackUrl="/" label="Back" />
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-apple-blue text-white shadow-apple-sm">
                 <Smartphone className="h-5 w-5" />

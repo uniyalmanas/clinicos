@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import DoctorReviewsSection from "@/components/DoctorReviewsSection";
 import AIReceptionistWidget from "@/components/AIReceptionistWidget";
+import BackButton from "@/components/BackButton";
 import { getDoctorBySlug, getDoctors } from "@/lib/clinic-data";
 
 interface Props {
@@ -66,9 +67,7 @@ export default async function DoctorProfilePage({ params }: Props) {
       {/* Navigation */}
       <header className="sticky top-0 z-40 apple-glass border-b border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white transition">
-            <ArrowLeft className="h-4 w-4" /> Back to Home
-          </Link>
+          <BackButton fallbackUrl="/search" label="Back" />
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link

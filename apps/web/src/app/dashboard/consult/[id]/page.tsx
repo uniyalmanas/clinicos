@@ -54,6 +54,7 @@ import {
 
 import QRCodeDisplay from "@/components/QRCodeDisplay";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
+import BackButton from "@/components/BackButton";
 import {
   evaluatePrescriptionSafety,
   translateDirectionsToHindi,
@@ -1039,6 +1040,7 @@ export default function DynamicConsultationStudioPage() {
       {/* 1. TOP APPOINTMENT PATIENT BAR */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 sm:p-6 shadow-apple-card">
         <div className="flex items-center gap-3.5">
+          <BackButton fallbackUrl="/dashboard" label="Queue" />
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-apple-blue font-mono text-xl font-bold text-white shadow-apple-sm">
             #{patient.token_number}
           </div>

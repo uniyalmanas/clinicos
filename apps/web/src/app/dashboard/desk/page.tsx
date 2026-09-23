@@ -286,6 +286,23 @@ export default function DashboardDeskPage() {
       }
     };
   }, []);
+  const fetchQueue = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.queue && json.queue.length > 0) {
+          setQueue(json.queue);
+        }
+      }
+    } catch {
+      // Keep local mock
+    }
+  };
+
+  useEffect(() => {
+    fetchQueue();
+  }, []);
 
   const handleCallToken = async (tokenNumber: number, patientName: string) => {
     playTokenCallChime();
@@ -318,16 +335,32 @@ export default function DashboardDeskPage() {
     }
   };
 
-  const handleTogglePayment = (tokenNumber: number) => {
+  const handleTogglePayment = async (tokenNumber: number) => {
+    const aptItem = queue.find(q => q.token_number === tokenNumber);
+    if (!aptItem) return;
+    const nextStatus = aptItem.payment_status === "paid" ? "pending" : "paid";
+
     setQueue(prevQueue =>
       prevQueue.map(item => {
         if (item.token_number === tokenNumber) {
-          const nextStatus = item.payment_status === "paid" ? "pending" : "paid";
           return { ...item, payment_status: nextStatus };
         }
         return item;
       })
     );
+
+    if (aptItem.appointment_number) {
+      try {
+        await fetch(`${API_BASE_URL}/api/v1/clinic/toggle-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            appointment_number: aptItem.appointment_number,
+            payment_status: nextStatus
+          })
+        });
+      } catch (e) {}
+    }
   };
 
   const handleAdmitWalkIn = async (e: React.FormEvent) => {
