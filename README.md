@@ -1,14 +1,72 @@
-# ClinicOS 🩺
-### Ultra-Fast Hospital & Clinic Operating System for Indian Healthcare
+# DocSphere / ClinicOS 🩺
+### Zero-Markup Healthcare Platform & Clinic Operating Infrastructure
+**Live Production URL:** [https://medic-sept-2026.vercel.app/](https://medic-sept-2026.vercel.app/)  
 **100% Serverless on Vercel + Supabase PostgreSQL (AWS ap-south-1)**
 
+[![Live Production](https://img.shields.io/badge/Production-Live%20on%20Vercel-0071E3?style=flat-square&logo=vercel)](https://medic-sept-2026.vercel.app/)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15.1.12-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react)](https://react.dev/)
+[![Groq LPU](https://img.shields.io/badge/AI%20Agent-Groq%20LPU%20Engine-F55036?style=flat-square)](https://groq.com/)
 [![Supabase](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
-[![Vercel](https://img.shields.io/badge/Deployment-Vercel%20Serverless-000000?style=flat-square&logo=vercel)](https://vercel.com/)
 [![ABDM Certified](https://img.shields.io/badge/ABDM-FHIR%20R4%20M1%2FM2-orange?style=flat-square)](https://abdm.gov.in/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+
+---
+
+## 🌐 Brand Architecture
+
+- **DocSphere (Patient & Consumer Identity)**: Dehradun's verified direct healthcare network. Provides zero-markup appointments, transparent doctor fees (₹0 commission), live counter OPD queue tracking on mobile phones, and tamper-proof digital prescriptions delivered directly via WhatsApp.
+- **DocSphere ClinicOS (Provider & Hospital Operating System)**: The full-stack operating infrastructure for independent doctors, multi-chamber polyclinics, and day-care centers. Delivers 30-second digital prescriptions, acoustic counter calling chimes, front-desk reception PWAs, waiting room TV wall displays, and automated 9 PM cash drawer closing reconciliation.
+
+---
+
+## 🚀 Live Patient-First Home Page (9-Step Architecture)
+
+The front page (`/`) implements an uncluttered, patient-first hierarchy optimized for trust and direct access:
+
+1. **Hero: "Zero-Markup Healthcare in Dehradun"**: Real-time search by doctor, specialty, or symptoms (Acne, Dental, Pediatrics) with direct primary CTAs (`Find Doctors in Dehradun` and `Book Appointment Token`).
+2. **Simple 4-Step Patient Journey**:
+   - `01 Search Verified Doctors`: Browse licensed practitioners with transparent fees across Rajpur Road, EC Road, Chakrata Road, and Haridwar Road.
+   - `02 Reserve Live Token`: 100% direct doctor consultation fees with zero aggregator markup or booking commissions.
+   - `03 Track Live OPD on Phone`: Real-time mobile ticker showing current chamber token numbers to eliminate waiting room crowds.
+   - `04 Direct Care & WhatsApp Rx`: In-person clinical encounter with tamper-proof cryptographic SHA-256 PDF prescriptions delivered to WhatsApp.
+3. **DocSphere vs. Traditional Marketplace Aggregators**: Transparent comparison matrix highlighting ₹0 markup, clinical merit discovery (no paid ads/sponsored doctor placements), live token counters, and confidential patient data privacy.
+4. **Live Pilot Clinics in Dehradun**: Verified practitioners featuring state council license numbers, consultation fees, and synchronized counter statuses:
+   - **Dr. Rahul Sharma**: MD (Dermatology), NMC Reg. `UKMC-8942-2012`, Derma Care Skin & Laser (Rajpur Rd), ₹600 (*Token #2 in room*).
+   - **Dr. Aditi Joshi**: MDS (Endodontics & Dental Surgery), `UDC-4120-2016`, Smile Craft Dental (EC Rd), ₹400 (*Token #1 in room*).
+   - **Dr. Vikram Sethi**: DNB (Pediatrics & Neonatology), UKMC Reg. `7312`, Dron Child & Newborn (Chakrata Rd), ₹500 (*Next Slot 11:30 AM*).
+5. **Top Specialties Catalog**: Top 8 high-demand medical specialties (General Physician, Dermatology, Dentistry, Pediatrics, Orthopaedics, Gynaecology, ENT, Diabetology) with custom SVG vector icons, linked directly to the full 24-specialty directory (`/specialties`).
+6. **For Doctors (DocSphere ClinicOS)**: Dedicated provider suite showcasing the 30-second prescription pad, reception desk PWA, and polyclinic multi-chamber hub, backed by an interactive 5-module live sandbox simulator.
+7. **Transparent 3-Tier Doctor Pricing**:
+   - **₹0 / forever (Starter Doctor)**: Digital profile, Google Maps discovery, up to 30 appointments/month.
+   - **₹499 / month (Solo Practice Pro)**: Unlimited live token queues, 30-second Rx studio, WhatsApp PDF dispatch, Soundbox UPI reconciliation.
+   - **₹1,999 / month (Multi-Doctor Polyclinic)**: Up to 8 consulting chambers, front-desk reception PWA, drawer audit ledger, acoustic counter chime system.
+8. **Modern FAQ Accordions**: Interactive open/close accordion modules answering common questions on zero-markup pricing, app-free mobile token tracking, queue safety, and clinic onboarding.
+9. **Minimalist Apple-Styled Footer**: Clean navigation linking to specialties, appointment booking, patient records, and the live production domain (`https://medic-sept-2026.vercel.app/`).
+
+---
+
+## 🤖 DocSphere AI Consultant Agent (Groq LPU Powered)
+
+Built with high-speed Groq LPU inference (`qwen/qwen3.8-27b` / `openai/gpt-oss-20b`) and a resilient clinical rule engine fallback:
+
+- **Floating Patient Assistant**: A compact pill widget (`DocSphere AI: Triage, Planning & Booking`) with active pulse indicators accessible across all devices.
+- **3-in-1 Patient Capabilities**:
+  1. **Clinical Triage & Specialist Recommendation**: Evaluates patient symptoms and directs them to the correct medical specialty (e.g., toothache ➔ Endodontics, skin lesions ➔ Dermatology, child fever ➔ Pediatrics).
+  2. **Visit Care Planning**: Explains what to expect, pre-visit checklist advice, and highlights transparent ₹0-markup fees (₹400–₹600).
+  3. **Direct 1-Click Interactive Booking**: Automatically outputs embedded **Doctor Action Cards** in the conversation with doctor qualifications, clinic address, direct consultation fee, and instant 1-click booking link (`/book?doctor=<slug>`).
+
+---
+
+## 🛡️ Superadmin Access Control
+
+- **Superadmin URL**: `/superadmin` (e.g. `https://medic-sept-2026.vercel.app/superadmin`)
+- **Direct Password Verification**: Direct master password authentication without unnecessary third-party OAuth/Gmail friction.
+- **Master Admin Capabilities**:
+  - Global clinic and doctor verification approvals.
+  - System-wide inquiries, patient telemetry, and platform analytics.
+  - Multi-clinic management and database health monitoring.
 
 ---
 
@@ -21,6 +79,9 @@ ClinicOS runs strictly on a high-speed, 2-tier serverless stack eliminating inte
 │                    VERCEL EDGE / SERVERLESS                  │
 │                                                              │
 │   Next.js 15.1.12 App Router (apps/web)                      │
+│   ├── DocSphere Patient Discovery & Booking Portal           │
+│   ├── DocSphere AI Consultant Agent (/api/ai/consultant)     │
+│   ├── Superadmin Master Console (/superadmin)                │
 │   ├── Clinical Workspaces & Doctor Studio UI                 │
 │   ├── 45+ Serverless API Routes (/api/*)                     │
 │   └── Web Serial Hardware Port Listeners (RS-232 / USB)      │
@@ -42,9 +103,9 @@ ClinicOS runs strictly on a high-speed, 2-tier serverless stack eliminating inte
 
 ---
 
-## 🛠️ Complete Marley Health Clinical Suites in ClinicOS
+## 🛠️ Complete Clinical Suites in ClinicOS
 
-ClinicOS incorporates all battle-tested clinical workflows from [earthians/marley](https://github.com/earthians/marley) (Frappe Healthcare) into a sub-50ms reactive web platform:
+ClinicOS incorporates battle-tested clinical workflows into a sub-50ms reactive web platform:
 
 ### 1. ⚡ Doctor Consultation Studio
 *Location:* `apps/web/src/app/dashboard/consult/[id]/page.tsx`
@@ -92,14 +153,16 @@ ClinicOS incorporates all battle-tested clinical workflows from [earthians/marle
 
 ### 7. 💵 Day-Closing EOD Cockpit & Doctor Splits
 *Location:* `apps/web/src/app/dashboard/finance/page.tsx`
-- **Cash Drawer Reconciliation**: Soundbox UPI vs Drawer Cash vs Petty Outflows.
+- **Cash Drawer Reconciliation**: Soundbox UPI vs Drawer Cash vs Petty Outflows with denomination lock safeguards.
 - **Visiting Doctor Splits**: Multi-doctor revenue sharing settlement (e.g. 80/20, 75/25, 70/30) with payout vouchers.
 - **Digital Audit Lock & WhatsApp Dispatch**: Tamper-proof EOD closing lock with automated summary dispatch.
 
 ### 8. 🎫 Multi-Chamber Outpatient Queue & Front Desk
-*Location:* `apps/web/src/app/dashboard/chambers/page.tsx` and `apps/web/src/app/dashboard/desk/page.tsx`
-- **Multi-Chamber OPD Dispatch**: Real-time token caller, next patient paging, and chamber routing.
-- **Waiting Room Smart TV Display** (`/waiting-room`): Fullscreen queue monitor with audio bell tones and live token updates.
+*Location:* `apps/web/src/app/dashboard/chambers/page.tsx` and `apps/web/src/app/clinic/desk/page.tsx`
+- **Live OPD Flow & Chamber Board**: 10/10 operational density with plain language, real-time wait times, and standardized NMC registration credentials.
+- **Receptionist Action Controls**: Fast `Next Token`, `Recall`, `Mark No-Show`, and `Emergency Override` buttons within arm's reach.
+- **9:29 AM Morning Empty-State**: Friendly zero-state prompt before the first walk-in arrives.
+- **Waiting Room Smart TV Display** (`/waiting-room`): Fullscreen queue monitor with Web Audio acoustic bell chimes and live token updates.
 - **Front Desk Acrylic Standee Studio** (`/dashboard/standee`): Printable front desk standees with scannable QR for token check-in.
 
 ---
@@ -108,7 +171,8 @@ ClinicOS incorporates all battle-tested clinical workflows from [earthians/marle
 
 ### Prerequisites
 - Node.js 18+ (tested on Node 24)
-- Supabase PostgreSQL instance
+- Supabase PostgreSQL instance (AWS ap-south-1)
+- Optional: Groq Cloud API Key for AI Consultant Agent
 
 ### Setup
 1. Clone the repository:
@@ -128,6 +192,7 @@ ClinicOS incorporates all battle-tested clinical workflows from [earthians/marle
    NEXT_PUBLIC_SUPABASE_URL="https://<ref>.supabase.co"
    NEXT_PUBLIC_SUPABASE_ANON_KEY="<your-anon-key>"
    JWT_SECRET_KEY="<your-secret-key>"
+   GROQ_API_KEY="<your-groq-api-key>"
    ```
 
 4. Run the development server:
@@ -144,11 +209,12 @@ ClinicOS incorporates all battle-tested clinical workflows from [earthians/marle
 ---
 
 ## 🔒 Security & Medical Standards Compliance
-- **NMC (National Medical Commission)**: Upper-case generic drug prescribing guidelines.
+- **NMC (National Medical Commission)**: Upper-case generic drug prescribing guidelines and registered doctor credentials.
 - **ABDM (Ayushman Bharat Digital Mission)**: FHIR R4 document standard for health record exchange.
 - **IRDAI**: Cashless hospitalization pre-authorization format.
-- **Digital Signature**: SHA-256 cryptographic verification seal on all clinical records.
+- **Digital Signatures**: SHA-256 cryptographic verification seal on all clinical records.
+- **DPDP Act Compliant**: Direct confidential doctor-patient relationships without third-party phone number marketing.
 
 ---
 
-**Developed for Indian Doctors & Clinics.**
+**Developed for Indian Doctors, Clinics, and Patients.**
