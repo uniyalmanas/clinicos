@@ -228,22 +228,6 @@ export default function LoginPage() {
                   <ArrowRight className="h-3.5 w-3.5 text-purple-600" />
                 </Link>
               </div>
-
-              <Link
-                href="/superadmin"
-                className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50/50 p-3 text-left shadow-sm transition hover:border-purple-500 hover:bg-purple-50 dark:border-purple-900/50 dark:bg-purple-950/20"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
-                    <ShieldCheck className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-900 dark:text-white">Master Super Admin (localhost:3000/superadmin)</div>
-                    <div className="text-[10px] text-slate-500">Fleet Control, SaaS Billing & Telemetry • Pass: Manas@12</div>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-purple-600" />
-              </Link>
             </div>
           </div>
 
