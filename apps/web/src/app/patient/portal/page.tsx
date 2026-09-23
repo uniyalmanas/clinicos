@@ -127,7 +127,7 @@ export default function PatientPortalPage() {
   };
 
   const forwardToChemist = (rxNumber: string) => {
-    setForwardedChemistMsg(`💊 Prescription #${rxNumber} routed to Apollo Pharmacy (Rajpur Road). Generic strips will be prepared for pickup.`);
+    setForwardedChemistMsg(`💊 Prescription #${rxNumber} routed to City Care Pharmacy (Rajpur Road). Generic strips will be prepared for pickup.`);
     setTimeout(() => setForwardedChemistMsg(null), 5000);
   };
 
@@ -344,7 +344,7 @@ export default function PatientPortalPage() {
                   <span>Partner Pharmacy &amp; Lab Pickup (Dehradun Network)</span>
                 </div>
                 <p className="text-[11px] text-[#86868B] mt-0.5">
-                  Forward prescribed generics to Apollo Pharmacy (Rajpur Road) with zero markup or book home blood sample pickup.
+                  Forward prescribed generics to City Care Pharmacy (Rajpur Road) with zero markup or book home blood sample pickup.
                 </p>
               </div>
 

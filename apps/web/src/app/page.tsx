@@ -37,8 +37,8 @@ export default function HomePage() {
 
   const faqs = [
     {
-      q: "How is DocSphere different from Practo or generic listing directories?",
-      a: "Practo operates as an aggregator marketplace where they own your patient relationships and charge heavy commissions on consultations. DocSphere is a direct operating system: you own your patients, get your own branded subdomain, retain 100% of consultation fees directly via UPI, and pay a flat tool fee."
+      q: "How is DocSphere different from traditional aggregator platforms or generic listing directories?",
+      a: "Traditional aggregators operate as marketplace directories where they own your patient relationships and charge high commission percentages on consultations. DocSphere is a direct operating system: you own your patients, get your own branded subdomain, retain 100% of consultation fees directly via UPI, and pay zero commission."
     },
     {
       q: "Do patients need to download an application to book or view prescriptions?",

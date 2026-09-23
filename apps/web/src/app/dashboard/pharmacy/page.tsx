@@ -147,7 +147,7 @@ export default function DashboardPharmacyPage() {
       prescription_number: "RX-2026-09-0014",
       patient_name: "Amit Rawat",
       patient_phone: "+91 91234 56780",
-      partner_name: "Apollo Pharmacy (Rajpur Road Hub)",
+      partner_name: "City Care Pharmacy (Rajpur Road Hub)",
       type: "pharmacy",
       items_summary: "DOXYCYCLINE 100MG (10 caps), TRETINOIN 0.05% CREAM (1 tube)",
       order_status: "ready_for_pickup",
@@ -918,7 +918,7 @@ export default function DashboardPharmacyPage() {
                   <Pill className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="font-bold text-xs text-[#1D1D1F] dark:text-white">Apollo Pharmacy (Rajpur Road)</div>
+                  <div className="font-bold text-xs text-[#1D1D1F] dark:text-white">City Care Pharmacy (Rajpur Road)</div>
                   <div className="text-[11px] text-[#86868B]">Walk-In & 30m Doorstep Delivery</div>
                 </div>
               </div>

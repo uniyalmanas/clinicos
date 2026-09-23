@@ -98,7 +98,7 @@ export default function PharmacyConsolePage() {
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-900 dark:text-white">Partner Chemist Console</span>
                   <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
-                    Apollo Pharmacy Rajpur Road
+                    City Care Pharmacy Rajpur Road
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Zero-Commission Generic Medicine Fulfillment Hub</p>

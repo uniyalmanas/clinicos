@@ -2201,7 +2201,7 @@ export default function DynamicConsultationStudioPage() {
                     {[
                       { id: "patient", label: "Patient", desc: patient.name },
                       { id: "attendant", label: "Attendant / Relative", desc: "Guardian" },
-                      { id: "chemist", label: "Partner Chemist", desc: "Apollo / Local" },
+                      { id: "chemist", label: "Partner Chemist", desc: "Empanelled Network" },
                     ].map(r => (
                       <button
                         key={r.id}

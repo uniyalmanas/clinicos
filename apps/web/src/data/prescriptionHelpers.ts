@@ -1,6 +1,6 @@
 /**
  * Clinical Safety, Hindi Translation & Jan Aushadhi Cost-Saving Helpers
- * Powering Apollo/HealthPlix-grade safety and accessibility in Clinicos.
+ * Powering enterprise hospital-grade clinical safety and accessibility in Clinicos.
  */
 
 export interface InteractionAlert {

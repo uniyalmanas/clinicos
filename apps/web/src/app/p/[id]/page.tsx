@@ -127,7 +127,7 @@ export default function PatientPrescriptionLockerPage() {
     `🔒 Cryptographic Hash: ${rx.digital_signature_hash?.slice(0, 16)}...`;
 
   const handleRouteToPharmacy = () => {
-    setRoutedChemistMsg(`💊 Prescription #${rx.prescription_number} transmitted to Apollo Pharmacy (Rajpur Road Hub). They will prepare generic generic strips.`);
+    setRoutedChemistMsg(`💊 Prescription #${rx.prescription_number} transmitted to Empanelled Network Pharmacy. They will prepare generic generic strips.`);
     setTimeout(() => setRoutedChemistMsg(null), 5000);
   };
 

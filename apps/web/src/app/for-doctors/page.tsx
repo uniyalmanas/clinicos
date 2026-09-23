@@ -176,8 +176,8 @@ export default function ForDoctorsPage() {
             <a href="#comparison" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
               Why ClinicOS?
             </a>
-            <a href="#docverse-contrast" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
-              Vs. DocVerse / Practo
+            <a href="#legacy-contrast" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
+              Vs. Legacy Aggregators
             </a>
             <Link href="/clinic/desk" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
               Desk Console
@@ -452,8 +452,8 @@ export default function ForDoctorsPage() {
         </div>
       </section>
 
-      {/* 4. COMPARISON: CLINICOS VS. AGGREGATOR PLATFORMS (APOLLO DOCVERSE & PRACTO) */}
-      <section id="docverse-contrast" className="py-16 px-4 sm:px-6 lg:px-8 bg-[#F5F6F9] dark:bg-[#090A0C]">
+      {/* 4. COMPARISON: CLINICOS VS. LEGACY AGGREGATOR PLATFORMS */}
+      <section id="legacy-contrast" className="py-16 px-4 sm:px-6 lg:px-8 bg-[#F5F6F9] dark:bg-[#090A0C]">
         <div className="mx-auto max-w-5xl">
           
           <div className="text-center max-w-3xl mx-auto">
@@ -461,7 +461,7 @@ export default function ForDoctorsPage() {
               The Fundamental Difference
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
-              Apollo DocVerse vs. ClinicOS
+              Legacy Aggregator Platforms vs. ClinicOS
             </h2>
             <p className="mt-3 text-sm sm:text-base text-[#6E6E73] dark:text-[#A1A1A6]">
               Aggregators are designed to feed corporate hospital pipelines. ClinicOS is designed to empower your independent chamber.
@@ -473,7 +473,7 @@ export default function ForDoctorsPage() {
               <thead>
                 <tr className="border-b border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/5">
                   <th className="p-4 sm:p-5 font-bold text-[#1D1D1F] dark:text-white">Feature / Operating Dimension</th>
-                  <th className="p-4 sm:p-5 font-bold text-[#6E6E73] dark:text-[#A1A1A6]">Apollo DocVerse / Practo</th>
+                  <th className="p-4 sm:p-5 font-bold text-[#6E6E73] dark:text-[#A1A1A6]">Legacy Marketplace Aggregators</th>
                   <th className="p-4 sm:p-5 font-black text-[#0071E3] dark:text-[#2997FF] bg-blue-50/50 dark:bg-blue-950/20">
                     ClinicOS (Our Platform)
                   </th>
