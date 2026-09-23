@@ -20,7 +20,11 @@ import {
   LogOut,
   ChevronRight,
   ExternalLink,
-  Bed
+  Bed,
+  Microscope,
+  Dumbbell,
+  ShieldCheck,
+  QrCode
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -94,6 +98,10 @@ export default function DashboardLayout({
     { label: "Waiting Lounge TV", href: "/waiting-room", icon: Building2, badge: "Display" },
     { label: "Pharmacy & Dispense", href: "/dashboard/pharmacy", icon: Pill, badge: "POS" },
     { label: "Inpatient Beds & Wards", href: "/dashboard/beds", icon: Bed },
+    { label: "Pathology & Lab LIS", href: "/dashboard/lab", icon: Microscope, badge: "LIS" },
+    { label: "Physio & Rehab", href: "/dashboard/rehab", icon: Dumbbell },
+    { label: "TPA & Cashless Claims", href: "/dashboard/insurance", icon: ShieldCheck, badge: "TPA" },
+    { label: "ABDM / ABHA Gateway", href: "/dashboard/abdm", icon: QrCode, badge: "Govt" },
     { label: "Day Closing & Finance", href: "/dashboard/finance", icon: CreditCard, badge: "EOD" },
     { label: "Patient History Vault", href: "/dashboard/patients", icon: Users },
     { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },

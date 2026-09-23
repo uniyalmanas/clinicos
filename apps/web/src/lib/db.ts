@@ -36,4 +36,5 @@ if (process.env.NODE_ENV !== "production") {
   global.__postgres_sql = sql;
 }
 
+export const db = sql;
 export default sql;
