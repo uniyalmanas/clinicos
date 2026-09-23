@@ -27,7 +27,9 @@ export async function GET(
       ...rx,
       vitals: typeof rx.vitals === "string" ? JSON.parse(rx.vitals) : rx.vitals,
       symptoms: typeof rx.symptoms === "string" ? JSON.parse(rx.symptoms) : rx.symptoms,
-      items: typeof rx.items === "string" ? JSON.parse(rx.items) : rx.items
+      items: typeof rx.items === "string" ? JSON.parse(rx.items) : rx.items,
+      lab_tests: typeof rx.lab_tests === "string" ? JSON.parse(rx.lab_tests) : (rx.lab_tests || []),
+      procedures: typeof rx.procedures === "string" ? JSON.parse(rx.procedures) : (rx.procedures || [])
     };
 
     return NextResponse.json(parsedRx);

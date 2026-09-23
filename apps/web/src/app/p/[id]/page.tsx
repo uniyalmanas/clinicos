@@ -368,10 +368,57 @@ export default function PatientPrescriptionLockerPage() {
             </div>
           </div>
 
+          {/* Ordered Investigations & Lab Tests (Marley Protocol) */}
+          {Array.isArray(rx.lab_tests) && rx.lab_tests.length > 0 && (
+            <div className="mt-6 rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/30 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300">
+              <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black flex items-center justify-between mb-2">
+                <span>🔬 Ordered Investigations &amp; Diagnostic Tests:</span>
+                <span className="text-[10px] font-mono text-[#86868B] uppercase">Authorized Diagnostic Order</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {rx.lab_tests.map((test: any, tIdx: number) => {
+                  const testName = typeof test === "string" ? test : (test.test_name || test.name || "Diagnostic Test");
+                  const testInstructions = typeof test === "object" ? test.instructions : null;
+                  return (
+                    <div key={tIdx} className="flex items-start gap-2 bg-white dark:bg-[#1C1C1E] p-2.5 rounded-xl border border-black/[0.04] dark:border-white/[0.06] print:border-gray-200">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#0071E3]/10 font-bold text-[#0071E3] text-[10px] shrink-0">
+                        {tIdx + 1}
+                      </span>
+                      <div>
+                        <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black">{testName}</div>
+                        {testInstructions && <div className="text-[10px] text-[#86868B] italic">{testInstructions}</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Clinical Procedures Performed (Marley Protocol) */}
+          {Array.isArray(rx.procedures) && rx.procedures.length > 0 && (
+            <div className="mt-4 rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/30 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300">
+              <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black mb-2">
+                ⚡ Clinical Procedures Performed:
+              </div>
+              <div className="space-y-1.5">
+                {rx.procedures.map((proc: any, pIdx: number) => {
+                  const procName = typeof proc === "string" ? proc : (proc.procedure_name || proc.name || "Procedure");
+                  return (
+                    <div key={pIdx} className="text-xs font-semibold text-[#1D1D1F] dark:text-white print:text-black flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#0071E3]" />
+                      <span>{procName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Doctor's Advice & Review Date */}
           <div className="mt-6 rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/40 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300">
             <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black">
-              Doctor&apos;s Clinical Advice & Lifestyle Guidelines:
+              Doctor&apos;s Clinical Advice &amp; Lifestyle Guidelines:
             </div>
             <p className="mt-1 text-[#86868B] leading-relaxed dark:text-[#8E8E93] print:text-gray-700">
               {rx.instructions}
@@ -386,7 +433,7 @@ export default function PatientPrescriptionLockerPage() {
             <div className="flex items-center gap-3.5">
               <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white p-1.5 shadow-sm shrink-0 print:border-black">
                 <QRCodeDisplay
-                  value={`http://localhost:3000/p/${rx.prescription_number || "RX-2026-09-0014"}`}
+                  value={publicPrescriptionUrl}
                   size={76}
                   level="M"
                   fgColor="#000000"

@@ -24,7 +24,11 @@ export async function POST(req: NextRequest) {
       provisional_diagnosis = "Clinical Consultation",
       items = [],
       instructions = "",
-      followup_date
+      followup_date,
+      lab_tests = [],
+      procedures = [],
+      clinical_notes = "",
+      diet_advice = ""
     } = body;
 
     if (!patient_name || !patient_phone) {
@@ -65,7 +69,8 @@ export async function POST(req: NextRequest) {
         doctor_reg_number, clinic_name, clinic_address, patient_name, 
         patient_phone, patient_age, patient_gender, vitals, symptoms, 
         provisional_diagnosis, items, instructions, followup_date, 
-        digital_signature_hash, qr_verification_code, created_at
+        digital_signature_hash, qr_verification_code, lab_tests, 
+        procedures, clinical_notes, diet_advice, created_at
       ) VALUES (
         ${id},
         ${rxNumber},
@@ -87,6 +92,10 @@ export async function POST(req: NextRequest) {
         ${calculatedFollowup},
         ${digitalSignatureHash},
         ${qrVerificationCode},
+        ${JSON.stringify(Array.isArray(lab_tests) ? lab_tests : [])},
+        ${JSON.stringify(Array.isArray(procedures) ? procedures : [])},
+        ${clinical_notes},
+        ${diet_advice},
         NOW()
       )
       RETURNING *;

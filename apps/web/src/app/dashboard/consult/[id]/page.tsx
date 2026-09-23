@@ -15,6 +15,7 @@ import {
   Printer, 
   Share2, 
   ShieldCheck, 
+  Bed,
   ArrowLeft, 
   Check, 
   Clock, 
@@ -108,6 +109,24 @@ export default function DynamicConsultationStudioPage() {
   const [isSigning, setIsSigning] = useState(false);
   const [scribeSuccessMessage, setScribeSuccessMessage] = useState<string | null>(null);
 
+  // Inpatient Bed Admission State (Marley Health Integration)
+  const [showAdmitModal, setShowAdmitModal] = useState(false);
+  const [availableBeds, setAvailableBeds] = useState<any[]>([]);
+  const [selectedBedId, setSelectedBedId] = useState<string>("");
+  const [admitNotes, setAdmitNotes] = useState<string>("");
+  const [isAdmittingBed, setIsAdmittingBed] = useState(false);
+  const [admitSuccessMsg, setAdmitSuccessMsg] = useState<string | null>(null);
+
+  const [doctor, setDoctor] = useState({
+    name: "Dr. Rahul Sharma",
+    slug: "dr-rahul-sharma",
+    title: "MBBS, MD (Dermatology)",
+    reg_number: "UKMC-8942-2012",
+    clinic_name: "Derma Care Skin & Laser Centre",
+    clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
+    phone: "+919876543210"
+  });
+
   // Fetch real appointment details if available
   useEffect(() => {
     async function loadAppointment() {
@@ -153,6 +172,17 @@ export default function DynamicConsultationStudioPage() {
           if (match.symptoms_description) {
             setChiefComplaints(match.symptoms_description);
           }
+
+          if (match.doctor_name) {
+            setDoctor(prev => ({
+              ...prev,
+              name: match.doctor_name,
+              slug: match.doctor_slug || prev.slug,
+              clinic_name: match.clinic_name || prev.clinic_name,
+              reg_number: match.doctor_slug?.includes("aditi") ? "UDC-4120-2016" : (match.doctor_slug?.includes("vikram") ? "UKMC-7812-2008" : prev.reg_number),
+              title: match.doctor_slug?.includes("aditi") ? "BDS, MDS (Endodontics)" : (match.doctor_slug?.includes("vikram") ? "MS, MCh (Plastic Surgery)" : prev.title)
+            }));
+          }
         }
       } catch (e) {
         // Fallback to initial state
@@ -162,15 +192,6 @@ export default function DynamicConsultationStudioPage() {
     }
     loadAppointment();
   }, [appointmentId]);
-
-  const [doctor] = useState({
-    name: "Dr. Rahul Sharma",
-    title: "MBBS, MD (Dermatology)",
-    reg_number: "UKMC-8942-2012",
-    clinic_name: "Derma Care Skin & Laser Centre",
-    clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
-    phone: "+919876543210"
-  });
 
   // Clinical Vitals with Quick-Pad Safety Radar
   const [vitals, setVitals] = useState({
@@ -509,6 +530,61 @@ export default function DynamicConsultationStudioPage() {
       setSelectedLabs(selectedLabs.filter(id => id !== labId));
     } else {
       setSelectedLabs([...selectedLabs, labId]);
+    }
+  };
+
+  // Open Bed Admission Modal (Marley Health Inpatient Protocol)
+  const openAdmitModal = async () => {
+    setShowAdmitModal(true);
+    setAdmitNotes(`Inpatient observation for ${provisionalDiagnosis}. Baseline Vitals: BP ${vitals.bp}, Pulse ${vitals.pulse}, SpO2 ${vitals.spo2}%.`);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/beds`);
+      if (res.ok) {
+        const data = await res.json();
+        const vacBeds = (data.beds || []).filter((b: any) => b.status === "vacant");
+        setAvailableBeds(vacBeds);
+        if (vacBeds.length > 0 && !selectedBedId) {
+          setSelectedBedId(vacBeds[0].id);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load beds:", e);
+    }
+  };
+
+  const handleConfirmBedAdmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBedId) {
+      alert("Please select a vacant bed");
+      return;
+    }
+    setIsAdmittingBed(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/beds/admit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bed_id: selectedBedId,
+          patient_name: patient.name,
+          patient_phone: patient.phone,
+          assigned_doctor_name: doctor.name,
+          admission_notes: admitNotes
+        })
+      });
+
+      if (res.ok) {
+        setShowAdmitModal(false);
+        const bedInfo = availableBeds.find(b => b.id === selectedBedId);
+        setAdmitSuccessMsg(`✓ Patient ${patient.name} admitted to ${bedInfo?.ward_name || "Ward"} (Bed ${bedInfo?.bed_number || ""})! Inpatient record and bed occupancy updated.`);
+        setTimeout(() => setAdmitSuccessMsg(null), 5000);
+      } else {
+        alert("Failed to admit patient to bed.");
+      }
+    } catch (err) {
+      console.error("Error admitting patient to bed:", err);
+      alert("Network error admitting patient.");
+    } finally {
+      setIsAdmittingBed(false);
     }
   };
 
@@ -919,9 +995,11 @@ export default function DynamicConsultationStudioPage() {
     try {
       const payload = {
         appointment_number: patient.appointment_number,
-        doctor_slug: "dr-rahul-sharma",
+        doctor_slug: doctor.slug || "dr-rahul-sharma",
         doctor_name: doctor.name,
         doctor_reg_number: doctor.reg_number,
+        clinic_name: doctor.clinic_name,
+        clinic_address: doctor.clinic_address,
         patient_name: patient.name,
         patient_phone: patient.phone,
         patient_age: patient.age,
@@ -940,7 +1018,15 @@ export default function DynamicConsultationStudioPage() {
           special_instructions: p.special_instructions
         })),
         instructions: followupAdvice,
-        followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+        followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        lab_tests: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id)).map(l => ({
+          test_name: l.test_name,
+          category: l.category,
+          instructions: l.fasting_required ? "Fasting Required (10-12 hrs)" : "Random sample"
+        })),
+        procedures: [],
+        clinical_notes: `Chief Complaints: ${chiefComplaints}. Vitals: BP ${vitals.bp}, Pulse ${vitals.pulse}, SpO2 ${vitals.spo2}%. Diagnosis: ${provisionalDiagnosis}. Advice: ${followupAdvice}`,
+        diet_advice: followupAdvice
       };
 
       const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/generate`, {
@@ -1122,13 +1208,33 @@ export default function DynamicConsultationStudioPage() {
           </button>
           <button
             onClick={() => setShowDocsModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-apple-teal/10 text-apple-teal dark:text-[#30D1BE] px-3 py-1 text-xs font-medium hover:bg-apple-teal/20 transition active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-full bg-apple-teal/10 text-apple-teal dark:text-[#30D1BE] px-3 py-1 text-xs font-medium hover:bg-apple-teal/20 transition active:scale-95 cursor-pointer"
           >
             <Microscope className="h-3.5 w-3.5" />
             <span>Lab Reports</span>
           </button>
+          <button
+            onClick={() => openAdmitModal()}
+            className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 text-xs font-semibold hover:bg-indigo-500/20 transition active:scale-95 cursor-pointer"
+            title="Admit patient to Inpatient Ward or Daycare Observation Bed (Marley Health Protocol)"
+          >
+            <Bed className="h-3.5 w-3.5" />
+            <span>Admit to Bed</span>
+          </button>
         </div>
       </div>
+
+      {/* Bed Admission Success Notification Banner */}
+      {admitSuccessMsg && (
+        <div className="rounded-[18px] bg-indigo-500/10 border border-indigo-500/30 px-4 py-3 text-xs font-semibold text-indigo-700 dark:text-indigo-300 flex items-center justify-between shadow-sm animate-in fade-in">
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-indigo-600" /> {admitSuccessMsg}
+          </span>
+          <button onClick={() => setAdmitSuccessMsg(null)} className="text-[#86868B] hover:text-[#1D1D1F]">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Scribe Success Notification Banner */}
       {scribeSuccessMessage && (
@@ -1260,6 +1366,103 @@ export default function DynamicConsultationStudioPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Marley Health Inpatient Ward / Bed Admission Modal */}
+      {showAdmitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-modal">
+            <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
+              <div className="flex items-center gap-2">
+                <Bed className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+                  Direct Inpatient Admission (Marley Protocol)
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAdmitModal(false)}
+                className="rounded-full p-1.5 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmBedAdmission} className="mt-4 space-y-4 text-xs">
+              <div className="rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 p-3.5 border border-indigo-200/50 dark:border-indigo-800/40">
+                <div className="font-bold text-indigo-900 dark:text-indigo-200 text-xs">
+                  Admitting: {patient.name} ({patient.phone})
+                </div>
+                <div className="text-[11px] text-indigo-700/80 dark:text-indigo-300 mt-0.5">
+                  Assigned Consultant: {doctor.name} • Immediate Clinical Transfer
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white block mb-1.5">
+                  Select Vacant Inpatient Bed / Daycare Unit *
+                </label>
+                {availableBeds.length === 0 ? (
+                  <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 p-3 text-amber-800 dark:text-amber-300">
+                    No vacant beds available currently. Check Bed Matrix on dashboard.
+                  </div>
+                ) : (
+                  <select
+                    value={selectedBedId}
+                    onChange={(e) => setSelectedBedId(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2.5 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                  >
+                    {availableBeds.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.ward_name} — Bed #{b.bed_number} (₹{b.daily_rate}/day or ₹{b.hourly_rate}/hr)
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white block mb-1">
+                  Admission Indication &amp; Clinical Notes *
+                </label>
+                <textarea
+                  rows={3}
+                  value={admitNotes}
+                  onChange={(e) => setAdmitNotes(e.target.value)}
+                  placeholder="Reason for inpatient admission, monitoring instructions..."
+                  className="w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-black/40 p-2.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                />
+              </div>
+
+              <div className="flex justify-end items-center gap-2 pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => setShowAdmitModal(false)}
+                  className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#86868B]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isAdmittingBed || availableBeds.length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 px-5 py-2 text-xs font-bold text-white shadow-apple-sm disabled:opacity-50 transition active:scale-95 cursor-pointer"
+                >
+                  {isAdmittingBed ? (
+                    <>
+                      <RotateCw className="h-4 w-4 animate-spin" />
+                      <span>Admitting Patient...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bed className="h-4 w-4" />
+                      <span>Confirm Inpatient Admission</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -1916,7 +2119,7 @@ export default function DynamicConsultationStudioPage() {
               <div className="flex items-center gap-3">
                 <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white p-1.5 shadow-sm">
                   <QRCodeDisplay
-                    value={`http://localhost:3000/p/${signedPrescription.prescription_number || "RX-2026-09-0014"}`}
+                    value={typeof window !== "undefined" ? `${window.location.origin}/p/${signedPrescription.prescription_number || "RX-2026-09-0014"}` : `https://clinicos.vercel.app/p/${signedPrescription.prescription_number || "RX-2026-09-0014"}`}
                     size={72}
                     level="M"
                     fgColor="#000000"

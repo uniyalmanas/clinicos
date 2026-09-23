@@ -342,8 +342,8 @@ export default function DashboardOverviewPage() {
                   </td>
                   <td className="px-6 py-3.5 text-right">
                     <Link
-                      href={pt.token === 2 ? "/dashboard/consult/APT-DERMA-102" : "/dashboard/desk"}
-                      className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] px-3 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.14] transition"
+                      href={pt.status === "in_consultation" ? `/dashboard/consult/${pt.appointment_number || `APT-${pt.token}`}` : `/dashboard/chambers`}
+                      className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] px-3 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.14] transition cursor-pointer"
                     >
                       {pt.status === "in_consultation" ? "Open ℞ Pad" : "Call Next"}
                       <ArrowRight className="h-3 w-3" />
