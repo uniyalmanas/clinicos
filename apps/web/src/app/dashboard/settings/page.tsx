@@ -29,6 +29,8 @@ export default function DashboardSettingsPage() {
 
   // Clinic Profile State
   const [clinicName, setClinicName] = useState("Derma Care Skin & Laser Centre");
+  const [tagline, setTagline] = useState("Advanced Dermatology, Laser & Aesthetic Surgery");
+  const [regNumber, setRegNumber] = useState("UK-CEA-2024-8891");
   const [address, setAddress] = useState("14, Rajpur Road, Near Ashley Hall");
   const [city, setCity] = useState("Dehradun");
   const [state, setState] = useState("Uttarakhand");
@@ -63,6 +65,10 @@ export default function DashboardSettingsPage() {
           const data = await res.json();
           if (data.id) setClinicId(data.id);
           if (data.name) setClinicName(data.name);
+          if (data.tagline) setTagline(data.tagline);
+          if (data.reg_number) setRegNumber(data.reg_number);
+          if (data.upi_vpa) setUpiVpa(data.upi_vpa);
+          if (data.doctor_split_percentage) setDoctorSplit(Number(data.doctor_split_percentage));
           if (data.address_line) setAddress(data.address_line);
           if (data.city) setCity(data.city);
           if (data.state) setState(data.state);
@@ -97,6 +103,10 @@ export default function DashboardSettingsPage() {
         id: clinicId || undefined,
         slug: clinicSlug,
         name: clinicName,
+        tagline,
+        reg_number: regNumber,
+        upi_vpa: upiVpa,
+        doctor_split_percentage: doctorSplit,
         phone,
         address_line: address,
         city,
@@ -188,6 +198,28 @@ export default function DashboardSettingsPage() {
                   onChange={e => setClinicName(e.target.value)}
                   required
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-bold shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300">Speciality Subtitle / Tagline</label>
+                <input
+                  type="text"
+                  value={tagline}
+                  onChange={e => setTagline(e.target.value)}
+                  placeholder="e.g. Advanced Dermatology & Laser Surgery"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300">Clinical Est. Act / NABH Reg #</label>
+                <input
+                  type="text"
+                  value={regNumber}
+                  onChange={e => setRegNumber(e.target.value)}
+                  placeholder="e.g. UK-CEA-REG-2024"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                 />
               </div>
 

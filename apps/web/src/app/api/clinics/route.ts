@@ -45,6 +45,10 @@ export async function PATCH(req: Request) {
       postal_code, 
       opening_hours, 
       facilities,
+      upi_vpa,
+      doctor_split_percentage,
+      reg_number,
+      tagline,
       consultation_fee,
       followup_fee,
       followup_validity_days,
@@ -67,7 +71,11 @@ export async function PATCH(req: Request) {
             state = COALESCE(${state || null}, state),
             postal_code = COALESCE(${postal_code || null}, postal_code),
             opening_hours = COALESCE(${opening_hours ? JSON.stringify(opening_hours) : null}::json, opening_hours),
-            facilities = COALESCE(${facilities ? JSON.stringify(facilities) : null}::json, facilities)
+            facilities = COALESCE(${facilities ? JSON.stringify(facilities) : null}::json, facilities),
+            upi_vpa = COALESCE(${upi_vpa || null}, upi_vpa),
+            doctor_split_percentage = COALESCE(${doctor_split_percentage !== undefined ? Number(doctor_split_percentage) : null}, doctor_split_percentage),
+            reg_number = COALESCE(${reg_number || null}, reg_number),
+            tagline = COALESCE(${tagline || null}, tagline)
           WHERE id::text = ${id}::text
           RETURNING *;
         `
@@ -81,7 +89,11 @@ export async function PATCH(req: Request) {
             state = COALESCE(${state || null}, state),
             postal_code = COALESCE(${postal_code || null}, postal_code),
             opening_hours = COALESCE(${opening_hours ? JSON.stringify(opening_hours) : null}::json, opening_hours),
-            facilities = COALESCE(${facilities ? JSON.stringify(facilities) : null}::json, facilities)
+            facilities = COALESCE(${facilities ? JSON.stringify(facilities) : null}::json, facilities),
+            upi_vpa = COALESCE(${upi_vpa || null}, upi_vpa),
+            doctor_split_percentage = COALESCE(${doctor_split_percentage !== undefined ? Number(doctor_split_percentage) : null}, doctor_split_percentage),
+            reg_number = COALESCE(${reg_number || null}, reg_number),
+            tagline = COALESCE(${tagline || null}, tagline)
           WHERE lower(slug) = ${slug.toLowerCase().trim()}
           RETURNING *;
         `;
