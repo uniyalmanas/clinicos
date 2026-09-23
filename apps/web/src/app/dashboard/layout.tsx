@@ -112,6 +112,8 @@ export default function DashboardLayout({
     { label: "Day Closing & Finance", href: "/dashboard/finance", icon: CreditCard, badge: "EOD" },
     { label: "Patient History Vault", href: "/dashboard/patients", icon: Users },
     { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
+    { label: "Clinic Configuration", href: "/dashboard/settings", icon: Settings },
+    { label: "Super Admin Fleet", href: "/admin", icon: ShieldCheck, badge: "Master" },
   ];
 
   if (!authChecked) {
