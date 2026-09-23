@@ -65,8 +65,10 @@ export default function LoginPage() {
         router.push("/dashboard");
       } else if (data.role === "staff") {
         router.push("/dashboard/desk");
+      } else if (data.role === "super_admin") {
+        router.push("/admin");
       } else {
-        router.push("/admin/analytics");
+        router.push("/admin");
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Login failed. Please check credentials.");
@@ -75,26 +77,25 @@ export default function LoginPage() {
     }
   };
 
-  const quickLoginAs = async (userRole: "doctor" | "staff" | "admin", targetUrl: string) => {
+  const quickLoginAs = async (userRole: "doctor" | "staff" | "superadmin" | "admin", targetUrl: string) => {
+    let credentials = { phone: "+919876543210", password: "Password@123" };
     if (userRole === "doctor") {
       setPhone("+919876543210");
       setPassword("Password@123");
+      credentials = { phone: "+919876543210", password: "Password@123" };
     } else if (userRole === "staff") {
       setPhone("+919876543214");
       setPassword("Password@123");
+      credentials = { phone: "+919876543214", password: "Password@123" };
     } else {
-      setPhone("+919876543215");
-      setPassword("Password@123");
+      setPhone("superadmin");
+      setPassword("Manas@12");
+      credentials = { phone: "superadmin", password: "Manas@12" };
     }
 
     setLoading(true);
     setErrorMessage(null);
     try {
-      const credentials = userRole === "doctor"
-        ? { phone: "+919876543210", password: "Password@123" }
-        : userRole === "staff"
-          ? { phone: "+919876543214", password: "Password@123" }
-          : { phone: "+919876543215", password: "Password@123" };
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,7 +103,7 @@ export default function LoginPage() {
       });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.detail || "Demo account login failed.");
+        throw new Error(errorData.detail || "Account login failed.");
       }
       const data = await res.json();
       localStorage.setItem("clinicos_token", data.access_token);
@@ -112,10 +113,12 @@ export default function LoginPage() {
         full_name: data.full_name,
         role: data.role,
         clinic_id: data.clinic_id || null,
+        clinic_name: data.clinic_name || null,
+        clinic_slug: data.clinic_slug || null,
       }));
       router.push(targetUrl);
     } catch (err: any) {
-      setErrorMessage(err.message || "Demo account login failed.");
+      setErrorMessage(err.message || "Account login failed.");
     } finally {
       setLoading(false);
     }
@@ -228,19 +231,19 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => quickLoginAs("admin", "/admin/analytics")}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-brand-500 hover:bg-brand-50/30 dark:border-slate-800 dark:bg-slate-900"
+                onClick={() => quickLoginAs("superadmin", "/admin")}
+                className="flex items-center justify-between rounded-xl border border-purple-200 bg-purple-50/50 p-3 text-left shadow-sm transition hover:border-purple-500 hover:bg-purple-50 dark:border-purple-900/50 dark:bg-purple-950/20"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-950">
-                    <BarChart3 className="h-4 w-4" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                    <ShieldCheck className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-slate-900 dark:text-white">Platform SuperAdmin</div>
-                    <div className="text-[10px] text-slate-500">Founder SaaS MRR & Council Verifications</div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white">Master Super Admin (superadmin)</div>
+                    <div className="text-[10px] text-slate-500">Fleet Control, SaaS Billing & Telemetry • Pass: Manas@12</div>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-slate-400" />
+                <ArrowRight className="h-4 w-4 text-purple-600" />
               </button>
             </div>
           </div>
@@ -261,17 +264,29 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Mobile Number (India)
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Mobile Number, Username, or Email
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPhone("superadmin");
+                    setPassword("Manas@12");
+                  }}
+                  className="text-[10px] text-purple-600 hover:underline font-semibold"
+                >
+                  Fill superadmin
+                </button>
+              </div>
               <div className="relative mt-1">
                 <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <input
-                  type="tel"
+                  type="text"
                   required
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  placeholder="+919876543210"
+                  placeholder="superadmin or +919876543210"
                   className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs font-mono shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 />
               </div>

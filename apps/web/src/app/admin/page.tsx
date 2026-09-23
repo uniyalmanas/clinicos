@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
   Building2, 
@@ -15,20 +16,21 @@ import {
   AlertTriangle, 
   ArrowLeft, 
   RefreshCw, 
-  IndianRupee,
-  Zap,
-  ExternalLink,
-  Search,
-  Filter,
-  Check,
-  Ban,
-  MessageCircle,
-  Bed,
-  Calendar,
-  Sparkles,
-  BarChart3,
-  Mail,
-  ChevronRight
+  IndianRupee, 
+  Zap, 
+  ExternalLink, 
+  Search, 
+  Filter, 
+  Check, 
+  Ban, 
+  MessageCircle, 
+  Bed, 
+  Calendar, 
+  Sparkles, 
+  BarChart3, 
+  Mail, 
+  ChevronRight,
+  LogOut
 } from "lucide-react";
 
 interface ClinicFleetRecord {
@@ -76,6 +78,8 @@ interface MasterKPIs {
 }
 
 export default function SuperAdminMasterPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"fleet" | "billing" | "telemetry">("fleet");
@@ -90,6 +94,22 @@ export default function SuperAdminMasterPage() {
   const [extendDays, setExtendDays] = useState(30);
   const [selectedPlan, setSelectedPlan] = useState<"starter" | "growth" | "enterprise">("growth");
   const [actionSuccessToast, setActionSuccessToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("clinicos_user");
+      if (stored) {
+        setCurrentUser(JSON.parse(stored));
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("clinicos_token");
+    localStorage.removeItem("clinicos_user");
+    document.cookie = "clinicos_token=; path=/; max-age=0";
+    router.push("/login");
+  };
 
   const fetchMasterData = async () => {
     try {
@@ -234,6 +254,22 @@ export default function SuperAdminMasterPage() {
               Inbound Leads
             </Link>
             <ThemeToggle />
+            
+            {currentUser && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs font-medium text-purple-700 dark:text-purple-300">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>{currentUser.full_name || "Super Admin"}</span>
+                <span className="text-[10px] opacity-75 font-mono">({currentUser.phone || "superadmin"})</span>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-950/30 dark:hover:bg-red-950/50 dark:text-red-400 border border-red-200 dark:border-red-900/50 text-xs font-bold shadow-sm transition inline-flex items-center gap-1.5"
+              title="Sign Out"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign Out
+            </button>
           </div>
         </div>
 

@@ -5,28 +5,35 @@ import { verifyPassword, signAccessToken } from "@/lib/auth";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { phone, password } = body;
+    const identifier = (body.phone || body.username || body.identifier || "").trim();
+    const password = body.password;
 
-    if (!phone || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
-        { detail: "Phone number and password are required." },
+        { detail: "Phone number, username, or email and password are required." },
         { status: 400 }
       );
     }
 
-    const cleanPhone = phone.trim();
+    const cleanIdentifier = identifier;
+    const lowerIdentifier = identifier.toLowerCase();
 
-    // Query user account
+    // Query user account by phone, username, or email
     const users = await sql`
       SELECT id, phone, email, password_hash, full_name, role, is_verified, is_active
       FROM user_accounts
-      WHERE phone = ${cleanPhone} AND is_active = true
+      WHERE (
+        phone = ${cleanIdentifier}
+        OR lower(phone) = ${lowerIdentifier}
+        OR email = ${cleanIdentifier}
+        OR lower(email) = ${lowerIdentifier}
+      ) AND is_active = true
       LIMIT 1
     `;
 
     if (users.length === 0) {
       return NextResponse.json(
-        { detail: "Invalid phone number or password." },
+        { detail: "Invalid username/phone or password." },
         { status: 401 }
       );
     }
@@ -36,7 +43,7 @@ export async function POST(req: Request) {
 
     if (!passwordValid) {
       return NextResponse.json(
-        { detail: "Invalid phone number or password." },
+        { detail: "Invalid username/phone or password." },
         { status: 401 }
       );
     }
@@ -50,7 +57,7 @@ export async function POST(req: Request) {
       LIMIT 1
     `;
 
-    const activeRole = memberships.length > 0 ? memberships[0].role : user.role;
+    const activeRole = user.role === "super_admin" ? "super_admin" : (memberships.length > 0 ? memberships[0].role : user.role);
     const clinicId = memberships.length > 0 ? memberships[0].clinic_id : null;
     const clinicName = memberships.length > 0 ? memberships[0].clinic_name : null;
     const clinicSlug = memberships.length > 0 ? memberships[0].clinic_slug : null;
