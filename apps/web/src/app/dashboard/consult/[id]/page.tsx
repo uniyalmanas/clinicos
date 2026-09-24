@@ -1170,55 +1170,27 @@ export default function DynamicConsultationStudioPage() {
           {/* AI Clinical Scribe Button */}
           <button
             onClick={() => setShowScribeModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>✨ AI Voice Scribe</span>
+            <span>AI Voice Scribe</span>
           </button>
 
-          {/* Quick Specialty Kits */}
-          <span className="text-[11px] font-medium text-[#86868B] hidden xl:inline">Simulate:</span>
-          <button
-            onClick={() => applySpecialtyKit("acne")}
-            className="rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] transition active:scale-95"
-          >
-            Acne
-          </button>
-          <button
-            onClick={() => applySpecialtyKit("fever")}
-            className="rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] transition active:scale-95"
-          >
-            Fever
-          </button>
-          <button
-            onClick={() => applySpecialtyKit("ddi_test")}
-            className="rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/20 transition active:scale-95 flex items-center gap-1"
-            title="Simulate severe Nitrates + Sildenafil interaction"
-          >
-            <AlertOctagon className="h-3 w-3" />
-            <span>Test DDI Alert</span>
-          </button>
-          <button
-            onClick={() => applySpecialtyKit("allergy_test")}
-            className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition active:scale-95 flex items-center gap-1"
-            title="Simulate Penicillin allergy conflict with Augmentin"
-          >
-            <ShieldAlert className="h-3 w-3" />
-            <span>Test Allergy Alert</span>
-          </button>
+          {/* Clinical Tools */}
           <button
             onClick={() => setShowDocsModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-apple-teal/10 text-apple-teal dark:text-[#30D1BE] px-3 py-1 text-xs font-medium hover:bg-apple-teal/20 transition active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] transition active:scale-95 cursor-pointer"
           >
-            <Microscope className="h-3.5 w-3.5" />
-            <span>Lab Reports</span>
+            <Microscope className="h-3.5 w-3.5 text-apple-teal" />
+            <span>Patient Documents & Labs</span>
           </button>
+
           <button
             onClick={() => openAdmitModal()}
-            className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 text-xs font-semibold hover:bg-indigo-500/20 transition active:scale-95 cursor-pointer"
-            title="Admit patient to Inpatient Ward or Daycare Observation Bed (Marley Health Protocol)"
+            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-3.5 py-1.5 text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition active:scale-95 cursor-pointer"
+            title="Admit patient to Inpatient Ward or Daycare Observation Bed"
           >
-            <Bed className="h-3.5 w-3.5" />
+            <Bed className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Admit to Bed</span>
           </button>
         </div>
@@ -3032,7 +3004,24 @@ export default function DynamicConsultationStudioPage() {
 
                       <div className="grid gap-3 sm:grid-cols-2 text-xs">
                         <div>
-                          <label className="font-medium text-[#86868B]">Dosage Frequency</label>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold text-[#86868B]">Dosage Frequency</label>
+                            <div className="flex items-center gap-1">
+                              {["1-0-1", "1-0-0", "0-0-1", "1-1-1", "SOS"].map(freq => (
+                                <button
+                                  key={freq}
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = prescribedItems.map(p => p.id === item.id ? { ...p, frequency: `${freq} (After Food)` } : p);
+                                    setPrescribedItems(updated);
+                                  }}
+                                  className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-black/[0.04] dark:bg-white/[0.06] text-[#1D1D1F] dark:text-white hover:bg-apple-blue hover:text-white transition cursor-pointer"
+                                >
+                                  {freq}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <input
                             type="text"
                             value={item.frequency}
@@ -3045,7 +3034,24 @@ export default function DynamicConsultationStudioPage() {
                         </div>
 
                         <div>
-                          <label className="font-medium text-[#86868B]">Duration</label>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold text-[#86868B]">Duration</label>
+                            <div className="flex items-center gap-1">
+                              {["3 Days", "5 Days", "7 Days", "14 Days", "30 Days"].map(dur => (
+                                <button
+                                  key={dur}
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = prescribedItems.map(p => p.id === item.id ? { ...p, duration: dur } : p);
+                                    setPrescribedItems(updated);
+                                  }}
+                                  className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-black/[0.04] dark:bg-white/[0.06] text-[#1D1D1F] dark:text-white hover:bg-apple-blue hover:text-white transition cursor-pointer"
+                                >
+                                  {dur.replace(" Days", "d")}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <input
                             type="text"
                             value={item.duration}
@@ -3058,7 +3064,24 @@ export default function DynamicConsultationStudioPage() {
                         </div>
 
                         <div className="sm:col-span-2">
-                          <label className="font-medium text-[#86868B]">Instructions for Patient (English)</label>
+                          <div className="flex items-center justify-between">
+                            <label className="font-semibold text-[#86868B]">Instructions / Timing</label>
+                            <div className="flex items-center gap-1">
+                              {["After Food", "Before Food", "At Bedtime", "With Warm Water"].map(timing => (
+                                <button
+                                  key={timing}
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = prescribedItems.map(p => p.id === item.id ? { ...p, special_instructions: timing } : p);
+                                    setPrescribedItems(updated);
+                                  }}
+                                  className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-black/[0.04] dark:bg-white/[0.06] text-[#1D1D1F] dark:text-white hover:bg-apple-blue hover:text-white transition cursor-pointer"
+                                >
+                                  {timing}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <input
                             type="text"
                             value={item.special_instructions}

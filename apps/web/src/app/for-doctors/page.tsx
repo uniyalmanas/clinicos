@@ -801,7 +801,102 @@ export default function ForDoctorsPage() {
         </div>
       </section>
 
-      {/* 6. FOOTER WITH QUICK LINK BACK TO PATIENT PORTAL */}
+      {/* 6. TRANSPARENT DOCTOR PRICING: 3 SIMPLE TIERS */}
+      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08] bg-[#F5F6F9] dark:bg-[#090A0C]">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+              Flat Software Fee. Zero Patient Commissions.
+            </span>
+            <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
+              Keep 100% of Your Consultation Fees
+            </h2>
+            <p className="mt-3 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6]">
+              Never surrender 20% to 25% of your earnings to aggregators. Patients pay you directly via UPI or cash.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {/* Free Starter */}
+            <div className="rounded-[28px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#16171B] flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Starter Doctor</h3>
+                <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">For establishing your initial digital clinic presence.</p>
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹0</span>
+                  <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">/ forever</span>
+                </div>
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Verified Doctor Profile</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Google Maps Discovery</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Up to 30 Appointments/month</li>
+                </ul>
+              </div>
+              <Link 
+                href="/onboarding" 
+                className="mt-8 block w-full rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
+              >
+                Get Started Free
+              </Link>
+            </div>
+
+            {/* Solo Pro */}
+            <div className="rounded-[28px] border-2 border-[#0071E3] bg-white p-7 shadow-apple-modal dark:bg-[#16171B] flex flex-col justify-between relative">
+              <div className="absolute -top-3 right-8 rounded-full bg-[#0071E3] px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+                Most Popular
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Solo Practice Pro</h3>
+                <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">For busy independent single-doctor chambers.</p>
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹499</span>
+                  <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">/ month</span>
+                </div>
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Unlimited Live Token Queue</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 30-Sec Digital Rx Studio</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Direct WhatsApp Rx PDF Delivery</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Soundbox UPI Reconciliation</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 100% Patient Data Ownership</li>
+                </ul>
+              </div>
+              <Link 
+                href="/onboarding" 
+                className="mt-8 block w-full rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-apple-sm hover:bg-[#0077ED] transition"
+              >
+                Start 14-Day Free Trial
+              </Link>
+            </div>
+
+            {/* Clinic */}
+            <div className="rounded-[28px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#16171B] flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Multi-Doctor Polyclinic</h3>
+                <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">For polyclinics and multi-chamber centers.</p>
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹1,999</span>
+                  <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">/ month</span>
+                </div>
+                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Up to 8 Doctor Chambers</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Front-Desk Reception PWA</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Clinic P&amp;L and Drawer Audit Ledger</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Multi-Chamber Audio Chimes</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Smart TV Waiting Room Board</li>
+                </ul>
+              </div>
+              <Link 
+                href="/onboarding" 
+                className="mt-8 block w-full rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
+              >
+                Upgrade to Polyclinic
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. FOOTER WITH QUICK LINK BACK TO PATIENT PORTAL */}
       <footer className="py-8 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#090A0C]">
         <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">

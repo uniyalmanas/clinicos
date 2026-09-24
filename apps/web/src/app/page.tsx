@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import InteractiveHeroSearch from "@/components/InteractiveHeroSearch";
-import InteractivePlayground from "@/components/InteractivePlayground";
 import DocSphereAIAgent from "@/components/DocSphereAIAgent";
 import {
   GeneralPhysicianIcon,
@@ -173,23 +172,27 @@ export default function HomePage() {
   const faqs = [
     {
       q: "How does DocSphere offer zero-markup healthcare?",
-      a: "Traditional aggregators charge independent doctors 15% to 25% commission on every appointment, which pushes up patient fees. DocSphere charges doctors a simple flat software tool fee (from ₹0 to ₹499/mo). Patients pay the doctor's exact consultation fee directly via UPI or cash at the desk with zero commission or convenience surcharges."
+      a: "Traditional aggregators charge independent doctors 15% to 25% commission on every appointment, which inflates consultation fees. DocSphere charges doctors a simple flat software tool fee. Patients pay the doctor's exact consultation fee directly at the desk or via UPI with zero commission, zero booking markups, and zero convenience fees."
     },
     {
       q: "Do I need to download an application to book or track my token?",
-      a: "No app downloads required. When you book a consultation on DocSphere, your live token number, clinic address, and real-time wait time are delivered directly to your web browser and WhatsApp. You can track your position in the OPD queue from anywhere in Dehradun."
+      a: "No app downloads required at all. DocSphere is 100% web-based and runs smoothly on Safari, Chrome, and Firefox on any smartphone. When you reserve a token, your live queue tracker and verified digital prescription PDF open directly in your browser and are sent straight to your WhatsApp."
     },
     {
       q: "How does the live token queue prevent waiting room crowds?",
-      a: "DocSphere links the doctor's consulting room directly to your phone. When Dr. Rahul Sharma or Dr. Aditi Joshi calls Token #2, your phone updates instantly with the expected wait time (~15 min). You only need to reach the counter when your token is near."
+      a: "DocSphere links the doctor's chamber directly to your phone. When Dr. Rahul Sharma or Dr. Aditi Joshi calls Token #2, your phone updates in real time with the live token status and estimated wait time. You can wait at home or a nearby cafe and only reach the clinic when your turn is near."
     },
     {
       q: "Are all doctors on DocSphere verified medical practitioners?",
-      a: "Yes. Every doctor profile displays verified State Medical Council registration credentials (e.g. NMC Reg. UKMC-8942-2012 / Uttarakhand Dental Council UDC-4120-2016) and qualification degrees. All digital prescriptions include UPPERCASE generic drug names per NMC guidelines."
+      a: "Yes. Every doctor profile displays verified State Medical Council registration credentials (e.g., NMC Reg. UKMC-8942-2012 / Uttarakhand Dental Council UDC-4120-2016) and degrees. All digital prescriptions follow NMC generic prescribing guidelines."
     },
     {
-      q: "How does a clinic or polyclinic join the DocSphere network?",
-      a: "Independent practitioners along Rajpur Road, EC Road, Chakrata Road, and Haridwar Road can onboard their practice in under 60 seconds. DocSphere ClinicOS provides their front desk with acoustic chime calling, 30-second prescriptions, and automated 9 PM cash drawer closing reconciliation."
+      q: "How is my medical data and personal phone number protected?",
+      a: "We strictly adhere to India's DPDP Act. We never sell or share patient contact details with third-party marketing companies, tele-pharmacies, or insurance brokers. All prescriptions are cryptographically sealed with tamper-proof SHA-256 digital signatures, visible only to you and your consulting doctor."
+    },
+    {
+      q: "How do I pay for my consultation?",
+      a: "You pay your doctor directly at the clinic reception counter using your preferred UPI app (Google Pay, PhonePe, Paytm) or cash. There are zero payment gateway processing deductions or hidden convenience surcharges."
     }
   ];
 
@@ -678,196 +681,166 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. FOR DOCTORS & POLYCLINICS (DOCSPHERE CLINICOS PLATFORM) */}
-      <section id="for-doctors" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08] bg-gradient-to-b from-transparent to-black/[0.02] dark:to-white/[0.02]">
+      {/* 6. PATIENT EXPERIENCES & VERIFIED COMMUNITY REVIEWS */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08] bg-white/50 dark:bg-[#1C1C1E]/50">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-3.5 py-1 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] mb-3">
-              <Stethoscope className="h-3.5 w-3.5" />
-              <span>DocSphere ClinicOS for Providers</span>
-            </div>
-            <h2 className="text-3xl font-black text-[#1D1D1F] dark:text-white sm:text-5xl tracking-tight">
-              The operating infrastructure for independent practices.
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+              Patient Experiences in Dehradun
+            </span>
+            <h2 className="mt-2 text-3xl font-black text-[#1D1D1F] dark:text-white sm:text-4xl tracking-tight">
+              Real Care. Zero Aggregator Markup.
             </h2>
-            <p className="mt-4 text-xs sm:text-base text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-              Tired of aggregators taking 20% to 25% commissions and owning your patient roster? DocSphere ClinicOS runs your physical clinic: 30-second digital Rx, acoustic counter token chimes, waiting room TV wall displays, and 9 PM cash drawer closing reconciliation.
+            <p className="mt-3 text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93]">
+              Read how local families in Dehradun skip crowded waiting rooms and consult verified doctors directly.
             </p>
           </div>
 
-          {/* 3 Core Provider Pillars */}
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {/* Pillar 1 */}
-            <div className="rounded-[28px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {/* Review 1 */}
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF]">
-                  <FileText className="h-6 w-6" />
+                <div className="flex items-center gap-1 text-amber-500 mb-3 text-sm">
+                  {"★".repeat(5)}
                 </div>
-                <h3 className="mt-5 text-lg font-bold text-[#1D1D1F] dark:text-white">
-                  30-Second Prescription Pad
-                </h3>
-                <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                  Fastest consultation tool in India. Generic drug enforcement, verified State Medical Council license, and tamper-proof SHA-256 digital signature dispatched to patient WhatsApp instantly.
+                <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-white leading-relaxed italic">
+                  &ldquo;I booked Dr. Rahul Sharma from home, monitored the live counter on my phone, and walked in right when Token #2 was called. No sitting for 2 hours in a packed waiting room.&rdquo;
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-black/[0.05] dark:border-white/[0.06]">
-                <Link href="/dashboard/consult/1" className="text-xs font-bold text-[#0071E3] hover:underline flex items-center gap-1">
-                  Try Prescription Pad Demo <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+              <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Priya S.</div>
+                  <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Rajpur Road • Derma Care</div>
+                </div>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                  Verified Visit
+                </span>
               </div>
             </div>
 
-            {/* Pillar 2 */}
-            <div className="rounded-[28px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            {/* Review 2 */}
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00A389]/10 text-[#00A389] dark:text-[#30D1BE]">
-                  <Building2 className="h-6 w-6" />
+                <div className="flex items-center gap-1 text-amber-500 mb-3 text-sm">
+                  {"★".repeat(5)}
                 </div>
-                <h3 className="mt-5 text-lg font-bold text-[#1D1D1F] dark:text-white">
-                  Front Desk Counter Console PWA
-                </h3>
-                <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                  10-second walk-in admitting, dual-tone Web Audio acoustic calling chime, and 9 PM cash drawer reconciliation that locks against physical currency counts.
+                <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-white leading-relaxed italic">
+                  &ldquo;Zero commission is real. The ₹500 fee went directly to the doctor via UPI. Within 30 seconds of leaving the chamber, the official digital prescription PDF was on my WhatsApp with scannable QR verification.&rdquo;
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-black/[0.05] dark:border-white/[0.06]">
-                <Link href="/clinic/desk" className="text-xs font-bold text-[#00A389] hover:underline flex items-center gap-1">
-                  Explore Counter Console <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+              <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Amit Rawat</div>
+                  <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">EC Road • Dental Consultation</div>
+                </div>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                  Verified Visit
+                </span>
               </div>
             </div>
 
-            {/* Pillar 3 */}
-            <div className="rounded-[28px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            {/* Review 3 */}
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
               <div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                  <Activity className="h-6 w-6" />
+                <div className="flex items-center gap-1 text-amber-500 mb-3 text-sm">
+                  {"★".repeat(5)}
                 </div>
-                <h3 className="mt-5 text-lg font-bold text-[#1D1D1F] dark:text-white">
-                  Simultaneous Multi-Doctor Chambers
-                </h3>
-                <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                  Run multi-doctor polyclinics with independent room rosters, waiting room Smart TV wall displays, and automated fee splits for visiting consultants.
+                <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-white leading-relaxed italic">
+                  &ldquo;Took my 8-month-old daughter to Dr. Vikram Sethi. Tracking the live queue on my phone saved us from sitting in a crowded OPD with an uncomfortable baby. The follow-up within 7 days was completely free as promised.&rdquo;
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-black/[0.05] dark:border-white/[0.06]">
-                <Link href="/dashboard/chambers" className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-1">
-                  View Multi-Chamber Hub <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
+              <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Neha Bhatt</div>
+                  <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Chakrata Road • Pediatrics</div>
+                </div>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                  Verified Visit
+                </span>
               </div>
             </div>
-          </div>
-
-          {/* Interactive Playground Simulator (Placed for Providers) */}
-          <div className="mt-14">
-            <InteractivePlayground />
-          </div>
-
-          {/* Doctor Onboarding CTA */}
-          <div className="mt-12 text-center flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/onboarding"
-              className="inline-flex items-center gap-2 rounded-full bg-[#0071E3] px-8 py-3.5 text-xs sm:text-sm font-bold text-white shadow-apple-sm hover:bg-[#0077ED] active:scale-95 transition"
-            >
-              <Stethoscope className="h-4 w-4" />
-              <span>Join as Doctor (&lt; 60s AI Setup)</span>
-            </Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-6 py-3.5 text-xs sm:text-sm font-semibold text-[#1D1D1F] hover:bg-black/[0.02] dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white shadow-sm"
-            >
-              <span>Explore Provider Suite</span>
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* 7. PRICING: 3 SIMPLE TIERS */}
-      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08]">
+      {/* 7. PATIENT SECURITY, PRIVACY & MEDICAL STANDARDS */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-7xl">
           <div className="text-center max-w-2xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
-              Transparent Doctor Pricing
+              Patient First Protection
             </span>
             <h2 className="mt-2 text-3xl font-black text-[#1D1D1F] dark:text-white sm:text-4xl tracking-tight">
-              Flat software fee. Zero patient commissions.
+              Clinical Integrity You Can Trust
             </h2>
             <p className="mt-3 text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93]">
-              Never surrender 20% of your clinical earnings. Keep 100% of patient fees via direct UPI.
+              DocSphere is built with rigorous medical council and privacy safeguards.
             </p>
           </div>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {/* Free Starter */}
-            <div className="rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Starter Doctor</h3>
-                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">For setting up your initial digital clinic presence.</p>
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹0</span>
-                  <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">/ forever</span>
-                </div>
-                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Verified Doctor Profile</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Google Maps Discovery</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Up to 30 Appointments/mo</li>
-                </ul>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-[22px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-[#0071E3] dark:text-[#2997FF]">
+                <ShieldCheck className="h-6 w-6" />
               </div>
-              <Link 
-                href="/onboarding" 
-                className="mt-8 block w-full rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
-              >
-                Get Started Free
-              </Link>
+              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">NMC Verified Doctors</h3>
+              <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                Every doctor lists verified State Medical Council registration credentials and degrees. No unverified practitioners.
+              </p>
             </div>
 
-            {/* Solo Pro */}
-            <div className="rounded-[28px] border-2 border-[#0071E3] bg-white p-8 shadow-apple-modal dark:bg-[#1C1C1E] flex flex-col justify-between relative">
-              <div className="absolute -top-3 right-8 rounded-full bg-[#0071E3] px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
-                Most Popular
+            <div className="rounded-[22px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Receipt className="h-6 w-6" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Solo Practice Pro</h3>
-                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">For busy independent single-doctor chambers.</p>
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹499</span>
-                  <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">/ month</span>
-                </div>
-                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Unlimited Live Token Queue</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 30-Sec Digital Rx Studio</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Direct WhatsApp Rx PDF Delivery</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Soundbox UPI Reconciliation</li>
-                </ul>
-              </div>
-              <Link 
-                href="/onboarding" 
-                className="mt-8 block w-full rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-apple-sm hover:bg-[#0077ED]"
-              >
-                Start 14-Day Free Trial
-              </Link>
+              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">₹0 Markup Guarantee</h3>
+              <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                Pay direct doctor consultation fees via UPI or cash. Zero aggregator commissions and zero booking surcharges.
+              </p>
             </div>
 
-            {/* Clinic */}
-            <div className="rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Multi-Doctor Polyclinic</h3>
-                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">For polyclinics and multi-chamber centers.</p>
-                <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹1,999</span>
-                  <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">/ month</span>
-                </div>
-                <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Up to 8 Doctor Chambers</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Front-Desk Reception PWA</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Clinic P&amp;L and Drawer Audit Ledger</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Multi-Chamber Audio Chimes</li>
-                </ul>
+            <div className="rounded-[22px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                <Lock className="h-6 w-6" />
               </div>
-              <Link 
-                href="/onboarding" 
-                className="mt-8 block w-full rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]"
+              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">DPDP Act Compliant</h3>
+              <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                Your medical data and phone number are confidential. We never sell patient rosters to tele-pharmacies or marketing bots.
+              </p>
+            </div>
+
+            <div className="rounded-[22px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <QrCode className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">SHA-256 Tamper-Proof Rx</h3>
+              <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                All digital prescriptions carry a cryptographic verification hash and scannable QR code resolving to your verified record.
+              </p>
+            </div>
+          </div>
+
+          {/* DIGNIFIED PROVIDER CALLOUT BANNER */}
+          <div className="mt-14 rounded-[28px] border border-blue-500/20 bg-gradient-to-r from-blue-500/5 via-blue-500/10 to-teal-500/5 p-8 sm:p-10 dark:border-blue-500/30 dark:bg-white/[0.02] flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="max-w-2xl text-center md:text-left">
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] mb-2">
+                <Stethoscope className="h-3.5 w-3.5" />
+                <span>For Independent Doctors &amp; Polyclinics</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
+                Run your practice with DocSphere ClinicOS
+              </h3>
+              <p className="mt-2 text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                Keep 100% of your patient earnings. Get 30-second digital prescriptions, acoustic waiting room chimes, front-desk reception PWAs, and 9 PM cash drawer closing reconciliation for just ₹499/month.
+              </p>
+            </div>
+            <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <Link
+                href="/for-doctors"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0071E3] px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-apple-sm hover:bg-[#0077ED] transition active:scale-95"
               >
-                Upgrade to Polyclinic
+                <span>Explore Provider Tools</span>
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>
