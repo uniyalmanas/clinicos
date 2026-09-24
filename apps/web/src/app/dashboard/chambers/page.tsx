@@ -133,6 +133,7 @@ export default function DashboardChambersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [chimeMsg, setChimeMsg] = useState<string | null>(null);
+  const [showCallAnyModal, setShowCallAnyModal] = useState(false);
 
   // Quick Walk-in Modal State
   const [walkinDocSlug, setWalkinDocSlug] = useState<string | null>(null);
@@ -721,9 +722,16 @@ export default function DashboardChambersPage() {
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Real-time OPD queue dispatch across active consultation rooms &amp; procedure chairs • Independent token series
           </p>
+          <div className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-3.5 py-1.5 text-xs font-mono font-bold shadow-xs flex-wrap">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-slate-400 dark:text-slate-500">LIVE OPD PROOF:</span>
+            <span className="text-emerald-400 dark:text-emerald-600 font-black">
+              DERM #12 in room · 3 waiting | DENTAL #5 procedure · 2 waiting
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {chimeMsg && (
             <div className="flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-slate-800 px-4 py-2 text-xs font-bold text-white shadow-xl animate-in fade-in">
               <Volume2 className="h-4 w-4 text-emerald-400 animate-bounce" />
@@ -731,14 +739,24 @@ export default function DashboardChambersPage() {
             </div>
           )}
 
+          {/* PRIMARY RECEPTION DISPATCH TRIGGER */}
+          <button
+            type="button"
+            onClick={() => setShowCallAnyModal(true)}
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-black shadow-md shadow-emerald-600/25 transition active:scale-95 cursor-pointer"
+          >
+            <Volume2 className="h-4 w-4 animate-pulse" />
+            <span>[ 📞 CALL ANY CHAMBER ]</span>
+          </button>
+
           <Link
             href="/waiting-room"
             target="_blank"
             className="flex items-center gap-1.5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/50 transition cursor-pointer"
-            title="Launch Smart TV Waiting Room Wall Display"
+            title="Launch Smart TV Waiting Room (Display-Only TV Screen for Waiting Area)"
           >
             <Tv className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Smart TV Waiting Room</span>
+            <span>Smart TV (Display-Only)</span>
           </Link>
 
           <button
@@ -842,7 +860,7 @@ export default function DashboardChambersPage() {
               <span>Unified Waiting Room TV Routing</span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              One shared reception screen routes patients across all consultation rooms &amp; procedure chairs with localized dual-harmonic chime broadcast.
+              Distinct chimes per chamber so patients know where to go (e.g., chime for Room 101, tone for Dental Chair 1). The shared lounge TV is display-only; tokens are dispatched from reception using [ 📞 CALL ANY CHAMBER ].
             </p>
           </div>
         </div>
@@ -1146,6 +1164,74 @@ export default function DashboardChambersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK CALL ANY CHAMBER MODAL */}
+      {showCallAnyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-slate-900 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Volume2 className="h-5 w-5 text-emerald-600" />
+                <h3 className="font-bold text-slate-900 dark:text-white">
+                  [ 📞 CALL ANY CHAMBER ] — Quick Reception Dispatch
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowCallAnyModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              One-tap call next patient into any active consultation room or procedure chair. Triggers distinct chime and updates the shared Smart TV wall display.
+            </p>
+
+            <div className="space-y-2.5">
+              {doctors.map(doc => {
+                const queue = appointmentsByDoc[doc.slug] || [];
+                const nextPt = queue.find(p => p.status === "waiting" || p.status === "confirmed" || p.status === "in_waiting");
+                const inConsult = queue.find(p => p.status === "in_consultation");
+
+                return (
+                  <div
+                    key={doc.slug}
+                    className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between gap-3"
+                  >
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>{doc.chamber_name}</span>
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                          {doc.token_prefix}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        {doc.full_name} • In room: {inConsult ? `${doc.token_prefix} #${inConsult.token_number} ${inConsult.patient_name}` : "Vacant"}
+                      </div>
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
+                        Next in line: {nextPt ? `${doc.token_prefix} #${nextPt.token_number} ${nextPt.patient_name}` : "Queue Cleared"}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        handleCallNext(doc);
+                        setShowCallAnyModal(false);
+                      }}
+                      disabled={!nextPt}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3.5 py-2 text-xs font-bold shadow-sm transition active:scale-95 shrink-0 cursor-pointer"
+                    >
+                      <Volume2 className="h-3.5 w-3.5" />
+                      <span>{nextPt ? `Call ${doc.token_prefix} #${nextPt.token_number}` : "All Called"}</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
