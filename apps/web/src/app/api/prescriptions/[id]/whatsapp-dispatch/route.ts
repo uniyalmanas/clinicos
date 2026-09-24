@@ -33,14 +33,16 @@ export async function POST(
     const clinicName = rx?.clinic_name || "Derma Care Skin & Laser Centre";
     const patientName = rx?.patient_name || "Patient";
 
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://medic-sept-2026.vercel.app").replace(/\/$/, "");
+
     let messageText = "";
 
     if (template_type === "bilingual_hindi") {
-      messageText = `नमस्ते ${patientName},\n${clinicName} से ${doctorName} द्वारा जारी डिजिटल पर्चा (Prescription #${rxNumber}) तैयार है।\n\n📄 पर्चा देखें और डाउनलोड करें:\nhttp://localhost:3000/p/${rxNumber}\n\n💊 कृपया दवाइयां डॉक्टर के निर्देशानुसार भोजन के बाद लें।\nस्वास्थ्य लाभ की मंगलकामनाएं!`;
+      messageText = `नमस्ते ${patientName},\n${clinicName} से ${doctorName} द्वारा जारी डिजिटल पर्चा (Prescription #${rxNumber}) तैयार है।\n\n📄 पर्चा देखें और डाउनलोड करें:\n${appUrl}/p/${rxNumber}\n\n💊 कृपया दवाइयां डॉक्टर के निर्देशानुसार भोजन के बाद लें।\nस्वास्थ्य लाभ की मंगलकामनाएं!`;
     } else if (template_type === "chemist_order") {
-      messageText = `Chemist Order Alert:\nPrescription #${rxNumber} for patient ${patientName} (${targetPhone}).\nDoctor: ${doctorName} (${clinicName}).\nView verified Rx order & batch dispense here:\nhttp://localhost:3000/p/${rxNumber}`;
+      messageText = `Chemist Order Alert:\nPrescription #${rxNumber} for patient ${patientName} (${targetPhone}).\nDoctor: ${doctorName} (${clinicName}).\nView verified Rx order & batch dispense here:\n${appUrl}/p/${rxNumber}`;
     } else {
-      messageText = `Namaste ${patientName},\nYour official digital prescription (#${rxNumber}) from ${doctorName} at ${clinicName} is ready.\n\n📄 View & Download Rx PDF:\nhttp://localhost:3000/p/${rxNumber}\n\n💊 Take medicines as prescribed.\n${custom_note ? `\nNote: ${custom_note}` : ""}\n\nWishing you speedy recovery!`;
+      messageText = `Namaste ${patientName},\nYour official digital prescription (#${rxNumber}) from ${doctorName} at ${clinicName} is ready.\n\n📄 View & Download Rx PDF:\n${appUrl}/p/${rxNumber}\n\n💊 Take medicines as prescribed.\n${custom_note ? `\nNote: ${custom_note}` : ""}\n\nWishing you speedy recovery!`;
     }
 
     const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(messageText)}`;

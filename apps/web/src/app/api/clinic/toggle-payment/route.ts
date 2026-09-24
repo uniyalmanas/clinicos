@@ -6,10 +6,11 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { appointment_number, payment_status, payment_mode } = body;
+    const target = body.appointment_number || body.token_id || body.id || body.appointment_id;
+    const { payment_status, payment_mode } = body;
 
-    if (!appointment_number) {
-      return NextResponse.json({ error: "appointment_number is required" }, { status: 400 });
+    if (!target) {
+      return NextResponse.json({ error: "appointment_number or id is required" }, { status: 400 });
     }
 
     let updated;
@@ -17,26 +18,28 @@ export async function POST(req: NextRequest) {
       updated = await sql`
         UPDATE appointments 
         SET payment_status = ${payment_status}, payment_mode = ${payment_mode}
-        WHERE appointment_number = ${appointment_number}
+        WHERE appointment_number = ${target} OR id::text = ${target}
         RETURNING *;
       `;
     } else if (payment_status) {
       updated = await sql`
         UPDATE appointments 
         SET payment_status = ${payment_status}
-        WHERE appointment_number = ${appointment_number}
+        WHERE appointment_number = ${target} OR id::text = ${target}
         RETURNING *;
       `;
     } else {
       // Toggle logic
       const current = await sql`
-        SELECT payment_status FROM appointments WHERE appointment_number = ${appointment_number};
+        SELECT payment_status FROM appointments 
+        WHERE appointment_number = ${target} OR id::text = ${target}
+        LIMIT 1;
       `;
       const nextStatus = current[0]?.payment_status === "paid" ? "pending" : "paid";
       updated = await sql`
         UPDATE appointments 
         SET payment_status = ${nextStatus}
-        WHERE appointment_number = ${appointment_number}
+        WHERE appointment_number = ${target} OR id::text = ${target}
         RETURNING *;
       `;
     }

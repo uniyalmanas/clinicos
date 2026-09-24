@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
 
     // Fetch existing payout expenses if settled
     const settledExpenses = await sql`
-      SELECT description, amount FROM expenses
-      WHERE category = 'Staff Salary' AND description ILIKE '%Payout%' AND (date = ${todayStr} OR created_at::date = CURRENT_DATE);
+      SELECT title, amount FROM expenses
+      WHERE category = 'Staff Salary' AND title ILIKE '%Payout%' AND (date = ${todayStr} OR created_at::date = CURRENT_DATE);
     `;
 
     const docList = doctors.length > 0 ? doctors : [
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
       const doctorShare = Math.round((gross * splitPct) / 100);
       const clinicShare = gross - doctorShare;
 
-      const isSettled = isFounder || settledExpenses.some((e: any) => e.description.toLowerCase().includes(doc.full_name.toLowerCase()));
+      const isSettled = isFounder || settledExpenses.some((e: any) => (e.title || "").toLowerCase().includes(doc.full_name.toLowerCase()));
 
       const closingSms = isFounder
         ? `${doc.full_name}, DermaCare Clinic Closing Summary: ${patientsSeen} OPD patients seen today. Total Collections: ₹${gross.toLocaleString("en-IN")}. All funds retained in clinic operating accounts. Have a great evening!`

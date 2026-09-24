@@ -25,15 +25,16 @@ export async function POST(req: NextRequest) {
     // Insert into expenses table as 'Staff Salary' / 'Doctor Revenue Split'
     const inserted = await sql`
       INSERT INTO expenses (
-        id, clinic_slug, category, amount, description, 
-        payment_mode, date, created_at
+        id, clinic_slug, title, category, amount, 
+        payment_mode, recorded_by, date, created_at
       ) VALUES (
         ${id},
         'derma-care-dehradun',
+        ${`Doctor Payout: ${doctor_name} (${notes})`},
         'Staff Salary',
         ${Number(amount)},
-        ${`Doctor Payout: ${doctor_name} (${notes})`},
         ${payment_mode},
+        'Front Desk Lead',
         ${todayStr},
         NOW()
       )
