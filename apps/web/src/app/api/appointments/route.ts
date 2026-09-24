@@ -105,7 +105,10 @@ export async function POST(req: NextRequest) {
     const isFreeFollowup = pastConsultation.length > 0;
     const finalFee = isFreeFollowup ? 0 : (fee_amount ?? doc?.consultation_fee ?? 600);
 
-    const aptNumber = `APT-${doctor_slug.replace(/^dr-/, "").slice(0, 5).toUpperCase()}-${100 + nextToken}`;
+    const aptPrefix = doctor_slug.replace(/^dr-/, "").slice(0, 5).toUpperCase();
+    const dateCompact = todayStr.replace(/-/g, "").slice(2);
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const aptNumber = `APT-${dateCompact}-${aptPrefix}-${nextToken.toString().padStart(2, '0')}-${randSuffix}`;
     const id = randomUUID();
 
     const inserted = await sql`

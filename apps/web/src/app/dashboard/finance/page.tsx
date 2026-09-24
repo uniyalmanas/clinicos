@@ -823,7 +823,7 @@ export default function DashboardFinancePage() {
                 Voucher Registry ({expenses.length} Records)
               </h2>
               <span className="text-xs text-[#86868B]">
-                Persisted to SQLite • Audit compliant
+                Persisted to PostgreSQL • Audit compliant
               </span>
             </div>
 

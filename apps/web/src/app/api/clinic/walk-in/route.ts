@@ -54,7 +54,9 @@ export async function POST(req: NextRequest) {
     const isFreeFollowup = pastConsultation.length > 0;
     const finalFee = isFreeFollowup ? 0 : fee_amount;
 
-    const aptNumber = `APT-WALKIN-${100 + nextToken}`;
+    const dateCompact = todayStr.replace(/-/g, "").slice(2);
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const aptNumber = `APT-${dateCompact}-WLK-${nextToken.toString().padStart(2, '0')}-${randSuffix}`;
     const id = randomUUID();
 
     const inserted = await sql`

@@ -64,7 +64,7 @@ export default function ForDoctorsPage() {
       pillColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
       headline: "Zero waiting room chaos with walk-in triage and acoustic chimes",
       description: "Replace messy paper counter registers. Issue numbered tokens, collect cash or direct UPI fees, route patients across multiple chambers, and broadcast token rings.",
-      url: "/clinic/desk",
+      url: "/dashboard/desk",
       actionText: "Launch Front Desk Counter",
       features: [
         "Instant walk-in patient registration in under 10 seconds",
@@ -85,7 +85,7 @@ export default function ForDoctorsPage() {
       pillColor: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20",
       headline: "Turn any Android TV or browser into a real-time token board",
       description: "Display active tokens, consulting doctors, and upcoming patients on your waiting room television. Built-in audio chime calls patients forward automatically.",
-      url: "/display/waiting-room",
+      url: "/waiting-room",
       actionText: "Launch Smart TV Display",
       features: [
         "Full-screen airport-style token board for HDMI / Android TVs",
@@ -106,11 +106,11 @@ export default function ForDoctorsPage() {
       pillColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
       headline: "Close the clinic day in 5 minutes with zero Excel spreadsheets",
       description: "Physical denomination counter for ₹500, ₹200, ₹100 notes joined with UPI logs. Auto-calculates petty cash outflows and visiting doctor fee shares with a tamper-proof day lock.",
-      url: "/clinic/settlement",
+      url: "/dashboard/finance",
       actionText: "Launch 9 PM Day Closing",
       features: [
         "Physical cash drawer denomination sheet (₹500, ₹200, ₹100, ₹50, ₹20, ₹10)",
-        "Real-time join of SQLite appointments with petty expense vouchers",
+        "Real-time join of clinic appointments with petty expense vouchers",
         "Automated visiting consultant split calculation (e.g. 70/30 revenue share)",
         "One-click CA-ready CSV export for clinic accounting",
         "Cryptographic SHA-256 day-closing audit lock"
@@ -179,7 +179,7 @@ export default function ForDoctorsPage() {
             <a href="#legacy-contrast" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
               Vs. Legacy Aggregators
             </a>
-            <Link href="/clinic/desk" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
+            <Link href="/dashboard/desk" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
               Desk Console
             </Link>
           </nav>
@@ -249,7 +249,7 @@ export default function ForDoctorsPage() {
             </Link>
 
             <Link
-              href="/clinic/desk"
+              href="/dashboard/desk"
               className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-3.5 text-xs sm:text-sm font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/20 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/10 transition"
             >
               <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -257,7 +257,7 @@ export default function ForDoctorsPage() {
             </Link>
 
             <Link
-              href="/display/waiting-room"
+              href="/waiting-room"
               className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-3.5 text-xs sm:text-sm font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/20 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/10 transition"
             >
               <Tv className="h-4 w-4 text-violet-600 dark:text-violet-400" />
@@ -423,7 +423,7 @@ export default function ForDoctorsPage() {
                         </span>
                       </div>
                       <p className="mt-1 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">
-                        Directly mapped to your clinic SQLite database and local queue dispatch engine.
+                        Directly mapped to your clinic PostgreSQL database and live queue dispatch engine.
                       </p>
                     </div>
 
@@ -607,7 +607,7 @@ export default function ForDoctorsPage() {
 
             {/* 2. Front Desk Token Desk */}
             <Link
-              href="/clinic/desk"
+              href="/dashboard/desk"
               className="group rounded-2xl border border-gray-200/90 bg-gray-50/60 p-5 hover:border-emerald-500 dark:border-white/10 dark:bg-[#16171B] dark:hover:border-emerald-400 transition shadow-2xs hover:shadow-md"
             >
               <div className="flex items-center justify-between">
@@ -629,7 +629,7 @@ export default function ForDoctorsPage() {
 
             {/* 3. Waiting Room Smart TV */}
             <Link
-              href="/display/waiting-room"
+              href="/waiting-room"
               className="group rounded-2xl border border-gray-200/90 bg-gray-50/60 p-5 hover:border-violet-500 dark:border-white/10 dark:bg-[#16171B] dark:hover:border-violet-400 transition shadow-2xs hover:shadow-md"
             >
               <div className="flex items-center justify-between">
@@ -651,7 +651,7 @@ export default function ForDoctorsPage() {
 
             {/* 4. 9 PM EOD Cash Drawer Settlement */}
             <Link
-              href="/clinic/settlement"
+              href="/dashboard/finance"
               className="group rounded-2xl border border-gray-200/90 bg-gray-50/60 p-5 hover:border-amber-500 dark:border-white/10 dark:bg-[#16171B] dark:hover:border-amber-400 transition shadow-2xs hover:shadow-md"
             >
               <div className="flex items-center justify-between">

@@ -59,7 +59,9 @@ export async function POST(req: NextRequest) {
     const finalFee = isFreeFollowup ? 0 : (doc?.consultation_fee ?? 600);
 
     const aptPrefix = doctor_slug.replace(/^dr-/, "").slice(0, 5).toUpperCase();
-    const aptNumber = `APT-${aptPrefix}-${100 + nextToken}`;
+    const dateCompact = todayStr.replace(/-/g, "").slice(2);
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    const aptNumber = `APT-${dateCompact}-${aptPrefix}-${nextToken.toString().padStart(2, '0')}-${randSuffix}`;
     const id = randomUUID();
 
     const slotLabel = time_slot || `Live OPD Token #${nextToken}`;

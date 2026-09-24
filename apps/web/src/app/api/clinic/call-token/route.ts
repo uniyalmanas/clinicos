@@ -7,16 +7,17 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { appointment_number, chamber_name = "Chamber 1" } = body;
+    const target = body.appointment_number || body.token_id || body.id || body.appointment_id;
+    const { chamber_name = "Chamber 1" } = body;
 
-    if (!appointment_number) {
-      return NextResponse.json({ error: "appointment_number is required" }, { status: 400 });
+    if (!target) {
+      return NextResponse.json({ error: "appointment_number or id is required" }, { status: 400 });
     }
 
-    // Get current appointment details
+    // Get current appointment details by appointment_number or id
     const apts = await sql`
       SELECT * FROM appointments 
-      WHERE appointment_number = ${appointment_number} 
+      WHERE appointment_number = ${target} OR id::text = ${target}
       LIMIT 1;
     `;
 
@@ -32,14 +33,14 @@ export async function POST(req: NextRequest) {
       SET status = 'completed' 
       WHERE doctor_slug = ${currentApt.doctor_slug} 
         AND status = 'in_consultation' 
-        AND appointment_number != ${appointment_number};
+        AND id != ${currentApt.id};
     `;
 
     // Mark target appointment as 'in_consultation'
     const updated = await sql`
       UPDATE appointments 
       SET status = 'in_consultation' 
-      WHERE appointment_number = ${appointment_number}
+      WHERE id = ${currentApt.id}
       RETURNING *;
     `;
 

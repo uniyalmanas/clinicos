@@ -6,7 +6,31 @@ import crypto from "crypto";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { phone, doctor, clinic, ai_bio } = body;
+    let { phone, doctor, clinic, ai_bio } = body;
+
+    // Support flat payload as well as nested payload
+    if (!doctor) {
+      doctor = {
+        full_name: body.full_name || body.doctor_name,
+        specialization: body.specialization || body.specialty || "General Physician",
+        qualifications: body.qualifications || body.qualification || "MBBS",
+        medical_council_reg_number: body.council_registration_number || body.medical_council_reg_number || body.reg_number || "UKMC-REG-2024",
+        medical_council_state: body.medical_council_state || "Uttarakhand Medical Council",
+        years_of_experience: Number(body.years_of_experience || 5),
+        consultation_fee: Number(body.consultation_fee || 500),
+        services: body.services || ["General Consultation"]
+      };
+    }
+    if (!clinic) {
+      clinic = {
+        name: body.clinic_name || body.name,
+        address_line: body.clinic_address || body.address_line || "Dehradun Medical Enclave",
+        city: body.city || "Dehradun",
+        state: body.state || "Uttarakhand",
+        postal_code: body.postal_code || "248001",
+        opening_hours: body.opening_hours
+      };
+    }
 
     if (!doctor?.full_name || !clinic?.name) {
       return NextResponse.json(
@@ -55,14 +79,14 @@ export async function POST(req: Request) {
     await sql`
       INSERT INTO clinics (
         id, slug, name, phone, address_line, city, state, postal_code,
-        facilities, opening_hours, status, is_verified,
-        subscription_status, subscription_plan, created_at, updated_at
+        facilities, opening_hours, status,
+        subscription_status, subscription_plan, created_at
       ) VALUES (
         ${clinicId}, ${clinicSlug}, ${clinic.name.trim()}, ${cleanPhone},
         ${clinic.address_line || "Rajpur Road"}, ${clinic.city || "Dehradun"},
         ${clinic.state || "Uttarakhand"}, ${clinic.postal_code || "248001"},
         ${JSON.stringify(facilities)}, ${JSON.stringify(openingHours)},
-        'active', true, 'trial', 'starter', NOW(), NOW()
+        'active', 'trial', 'starter', NOW()
       )
     `;
 
@@ -78,7 +102,7 @@ export async function POST(req: Request) {
         consultation_fee, followup_fee, followup_validity_days, services_offered,
         verification_status, rating, total_reviews,
         clinic_id, clinic_name, clinic_slug, clinic_address,
-        opd_timings, phone, bio, created_at, updated_at
+        opd_timings, phone, bio, created_at
       ) VALUES (
         ${doctorId}, ${docSlug}, ${doctor.full_name.trim()}, 'Dr.',
         ${doctor.specialization || "General Physician"},
@@ -92,7 +116,7 @@ export async function POST(req: Request) {
         ${clinic.address_line || "Rajpur Road, Dehradun"},
         'Mon - Sat: 10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM',
         ${cleanPhone}, ${ai_bio || doctor.full_name + " is a specialist in Dehradun."},
-        NOW(), NOW()
+        NOW()
       )
     `;
 
