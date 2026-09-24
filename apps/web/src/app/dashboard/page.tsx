@@ -3,33 +3,40 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { 
-  Building2, 
   Stethoscope, 
   UserCheck, 
   Clock, 
   TrendingUp, 
   ArrowRight, 
-  Users, 
   IndianRupee, 
-  Sparkles,
-  CheckCircle2,
-  Volume2,
-  RotateCw,
-  UserX,
-  Zap,
-  ShieldCheck,
-  RefreshCw,
-  ExternalLink,
+  Volume2, 
+  RotateCw, 
+  UserX, 
+  Zap, 
+  ShieldCheck, 
+  RefreshCw, 
+  ExternalLink, 
+  AlertTriangle, 
+  Lock, 
+  Plus, 
+  Check, 
+  FileText, 
+  Send, 
+  DollarSign, 
+  X, 
+  Printer, 
+  Pause, 
+  Play, 
+  History, 
+  MessageSquare,
   AlertCircle,
-  Wifi,
-  WifiOff,
-  Lock,
-  Plus,
-  ShieldAlert,
-  Check
+  FileSpreadsheet,
+  CheckCircle2,
+  Calendar,
+  Users
 } from "lucide-react";
 
-// Professional SVG vector icon for Dental Chamber (avoids OS emoji font rendering issues)
+// Professional Dental Tooth SVG Vector Icon
 function DentalToothIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -38,7 +45,7 @@ function DentalToothIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-// Web Audio API dual-tone chime generator for acoustic counter alert
+// Clean Web Audio API dual-tone chime generator for acoustic counter alert
 function playTokenCallChime() {
   try {
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -49,7 +56,7 @@ function playTokenCallChime() {
     const gain1 = audioCtx.createGain();
     osc1.type = "sine";
     osc1.frequency.setValueAtTime(587.33, now);
-    gain1.gain.setValueAtTime(0.3, now);
+    gain1.gain.setValueAtTime(0.28, now);
     gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
     osc1.connect(gain1);
     gain1.connect(audioCtx.destination);
@@ -61,7 +68,7 @@ function playTokenCallChime() {
     const gain2 = audioCtx.createGain();
     osc2.type = "sine";
     osc2.frequency.setValueAtTime(880.00, now + 0.18);
-    gain2.gain.setValueAtTime(0.3, now + 0.18);
+    gain2.gain.setValueAtTime(0.28, now + 0.18);
     gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
     osc2.connect(gain2);
     gain2.connect(audioCtx.destination);
@@ -73,946 +80,1394 @@ function playTokenCallChime() {
 }
 
 export default function DashboardOverviewPage() {
-  // Liveness & Reception State
-  const [secondsSinceSync, setSecondsSinceSync] = useState(2);
-  const [isOnline, setIsOnline] = useState(true);
-  const [isMorningEmptyState, setIsMorningEmptyState] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState("Just now");
-  const [isSyncing, setIsSyncing] = useState(false);
+  // Toast & Sync state
   const [actionToast, setActionToast] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [secondsSinceSync, setSecondsSinceSync] = useState(3);
 
-  // Chamber 1 Live Telemetry & Queue
-  const [chamber1, setChamber1] = useState({
-    id: "chamber-1",
-    chamberName: "Chamber 1 • Dermatology",
-    doctorName: "Dr. Rahul Sharma",
-    qualification: "MD (Dermatology)",
-    councilReg: "NMC Reg. UKMC-8942-2012",
-    councilName: "Uttarakhand Medical Council",
-    inRoomToken: 2,
-    inRoomPatient: "Priya Singh",
-    inRoomDiagnosis: "Allergic Contact Dermatitis",
-    inRoomTimeMins: 8,
-    nextToken: 3,
-    nextPatient: "Rohit Pant",
-    waitingCount: 5,
-    waitingRange: "#3 – #7",
-    estWaitMins: 18,
-    consultationStudioUrl: "/dashboard/consult/APT-DERMA-102"
+  // Financial & Metric state (Obsessive money tracking)
+  const [totalCollected, setTotalCollected] = useState(8450);
+  const [upiCollected, setUpiCollected] = useState(6650);
+  const [cashCollected, setCashCollected] = useState(1800);
+  const [openTokensCount, setOpenTokensCount] = useState(3);
+
+  // Chamber 1 state (Dr. Rahul Sharma - Dermatology)
+  const [chamber1Paused, setChamber1Paused] = useState(false);
+  const [chamber1Current, setChamber1Current] = useState({
+    token: 12,
+    patientName: "Priya S.",
+    ageGender: "24F",
+    complaint: "Acne Follow-up",
+    visitNumber: 3,
+    lastRx: "Itraconazole 200mg (Completed)",
+    failedRx: "Fluconazole 150mg (Gastric Distress)",
+    paymentStatus: "paid",
+    fee: 600,
+    inRoomMins: 6
   });
 
-  // Chamber 2 Live Telemetry & Queue
-  const [chamber2, setChamber2] = useState({
-    id: "chamber-2",
-    chamberName: "Chamber 2 • Dental Care",
-    doctorName: "Dr. Aditi Joshi",
-    qualification: "MDS (Endodontics)",
-    councilReg: "State Dental Council Reg. UDC-4120-2016",
-    councilName: "Uttarakhand Dental Council",
-    inRoomToken: 1,
-    inRoomPatient: "Kavita Joshi",
-    inRoomDiagnosis: "Deep Dentinal Caries (#36)",
-    inRoomTimeMins: 14,
-    nextToken: 2,
-    nextPatient: "Suresh Rawat",
-    waitingCount: 3,
-    waitingRange: "#2 – #4",
-    estWaitMins: 12,
-    consultationStudioUrl: "/dashboard/chambers"
-  });
-
-  const [activeQueue, setActiveQueue] = useState<any[]>([
-    {
-      token: 1,
-      patient_name: "Amit Rawat",
-      phone: "+91 91234 56780",
-      doctor: "Dr. Rahul Sharma (Chamber 1)",
-      status: "completed",
-      time: "10:15 AM",
-      fee: 600,
-      payment: "UPI Paid"
-    },
-    {
-      token: 2,
-      patient_name: "Priya Singh",
-      phone: "+91 91234 56781",
-      doctor: "Dr. Rahul Sharma (Chamber 1)",
-      status: "in_consultation",
-      time: "10:30 AM",
-      fee: 600,
-      payment: "UPI Paid"
-    },
-    {
-      token: 3,
-      patient_name: "Rohit Pant",
-      phone: "+91 91234 56782",
-      doctor: "Dr. Rahul Sharma (Chamber 1)",
-      status: "waiting",
-      time: "10:45 AM",
-      fee: 600,
-      payment: "Cash Pending"
-    },
-    {
-      token: 4,
-      patient_name: "Kavita Joshi",
-      phone: "+91 98765 11111",
-      doctor: "Dr. Aditi Joshi (Chamber 2)",
-      status: "in_consultation",
-      time: "11:00 AM",
-      fee: 500,
-      payment: "UPI Paid"
-    },
-    {
-      token: 5,
-      patient_name: "Suresh Rawat",
-      phone: "+91 98765 22222",
-      doctor: "Dr. Aditi Joshi (Chamber 2)",
-      status: "waiting",
-      time: "11:15 AM",
-      fee: 500,
-      payment: "Cash Pending"
-    }
+  const [chamber1Queue, setChamber1Queue] = useState([
+    { token: 13, patientName: "Rohit V.", ageGender: "41M", complaint: "BP Check", waitMins: 12, status: "waiting", fee: 600, payment: "UPI Paid", isStuck: false },
+    { token: 14, patientName: "Anjali K.", ageGender: "29F", complaint: "Laser Consult", waitMins: 25, status: "waiting", fee: 1200, payment: "Cash Pending", isStuck: false },
+    { token: 15, patientName: "Vikram P.", ageGender: "50M", complaint: "Eczema", waitMins: 40, status: "waiting", fee: 600, payment: "Cash Pending", isStuck: true }
   ]);
 
-  const [metrics, setMetrics] = useState({
-    footfall: 14,
-    waitingCount: 8,
-    avgWaitMins: 15,
-    grossCollections: 7800,
-    upiCollections: 6000,
-    cashCollections: 1800,
-    marginPct: 61.4,
+  // Chamber 2 state (Dr. Aditi Joshi - Dental)
+  const [chamber2Paused, setChamber2Paused] = useState(false);
+  const [chamber2Current, setChamber2Current] = useState({
+    token: 5,
+    patientName: "Amit R.",
+    ageGender: "32M",
+    complaint: "RCT Root Canal",
+    visitNumber: 1,
+    paymentStatus: "pending",
+    fee: 4000,
+    inRoomMins: 14
   });
 
-  // 1. Seconds counter & connectivity listener
+  const [chamber2Queue, setChamber2Queue] = useState([
+    { token: 6, patientName: "Sneha M.", ageGender: "22F", complaint: "Scaling", waitMins: 5, status: "waiting", fee: 800, payment: "UPI Paid", isStuck: false },
+    { token: 7, patientName: "Karan D.", ageGender: "45M", complaint: "Crown Prep", waitMins: 15, status: "waiting", fee: 2500, payment: "Cash Pending", isStuck: false }
+  ]);
+
+  // Modal Dialog States
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [showStuckModal, setShowStuckModal] = useState(false);
+  const [showPrintReportModal, setShowPrintReportModal] = useState(false);
+  const [showWhatsappModal, setShowWhatsappModal] = useState(false);
+  const [showPnlModal, setShowPnlModal] = useState(false);
+  const [showAddPatientModal, setShowAddPatientModal] = useState<"chamber-1" | "chamber-2" | null>(null);
+  const [showCollectionsBreakdown, setShowCollectionsBreakdown] = useState(false);
+  const [showDigestModal, setShowDigestModal] = useState(false);
+
+  // New Walk-in form state
+  const [newPatient, setNewPatient] = useState({
+    name: "",
+    age: "",
+    gender: "F",
+    complaint: "",
+    fee: 600,
+    paymentMode: "UPI"
+  });
+
+  // Timer loop for sync seconds counter
   useEffect(() => {
     const timer = setInterval(() => {
       setSecondsSinceSync(prev => prev + 1);
     }, 1000);
-
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
+    return () => clearInterval(timer);
   }, []);
 
-  // 2. Fetch live data
-  const loadData = useCallback(async (manual = false) => {
-    if (manual) setIsSyncing(true);
-    try {
-      const [deskRes, expRes] = await Promise.all([
-        fetch("/api/clinic/desk-queue").then(r => r.ok ? r.json() : null),
-        fetch("/api/expenses").then(r => r.ok ? r.json() : null),
-      ]);
+  const showNotification = (msg: string) => {
+    setActionToast(msg);
+    setTimeout(() => setActionToast(null), 4000);
+  };
 
-      if (deskRes?.queue && deskRes.queue.length > 0) {
-        const mapped = deskRes.queue.map((q: any) => ({
-          token: q.token_number,
-          appointment_number: q.appointment_number,
-          patient_name: q.patient_name,
-          phone: q.patient_phone,
-          doctor: `${q.doctor_name || "Dr. Rahul Sharma"} (Chamber 1)`,
-          status: q.status,
-          time: q.time_slot || "Live Queue",
-          fee: q.fee_amount || 600,
-          payment: q.payment_status === "paid" ? `${(q.payment_mode || "UPI").toUpperCase()} Paid` : "Cash Pending",
-        }));
-        setActiveQueue(mapped);
+  // Chamber 1 Actions
+  const handleCallChamber1Next = () => {
+    if (chamber1Queue.length === 0) {
+      showNotification("Chamber 1 queue is cleared!");
+      return;
+    }
+    playTokenCallChime();
+    const nextPatient = chamber1Queue[0];
+    const remaining = chamber1Queue.slice(1);
 
-        const inConsult = deskRes.queue.find((q: any) => q.status === "in_consultation");
-        if (inConsult) {
-          setChamber1(prev => ({
-            ...prev,
-            inRoomToken: inConsult.token_number,
-            inRoomPatient: inConsult.patient_name,
-          }));
+    setChamber1Current({
+      token: nextPatient.token,
+      patientName: nextPatient.patientName,
+      ageGender: nextPatient.ageGender,
+      complaint: nextPatient.complaint,
+      visitNumber: 1,
+      lastRx: "No prior records (New Patient)",
+      failedRx: "None recorded",
+      paymentStatus: nextPatient.payment.includes("Paid") ? "paid" : "pending",
+      fee: nextPatient.fee,
+      inRoomMins: 1
+    });
+
+    setChamber1Queue(remaining);
+    showNotification(`Called Token #${nextPatient.token} (${nextPatient.patientName}) into Chamber 1`);
+  };
+
+  // Chamber 2 Actions
+  const handleCallChamber2Next = () => {
+    if (chamber2Queue.length === 0) {
+      showNotification("Chamber 2 queue is cleared!");
+      return;
+    }
+    playTokenCallChime();
+    const nextPatient = chamber2Queue[0];
+    const remaining = chamber2Queue.slice(1);
+
+    setChamber2Current({
+      token: nextPatient.token,
+      patientName: nextPatient.patientName,
+      ageGender: nextPatient.ageGender,
+      complaint: nextPatient.complaint,
+      visitNumber: 1,
+      paymentStatus: nextPatient.payment.includes("Paid") ? "paid" : "pending",
+      fee: nextPatient.fee,
+      inRoomMins: 1
+    });
+
+    setChamber2Queue(remaining);
+    showNotification(`Called Token #${nextPatient.token} (${nextPatient.patientName}) into Chamber 2`);
+  };
+
+  // Toggle Chamber 2 Payment Status (Inline Money Control)
+  const handleToggleChamber2Payment = () => {
+    if (chamber2Current.paymentStatus === "pending") {
+      setChamber2Current(prev => ({ ...prev, paymentStatus: "paid" }));
+      setTotalCollected(prev => prev + chamber2Current.fee);
+      setUpiCollected(prev => prev + chamber2Current.fee);
+      setOpenTokensCount(prev => Math.max(0, prev - 1));
+      showNotification(`₹${chamber2Current.fee.toLocaleString("en-IN")} marked PAID via Soundbox UPI for Token #${chamber2Current.token}`);
+    } else {
+      setChamber2Current(prev => ({ ...prev, paymentStatus: "pending" }));
+      setTotalCollected(prev => Math.max(0, prev - chamber2Current.fee));
+      setUpiCollected(prev => Math.max(0, prev - chamber2Current.fee));
+      setOpenTokensCount(prev => prev + 1);
+      showNotification(`Token #${chamber2Current.token} payment flipped to PENDING`);
+    }
+  };
+
+  // Resolve Stuck Token (Vikram P.)
+  const handleResolveStuck = (action: "call_now" | "whatsapp_delay" | "no_show") => {
+    setShowStuckModal(false);
+    playTokenCallChime();
+
+    if (action === "call_now") {
+      const stuckPatient = chamber1Queue.find(p => p.isStuck) || chamber1Queue[2];
+      if (!stuckPatient) return;
+      const remaining = chamber1Queue.filter(p => p.token !== stuckPatient.token);
+
+      setChamber1Current({
+        token: stuckPatient.token,
+        patientName: stuckPatient.patientName,
+        ageGender: stuckPatient.ageGender,
+        complaint: `${stuckPatient.complaint} (Priority Call)`,
+        visitNumber: 2,
+        lastRx: "Clobetasol 0.05% + Cetirizine 10mg",
+        failedRx: "Betamethasone dipropionate",
+        paymentStatus: stuckPatient.payment.includes("Paid") ? "paid" : "pending",
+        fee: stuckPatient.fee,
+        inRoomMins: 1
+      });
+      setChamber1Queue(remaining);
+      showNotification(`Priority Override: Token #${stuckPatient.token} (${stuckPatient.patientName}) called into Chamber 1`);
+    } else if (action === "whatsapp_delay") {
+      showNotification("WhatsApp delay push sent to Vikram P.: 'Dr. Rahul is in a procedure. Expected call: 11:20 AM.'");
+    } else if (action === "no_show") {
+      setChamber1Queue(prev => prev.filter(p => !p.isStuck));
+      showNotification("Token #15 (Vikram P.) marked No-Show / Stepped Out. Queue cleared.");
+    }
+  };
+
+  // Add Walk-in Patient to Selected Chamber
+  const handleAddPatientSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPatient.name.trim()) return;
+
+    if (showAddPatientModal === "chamber-1") {
+      const newToken = (chamber1Queue.length > 0 ? chamber1Queue[chamber1Queue.length - 1].token : chamber1Current.token) + 1;
+      setChamber1Queue(prev => [
+        ...prev,
+        {
+          token: newToken,
+          patientName: newPatient.name,
+          ageGender: `${newPatient.age}${newPatient.gender}`,
+          complaint: newPatient.complaint || "General Consultation",
+          waitMins: 10,
+          status: "waiting",
+          fee: Number(newPatient.fee) || 600,
+          payment: newPatient.paymentMode === "UPI" ? "UPI Paid" : "Cash Pending",
+          isStuck: false
         }
+      ]);
+      if (newPatient.paymentMode === "UPI") {
+        setTotalCollected(prev => prev + (Number(newPatient.fee) || 600));
+        setUpiCollected(prev => prev + (Number(newPatient.fee) || 600));
+      } else {
+        setOpenTokensCount(prev => prev + 1);
       }
-
-      if (expRes?.kpis) {
-        setMetrics(prev => ({
-          ...prev,
-          grossCollections: expRes.kpis.gross_collections || prev.grossCollections,
-          marginPct: expRes.kpis.profit_margin_pct || prev.marginPct,
-        }));
+      showNotification(`Added Token #${newToken} (${newPatient.name}) to Chamber 1`);
+    } else {
+      const newToken = (chamber2Queue.length > 0 ? chamber2Queue[chamber2Queue.length - 1].token : chamber2Current.token) + 1;
+      setChamber2Queue(prev => [
+        ...prev,
+        {
+          token: newToken,
+          patientName: newPatient.name,
+          ageGender: `${newPatient.age}${newPatient.gender}`,
+          complaint: newPatient.complaint || "Dental Consult",
+          waitMins: 10,
+          status: "waiting",
+          fee: Number(newPatient.fee) || 800,
+          payment: newPatient.paymentMode === "UPI" ? "UPI Paid" : "Cash Pending",
+          isStuck: false
+        }
+      ]);
+      if (newPatient.paymentMode === "UPI") {
+        setTotalCollected(prev => prev + (Number(newPatient.fee) || 800));
+        setUpiCollected(prev => prev + (Number(newPatient.fee) || 800));
+      } else {
+        setOpenTokensCount(prev => prev + 1);
       }
-
-      setIsOnline(true);
-      setSecondsSinceSync(0);
-      const now = new Date();
-      setLastSyncTime(now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
-    } catch (e) {
-      console.warn("Live fetch timeout or offline:", e);
-      setIsOnline(false);
-    } finally {
-      if (manual) setIsSyncing(false);
-    }
-  }, []);
-
-  // Periodic polling every 12 seconds
-  useEffect(() => {
-    loadData();
-    const pollInterval = setInterval(() => {
-      loadData();
-    }, 12000);
-    return () => clearInterval(pollInterval);
-  }, [loadData]);
-
-  // Operational Action 1: Call Next Token
-  const handleCallNext = (chamberId: "chamber-1" | "chamber-2") => {
-    playTokenCallChime();
-    if (chamberId === "chamber-1") {
-      const calledToken = chamber1.nextToken;
-      const calledPatient = chamber1.nextPatient;
-      const newNext = calledToken + 1;
-      const newWait = Math.max(0, chamber1.waitingCount - 1);
-
-      setChamber1(prev => ({
-        ...prev,
-        inRoomToken: calledToken,
-        inRoomPatient: calledPatient,
-        inRoomTimeMins: 1,
-        nextToken: newNext,
-        nextPatient: `Patient #${newNext}`,
-        waitingCount: newWait,
-        waitingRange: newWait > 0 ? `#${newNext} – #${newNext + newWait - 1}` : "Queue Cleared",
-        estWaitMins: Math.max(0, prev.estWaitMins - 6)
-      }));
-
-      // Update table status
-      setActiveQueue(prev => prev.map(p => {
-        if (p.token === calledToken) return { ...p, status: "in_consultation" };
-        if (p.token === chamber1.inRoomToken) return { ...p, status: "completed" };
-        return p;
-      }));
-
-      setActionToast(`Called Token #${calledToken} (${calledPatient}) into Chamber 1`);
-    } else {
-      const calledToken = chamber2.nextToken;
-      const calledPatient = chamber2.nextPatient;
-      const newNext = calledToken + 1;
-      const newWait = Math.max(0, chamber2.waitingCount - 1);
-
-      setChamber2(prev => ({
-        ...prev,
-        inRoomToken: calledToken,
-        inRoomPatient: calledPatient,
-        inRoomTimeMins: 1,
-        nextToken: newNext,
-        nextPatient: `Patient #${newNext}`,
-        waitingCount: newWait,
-        waitingRange: newWait > 0 ? `#${newNext} – #${newNext + newWait - 1}` : "Queue Cleared",
-        estWaitMins: Math.max(0, prev.estWaitMins - 5)
-      }));
-
-      setActiveQueue(prev => prev.map(p => {
-        if (p.token === calledToken) return { ...p, status: "in_consultation" };
-        if (p.token === chamber2.inRoomToken) return { ...p, status: "completed" };
-        return p;
-      }));
-
-      setActionToast(`Called Token #${calledToken} (${calledPatient}) into Chamber 2`);
+      showNotification(`Added Token #${newToken} (${newPatient.name}) to Chamber 2`);
     }
 
-    setTimeout(() => setActionToast(null), 4000);
-  };
-
-  // Operational Action 2: Recall Active Token (Re-rings acoustic bell)
-  const handleRecall = (chamberId: "chamber-1" | "chamber-2") => {
-    playTokenCallChime();
-    const token = chamberId === "chamber-1" ? chamber1.inRoomToken : chamber2.inRoomToken;
-    const name = chamberId === "chamber-1" ? chamber1.inRoomPatient : chamber2.inRoomPatient;
-    const room = chamberId === "chamber-1" ? "Chamber 1" : "Chamber 2";
-
-    setActionToast(`Recalled Token #${token} (${name}) to ${room} with acoustic chime`);
-    setTimeout(() => setActionToast(null), 4000);
-  };
-
-  // Operational Action 3: Mark No-Show / Absent
-  const handleNoShow = (chamberId: "chamber-1" | "chamber-2") => {
-    playTokenCallChime();
-    if (chamberId === "chamber-1") {
-      const skipped = chamber1.inRoomToken;
-      const nextToken = chamber1.nextToken;
-      const nextName = chamber1.nextPatient;
-
-      setChamber1(prev => ({
-        ...prev,
-        inRoomToken: nextToken,
-        inRoomPatient: nextName,
-        nextToken: nextToken + 1,
-        nextPatient: `Patient #${nextToken + 1}`,
-        waitingCount: Math.max(0, prev.waitingCount - 1),
-        waitingRange: prev.waitingCount > 1 ? `#${nextToken + 1} – #${nextToken + prev.waitingCount - 1}` : "Queue Cleared"
-      }));
-
-      setActionToast(`Token #${skipped} marked No-Show. Advanced Chamber 1 to Token #${nextToken}.`);
-    } else {
-      const skipped = chamber2.inRoomToken;
-      const nextToken = chamber2.nextToken;
-      const nextName = chamber2.nextPatient;
-
-      setChamber2(prev => ({
-        ...prev,
-        inRoomToken: nextToken,
-        inRoomPatient: nextName,
-        nextToken: nextToken + 1,
-        nextPatient: `Patient #${nextToken + 1}`,
-        waitingCount: Math.max(0, prev.waitingCount - 1),
-        waitingRange: prev.waitingCount > 1 ? `#${nextToken + 1} – #${nextToken + prev.waitingCount - 1}` : "Queue Cleared"
-      }));
-
-      setActionToast(`Token #${skipped} marked No-Show. Advanced Chamber 2 to Token #${nextToken}.`);
-    }
-
-    setTimeout(() => setActionToast(null), 4000);
-  };
-
-  // Operational Action 4: Emergency Priority Override
-  const handleEmergencyPriority = (chamberId: "chamber-1" | "chamber-2") => {
-    playTokenCallChime();
-    const emgToken = 99;
-    const emgName = "Emergency Walk-In";
-
-    if (chamberId === "chamber-1") {
-      setChamber1(prev => ({
-        ...prev,
-        nextToken: emgToken,
-        nextPatient: "Emergency Triage Patient",
-        waitingCount: prev.waitingCount + 1,
-      }));
-      setActionToast(`Emergency Override! Token #EMG inserted as next priority for Chamber 1.`);
-    } else {
-      setChamber2(prev => ({
-        ...prev,
-        nextToken: emgToken,
-        nextPatient: "Emergency Triage Patient",
-        waitingCount: prev.waitingCount + 1,
-      }));
-      setActionToast(`Emergency Override! Token #EMG inserted as next priority for Chamber 2.`);
-    }
-
-    setTimeout(() => setActionToast(null), 4000);
-  };
-
-  // Empty-state quick admission handler (for 9:29 AM morning OPD start)
-  const handleAdmitFirstWalkin = (chamberId: "chamber-1" | "chamber-2") => {
-    playTokenCallChime();
-    setIsMorningEmptyState(false);
-    if (chamberId === "chamber-1") {
-      setChamber1(prev => ({
-        ...prev,
-        inRoomToken: 1,
-        inRoomPatient: "Aman Negi",
-        inRoomDiagnosis: "Acne Vulgaris",
-        inRoomTimeMins: 1,
-        nextToken: 2,
-        nextPatient: "Pooja Bisht",
-        waitingCount: 1,
-        waitingRange: "#2",
-        estWaitMins: 12
-      }));
-      setActionToast("First morning walk-in admitted: Token #1 for Dr. Rahul Sharma (Chamber 1)");
-    } else {
-      setChamber2(prev => ({
-        ...prev,
-        inRoomToken: 1,
-        inRoomPatient: "Rohit Rawat",
-        inRoomDiagnosis: "Toothache / Root Canal",
-        inRoomTimeMins: 1,
-        nextToken: 2,
-        nextPatient: "Sunita Devi",
-        waitingCount: 1,
-        waitingRange: "#2",
-        estWaitMins: 10
-      }));
-      setActionToast("First morning walk-in admitted: Token #1 for Dr. Aditi Joshi (Chamber 2)");
-    }
-    setTimeout(() => setActionToast(null), 4000);
+    setNewPatient({ name: "", age: "", gender: "F", complaint: "", fee: 600, paymentMode: "UPI" });
+    setShowAddPatientModal(null);
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* NOTIFICATION TOAST */}
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
+      {/* FLOATING ACTION NOTIFICATION TOAST */}
       {actionToast && (
         <div className="p-3.5 rounded-2xl bg-slate-900 text-white border border-slate-700 shadow-2xl flex items-center justify-between text-xs font-bold animate-in fade-in duration-200">
           <div className="flex items-center gap-2">
             <Volume2 className="h-4 w-4 text-emerald-400 shrink-0" />
             <span>{actionToast}</span>
           </div>
-          <button onClick={() => setActionToast(null)} className="text-slate-400 hover:text-white text-xs underline">
+          <button 
+            type="button"
+            onClick={() => setActionToast(null)} 
+            className="text-slate-400 hover:text-white text-xs underline cursor-pointer"
+          >
             Dismiss
           </button>
         </div>
       )}
 
-      {/* 1. TOP METRIC STATS */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {/* Footfall */}
-        <div className="rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] transition hover:shadow-apple-sm">
-          <div className="flex items-center justify-between text-[#86868B] dark:text-[#8E8E93]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Today&apos;s Footfall</span>
-            <div className="rounded-[12px] bg-[#0071E3]/10 p-2 text-[#0071E3] dark:text-[#2997FF]">
-              <Users className="h-4 w-4" />
+      {/* ┌─────────────────────────────────────────────────────────────────────────────┐ */}
+      {/* │ CLINIC COMMAND BOARD       │ TOTAL COLLECTED: ₹8,450   │ OPEN: 3           │ */}
+      {/* └─────────────────────────────────────────────────────────────────────────────┘ */}
+      <div className="rounded-3xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-4 sm:p-5 shadow-apple-card flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* Title & Live Heartbeat */}
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-black text-sm tracking-wider">
+            CMD
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-black text-[#1D1D1F] dark:text-white tracking-tight uppercase">
+                Clinic Command Board
+              </h1>
+              <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Live Sync ({secondsSinceSync}s)</span>
+              </span>
             </div>
-          </div>
-          <div className="mt-3 text-3xl font-extrabold text-[#1D1D1F] dark:text-white font-mono tracking-tight">
-            {isMorningEmptyState ? 0 : metrics.footfall} <span className="text-xs font-normal text-[#86868B] dark:text-[#8E8E93]">Patients</span>
-          </div>
-          <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#34C759] dark:text-[#30D158] font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>{isMorningEmptyState ? "Morning OPD Opening" : "+18% vs last week"}</span>
+            <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+              Real-time OPD triage, clinical memory lookup, and soundbox-reconciled counter billing
+            </p>
           </div>
         </div>
 
-        {/* Live Queue */}
-        <div className="rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] transition hover:shadow-apple-sm">
-          <div className="flex items-center justify-between text-[#86868B] dark:text-[#8E8E93]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">In Waiting Queue</span>
-            <div className="rounded-[12px] bg-[#FF9500]/10 p-2 text-[#FF9500] dark:text-[#FF9F0A]">
-              <Clock className="h-4 w-4" />
+        {/* Action Counters (Money + Unresolved Tokens) */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Total Collected Pill (Clickable for CA/Soundbox audit breakdown) */}
+          <button
+            type="button"
+            onClick={() => setShowCollectionsBreakdown(true)}
+            className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 transition active:scale-95 cursor-pointer text-left"
+            title="Click to view Soundbox vs Cash audit breakdown"
+          >
+            <div className="p-1 rounded-lg bg-emerald-600 text-white">
+              <IndianRupee className="h-3.5 w-3.5" />
             </div>
-          </div>
-          <div className="mt-3 text-3xl font-extrabold text-[#FF9500] dark:text-[#FF9F0A] font-mono tracking-tight">
-            {isMorningEmptyState ? 0 : (chamber1.waitingCount + chamber2.waitingCount)} <span className="text-xs font-normal text-[#86868B] dark:text-[#8E8E93]">Patients</span>
-          </div>
-          <div className="mt-2.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
-            {isMorningEmptyState ? "Chambers vacant · No queue" : `Across both chambers (${chamber1.waitingCount} Derm · ${chamber2.waitingCount} Dental)`}
-          </div>
-        </div>
+            <div>
+              <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-400">
+                Total Collected
+              </div>
+              <div className="text-sm font-black font-mono">
+                ₹{totalCollected.toLocaleString("en-IN")}
+              </div>
+            </div>
+          </button>
 
-        {/* Gross Collections */}
-        <div className="rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] transition hover:shadow-apple-sm">
-          <div className="flex items-center justify-between text-[#86868B] dark:text-[#8E8E93]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Gross Collections</span>
-            <div className="rounded-[12px] bg-[#34C759]/10 p-2 text-[#34C759] dark:text-[#30D158]">
-              <IndianRupee className="h-4 w-4" />
+          {/* Open/Pending Tokens Pill */}
+          <button
+            type="button"
+            onClick={() => setShowCollectionsBreakdown(true)}
+            className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-800 dark:text-amber-300 transition active:scale-95 cursor-pointer text-left"
+            title="Click to review pending payments"
+          >
+            <div className="p-1 rounded-lg bg-amber-600 text-white">
+              <AlertCircle className="h-3.5 w-3.5" />
             </div>
-          </div>
-          <div className="mt-3 text-3xl font-extrabold text-[#1D1D1F] dark:text-white font-mono tracking-tight">
-            ₹{isMorningEmptyState ? "0" : metrics.grossCollections.toLocaleString("en-IN")}
-          </div>
-          <div className="mt-2.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
-            {isMorningEmptyState ? "Drawer cash locked at ₹0" : `₹${metrics.upiCollections} UPI • ₹${metrics.cashCollections} Cash`}
-          </div>
-        </div>
+            <div>
+              <div className="text-[10px] uppercase font-bold tracking-wider text-amber-700 dark:text-amber-400">
+                Open / Pending
+              </div>
+              <div className="text-sm font-black font-mono">
+                {openTokensCount} Tokens
+              </div>
+            </div>
+          </button>
 
-        {/* Operating Margin */}
-        <div className="rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] transition hover:shadow-apple-sm">
-          <div className="flex items-center justify-between text-[#86868B] dark:text-[#8E8E93]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Operating Margin</span>
-            <div className="rounded-[12px] bg-[#AF52DE]/10 p-2 text-[#AF52DE] dark:text-[#BF5AF2]">
-              <Sparkles className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3 text-3xl font-extrabold text-[#AF52DE] dark:text-[#BF5AF2] font-mono tracking-tight">
-            {isMorningEmptyState ? "0.0" : metrics.marginPct}%
-          </div>
-          <div className="mt-2.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
-            {isMorningEmptyState ? "Shift starting" : "Net In-hand after rent & split"}
-          </div>
+          {/* 9 PM Daily Digest Nudge Button */}
+          <button
+            type="button"
+            onClick={() => setShowDigestModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#1D1D1F] dark:text-white text-xs font-bold transition active:scale-95 cursor-pointer"
+            title="Preview 9 PM Doctor WhatsApp Closing Digest"
+          >
+            <Send className="h-3.5 w-3.5 text-emerald-500" />
+            <span className="hidden sm:inline">9 PM Digest</span>
+          </button>
+
+          {/* Direct link to Reception Full Desk */}
+          <Link
+            href="/dashboard/desk"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition active:scale-95"
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            <span>Desk Console</span>
+          </Link>
         </div>
       </div>
 
-      {/* 2. LIVE OPD CHAMBER FLOW BOARD (OPERATIONAL RECEPTION CONTROL HEADER) */}
-      <div className="space-y-4">
-        {/* HEADER BAR WITH LIVENESS PULSE & QUICK ACTIONS */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 rounded-3xl bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-apple-card">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-wider">
-                LIVE OPD FLOW
-              </span>
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* TWO CHAMBER ACTION COMMAND CARDS                                          */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-2">
 
-              {/* Liveness Pulse Indicator */}
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                {isOnline ? (
+        {/* 🟢 CHAMBER 1: Dr. Rahul (Dermatology) */}
+        <div className={`rounded-3xl border ${chamber1Paused ? "border-amber-400/40 bg-amber-50/10" : "border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E]"} p-5 sm:p-6 shadow-apple-card space-y-4`}>
+          {/* Chamber Header */}
+          <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${chamber1Paused ? "bg-amber-500" : "bg-emerald-500 animate-pulse"}`}></span>
+                <h2 className="text-sm sm:text-base font-black text-[#1D1D1F] dark:text-white uppercase tracking-tight">
+                  Chamber 1: Dr. Rahul (Dermatology)
+                </h2>
+                {chamber1Paused && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-bold">
+                    PAUSED
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                <span>NMC Reg. UKMC-8942-2012 · MD (Dermatology)</span>
+              </div>
+            </div>
+
+            <Link
+              href="/dashboard/consult/APT-DERMA-102"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+            >
+              Open ℞ Pad <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+
+          {/* NEXT / IN-ROOM PATIENT HERO BOX */}
+          <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[10px] tracking-wider uppercase">
+                  IN ROOM
+                </span>
+                <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                  #{chamber1Current.token}
+                </span>
+                <span className="text-sm sm:text-base font-bold text-[#1D1D1F] dark:text-white">
+                  {chamber1Current.patientName} ({chamber1Current.ageGender})
+                </span>
+                <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">
+                  • {chamber1Current.complaint}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  ₹{chamber1Current.fee} UPI Verified
+                </span>
+                <span className="text-[10px] font-mono text-[#86868B] px-2 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
+                  {chamber1Current.inRoomMins}m in room
+                </span>
+              </div>
+            </div>
+
+            {/* ⚠️ RETENTION KILLER: THE "3rd Visit" CLINICAL MEMORY BANNER */}
+            <div 
+              onClick={() => setShowHistoryDrawer(true)}
+              className="group p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/25 transition cursor-pointer flex items-start justify-between gap-3 text-amber-900 dark:text-amber-200"
+              title="Click to view full clinical timeline and prior prescriptions"
+            >
+              <div className="space-y-0.5 text-xs">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <span className="text-amber-600 dark:text-amber-400">⚠️</span>
+                  <span className="underline decoration-amber-500/50 underline-offset-2">
+                    {chamber1Current.visitNumber}rd Visit • Last Rx: {chamber1Current.lastRx}
+                  </span>
+                </div>
+                <div className="text-[11px] text-amber-800 dark:text-amber-300/80 font-medium">
+                  Failed: {chamber1Current.failedRx} → Click to open prior 3-visit Rx timeline
+                </div>
+              </div>
+              <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 flex items-center gap-1">
+                <History className="h-3 w-3" />
+                History
+              </span>
+            </div>
+          </div>
+
+          {/* ACTION BUTTON BAR: [ 📞 Call Token ] [ ➕ Add Patient ] [ ⏸ Pause ] */}
+          <div className="grid grid-cols-3 gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={handleCallChamber1Next}
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
+            >
+              <Volume2 className="h-4 w-4" />
+              <span>Call Token</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowAddPatientModal("chamber-1")}
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-[#1D1D1F] dark:text-white font-bold text-xs transition active:scale-95 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Patient</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setChamber1Paused(prev => !prev)}
+              className={`inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs transition active:scale-95 cursor-pointer ${
+                chamber1Paused 
+                  ? "bg-amber-600 text-white hover:bg-amber-700" 
+                  : "bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-[#1D1D1F] dark:text-white"
+              }`}
+            >
+              {chamber1Paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              <span>{chamber1Paused ? "Resume" : "Pause"}</span>
+            </button>
+          </div>
+
+          {/* LIVE QUEUE (NEXT 3 PATIENTS ONLY — NO INFINITE TABLE CLUTTER) */}
+          <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
+            <div className="flex items-center justify-between text-xs font-bold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider">
+              <span>Live Queue ({chamber1Queue.length} Waiting)</span>
+              <span>Wait Times</span>
+            </div>
+
+            <div className="space-y-2">
+              {chamber1Queue.slice(0, 3).map((pt) => (
+                <div 
+                  key={pt.token}
+                  className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition ${
+                    pt.isStuck
+                      ? "border-red-500/40 bg-red-50/20 dark:bg-red-950/20 text-red-900 dark:text-red-200"
+                      : "border-black/[0.05] dark:border-white/[0.06] bg-black/[0.01] dark:bg-white/[0.02] text-[#1D1D1F] dark:text-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                      #{pt.token}
+                    </span>
+                    <span className="font-semibold">{pt.patientName}</span>
+                    <span className="text-[#86868B] dark:text-[#8E8E93]">• {pt.ageGender} • {pt.complaint}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 font-mono">
+                    <span>Wait: {pt.waitMins}m</span>
+                    {pt.isStuck && (
+                      <span className="px-2 py-0.5 rounded-full bg-red-600 text-white font-sans text-[10px] font-black uppercase tracking-wider animate-pulse">
+                        ⚠️ STUCK
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {chamber1Queue.length === 0 && (
+                <div className="p-4 rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] text-center text-xs text-[#86868B]">
+                  Queue Cleared · No waiting patients for Chamber 1
+                </div>
+              )}
+            </div>
+
+            {/* [ 🚨 Resolve Stuck Token ] Action Button */}
+            {chamber1Queue.some(p => p.isStuck) && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowStuckModal(true)}
+                  className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Resolve Stuck Token (#15 Vikram P. waiting 40m)</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 🟢 CHAMBER 2: Dr. Aditi (Dental) */}
+        <div className={`rounded-3xl border ${chamber2Paused ? "border-amber-400/40 bg-amber-50/10" : "border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E]"} p-5 sm:p-6 shadow-apple-card space-y-4`}>
+          {/* Chamber Header */}
+          <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${chamber2Paused ? "bg-amber-500" : "bg-blue-500 animate-pulse"}`}></span>
+                <h2 className="text-sm sm:text-base font-black text-[#1D1D1F] dark:text-white uppercase tracking-tight">
+                  Chamber 2: Dr. Aditi (Dental)
+                </h2>
+                {chamber2Paused && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-bold">
+                    PAUSED
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] flex items-center gap-1.5">
+                <DentalToothIcon className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                <span>Dental Council Reg. UDC-4120-2016 · MDS (Endodontics)</span>
+              </div>
+            </div>
+
+            <Link
+              href="/dashboard/chambers"
+              className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+            >
+              Dental Console <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+
+          {/* NEXT / IN-ROOM PATIENT HERO BOX */}
+          <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[10px] tracking-wider uppercase">
+                  IN ROOM
+                </span>
+                <span className="text-xl sm:text-2xl font-black font-mono text-blue-600 dark:text-blue-400">
+                  #{chamber2Current.token}
+                </span>
+                <span className="text-sm sm:text-base font-bold text-[#1D1D1F] dark:text-white">
+                  {chamber2Current.patientName} ({chamber2Current.ageGender})
+                </span>
+                <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">
+                  • {chamber2Current.complaint}
+                </span>
+              </div>
+
+              <span className="text-[10px] font-mono text-[#86868B] px-2 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] self-start sm:self-center">
+                {chamber2Current.inRoomMins}m in room
+              </span>
+            </div>
+
+            {/* 💳 INLINE PAYMENT STATUS (THE MONEY TRIGGER) */}
+            <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition ${
+              chamber2Current.paymentStatus === "pending"
+                ? "bg-rose-500/10 border-rose-500/25 text-rose-900 dark:text-rose-200"
+                : "bg-emerald-500/10 border-emerald-500/25 text-emerald-900 dark:text-emerald-200"
+            }`}>
+              <div className="flex items-center gap-2 font-bold">
+                {chamber2Current.paymentStatus === "pending" ? (
                   <>
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Live Sync · Updated {secondsSinceSync}s ago</span>
+                    <span className="text-rose-600 dark:text-rose-400 text-sm">💳</span>
+                    <span>Payment: Pending (₹{chamber2Current.fee.toLocaleString("en-IN")})</span>
                   </>
                 ) : (
                   <>
-                    <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                    <span className="text-amber-600 dark:text-amber-400">Offline · Last synced {lastSyncTime}</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span>Payment: Paid via Soundbox UPI (₹{chamber2Current.fee.toLocaleString("en-IN")})</span>
                   </>
                 )}
               </div>
 
-              {/* Glanceable Multi-Chamber Summary Pill */}
-              <div className="hidden md:flex items-center gap-2 text-[11px] text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/[0.05] px-3 py-1 rounded-full border border-black/[0.05]">
-                <span className="font-semibold text-teal-700 dark:text-teal-400">
-                  Chamber 1: {isMorningEmptyState ? "Vacant (0 waiting)" : `#${chamber1.inRoomToken} in room (${chamber1.waitingCount} waiting · ~${chamber1.estWaitMins}m)`}
-                </span>
-                <span>•</span>
-                <span className="font-semibold text-blue-700 dark:text-blue-400">
-                  Chamber 2: {isMorningEmptyState ? "Vacant (0 waiting)" : `#${chamber2.inRoomToken} in room (${chamber2.waitingCount} waiting · ~${chamber2.estWaitMins}m)`}
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={handleToggleChamber2Payment}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition active:scale-95 cursor-pointer shadow-xs ${
+                  chamber2Current.paymentStatus === "pending"
+                    ? "bg-rose-600 hover:bg-rose-700 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                }`}
+              >
+                {chamber2Current.paymentStatus === "pending" ? "Mark Paid" : "Paid ✓"}
+              </button>
             </div>
-
-            <h2 className="text-lg font-black text-[#1D1D1F] dark:text-white tracking-tight">
-              Live Consulting Chambers Command Board
-            </h2>
-            <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-              Call, recall, or override tokens across both chambers — live queue positions, wait times, and payment status in real time.
-            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Simulation View Mode Switcher */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.05]">
-              <button
-                type="button"
-                onClick={() => setIsMorningEmptyState(false)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  !isMorningEmptyState
-                    ? "bg-white dark:bg-[#2C2C2E] text-blue-600 dark:text-blue-400 shadow-xs"
-                    : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
-                }`}
-              >
-                Peak OPD Rush (Active)
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsMorningEmptyState(true)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                  isMorningEmptyState
-                    ? "bg-white dark:bg-[#2C2C2E] text-amber-600 dark:text-amber-400 shadow-xs"
-                    : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
-                }`}
-              >
-                9:29 AM (Empty Morning)
-              </button>
-            </div>
-
+          {/* ACTION BUTTON BAR: [ 📞 Call Token ] [ ✅ Mark Paid ] [ ⏸ Pause ] */}
+          <div className="grid grid-cols-3 gap-2.5 pt-1">
             <button
-              onClick={() => loadData(true)}
-              disabled={isSyncing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer"
-              title="Refresh queue"
+              type="button"
+              onClick={handleCallChamber2Next}
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin text-blue-600" : ""}`} />
-              <span>{isSyncing ? "Syncing..." : "Sync"}</span>
+              <Volume2 className="h-4 w-4" />
+              <span>Call Token</span>
             </button>
 
-            <Link
-              href="/dashboard/desk"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-xs font-bold text-white shadow-apple-sm transition active:scale-95"
+            <button
+              type="button"
+              onClick={handleToggleChamber2Payment}
+              className={`inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs transition active:scale-95 cursor-pointer ${
+                chamber2Current.paymentStatus === "pending"
+                  ? "bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+              }`}
             >
-              <UserCheck className="h-4 w-4" />
-              <span>Reception Desk</span>
-            </Link>
-          </div>
-        </div>
+              <Check className="h-4 w-4" />
+              <span>{chamber2Current.paymentStatus === "pending" ? "Mark Paid" : "Toggle Paid"}</span>
+            </button>
 
-        {/* TWO CHAMBER CARDS WITH CLEAR VISUAL HIERARCHY */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* CHAMBER 1: DERMATOLOGY & LASER */}
-          <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 sm:p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-4">
-            {/* Visual Priority 1: Tokens First! */}
-            {isMorningEmptyState ? (
-              <div className="rounded-2xl border-2 border-dashed border-teal-500/20 bg-teal-500/5 p-4 text-center space-y-2.5">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 text-[11px] font-bold">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>Chamber Vacant · Ready for Morning OPD</span>
-                </div>
-                <div className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  No patients yet — first token generated here →
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleAdmitFirstWalkin("chamber-1")}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Admit Token #1 (10s Walk-In)
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/[0.05] dark:border-white/[0.06]">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-2 rounded-2xl">
-                    <span className="text-[10px] font-black uppercase text-emerald-800 dark:text-emerald-300">IN ROOM</span>
-                    <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                      #{chamber1.inRoomToken}
-                    </span>
-                    <span className="text-xs font-bold text-[#1D1D1F] dark:text-white">
-                      {chamber1.inRoomPatient}
-                    </span>
-                  </div>
-
-                  <div className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                    <span className="block text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">Next Up</span>
-                    <span className="font-bold font-mono text-[#1D1D1F] dark:text-white">#{chamber1.nextToken}</span> ({chamber1.nextPatient})
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    In Consultation ({chamber1.inRoomTimeMins}m)
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Queue Count & Wait Time Strip */}
-            <div className="flex items-center justify-between text-xs py-2 px-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
-              <div className="flex items-center gap-3">
-                <span>Waiting: <strong className="font-mono text-blue-600 dark:text-blue-400">{isMorningEmptyState ? 0 : chamber1.waitingCount}</strong> ({isMorningEmptyState ? "No queue" : chamber1.waitingRange})</span>
-                <span className="text-[#86868B]">•</span>
-                <span>Est. Wait: <strong className="font-mono text-amber-600 dark:text-amber-400">~{isMorningEmptyState ? 0 : chamber1.estWaitMins} min</strong></span>
-              </div>
-              <span className="text-[11px] text-[#86868B] font-mono hidden sm:inline">
-                {isMorningEmptyState ? "First Token Ready" : chamber1.inRoomDiagnosis}
-              </span>
-            </div>
-
-            {/* Visual Priority 2 & 3: Doctor Name & Verified Council Registration */}
-            <div className="flex items-center justify-between pt-1">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-teal-50 dark:bg-teal-950/60 px-2.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
-                    Chamber 1 • Dermatology &amp; Laser
-                  </span>
-                </div>
-                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1.5 mt-1">
-                  <Stethoscope className="h-4 w-4 text-teal-600 shrink-0" />
-                  {chamber1.doctorName}
-                  <span className="text-xs font-normal text-[#86868B]">· {chamber1.qualification}</span>
-                </h3>
-                <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-0.5 flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{chamber1.councilReg}</span>
-                  <span className="opacity-75">({chamber1.councilName})</span>
-                </div>
-              </div>
-
-              <Link
-                href={chamber1.consultationStudioUrl}
-                className="text-[11px] font-bold text-[#0071E3] hover:underline flex items-center gap-1"
-              >
-                Chamber ℞ <ExternalLink className="h-3 w-3" />
-              </Link>
-            </div>
-
-            {/* Operational Action Bar (Reception Control Panel) */}
-            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => isMorningEmptyState ? handleAdmitFirstWalkin("chamber-1") : handleCallNext("chamber-1")}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
-                title="Call next waiting patient with audio bell"
-              >
-                <Volume2 className="h-3.5 w-3.5" />
-                Call Next
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRecall("chamber-1")}
-                disabled={isMorningEmptyState}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 font-bold text-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                title="Re-ring chime for current token in waiting hall"
-              >
-                <RotateCw className="h-3.5 w-3.5" />
-                Recall
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleNoShow("chamber-1")}
-                disabled={isMorningEmptyState}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:text-white font-semibold text-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                title="Mark absent and advance queue"
-              >
-                <UserX className="h-3.5 w-3.5 text-red-500" />
-                No-Show
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleEmergencyPriority("chamber-1")}
-                className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:hover:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50 font-bold text-xs transition active:scale-95 cursor-pointer"
-                title="Emergency walk-in priority override"
-              >
-                <Zap className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                Priority
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setChamber2Paused(prev => !prev)}
+              className={`inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs transition active:scale-95 cursor-pointer ${
+                chamber2Paused 
+                  ? "bg-amber-600 text-white hover:bg-amber-700" 
+                  : "bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-[#1D1D1F] dark:text-white"
+              }`}
+            >
+              {chamber2Paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              <span>{chamber2Paused ? "Resume" : "Pause"}</span>
+            </button>
           </div>
 
-          {/* CHAMBER 2: DENTAL & ORAL SURGERY */}
-          <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 sm:p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-4">
-            {/* Visual Priority 1: Tokens First! */}
-            {isMorningEmptyState ? (
-              <div className="rounded-2xl border-2 border-dashed border-blue-500/20 bg-blue-500/5 p-4 text-center space-y-2.5">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 text-[11px] font-bold">
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>Chamber Vacant · Ready for Morning OPD</span>
-                </div>
-                <div className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  No patients yet — first token generated here →
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => handleAdmitFirstWalkin("chamber-2")}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Admit Token #1 (10s Walk-In)
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/[0.05] dark:border-white/[0.06]">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-500/30 px-3.5 py-2 rounded-2xl">
-                    <span className="text-[10px] font-black uppercase text-emerald-800 dark:text-emerald-300">IN ROOM</span>
-                    <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                      #{chamber2.inRoomToken}
+          {/* LIVE QUEUE (NEXT 3 PATIENTS ONLY) */}
+          <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
+            <div className="flex items-center justify-between text-xs font-bold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider">
+              <span>Live Queue ({chamber2Queue.length} Waiting)</span>
+              <span>Wait Times</span>
+            </div>
+
+            <div className="space-y-2">
+              {chamber2Queue.slice(0, 3).map((pt) => (
+                <div 
+                  key={pt.token}
+                  className="p-3 rounded-xl border border-black/[0.05] dark:border-white/[0.06] bg-black/[0.01] dark:bg-white/[0.02] flex items-center justify-between gap-3 text-xs text-[#1D1D1F] dark:text-white"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                      #{pt.token}
                     </span>
-                    <span className="text-xs font-bold text-[#1D1D1F] dark:text-white">
-                      {chamber2.inRoomPatient}
-                    </span>
+                    <span className="font-semibold">{pt.patientName}</span>
+                    <span className="text-[#86868B] dark:text-[#8E8E93]">• {pt.ageGender} • {pt.complaint}</span>
                   </div>
 
-                  <div className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                    <span className="block text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">Next Up</span>
-                    <span className="font-bold font-mono text-[#1D1D1F] dark:text-white">#{chamber2.nextToken}</span> ({chamber2.nextPatient})
+                  <div className="flex items-center gap-2 font-mono">
+                    <span>Wait: {pt.waitMins}m</span>
+                    <span className="text-[11px] text-[#86868B]">({pt.payment})</span>
                   </div>
                 </div>
+              ))}
 
-                <div className="flex items-center gap-1.5">
-                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-                    In Consultation ({chamber2.inRoomTimeMins}m)
-                  </span>
+              {chamber2Queue.length === 0 && (
+                <div className="p-4 rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] text-center text-xs text-[#86868B]">
+                  Queue Cleared · No waiting patients for Chamber 2
                 </div>
-              </div>
-            )}
-
-            {/* Queue Count & Wait Time Strip */}
-            <div className="flex items-center justify-between text-xs py-2 px-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
-              <div className="flex items-center gap-3">
-                <span>Waiting: <strong className="font-mono text-blue-600 dark:text-blue-400">{isMorningEmptyState ? 0 : chamber2.waitingCount}</strong> ({isMorningEmptyState ? "No queue" : chamber2.waitingRange})</span>
-                <span className="text-[#86868B]">•</span>
-                <span>Est. Wait: <strong className="font-mono text-amber-600 dark:text-amber-400">~{isMorningEmptyState ? 0 : chamber2.estWaitMins} min</strong></span>
-              </div>
-              <span className="text-[11px] text-[#86868B] font-mono hidden sm:inline">
-                {isMorningEmptyState ? "First Token Ready" : chamber2.inRoomDiagnosis}
-              </span>
-            </div>
-
-            {/* Visual Priority 2 & 3: Doctor Name & Verified Council Registration */}
-            <div className="flex items-center justify-between pt-1">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
-                    Chamber 2 • Dental &amp; Oral Surgery
-                  </span>
-                </div>
-                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1.5 mt-1">
-                  <DentalToothIcon className="h-4 w-4 text-blue-600 shrink-0" />
-                  {chamber2.doctorName}
-                  <span className="text-xs font-normal text-[#86868B]">· {chamber2.qualification}</span>
-                </h3>
-                <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-0.5 flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{chamber2.councilReg}</span>
-                  <span className="opacity-75">({chamber2.councilName})</span>
-                </div>
-              </div>
-
-              <Link
-                href={chamber2.consultationStudioUrl}
-                className="text-[11px] font-bold text-[#00A389] hover:underline flex items-center gap-1"
-              >
-                Dental Chamber <ExternalLink className="h-3 w-3" />
-              </Link>
-            </div>
-
-            {/* Operational Action Bar (Reception Control Panel) */}
-            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
-              <button
-                type="button"
-                onClick={() => isMorningEmptyState ? handleAdmitFirstWalkin("chamber-2") : handleCallNext("chamber-2")}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
-                title="Call next waiting patient with audio bell"
-              >
-                <Volume2 className="h-3.5 w-3.5" />
-                Call Next
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRecall("chamber-2")}
-                disabled={isMorningEmptyState}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 font-bold text-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                title="Re-ring chime for current token in waiting hall"
-              >
-                <RotateCw className="h-3.5 w-3.5" />
-                Recall
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleNoShow("chamber-2")}
-                disabled={isMorningEmptyState}
-                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:text-white font-semibold text-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                title="Mark absent and advance queue"
-              >
-                <UserX className="h-3.5 w-3.5 text-red-500" />
-                No-Show
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleEmergencyPriority("chamber-2")}
-                className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:hover:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-900/50 font-bold text-xs transition active:scale-95 cursor-pointer"
-                title="Emergency walk-in priority override"
-              >
-                <Zap className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-                Priority
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. LIVE PATIENT OPD QUEUE TABLE (APPLE GROUPED LIST WITH SOUNDBOX & DRAWER AUDIT) */}
-      <div className="rounded-[24px] border border-black/[0.06] bg-white shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] overflow-hidden">
-        <div className="p-5 border-b border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-[#1D1D1F] dark:text-white tracking-tight">Today&apos;s Active OPD Roster</h2>
-            <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">Individual patient arrivals, chamber tokens, and soundbox-reconciled billing</p>
-          </div>
-          <Link
-            href="/dashboard/desk"
-            className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.02] active:scale-95 transition dark:border-white/[0.12] dark:bg-[#2C2C2E] dark:text-white"
-          >
-            <UserCheck className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-            Launch Full Desk Console
-          </Link>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#ECEEF2]/60 border-b border-black/[0.05] text-[#86868B] dark:bg-[#2C2C2E]/60 dark:border-white/[0.06] dark:text-[#8E8E93]">
-              <tr>
-                <th className="px-6 py-3 font-semibold">Token</th>
-                <th className="px-6 py-3 font-semibold">Patient Name</th>
-                <th className="px-6 py-3 font-semibold">Assigned Chamber</th>
-                <th className="px-6 py-3 font-semibold">Arrival Time</th>
-                <th className="px-6 py-3 font-semibold">Status</th>
-                <th className="px-6 py-3 font-semibold">Payment &amp; Audit Source</th>
-                <th className="px-6 py-3 font-semibold text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/[0.05] dark:divide-white/[0.06]">
-              {isMorningEmptyState ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-xs text-[#86868B]">
-                    No patients registered for morning OPD yet. Click &quot;Admit Walk-In&quot; to issue Token #1.
-                  </td>
-                </tr>
-              ) : (
-                activeQueue.map((pt) => {
-                  const isUpiPaid = pt.payment.includes("UPI");
-                  const isCashPaid = pt.payment.includes("Cash") && pt.payment.includes("Paid");
-
-                  return (
-                    <tr key={pt.token} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition">
-                      <td className="px-6 py-3.5 font-bold font-mono text-[#1D1D1F] dark:text-white">
-                        #{pt.token}
-                      </td>
-                      <td className="px-6 py-3.5">
-                        <div className="font-bold text-[#1D1D1F] dark:text-white">{pt.patient_name}</div>
-                        <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">{pt.phone}</div>
-                      </td>
-                      <td className="px-6 py-3.5 text-[#86868B] dark:text-[#8E8E93]">
-                        {pt.doctor}
-                      </td>
-                      <td className="px-6 py-3.5 text-[#86868B] dark:text-[#8E8E93] font-mono text-[11px]">
-                        {pt.time}
-                      </td>
-                      <td className="px-6 py-3.5">
-                        {pt.status === "in_consultation" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#30D158]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#34C759] dark:text-[#30D158]">
-                            In Chamber
-                          </span>
-                        ) : pt.status === "waiting" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#FF9500]/10 px-2.5 py-0.5 text-[11px] font-bold text-[#FF9500] dark:text-[#FF9F0A]">
-                            Waiting in OPD
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] px-2.5 py-0.5 text-[11px] font-semibold text-[#86868B] dark:bg-white/[0.08] dark:text-[#8E8E93]">
-                            Completed
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-3.5">
-                        {isUpiPaid ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold text-[11px]" title="Soundbox automated webhook confirmed. Immutable transaction.">
-                            <CheckCircle2 className="h-3 w-3 shrink-0" />
-                            ₹{pt.fee} • Soundbox Verified UPI
-                          </span>
-                        ) : isCashPaid ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 font-bold text-[11px]" title="Desk Drawer Locked. Must match physical cash-in-drawer sheet at 9 PM shift close.">
-                            <Lock className="h-3 w-3 shrink-0 text-amber-600" />
-                            ₹{pt.fee} • Cash (Drawer Locked)
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-[#86868B] font-semibold text-[11px]">
-                            <Clock className="h-3 w-3 shrink-0" />
-                            ₹{pt.fee} • Unpaid Pending
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-3.5 text-right">
-                        <Link
-                          href={pt.status === "in_consultation" ? `/dashboard/consult/${pt.appointment_number || `APT-${pt.token}`}` : `/dashboard/chambers`}
-                          className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] px-3 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.14] transition cursor-pointer"
-                        >
-                          {pt.status === "in_consultation" ? "Open ℞ Pad" : "Call Next"}
-                          <ArrowRight className="h-3 w-3" />
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
               )}
-            </tbody>
-          </table>
+            </div>
+
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowAddPatientModal("chamber-2")}
+                className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Add Walk-in to Chamber 2</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* 4. CASH DRAWER AUDIT & SETTLEMENT PROTECTION FOOTER */}
-        <div className="p-4 bg-amber-500/10 border-t border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      </div>
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* ⚡ QUICK ACTIONS (Reception / Doctor)                                      */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      <div className="rounded-3xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 shadow-apple-card space-y-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Lock className="h-4 w-4 shrink-0 text-amber-600" />
-            <span>
-              <strong>Cash Drawer Audit Security Active:</strong> Desk cashier (Pooja Verma) cash receipts are locked to the counter drawer. Marking cash payments requires physical denomination verification during the 9 PM shift closing settlement.
-            </span>
+            <span className="text-amber-500 font-bold">⚡</span>
+            <h3 className="text-xs sm:text-sm font-black text-[#1D1D1F] dark:text-white uppercase tracking-wider">
+              Quick Actions (Reception &amp; Doctor)
+            </h3>
           </div>
-          <Link
-            href="/clinic/settlement"
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 underline hover:no-underline shrink-0"
+          <span className="text-[11px] text-[#86868B] font-mono">End-of-Day Habit Locks</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* [ 📄 Print Day Report ] */}
+          <button
+            type="button"
+            onClick={() => setShowPrintReportModal(true)}
+            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
           >
-            Shift Settlement Sheet →
-          </Link>
+            <Printer className="h-4 w-4 text-blue-600" />
+            <span>Print Day Report (CA Audit)</span>
+          </button>
+
+          {/* [ 🔔 Send WhatsApp Reminders ] */}
+          <button
+            type="button"
+            onClick={() => setShowWhatsappModal(true)}
+            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
+          >
+            <Send className="h-4 w-4 text-emerald-600" />
+            <span>Send WhatsApp Reminders</span>
+          </button>
+
+          {/* [ 📊 View P&L ] */}
+          <button
+            type="button"
+            onClick={() => setShowPnlModal(true)}
+            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
+          >
+            <TrendingUp className="h-4 w-4 text-purple-600" />
+            <span>View P&amp;L &amp; Doctor Split</span>
+          </button>
         </div>
       </div>
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 1: RETURNING PATIENT CLINICAL MEMORY DRAWER (THE #1 RETENTION MOAT)   */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showHistoryDrawer && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                  <History className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                    Priya Singh (24F) • Clinical Memory
+                  </h3>
+                  <p className="text-xs text-[#86868B]">UID: PT-DERMA-912 · Rajpur Road, Dehradun</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHistoryDrawer(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Prescription &amp; Clinical Timeline (3 Visits)
+              </div>
+
+              {/* Visit 1 */}
+              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white">Visit 1 · 14 Aug 2026</span>
+                  <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 text-[10px] font-bold">Adverse Reaction</span>
+                </div>
+                <div className="text-[#86868B]">Dx: Tinea Corporis / Erythematous plaque</div>
+                <div className="font-mono text-slate-800 dark:text-slate-200">
+                  Rx: Fluconazole 150mg 1 tab weekly
+                </div>
+                <div className="text-rose-600 dark:text-rose-400 text-[11px] font-semibold">
+                  ⚠️ Patient called clinic on Day 3 reporting acute gastric distress &amp; nausea. Discontinued.
+                </div>
+              </div>
+
+              {/* Visit 2 */}
+              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white">Visit 2 · 02 Sep 2026</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[10px] font-bold">Success / Cleared</span>
+                </div>
+                <div className="text-[#86868B]">Dx: Switched Antifungal Protocol</div>
+                <div className="font-mono text-slate-800 dark:text-slate-200">
+                  Rx: Itraconazole 200mg (1-0-1 after food) 21d + Ketoconazole lotion
+                </div>
+                <div className="text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
+                  ✓ Lesions 90% resolved. Well tolerated with no gastric symptoms.
+                </div>
+              </div>
+
+              {/* Visit 3 (Today) */}
+              <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-blue-900 dark:text-blue-200">Visit 3 · Today (24 Sep 2026)</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">Active Consult</span>
+                </div>
+                <div className="text-blue-800 dark:text-blue-300">Chief Complaint: Acne Vulgaris &amp; Post-Inflammatory Hyperpigmentation</div>
+                <div className="font-mono text-blue-900 dark:text-blue-100 font-bold">
+                  Doctor Action: Ready to issue ℞ via Studio pad
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHistoryDrawer(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+              >
+                Close
+              </button>
+              <Link
+                href="/dashboard/consult/APT-DERMA-102"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm"
+              >
+                Open Consultation Pad →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 2: RESOLVE STUCK TOKEN DIALOG                                        */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showStuckModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  Resolve Stuck Token #15
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowStuckModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-1 text-xs">
+              <p className="font-bold text-slate-800 dark:text-slate-200">
+                Patient: Vikram P. (50M) • Eczema • Waiting 40 min
+              </p>
+              <p className="text-[#86868B]">
+                Waiting time exceeded clinical threshold (&gt;30m). Choose immediate resolution:
+              </p>
+            </div>
+
+            <div className="space-y-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => handleResolveStuck("call_now")}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4" />
+                  <span>Call to Chamber 1 Now (Priority Jump)</span>
+                </div>
+                <span>⚡</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleResolveStuck("whatsapp_delay")}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 border border-blue-500/20 text-xs font-bold transition active:scale-95 cursor-pointer text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <Send className="h-4 w-4 text-blue-600" />
+                  <span>Send WhatsApp Delay Alert (+15m)</span>
+                </div>
+                <span>📲</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleResolveStuck("no_show")}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] text-[#1D1D1F] dark:text-white text-xs font-bold transition active:scale-95 cursor-pointer text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <UserX className="h-4 w-4 text-red-500" />
+                  <span>Mark Patient Stepped Out / No-Show</span>
+                </div>
+                <span>Skip</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 3: CA-READY PRINT DAY REPORT (DAY CLOSING LOCK)                      */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showPrintReportModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Printer className="h-5 w-5 text-blue-600" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  Daily Closing Settlement &amp; CA Audit Sheet
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPrintReportModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Printable Statement Area */}
+            <div className="p-5 rounded-2xl border border-black/[0.1] dark:border-white/[0.1] bg-black/[0.01] dark:bg-white/[0.02] space-y-4 text-xs font-mono">
+              <div className="flex justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
+                <div>
+                  <div className="font-bold text-sm text-[#1D1D1F] dark:text-white">DOCSPHERE CLINIC — RAJPUR ROAD</div>
+                  <div className="text-[11px] text-[#86868B]">GSTIN: 05AAACH7409R1ZZ · Audit Batch #EOD-20260924</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold">DATE: 24 SEP 2026</div>
+                  <div className="text-[11px] text-[#86868B]">SHIFT: 09:00 - 20:00</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[#86868B]">TOTAL FOOTFALL</div>
+                  <div className="text-sm font-bold text-[#1D1D1F] dark:text-white">21 Consultations</div>
+                </div>
+                <div>
+                  <div className="text-[#86868B]">AUDIT DISCREPANCIES</div>
+                  <div className="text-sm font-bold text-emerald-600">0 (100% Soundbox Matched)</div>
+                </div>
+              </div>
+
+              <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-3 space-y-1.5">
+                <div className="flex justify-between">
+                  <span>Soundbox UPI Webhook Verified:</span>
+                  <span className="font-bold">₹{upiCollected.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Physical Cash in Drawer:</span>
+                  <span className="font-bold">₹{cashCollected.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t border-black/[0.1] dark:border-white/[0.1] pt-2">
+                  <span>GROSS CLINIC COLLECTIONS:</span>
+                  <span className="text-emerald-600">₹{totalCollected.toLocaleString("en-IN")}</span>
+                </div>
+              </div>
+
+              <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-3 space-y-1 text-[11px] text-[#86868B]">
+                <div className="flex justify-between">
+                  <span>Dr. Rahul Sharma Payout (70%):</span>
+                  <span>₹4,200</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Dr. Aditi Joshi Payout (70%):</span>
+                  <span>₹2,800</span>
+                </div>
+                <div className="flex justify-between font-bold text-slate-800 dark:text-slate-200">
+                  <span>Clinic Retained Margin (30%):</span>
+                  <span>₹2,535</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPrintReportModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.print();
+                  showNotification("Printing CA-Ready Day Closing Report");
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Print Official PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 4: BATCH WHATSAPP QUEUE REMINDERS                                    */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showWhatsappModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <Send className="h-5 w-5" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  Send WhatsApp Queue Broadcast
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWhatsappModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <p className="text-[#86868B]">
+                This will trigger instant WhatsApp live position updates to all 5 waiting patients:
+              </p>
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-900 dark:text-emerald-200 font-mono text-[11px] space-y-1">
+                <p><strong>Sample Message:</strong></p>
+                <p>&quot;Namaste Rohit, your Token #13 at Dr. Rahul Sharma&apos;s chamber is 1 token away. Estimated entry: 11:15 AM. Live link: medic-sept-2026.vercel.app/p/TK-13&quot;</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowWhatsappModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowWhatsappModal(false);
+                  showNotification("Dispatched 5 WhatsApp queue alerts to waiting patients!");
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              >
+                <Send className="h-4 w-4" />
+                <span>Send to 5 Patients Now</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 5: P&L & DOCTOR SPLIT MODAL                                          */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showPnlModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2 text-purple-600">
+                <TrendingUp className="h-5 w-5" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  Today&apos;s Clinic P&amp;L Overview
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPnlModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] space-y-2">
+                <div className="flex justify-between font-bold">
+                  <span>Gross OPD Revenue:</span>
+                  <span className="font-mono text-emerald-600">₹{totalCollected.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="flex justify-between text-[#86868B]">
+                  <span>Doctor Payouts (Dr. Rahul + Dr. Aditi):</span>
+                  <span className="font-mono text-rose-600">-₹5,200</span>
+                </div>
+                <div className="flex justify-between text-[#86868B]">
+                  <span>Medical Consumables &amp; Sterilization:</span>
+                  <span className="font-mono text-rose-600">-₹800</span>
+                </div>
+                <div className="flex justify-between text-[#86868B]">
+                  <span>Reception &amp; Electricity Pro-rata:</span>
+                  <span className="font-mono text-rose-600">-₹450</span>
+                </div>
+                <div className="flex justify-between text-sm font-black border-t border-black/[0.08] dark:border-white/[0.08] pt-2">
+                  <span>Net Retained Clinic Profit:</span>
+                  <span className="font-mono text-emerald-600">
+                    ₹{(totalCollected - 6450).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <Link
+                href="/dashboard/finance"
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm"
+              >
+                Full Finance Console →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 6: ADD WALK-IN PATIENT                                               */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showAddPatientModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-blue-600" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  Add Walk-In Patient ({showAddPatientModal === "chamber-1" ? "Chamber 1" : "Chamber 2"})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddPatientModal(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPatientSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Patient Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Manas Verma"
+                  value={newPatient.name}
+                  onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Age</label>
+                  <input
+                    type="number"
+                    required
+                    placeholder="30"
+                    value={newPatient.age}
+                    onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Gender</label>
+                  <select
+                    value={newPatient.gender}
+                    onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                  >
+                    <option value="M">Male (M)</option>
+                    <option value="F">Female (F)</option>
+                    <option value="O">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Chief Complaint</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rash on neck / Tooth pain"
+                  value={newPatient.complaint}
+                  onChange={(e) => setNewPatient({ ...newPatient, complaint: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">OPD Fee (₹)</label>
+                  <input
+                    type="number"
+                    value={newPatient.fee}
+                    onChange={(e) => setNewPatient({ ...newPatient, fee: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Payment Mode</label>
+                  <select
+                    value={newPatient.paymentMode}
+                    onChange={(e) => setNewPatient({ ...newPatient, paymentMode: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                  >
+                    <option value="UPI">Soundbox UPI (Immediate)</option>
+                    <option value="Cash">Cash (Pending at Desk)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddPatientModal(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                >
+                  Issue Token &amp; Insert
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 7: COLLECTIONS & PENDING BREAKDOWN                                    */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showCollectionsBreakdown && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <IndianRupee className="h-5 w-5" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  Live Counter Collections Audit
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCollectionsBreakdown(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex justify-between items-center">
+                <div>
+                  <div className="font-bold text-emerald-900 dark:text-emerald-200">Soundbox UPI Webhook Verified</div>
+                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400">Direct settled to HDFC Bank A/c</div>
+                </div>
+                <div className="font-mono font-black text-sm text-emerald-800 dark:text-emerald-200">
+                  ₹{upiCollected.toLocaleString("en-IN")}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex justify-between items-center">
+                <div>
+                  <div className="font-bold text-amber-900 dark:text-amber-200">Cash in Drawer (Locked)</div>
+                  <div className="text-[10px] text-amber-700 dark:text-amber-400">Reconciled at 9 PM shift closing</div>
+                </div>
+                <div className="font-mono font-black text-sm text-amber-800 dark:text-amber-200">
+                  ₹{cashCollected.toLocaleString("en-IN")}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex justify-between items-center">
+                <div>
+                  <div className="font-bold text-rose-900 dark:text-rose-200">Pending / Uncollected OPD Fees</div>
+                  <div className="text-[10px] text-rose-700 dark:text-rose-400">{openTokensCount} Patients with pending balance</div>
+                </div>
+                <div className="font-mono font-black text-sm text-rose-800 dark:text-rose-200">
+                  ₹{chamber2Current.paymentStatus === "pending" ? "5,800" : "1,800"}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCollectionsBreakdown(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 8: 9 PM DAILY DIGEST NOTIFICATION PREVIEW (RETENTION SECRET)          */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showDigestModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <Send className="h-5 w-5" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  9 PM Automated WhatsApp Digest
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDigestModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-[#86868B]">
+                This is the automated evening message sent to Dr. Rahul &amp; Dr. Aditi every night at 9:00 PM. It reinforces daily time saved and zero cash leakage:
+              </p>
+
+              {/* WhatsApp message card preview */}
+              <div className="p-4 rounded-2xl bg-[#EFEAE2] dark:bg-[#0B141A] border border-black/[0.05] dark:border-white/[0.05] text-[#111B21] dark:text-[#E9EDEF] space-y-2">
+                <div className="bg-white dark:bg-[#202C33] p-3 rounded-xl shadow-xs space-y-1.5 font-sans">
+                  <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">
+                    DocSphere ClinicOS Daily Digest 🩺
+                  </div>
+                  <p className="text-xs leading-relaxed">
+                    &quot;Dr. Rahul, today you saw <strong>21 patients</strong>.<br />
+                    💰 <strong>₹8,450 collected</strong> (₹6,650 UPI + ₹1,800 Cash).<br />
+                    ✅ <strong>0 discrepancies</strong> on counter soundbox.<br />
+                    ⏱️ Saved ~1.8 hours vs paper registers.<br />
+                    Great day! Shift safely closed.&quot;
+                  </p>
+                  <div className="text-[10px] text-right text-slate-400 font-mono">
+                    21:00 ✓✓
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDigestModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDigestModal(false);
+                  showNotification("Test WhatsApp Digest dispatched to Dr. Rahul's phone (+91 91234 56780)");
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              >
+                <Send className="h-4 w-4" />
+                <span>Test Send to Doctor</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
