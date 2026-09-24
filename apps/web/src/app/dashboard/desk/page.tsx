@@ -95,7 +95,7 @@ export default function DashboardDeskPage() {
     {
       appointment_number: "APT-DERMA-103",
       token_number: 13,
-      patient_name: "Rohit Pant",
+      patient_name: "Rohit V.",
       patient_phone: "+919123456782",
       status: "waiting",
       time_slot: "10:45 AM (BP Check)",
@@ -446,11 +446,16 @@ export default function DashboardDeskPage() {
       {/* 1. TOP HEADER & MODAL TRIGGERS */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-[#1D1D1F] dark:text-white">
-            Reception Desk Counter Console PWA
-          </h1>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-black tracking-wider uppercase">
+              DESK CONSOLE
+            </span>
+            <h1 className="text-lg sm:text-xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
+              CONSOLE: Pooja | DR. RAHUL
+            </h1>
+          </div>
           <p className="text-xs text-[#86868B] mt-0.5">
-            Counter staff: Pooja Verma • Dr. Rahul Sharma LIVE QUEUE • High-Throughput Reception Console
+            Real-time OPD throughput console • Direct soundbox reconciliation &amp; 1-tap token calling
           </p>
         </div>
 
@@ -530,33 +535,40 @@ export default function DashboardDeskPage() {
       {/* ⚡ HERO CALL CONSOLE — THE ONE-HANDED RECEPTIONIST TEST */}
       <div className="rounded-[28px] border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-6 shadow-apple-card space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                ACTIVE IN CHAMBER 1 NOW
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                LIVE QUEUE:
               </span>
             </div>
-            <div className="flex items-baseline gap-2.5 flex-wrap">
-              <span className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                #{activeInConsultation?.token_number || 12}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
-                {activeInConsultation?.patient_name || "Priya Singh"}
-              </span>
-              <span className="text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
-                • {activeInConsultation?.time_slot || "Acne Consult"}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-xs pt-0.5 flex-wrap">
-              <span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Payment: {activeInConsultation?.payment_status === "paid" ? "₹600 PAID (UPI Soundbox) ✅" : "⚠️ PENDING"}
-              </span>
-              <span className="text-[#86868B]">•</span>
-              <span className="text-xs text-slate-700 dark:text-slate-300">
-                NEXT IN LINE: <strong className="font-mono text-slate-900 dark:text-white text-sm">#{nextWaiting ? `${nextWaiting.token_number} ${nextWaiting.patient_name}` : "Queue Cleared"}</strong>
-              </span>
+            <div className="space-y-1.5">
+              <div className="flex items-baseline gap-2 text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-white flex-wrap">
+                <span className="text-emerald-600 dark:text-emerald-400 font-black font-mono">
+                  #{activeInConsultation?.token_number || 12}
+                </span>
+                <span>{activeInConsultation?.patient_name || "Priya Singh"}</span>
+                <span className="text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
+                  • Est. Wait: 24m •
+                </span>
+                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                  {activeInConsultation?.payment_status === "paid" ? "PAID ✅" : "PENDING ⏳"}
+                </span>
+              </div>
+              {nextWaiting && (
+                <div className="flex items-baseline gap-2 text-sm sm:text-base font-semibold text-[#1D1D1F] dark:text-white flex-wrap">
+                  <span className="text-amber-600 dark:text-amber-400 font-black font-mono">
+                    #{nextWaiting.token_number}
+                  </span>
+                  <span>{nextWaiting.patient_name}</span>
+                  <span className="text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
+                    • Est. Wait: 15m •
+                  </span>
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                    {nextWaiting.payment_status === "paid" ? "PAID ✅" : "PENDING ⏳"}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -569,7 +581,7 @@ export default function DashboardDeskPage() {
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm tracking-wide shadow-lg shadow-emerald-600/30 transition active:scale-95 cursor-pointer disabled:opacity-50"
             >
               <Volume2 className="h-5 w-5 animate-pulse" />
-              <span>{nextWaiting ? `CALL NEXT TOKEN (#${nextWaiting.token_number})` : "ALL CALLED"}</span>
+              <span>{nextWaiting ? `[ 📞 CALL NEXT TOKEN ]` : "ALL CALLED"}</span>
             </button>
 
             <button
@@ -578,7 +590,7 @@ export default function DashboardDeskPage() {
               className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-sm transition active:scale-95 cursor-pointer"
             >
               <Plus className="h-5 w-5" />
-              <span>ADMIT WALK-IN (10s)</span>
+              <span>[ ➕ ADD WALK-IN ]</span>
             </button>
           </div>
         </div>
@@ -591,10 +603,10 @@ export default function DashboardDeskPage() {
             <Stethoscope className="h-4 w-4" /> Active in Chamber
           </div>
           <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
-            {activeInConsultation ? `Token #${activeInConsultation.token_number}` : "Chamber Idle"}
+            {activeInConsultation ? `#${activeInConsultation.token_number} ${activeInConsultation.patient_name}` : "Chamber Idle"}
           </div>
-          <p className="mt-1 text-xs text-[#86868B] truncate">
-            {activeInConsultation ? activeInConsultation.patient_name : "Waiting for next patient"}
+          <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+            {activeInConsultation?.payment_status === "paid" ? "PAID via Soundbox UPI ✅" : "Payment: PENDING ⚠️"}
           </p>
         </div>
 
@@ -610,16 +622,21 @@ export default function DashboardDeskPage() {
           </p>
         </div>
 
-        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card">
-          <div className="text-[11px] font-semibold text-apple-teal dark:text-[#30D1BE] uppercase tracking-wider flex items-center gap-1.5">
-            <CreditCard className="h-4 w-4" /> Soundbox UPI
+        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card flex flex-col justify-between">
+          <div>
+            <div className="text-[11px] font-black text-apple-teal dark:text-[#30D1BE] uppercase tracking-wider flex items-center gap-1.5">
+              <CreditCard className="h-4 w-4" /> SETTLEMENT:
+            </div>
+            <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
+              ₹{upiCollected.toLocaleString("en-IN")}
+            </div>
+            <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Direct Bank Transfer: ✅ Synced
+            </p>
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
-            ₹{upiCollected.toLocaleString("en-IN")}
-          </div>
-          <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            UPI Soundbox: ✅ Synced
+          <p className="mt-2 text-xs font-bold text-[#1D1D1F] dark:text-white pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
+            Total Gross: ₹ 1,200
           </p>
         </div>
 
@@ -640,7 +657,7 @@ export default function DashboardDeskPage() {
               ₹{cashCollected.toLocaleString("en-IN")}
             </div>
           </div>
-          <p className="mt-2 text-xs text-[#86868B] pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
+          <p className="mt-2 text-xs font-bold text-[#1D1D1F] dark:text-white pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
             Total Gross: ₹{totalCollectedToday.toLocaleString("en-IN")}
           </p>
         </div>
@@ -696,15 +713,21 @@ export default function DashboardDeskPage() {
                   </td>
                   <td className="px-5 py-4">
                     {item.status === "in_consultation" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-bold">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-                        In Chamber
-                      </span>
+                      <div>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-bold">
+                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
+                          In Chamber
+                        </span>
+                        <div className="text-[11px] text-[#86868B] mt-0.5 font-medium">Est. Wait: 24m</div>
+                      </div>
                     ) : item.status === "waiting" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1 text-xs font-bold">
-                        <Clock className="h-3.5 w-3.5" />
-                        Waiting in Lounge
-                      </span>
+                      <div>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1 text-xs font-bold">
+                          <Clock className="h-3.5 w-3.5" />
+                          Waiting in Lounge
+                        </span>
+                        <div className="text-[11px] text-[#86868B] mt-0.5 font-medium">Est. Wait: 15m</div>
+                      </div>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-3 py-1 text-xs font-medium text-[#86868B]">
                         <Check className="h-3.5 w-3.5" />
@@ -726,12 +749,12 @@ export default function DashboardDeskPage() {
                       {item.payment_status === "paid" ? (
                         <>
                           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                          <span>PAID (₹{item.fee_amount} {item.payment_mode.toUpperCase()}) ✅</span>
+                          <span>PAID ✅ (₹{item.fee_amount} {item.payment_mode.toUpperCase()})</span>
                         </>
                       ) : (
                         <>
                           <Clock className="h-3.5 w-3.5 text-rose-600" />
-                          <span>PENDING (Collect ₹{item.fee_amount}) ⚠️</span>
+                          <span>PENDING ⏳ (Collect ₹{item.fee_amount})</span>
                         </>
                       )}
                     </button>
