@@ -308,7 +308,7 @@ export default function ForDoctorsPage() {
       </section>
 
       {/* 3. THE 5 CORE CLINIC COCKPITS (INTERACTIVE TABBED SHOWCASE) */}
-      <section id="cockpits" className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#101114] border-t border-b border-black/[0.06] dark:border-white/[0.08]">
+      <section id="cockpits" className="scroll-mt-16 py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#101114] border-t border-b border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-6xl">
           
           <div className="text-center max-w-3xl mx-auto">
@@ -453,12 +453,14 @@ export default function ForDoctorsPage() {
       </section>
 
       {/* 4. COMPARISON: CLINICOS VS. LEGACY AGGREGATOR PLATFORMS */}
-      <section id="legacy-contrast" className="py-16 px-4 sm:px-6 lg:px-8 bg-[#F5F6F9] dark:bg-[#090A0C]">
+      <section id="comparison" className="scroll-mt-16 py-16 px-4 sm:px-6 lg:px-8 bg-[#F5F6F9] dark:bg-[#090A0C]">
+        <div id="legacy-contrast" className="scroll-mt-20" />
+        <div id="why-clinicos" className="scroll-mt-20" />
         <div className="mx-auto max-w-5xl">
           
           <div className="text-center max-w-3xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              The Fundamental Difference
+              Why ClinicOS? • The Fundamental Difference
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
               Legacy Aggregator Platforms vs. ClinicOS
@@ -559,7 +561,7 @@ export default function ForDoctorsPage() {
       </section>
 
       {/* 5. QUICK-LAUNCH ALL 5 TOOLS GRID */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#101114] border-t border-black/[0.06] dark:border-white/[0.08]">
+      <section id="tools-grid" className="scroll-mt-16 py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#101114] border-t border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-6xl">
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-white/10 pb-6">
