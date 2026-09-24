@@ -70,11 +70,11 @@ export default function DashboardDeskPage() {
   const [queue, setQueue] = useState<any[]>([
     {
       appointment_number: "APT-DERMA-101",
-      token_number: 1,
+      token_number: 11,
       patient_name: "Amit Rawat",
       patient_phone: "+919123456780",
       status: "completed",
-      time_slot: "10:15 AM - 10:30 AM",
+      time_slot: "10:15 AM",
       fee_amount: 600,
       payment_status: "paid",
       payment_mode: "upi",
@@ -82,11 +82,11 @@ export default function DashboardDeskPage() {
     },
     {
       appointment_number: "APT-DERMA-102",
-      token_number: 2,
+      token_number: 12,
       patient_name: "Priya Singh",
       patient_phone: "+919123456781",
       status: "in_consultation",
-      time_slot: "10:30 AM - 10:45 AM",
+      time_slot: "10:30 AM (Acne Consult)",
       fee_amount: 600,
       payment_status: "paid",
       payment_mode: "upi",
@@ -94,23 +94,35 @@ export default function DashboardDeskPage() {
     },
     {
       appointment_number: "APT-DERMA-103",
-      token_number: 3,
+      token_number: 13,
       patient_name: "Rohit Pant",
       patient_phone: "+919123456782",
       status: "waiting",
-      time_slot: "10:45 AM - 11:00 AM",
+      time_slot: "10:45 AM (BP Check)",
       fee_amount: 600,
       payment_status: "pending",
       payment_mode: "cash",
       is_walk_in: false
     },
     {
-      appointment_number: "APT-WALKIN-104",
-      token_number: 4,
-      patient_name: "Kavita Joshi",
+      appointment_number: "APT-DERMA-104",
+      token_number: 14,
+      patient_name: "Anjali K.",
       patient_phone: "+919876511111",
       status: "waiting",
-      time_slot: "11:00 AM",
+      time_slot: "11:00 AM (Laser Consult)",
+      fee_amount: 1200,
+      payment_status: "pending",
+      payment_mode: "cash",
+      is_walk_in: false
+    },
+    {
+      appointment_number: "APT-WALKIN-105",
+      token_number: 15,
+      patient_name: "Vikram P.",
+      patient_phone: "+919876522222",
+      status: "waiting",
+      time_slot: "11:15 AM (Eczema Walk-In)",
       fee_amount: 600,
       payment_status: "pending",
       payment_mode: "cash",
@@ -212,6 +224,7 @@ export default function DashboardDeskPage() {
   const activeInConsultation = queue.find(q => q.status === "in_consultation");
   const waitingPatients = queue.filter(q => q.status === "waiting");
   const completedPatients = queue.filter(q => q.status === "completed");
+  const nextWaiting = waitingPatients[0];
 
   const totalCollectedToday = queue
     .filter(q => q.payment_status === "paid")
@@ -437,7 +450,7 @@ export default function DashboardDeskPage() {
             Reception Desk Counter Console PWA
           </h1>
           <p className="text-xs text-[#86868B] mt-0.5">
-            Counter staff: Pooja Verma • Dr. Rahul Sharma OPD Roster
+            Counter staff: Pooja Verma • Dr. Rahul Sharma LIVE QUEUE • High-Throughput Reception Console
           </p>
         </div>
 
@@ -493,7 +506,6 @@ export default function DashboardDeskPage() {
             <span>Counter QR</span>
           </button>
 
-
           <button
             onClick={() => setShowWalkInModal(true)}
             className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue hover:bg-[#0077ED] px-4 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
@@ -514,6 +526,63 @@ export default function DashboardDeskPage() {
           <span className="text-[#86868B] font-normal text-[11px]">Audio Chime Broadcasted</span>
         </div>
       )}
+
+      {/* ⚡ HERO CALL CONSOLE — THE ONE-HANDED RECEPTIONIST TEST */}
+      <div className="rounded-[28px] border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-6 shadow-apple-card space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                ACTIVE IN CHAMBER 1 NOW
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2.5 flex-wrap">
+              <span className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                #{activeInConsultation?.token_number || 12}
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
+                {activeInConsultation?.patient_name || "Priya Singh"}
+              </span>
+              <span className="text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
+                • {activeInConsultation?.time_slot || "Acne Consult"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs pt-0.5 flex-wrap">
+              <span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Payment: {activeInConsultation?.payment_status === "paid" ? "₹600 PAID (UPI Soundbox) ✅" : "⚠️ PENDING"}
+              </span>
+              <span className="text-[#86868B]">•</span>
+              <span className="text-xs text-slate-700 dark:text-slate-300">
+                NEXT IN LINE: <strong className="font-mono text-slate-900 dark:text-white text-sm">#{nextWaiting ? `${nextWaiting.token_number} ${nextWaiting.patient_name}` : "Queue Cleared"}</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* GIANT PRIMARY ONE-HANDED ACTION BUTTONS */}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => nextWaiting && handleCallToken(nextWaiting.token_number, nextWaiting.patient_name)}
+              disabled={!nextWaiting}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm tracking-wide shadow-lg shadow-emerald-600/30 transition active:scale-95 cursor-pointer disabled:opacity-50"
+            >
+              <Volume2 className="h-5 w-5 animate-pulse" />
+              <span>{nextWaiting ? `CALL NEXT TOKEN (#${nextWaiting.token_number})` : "ALL CALLED"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowWalkInModal(true)}
+              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-sm transition active:scale-95 cursor-pointer"
+            >
+              <Plus className="h-5 w-5" />
+              <span>ADMIT WALK-IN (10s)</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* 2. RECONCILIATION & COUNTER METRICS */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -548,8 +617,9 @@ export default function DashboardDeskPage() {
           <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
             ₹{upiCollected.toLocaleString("en-IN")}
           </div>
-          <p className="mt-1 text-xs text-apple-teal dark:text-[#30D1BE] font-medium">
-            Direct Bank Settlement
+          <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            UPI Soundbox: ✅ Synced
           </p>
         </div>
 
@@ -579,9 +649,12 @@ export default function DashboardDeskPage() {
       {/* 3. COUNTER QUEUE TABLE */}
       <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] shadow-apple-card overflow-hidden">
         <div className="p-5 border-b border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">
-            Counter Live Tokens ({queue.length})
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+            <h2 className="text-sm font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+              LIVE QUEUE ({queue.length} Total • {waitingPatients.length} Waiting)
+            </h2>
+          </div>
           <span className="text-xs text-[#86868B]">
             1-Click Call Bell plays dual-harmonic speaker tone
           </span>
@@ -595,78 +668,97 @@ export default function DashboardDeskPage() {
                 <th className="px-5 py-3.5">Patient</th>
                 <th className="px-5 py-3.5">Phone</th>
                 <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Fee & Reconciliation</th>
+                <th className="px-5 py-3.5">Payment Status</th>
                 <th className="px-5 py-3.5 text-right">Counter Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06]">
               {queue.map(item => (
                 <tr key={item.token_number} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition">
-                  <td className="px-5 py-4 font-bold font-mono text-base text-[#1D1D1F] dark:text-white">
-                    #{item.token_number}
+                  <td className="px-5 py-4">
+                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-mono font-black text-sm">
+                      #{item.token_number}
+                    </div>
                   </td>
                   <td className="px-5 py-4">
-                    <div className="font-semibold text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
-                      <span>{item.patient_name}</span>
+                    <div className="font-bold text-sm text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                      <span>#{item.token_number} {item.patient_name}</span>
                       {item.is_walk_in && (
-                        <span className="rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-2 py-0.5 text-[10px] font-semibold text-[#86868B]">
+                        <span className="rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 px-2 py-0.5 text-[10px] font-bold">
                           Walk-In
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-[#86868B] mt-0.5">{item.time_slot}</div>
+                    <div className="text-[11px] text-[#86868B] mt-0.5">{item.time_slot}</div>
                   </td>
-                  <td className="px-5 py-4 text-[#86868B] font-mono">
+                  <td className="px-5 py-4 text-[#86868B] font-mono text-xs">
                     {item.patient_phone}
                   </td>
                   <td className="px-5 py-4">
                     {item.status === "in_consultation" ? (
-                      <span className="rounded-full bg-apple-teal/10 text-apple-teal dark:text-[#30D1BE] px-2.5 py-0.5 text-[11px] font-medium">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-bold">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
                         In Chamber
                       </span>
                     ) : item.status === "waiting" ? (
-                      <span className="rounded-full bg-apple-amber/10 text-apple-amber dark:text-[#FF9F0A] px-2.5 py-0.5 text-[11px] font-medium">
-                        Waiting
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1 text-xs font-bold">
+                        <Clock className="h-3.5 w-3.5" />
+                        Waiting in Lounge
                       </span>
                     ) : (
-                      <span className="rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-2.5 py-0.5 text-[11px] font-normal text-[#86868B]">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-3 py-1 text-xs font-medium text-[#86868B]">
+                        <Check className="h-3.5 w-3.5" />
                         Completed
                       </span>
                     )}
                   </td>
                   <td className="px-5 py-4">
                     <button
+                      type="button"
                       onClick={() => handleTogglePayment(item.token_number)}
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium transition active:scale-95 ${
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs ${
                         item.payment_status === "paid"
-                          ? "bg-apple-teal/10 text-apple-teal hover:bg-apple-teal/20 dark:text-[#30D1BE]"
-                          : "bg-apple-amber/10 text-apple-amber hover:bg-apple-amber/20 dark:text-[#FF9F0A]"
+                          ? "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-500/20"
+                          : "bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:text-rose-300 border border-rose-500/20 animate-pulse"
                       }`}
+                      title="Tap to toggle payment status"
                     >
-                      <Check className="h-3 w-3" />
-                      ₹{item.fee_amount} ({item.payment_mode.toUpperCase()}) • {item.payment_status}
+                      {item.payment_status === "paid" ? (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                          <span>PAID (₹{item.fee_amount} {item.payment_mode.toUpperCase()}) ✅</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="h-3.5 w-3.5 text-rose-600" />
+                          <span>PENDING (Collect ₹{item.fee_amount}) ⚠️</span>
+                        </>
+                      )}
                     </button>
                   </td>
                   <td className="px-5 py-4 text-right">
-                    {item.status === "waiting" ? (
-                      <button
-                        onClick={() => handleCallToken(item.token_number, item.patient_name)}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue hover:bg-[#0077ED] px-3.5 py-1.5 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
-                      >
-                        <Volume2 className="h-3.5 w-3.5" />
-                        Call Token
-                      </button>
-                    ) : item.status === "in_consultation" ? (
-                      <Link
-                        href="/dashboard/consult/APT-DERMA-102"
-                        className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition"
-                      >
-                        <span>Open ℞ Studio</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    ) : (
-                      <span className="text-[11px] text-[#86868B] font-medium">Done</span>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {item.status === "waiting" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleCallToken(item.token_number, item.patient_name)}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs active:scale-95 transition cursor-pointer"
+                        >
+                          <Volume2 className="h-3.5 w-3.5" />
+                          Call Token
+                        </button>
+                      ) : item.status === "in_consultation" ? (
+                        <Link
+                          href="/dashboard/consult/APT-DERMA-102"
+                          className="inline-flex items-center gap-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition"
+                        >
+                          <span>Open ℞ Pad</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      ) : (
+                        <span className="text-[11px] text-[#86868B] font-medium">Done</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
