@@ -170,11 +170,11 @@ export default function ForDoctorsPage() {
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 rounded-full bg-black/[0.04] p-1 dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.06]">
+            <a href="#why-clinicos" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
+              Why ClinicOS?
+            </a>
             <a href="#cockpits" className="rounded-full px-4 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-white dark:text-white dark:hover:bg-white/10 transition shadow-sm">
               5 Core Tools
-            </a>
-            <a href="#comparison" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
-              Why ClinicOS?
             </a>
             <a href="#legacy-contrast" className="rounded-full px-4 py-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white transition">
               Vs. Legacy Aggregators
@@ -265,43 +265,123 @@ export default function ForDoctorsPage() {
             </Link>
           </div>
 
-          {/* 4 Trust Badges */}
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-            <div className="rounded-2xl border border-black/[0.06] bg-white p-4 dark:border-white/[0.08] dark:bg-[#161618] shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#0071E3] dark:text-[#2997FF]">
-                <CheckCircle2 className="h-4 w-4" /> NMC Compliant
+          {/* Quick Trust Highlights */}
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs font-semibold text-[#6E6E73] dark:text-[#8E8E93]">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span>0% Platform Commission</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#0071E3]" />
+              <span>NMC Generic Compliant</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
+              <span>9 PM Cash Drawer Settlement</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-purple-500" />
+              <span>Offline-Resilient Speed</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 2. WHY CLINICOS: 4 CORE VALUE PILLARS */}
+      <section id="why-clinicos" className="scroll-mt-16 py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#101114] border-t border-b border-black/[0.06] dark:border-white/[0.08]">
+        <div className="mx-auto max-w-6xl">
+          
+          <div className="text-center max-w-3xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+              Why ClinicOS?
+            </span>
+            <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
+              Built for Doctor Autonomy, OPD Speed, and Compliance.
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-[#6E6E73] dark:text-[#A1A1A6]">
+              Unlike hospital EMRs built for corporate billing or aggregators designed to siphon your patient relationships, ClinicOS gives the independent Indian doctor full practice sovereignty.
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+            
+            {/* Pillar 1: 0% Commission */}
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-4">
+                <ShieldCheck className="h-5 w-5" />
               </div>
-              <p className="mt-1 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6] leading-snug">
-                UPPERCASE generic chemical names enforced automatically.
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Direct Revenue
+              </div>
+              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                0% Platform Commission
+              </h3>
+              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                100% of patient consultation fees go directly to your personal UPI QR code or clinic cash drawer. Zero commissions, zero middleman escrow.
               </p>
+              <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                ✓ 100% Doctor-Owned
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-black/[0.06] bg-white p-4 dark:border-black/[0.08] dark:bg-[#161618] shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                <ShieldCheck className="h-4 w-4" /> 0% Platform Commission
+            {/* Pillar 2: NMC Compliant */}
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-[#0071E3] dark:text-[#2997FF] mb-4">
+                <CheckCircle2 className="h-5 w-5" />
               </div>
-              <p className="mt-1 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6] leading-snug">
-                100% of patient fees go directly to your personal UPI or cash drawer.
+              <div className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+                Audit Proof
+              </div>
+              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                NMC Generic Compliance
+              </h3>
+              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                Automatically enforces UPPERCASE generic chemical molecule names on every prescription to protect your license during clinical audits.
               </p>
+              <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-[#0071E3] dark:text-[#2997FF]">
+                ✓ NMC Registered Guidelines
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-black/[0.06] bg-white p-4 dark:border-black/[0.08] dark:bg-[#161618] shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                <IndianRupee className="h-4 w-4" /> 9 PM EOD Settlement
+            {/* Pillar 3: 9 PM EOD Settlement */}
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-4">
+                <IndianRupee className="h-5 w-5" />
               </div>
-              <p className="mt-1 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6] leading-snug">
-                Physical denomination counting &amp; visiting consultant splits.
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                Zero Discrepancy
+              </div>
+              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                9 PM EOD Settlement
+              </h3>
+              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                Replaces messy Excel sheets with a 5-minute cash drawer denomination sheet (₹500/₹200/₹100) and automated visiting doctor revenue share calculations.
               </p>
+              <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                ✓ Cryptographic Day Lock
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-black/[0.06] bg-white p-4 dark:border-black/[0.08] dark:bg-[#161618] shadow-2xs">
-              <div className="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400">
-                <Zap className="h-4 w-4" /> Offline-Resilient
+            {/* Pillar 4: Offline-Resilient */}
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 mb-4">
+                <Zap className="h-5 w-5" />
               </div>
-              <p className="mt-1 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6] leading-snug">
-                Works seamlessly through spotty internet and clinic power drops.
+              <div className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                High Throughput
+              </div>
+              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                Offline-Resilient Speed
+              </h3>
+              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                Sub-50ms keystroke response designed for busy morning rushes. Keeps functioning seamlessly during clinic power fluctuations or spotty internet drops.
               </p>
+              <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-purple-700 dark:text-purple-400">
+                ✓ Zero Keystroke Lag
+              </div>
             </div>
+
           </div>
 
         </div>
@@ -453,14 +533,13 @@ export default function ForDoctorsPage() {
       </section>
 
       {/* 4. COMPARISON: CLINICOS VS. LEGACY AGGREGATOR PLATFORMS */}
-      <section id="comparison" className="scroll-mt-16 py-16 px-4 sm:px-6 lg:px-8 bg-[#F5F6F9] dark:bg-[#090A0C]">
-        <div id="legacy-contrast" className="scroll-mt-20" />
-        <div id="why-clinicos" className="scroll-mt-20" />
+      <section id="legacy-contrast" className="scroll-mt-16 py-16 px-4 sm:px-6 lg:px-8 bg-[#F5F6F9] dark:bg-[#090A0C]">
+        <div id="comparison" className="scroll-mt-20" />
         <div className="mx-auto max-w-5xl">
           
           <div className="text-center max-w-3xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              Why ClinicOS? • The Fundamental Difference
+              Direct Head-to-Head Comparison
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
               Legacy Aggregator Platforms vs. ClinicOS
