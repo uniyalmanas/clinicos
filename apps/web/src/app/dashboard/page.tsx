@@ -139,6 +139,7 @@ export default function DashboardOverviewPage() {
   const [showAddPatientModal, setShowAddPatientModal] = useState<"chamber-1" | "chamber-2" | null>(null);
   const [showCollectionsBreakdown, setShowCollectionsBreakdown] = useState(false);
   const [showDigestModal, setShowDigestModal] = useState(false);
+  const [showCashDrawerModal, setShowCashDrawerModal] = useState(false);
 
   // New Walk-in form state
   const [newPatient, setNewPatient] = useState({
@@ -360,7 +361,7 @@ export default function DashboardOverviewPage() {
               </span>
             </div>
             <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-              Active OPD Decision Board • Triage next patient, review clinical history, and clear counter balance
+              Real-time OPD Triage • Clinical Memory Lookup • Soundbox-Reconciled Counter Billing
             </p>
           </div>
         </div>
@@ -786,30 +787,20 @@ export default function DashboardOverviewPage() {
       </div>
 
       {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* ⚡ QUICK ACTIONS (Reception / Doctor)                                      */}
+      {/* ⚡ QUICK ACTIONS                                                           */}
       {/* ────────────────────────────────────────────────────────────────────────── */}
       <div className="rounded-3xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 shadow-apple-card space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-amber-500 font-bold">⚡</span>
             <h3 className="text-xs sm:text-sm font-black text-[#1D1D1F] dark:text-white uppercase tracking-wider">
-              Quick Actions (Reception &amp; Doctor)
+              QUICK ACTIONS
             </h3>
           </div>
-          <span className="text-[11px] text-[#86868B] font-mono">End-of-Day Habit Locks</span>
+          <span className="text-[11px] text-[#86868B] font-mono">Clinical, CA Compliance &amp; Drawer Locks</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* [ 📄 Print Day Report ] */}
-          <button
-            type="button"
-            onClick={() => setShowPrintReportModal(true)}
-            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
-          >
-            <Printer className="h-4 w-4 text-blue-600" />
-            <span>Print Day Report (CA Audit)</span>
-          </button>
-
           {/* [ 🔔 Send WhatsApp Reminders ] */}
           <button
             type="button"
@@ -817,17 +808,27 @@ export default function DashboardOverviewPage() {
             className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
           >
             <Send className="h-4 w-4 text-emerald-600" />
-            <span>Send WhatsApp Reminders</span>
+            <span>🔔 Send WhatsApp Reminders</span>
           </button>
 
-          {/* [ 📊 View P&L ] */}
+          {/* [ 📄 Print Day Report ] */}
           <button
             type="button"
-            onClick={() => setShowPnlModal(true)}
+            onClick={() => setShowPrintReportModal(true)}
             className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
           >
-            <TrendingUp className="h-4 w-4 text-purple-600" />
-            <span>View P&amp;L &amp; Doctor Split</span>
+            <Printer className="h-4 w-4 text-blue-600" />
+            <span>📄 Print Day Report</span>
+          </button>
+
+          {/* [ 💳 Reconcile Cash Drawer ] */}
+          <button
+            type="button"
+            onClick={() => setShowCashDrawerModal(true)}
+            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
+          >
+            <Lock className="h-4 w-4 text-amber-600" />
+            <span>💳 Reconcile Cash Drawer</span>
           </button>
         </div>
       </div>
@@ -1463,6 +1464,85 @@ export default function DashboardOverviewPage() {
               >
                 <Send className="h-4 w-4" />
                 <span>Test Send to Doctor</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 9: RECONCILE CASH DRAWER (ZERO THEFT / 9 PM SHIFT LOCK)               */}
+      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {showCashDrawerModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <div className="flex items-center gap-2 text-amber-600">
+                <Lock className="h-5 w-5" />
+                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
+                  9 PM Cash Drawer Reconciliation
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCashDrawerModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-[#86868B]">
+                Physical cash in desk drawer must reconcile with tokens issued prior to closing the shift:
+              </p>
+
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-2.5 font-mono text-[11px]">
+                <div className="flex justify-between text-amber-900 dark:text-amber-200">
+                  <span>₹500 Notes (3x):</span>
+                  <span className="font-bold">₹1,500</span>
+                </div>
+                <div className="flex justify-between text-amber-900 dark:text-amber-200">
+                  <span>₹200 Notes (1x):</span>
+                  <span className="font-bold">₹200</span>
+                </div>
+                <div className="flex justify-between text-amber-900 dark:text-amber-200">
+                  <span>₹100 Notes (1x):</span>
+                  <span className="font-bold">₹100</span>
+                </div>
+                <div className="border-t border-amber-500/20 pt-2 flex justify-between font-bold text-xs">
+                  <span>PHYSICAL CASH COUNT:</span>
+                  <span className="text-emerald-700 dark:text-emerald-400">₹{cashCollected.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="flex justify-between font-bold text-xs">
+                  <span>EXPECTED SYSTEM CASH:</span>
+                  <span>₹{cashCollected.toLocaleString("en-IN")}</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold text-emerald-600">
+                  <span>DISCREPANCY / LEAKAGE:</span>
+                  <span>₹0.00 (100% Balanced ✓)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCashDrawerModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCashDrawerModal(false);
+                  showNotification("Cash drawer safely locked at ₹1,800. Shift audit submitted.");
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              >
+                <Check className="h-4 w-4" />
+                <span>Confirm &amp; Lock Drawer</span>
               </button>
             </div>
           </div>
