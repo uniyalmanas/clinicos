@@ -360,7 +360,7 @@ export default function DashboardOverviewPage() {
               </span>
             </div>
             <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-              Real-time OPD triage, clinical memory lookup, and soundbox-reconciled counter billing
+              Active OPD Decision Board • Triage next patient, review clinical history, and clear counter balance
             </p>
           </div>
         </div>
