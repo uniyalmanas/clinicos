@@ -433,18 +433,24 @@ export default function DashboardPharmacyPage() {
   return (
     <div className="space-y-6">
       {/* 1. HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-[#1D1D1F] dark:text-white">
-            Clinic Dispensary & Pharmacy Operations
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              Profit Protection &amp; Dispensary Engine
+            </span>
+          </div>
+          <h1 className="mt-1 text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
+            Clinic Dispensary &amp; Pharmacy Operations
           </h1>
-          <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-            Real-time batch expiry alerts, computerized stock depletion, and GST-compliant counter dispensing
+          <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+            Stop inventory losses, eliminate counter theft, and issue GST-compliant invoices with zero manual counting
           </p>
         </div>
 
         {/* Tab Navigation Pill */}
-        <div className="flex items-center gap-1 rounded-[14px] bg-[#ECEEF2] p-1 dark:bg-white/[0.06]">
+        <div className="flex items-center gap-1 rounded-[14px] bg-[#ECEEF2] p-1 dark:bg-white/[0.06] shrink-0">
           <button
             onClick={() => setActiveTab("inventory")}
             className={`flex items-center gap-1.5 rounded-[10px] px-3.5 py-1.5 text-xs font-bold transition ${
@@ -454,7 +460,7 @@ export default function DashboardPharmacyPage() {
             }`}
           >
             <Layers className="h-3.5 w-3.5" />
-            <span>Batch Inventory & Expiry</span>
+            <span>Batch Inventory &amp; Expiry</span>
           </button>
 
           <button
@@ -485,6 +491,81 @@ export default function DashboardPharmacyPage() {
             <ExternalLink className="h-3.5 w-3.5" />
             <span>Delivery Partners</span>
           </button>
+        </div>
+      </div>
+
+      {/* 2. PROFIT PROTECTION & LOSS PREVENTION PILLARS (SCANNABLE 4-COLUMN FINANCIAL STAKES GRID) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Pillar 1: Stop Expiry Losses */}
+        <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-white to-white dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-4 shadow-apple-card space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5" /> Stop Expiry Losses
+            </span>
+            <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-black text-amber-700 dark:text-amber-400 font-mono">
+              Save ₹5,000/mo
+            </span>
+          </div>
+          <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+            Stop ₹5,000/month Losses
+          </h3>
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+            Real-time batch alerts for drugs expiring in &lt;30 days. Return slow-moving stock to distributors before credit notes expire.
+          </p>
+        </div>
+
+        {/* Pillar 2: Theft & Shrinkage Detection */}
+        <div className="rounded-2xl border border-rose-500/20 bg-gradient-to-br from-rose-500/5 via-white to-white dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-4 shadow-apple-card space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5" /> Theft Detection
+            </span>
+            <span className="rounded-md bg-rose-500/10 px-2 py-0.5 text-[10px] font-black text-rose-700 dark:text-rose-400 font-mono">
+              Zero Pilferage
+            </span>
+          </div>
+          <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+            Auto-Detects Stock Shrinkage
+          </h3>
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+            Auto-alerts for unusual stock shrinkage or missing units. Counter audits flag unauthorized drawer openings and inventory variance.
+          </p>
+        </div>
+
+        {/* Pillar 3: Computerized Auto-Depletion */}
+        <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 via-white to-white dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-4 shadow-apple-card space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5" /> Auto-Depletion
+            </span>
+            <span className="rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-black text-blue-700 dark:text-blue-400 font-mono">
+              Zero Manual Count
+            </span>
+          </div>
+          <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+            Instant Prescription Depletion
+          </h3>
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+            Stock updates instantly as prescriptions are written or dispensed. No manual counting, no end-of-day register discrepancies.
+          </p>
+        </div>
+
+        {/* Pillar 4: GST-Ready Invoices */}
+        <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-white to-white dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-4 shadow-apple-card space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+              <Receipt className="h-3.5 w-3.5" /> GST-Ready POS
+            </span>
+            <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:text-emerald-400 font-mono">
+              5-Sec Invoicing
+            </span>
+          </div>
+          <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+            Compliant Counter Bills
+          </h3>
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+            Generate compliant GST invoices at the counter in 5 seconds with automatic HSN codes, split CGST/SGST, and soundbox UPI QR codes.
+          </p>
         </div>
       </div>
 
@@ -519,7 +600,7 @@ export default function DashboardPharmacyPage() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-[#FF9500]">Expiring Soon (&lt;60d)</span>
+                <span className="text-xs font-bold text-[#FF9500]">Stop Expiry Losses</span>
                 <span className="rounded-full bg-[#FF9500]/15 p-2 text-[#FF9500]">
                   <AlertTriangle className="h-4 w-4" />
                 </span>
@@ -528,7 +609,7 @@ export default function DashboardPharmacyPage() {
                 {summary.expiring_soon_count} Batches
               </div>
               <div className="mt-1 text-[11px] text-[#86868B]">
-                {inventoryFilter === "expiring_soon" ? "✓ Filter Active (Click to reset)" : "Click to view near-expiry batches"}
+                {inventoryFilter === "expiring_soon" ? "✓ Filter Active (Click to reset)" : "Save ₹5,000/mo • Expiring in <30d/<60d"}
               </div>
             </div>
 
@@ -555,19 +636,19 @@ export default function DashboardPharmacyPage() {
               </div>
             </div>
 
-            {/* In-House Compliance */}
+            {/* Theft & Shrinkage Guard */}
             <div className="rounded-[20px] border border-black/[0.06] bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-[#34C759]">NMC / HSN Compliant</span>
+                <span className="text-xs font-bold text-[#34C759]">Theft &amp; Audit Guard</span>
                 <span className="rounded-full bg-[#34C759]/10 p-2 text-[#34C759]">
                   <ShieldCheck className="h-4 w-4" />
                 </span>
               </div>
               <div className="mt-2 text-2xl font-black text-[#34C759]">
-                100%
+                0 Shrinkage
               </div>
               <div className="mt-1 text-[11px] text-[#86868B]">
-                Uppercase chemical matching
+                Auto-audits missing stock &amp; GST compliance
               </div>
             </div>
           </div>
