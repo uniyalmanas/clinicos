@@ -137,6 +137,9 @@ export default function DashboardDeskPage() {
   const [walkInFee, setWalkInFee] = useState(600);
   const [walkInPaymentMode, setWalkInPaymentMode] = useState<"cash" | "upi">("upi");
   const [calledTokenMsg, setCalledTokenMsg] = useState<string | null>(null);
+  const [isSearchingPhone, setIsSearchingPhone] = useState(false);
+  const [foundPatient, setFoundPatient] = useState<any>(null);
+  const [searchFeedback, setSearchFeedback] = useState<string | null>(null);
 
   // Automated WhatsApp Follow-up & Review Booster (Option B)
   const [showAutomationsModal, setShowAutomationsModal] = useState(false);
@@ -376,6 +379,58 @@ export default function DashboardDeskPage() {
     }
   };
 
+  const handlePhoneChange = async (value: string) => {
+    setWalkInPhone(value);
+    const cleanDigits = value.replace(/\D/g, "").slice(-10);
+
+    if (cleanDigits.length === 10) {
+      setIsSearchingPhone(true);
+      setSearchFeedback("Searching Clinic Memory...");
+      try {
+        const res = await fetch(`/api/patients/${cleanDigits}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.patientProfile?.full_name && data.patientProfile.full_name !== "Patient") {
+            setFoundPatient(data);
+            setWalkInName(data.patientProfile.full_name);
+
+            // Check follow-up fee validity
+            const lastVisit = data.visits?.[0];
+            const visitCount = data.total_visits || data.visits?.length || 1;
+
+            let isFreeFollowup = false;
+            if (lastVisit?.visit_date) {
+              const daysDiff = (Date.now() - new Date(lastVisit.visit_date).getTime()) / (1000 * 60 * 60 * 24);
+              if (daysDiff <= 7) {
+                isFreeFollowup = true;
+                setWalkInFee(0);
+              } else if (daysDiff <= 14) {
+                setWalkInFee(300);
+              } else {
+                setWalkInFee(600);
+              }
+            }
+
+            setSearchFeedback(
+              `✅ Returning Patient: ${data.patientProfile.full_name} (${data.patientProfile.age || '25'}${data.patientProfile.gender?.[0] || 'M'}) • ${visitCount} previous visits • ${isFreeFollowup ? '🎉 Free Follow-up (Within 7 Days)' : 'Follow-up Active'}`
+            );
+            return;
+          }
+        }
+        setFoundPatient(null);
+        setSearchFeedback("✨ New Patient: Enter full name & details to create permanent health record.");
+      } catch (err) {
+        setFoundPatient(null);
+        setSearchFeedback(null);
+      } finally {
+        setIsSearchingPhone(false);
+      }
+    } else {
+      setFoundPatient(null);
+      setSearchFeedback(null);
+    }
+  };
+
   const handleAdmitWalkIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!walkInName || !walkInPhone) return;
@@ -394,9 +449,13 @@ export default function DashboardDeskPage() {
         })
       });
 
+      playTokenCallChime();
+
       if (res.ok) {
         const data = await res.json();
         setQueue(prev => [...prev, data.appointment]);
+        const assignedToken = data.appointment?.token_number;
+        setCalledTokenMsg(`✅ Token #${assignedToken} Generated for ${walkInName}`);
       } else {
         const nextTokenNum = Math.max(...queue.map(q => q.token_number), 0) + 1;
         setQueue(prev => [
@@ -414,6 +473,7 @@ export default function DashboardDeskPage() {
             is_walk_in: true
           }
         ]);
+        setCalledTokenMsg(`✅ Token #${nextTokenNum} Generated for ${walkInName}`);
       }
     } catch {
       const nextTokenNum = Math.max(...queue.map(q => q.token_number), 0) + 1;
@@ -432,12 +492,14 @@ export default function DashboardDeskPage() {
           is_walk_in: true
         }
       ]);
+      setCalledTokenMsg(`✅ Token #${nextTokenNum} Generated for ${walkInName}`);
     } finally {
       setShowWalkInModal(false);
       setWalkInName("");
       setWalkInPhone("");
-      setCalledTokenMsg(`Admitted Walk-In (${walkInName})`);
-      setTimeout(() => setCalledTokenMsg(null), 4000);
+      setFoundPatient(null);
+      setSearchFeedback(null);
+      setTimeout(() => setCalledTokenMsg(null), 5000);
     }
   };
 
@@ -799,37 +861,72 @@ export default function DashboardDeskPage() {
               10-Second Walk-In Admission
             </h3>
             <p className="text-xs text-[#86868B] mt-1">
-              Assigns the next available live token number immediately
+              Enter phone number to auto-detect returning patient memory or register new patient
             </p>
 
             <form onSubmit={handleAdmitWalkIn} className="mt-5 space-y-3.5 text-xs">
+              {/* 1. PHONE NUMBER (FIRST) */}
               <div>
-                <label className="font-medium text-[#1D1D1F] dark:text-white">Patient Full Name</label>
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 text-apple-blue" />
+                    <span>1. Patient Mobile Number</span>
+                  </label>
+                  {isSearchingPhone && (
+                    <span className="text-[10px] text-apple-blue animate-pulse flex items-center gap-1">
+                      <RotateCw className="h-3 w-3 animate-spin" /> Searching...
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="tel"
+                  required
+                  autoFocus
+                  placeholder="e.g. 98765 43210 (10 digits)"
+                  value={walkInPhone}
+                  onChange={e => handlePhoneChange(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-sm font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 tracking-wider"
+                />
+              </div>
+
+              {/* CLINIC MEMORY STATUS BANNER */}
+              {searchFeedback && (
+                <div className={`p-2.5 rounded-xl border text-xs leading-relaxed animate-in fade-in duration-200 ${
+                  foundPatient 
+                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-900 dark:text-emerald-200" 
+                    : "bg-blue-500/10 border-blue-500/25 text-blue-900 dark:text-blue-200"
+                }`}>
+                  <div className="font-semibold flex items-center gap-1.5">
+                    {foundPatient ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" /> : <Sparkles className="h-3.5 w-3.5 text-blue-600 shrink-0" />}
+                    <span>{searchFeedback}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. PATIENT FULL NAME */}
+              <div>
+                <label className="font-medium text-[#1D1D1F] dark:text-white">
+                  2. Patient Full Name {foundPatient && <span className="text-emerald-600 text-[10px] font-bold font-mono">(Found in Records)</span>}
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Ramesh Chandra"
                   value={walkInName}
                   onChange={e => setWalkInName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30 font-medium"
                 />
               </div>
 
-              <div>
-                <label className="font-medium text-[#1D1D1F] dark:text-white">Mobile Number (WhatsApp Delivery)</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="+91 98765 43210"
-                  value={walkInPhone}
-                  onChange={e => setWalkInPhone(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 font-mono text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
-                />
-              </div>
-
+              {/* 3. FEE & PAYMENT MODE */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-medium text-[#1D1D1F] dark:text-white">Consultation Fee</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-medium text-[#1D1D1F] dark:text-white">Consultation Fee</label>
+                    {walkInFee === 0 && (
+                      <span className="text-[10px] text-emerald-600 font-black uppercase">Free</span>
+                    )}
+                  </div>
                   <input
                     type="number"
                     value={walkInFee}
@@ -860,9 +957,10 @@ export default function DashboardDeskPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-full bg-apple-blue py-2.5 font-semibold text-white shadow-apple-sm hover:bg-[#0077ED] active:scale-95 transition"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-apple-blue py-2.5 font-semibold text-white shadow-apple-sm hover:bg-[#0077ED] active:scale-95 transition"
                 >
-                  Confirm & Admit
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Admit &amp; Generate Token</span>
                 </button>
               </div>
             </form>

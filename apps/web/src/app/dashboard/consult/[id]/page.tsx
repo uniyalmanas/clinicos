@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { INDIAN_MEDICINES, COMMON_LAB_TESTS, MedicineItem, LabTestItem } from "@/data/medicines";
 import { API_BASE_URL } from "@/lib/api";
 import { 
@@ -86,9 +86,15 @@ interface PrescribedMedicine {
 }
 
 export default function DynamicConsultationStudioPage() {
+  const router = useRouter();
   const params = useParams();
   const appointmentId = (params?.id as string) || "APT-DERMA-102";
   const [isLoadingPatient, setIsLoadingPatient] = useState(true);
+  const [patientFee, setPatientFee] = useState<number>(600);
+  const [patientHistory, setPatientHistory] = useState<any>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSavingAndNext, setIsSavingAndNext] = useState(false);
+  const [nextPatientNotice, setNextPatientNotice] = useState<{ token: number; name: string; appointment_number: string } | null>(null);
 
   // Patient Demographic Information
   const [patient, setPatient] = useState({
@@ -173,6 +179,10 @@ export default function DynamicConsultationStudioPage() {
             setChiefComplaints(match.symptoms_description);
           }
 
+          if (match.fee_amount !== undefined) {
+            setPatientFee(Number(match.fee_amount));
+          }
+
           if (match.doctor_name) {
             setDoctor(prev => ({
               ...prev,
@@ -192,6 +202,26 @@ export default function DynamicConsultationStudioPage() {
     }
     loadAppointment();
   }, [appointmentId]);
+
+  // Fetch real patient clinical memory from PostgreSQL (past visits, diagnosis, baseline vitals, allergies)
+  useEffect(() => {
+    const cleanPh = patient.phone.replace(/[^0-9]/g, "").slice(-10);
+    if (cleanPh.length === 10) {
+      setIsLoadingHistory(true);
+      fetch(`/api/patients/${cleanPh}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.patient) {
+            setPatientHistory(data.patient);
+            if (data.patient.chronic_allergies && data.patient.chronic_allergies.length > 0) {
+              setPatient(p => ({ ...p, allergies: data.patient.chronic_allergies.join(", ") }));
+            }
+          }
+        })
+        .catch(err => console.error("Error loading patient memory:", err))
+        .finally(() => setIsLoadingHistory(false));
+    }
+  }, [patient.phone]);
 
   // Clinical Vitals with Quick-Pad Safety Radar
   const [vitals, setVitals] = useState({
@@ -276,7 +306,7 @@ export default function DynamicConsultationStudioPage() {
     return null;
   }, [vitals.sugar]);
 
-  // Past Patient Record & 1-Click Past Visit Clone
+  // Past Patient Record & 1-Click Past Visit Clone (Combines PostgreSQL memory + Seed patients)
   const pastPatientRecord = useMemo(() => {
     return SEED_PATIENTS.find(
       p => p.phone.replace(/\D/g, "").includes(patient.phone.replace(/\D/g, "")) ||
@@ -285,11 +315,14 @@ export default function DynamicConsultationStudioPage() {
   }, [patient.phone, patient.name]);
 
   const lastClinicalVisit = useMemo(() => {
+    if (patientHistory && patientHistory.visits && patientHistory.visits.length > 0) {
+      return patientHistory.visits[0];
+    }
     if (pastPatientRecord && pastPatientRecord.visits && pastPatientRecord.visits.length > 0) {
       return pastPatientRecord.visits[0];
     }
     return null;
-  }, [pastPatientRecord]);
+  }, [patientHistory, pastPatientRecord]);
 
   const clonePreviousRx = (extendDuration: boolean = false) => {
     if (!lastClinicalVisit) return;
@@ -314,7 +347,7 @@ export default function DynamicConsultationStudioPage() {
       }));
     }
 
-    const clonedMeds: PrescribedMedicine[] = (lastClinicalVisit.medications_summary || []).map((summaryStr, idx) => {
+    const clonedMeds: PrescribedMedicine[] = (lastClinicalVisit.medications_summary || []).map((summaryStr: string, idx: number) => {
       // Find matching medicine from catalog or preserve EXACT medicine written by doctor
       const cleanName = summaryStr.replace(/^(CAP|TAB|SYR|CREAM|LOTION|GEL|OINT)\s+/i, "").trim();
       const detectedForm = summaryStr.match(/^(CAP|TAB|SYR|CREAM|LOTION|GEL|OINT)/i)?.[0] || "Tablet";
@@ -1051,6 +1084,15 @@ export default function DynamicConsultationStudioPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ appointment_number: patient.appointment_number })
           }).catch(() => {}),
+          fetch(`/api/clinic/toggle-payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              appointment_number: patient.appointment_number,
+              payment_status: "paid",
+              payment_mode: "upi"
+            })
+          }).catch(() => {}),
           fetch(`/api/clinic/schedule-automations`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1117,6 +1159,154 @@ export default function DynamicConsultationStudioPage() {
     initAutomations(rxNumber);
     setSignedPrescription(rxData);
   };
+
+  // Play Acoustic Chime when calling or transitioning patients
+  const playCallChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.frequency.setValueAtTime(587.33, now);
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.5);
+
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.frequency.setValueAtTime(880.00, now + 0.2);
+      gain2.gain.setValueAtTime(0.3, now + 0.2);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.2);
+      osc2.stop(now + 0.8);
+    } catch (e) {}
+  };
+
+  // Continuous Clinic Loop: ⚡ SAVE & NEXT PATIENT (Steps 10-14)
+  const handleSaveAndNext = async () => {
+    setIsSavingAndNext(true);
+    try {
+      // 1. Sign Prescription & create SHA-256 seal
+      await handleSignPrescription();
+
+      // 2. Fetch queue to locate the next waiting patient
+      const qRes = await fetch(`/api/clinic/desk-queue`);
+      let nextApt: any = null;
+      if (qRes.ok) {
+        const qJson = await qRes.json();
+        const waitingList = (qJson.queue || []).filter(
+          (a: any) =>
+            (a.status === "waiting" || a.status === "in_waiting" || a.status === "confirmed") &&
+            String(a.appointment_number).trim() !== String(patient.appointment_number).trim() &&
+            Number(a.token_number) !== Number(patient.token_number)
+        );
+        if (waitingList.length > 0) {
+          nextApt = waitingList[0];
+        }
+      }
+
+      if (nextApt) {
+        setNextPatientNotice({
+          token: nextApt.token_number,
+          name: nextApt.patient_name,
+          appointment_number: nextApt.appointment_number
+        });
+
+        // 3. Automatically call next token on server
+        try {
+          await fetch(`/api/clinic/call-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              appointment_number: nextApt.appointment_number,
+              chamber_name: doctor.clinic_name
+            })
+          });
+        } catch (e) {}
+
+        playCallChime();
+
+        // 4. Smoothly advance to next patient's consultation studio
+        setTimeout(() => {
+          router.push(`/dashboard/consult/${nextApt.appointment_number}`);
+        }, 1100);
+      } else {
+        setComboToast("🎉 All waiting patients in queue attended! Excellent work Doctor.");
+        setTimeout(() => setComboToast(null), 5000);
+      }
+    } catch (err) {
+      console.error("Save & next error:", err);
+    } finally {
+      setIsSavingAndNext(false);
+    }
+  };
+
+  // Advance to next patient from Signed Prescription view
+  const handleAdvanceToNextPatient = async () => {
+    try {
+      const qRes = await fetch(`/api/clinic/desk-queue`);
+      let nextApt: any = null;
+      if (qRes.ok) {
+        const qJson = await qRes.json();
+        const waitingList = (qJson.queue || []).filter(
+          (a: any) =>
+            (a.status === "waiting" || a.status === "in_waiting" || a.status === "confirmed") &&
+            String(a.appointment_number).trim() !== String(patient.appointment_number).trim() &&
+            Number(a.token_number) !== Number(patient.token_number)
+        );
+        if (waitingList.length > 0) nextApt = waitingList[0];
+      }
+
+      if (nextApt) {
+        setNextPatientNotice({
+          token: nextApt.token_number,
+          name: nextApt.patient_name,
+          appointment_number: nextApt.appointment_number
+        });
+
+        try {
+          await fetch(`/api/clinic/call-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              appointment_number: nextApt.appointment_number,
+              chamber_name: doctor.clinic_name
+            })
+          });
+        } catch (e) {}
+
+        playCallChime();
+
+        setTimeout(() => {
+          router.push(`/dashboard/consult/${nextApt.appointment_number}`);
+        }, 1000);
+      } else {
+        alert("🎉 All waiting patients have been attended! Returning to Chambers.");
+        router.push(`/dashboard/chambers`);
+      }
+    } catch (e) {
+      router.push(`/dashboard/chambers`);
+    }
+  };
+
+  // Keyboard Shortcut: Ctrl + Enter (or Cmd + Enter) triggers "Save & Next"
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        if (!isSigning && !isSavingAndNext) {
+          handleSaveAndNext();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSigning, isSavingAndNext, prescribedItems, provisionalDiagnosis, chiefComplaints, vitals, patient]);
 
   const cleanPhone = patient.phone.replace(/[^0-9]/g, "");
   const waShareText = `🏥 *Prescription - ${doctor.clinic_name}*\nHello ${patient.name}, Dr. Rahul Sharma has signed your prescription (#${signedPrescription?.prescription_number || "RX-2026"}).\nView & Download: http://localhost:3000/p/${signedPrescription?.prescription_number || "RX-2026-09-0014"}`;
@@ -1676,6 +1866,15 @@ export default function DynamicConsultationStudioPage() {
                 </button>
 
                 <button
+                  onClick={handleAdvanceToNextPatient}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-4 py-2 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition cursor-pointer"
+                  title="Call and advance to next waiting patient in queue"
+                >
+                  <Zap className="h-3.5 w-3.5 fill-current" />
+                  <span>⚡ Next Patient ➔</span>
+                </button>
+
+                <button
                   onClick={() => setSignedPrescription(null)}
                   className="rounded-full border border-black/[0.1] dark:border-white/[0.12] px-3.5 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
                 >
@@ -1690,6 +1889,54 @@ export default function DynamicConsultationStudioPage() {
                 <span>{dispatchFeedback}</span>
               </div>
             )}
+
+            {/* ₹500 CONSULTATION BILL & DYNAMIC UPI QR / SOUNDBOX RECONCILIATION CARD */}
+            <div className="rounded-[24px] border border-emerald-500/25 bg-gradient-to-r from-emerald-500/[0.06] via-teal-500/[0.04] to-emerald-500/[0.02] dark:from-emerald-950/30 dark:to-teal-950/20 p-5 shadow-apple-card space-y-4 print:hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex-shrink-0 font-bold font-mono">
+                    <IndianRupee className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                        Official Consultation Bill Created
+                      </span>
+                      <span className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 border border-emerald-500/20">
+                        Bill #INV-2026-09-{String(patient.token_number || 1).padStart(4, "0")}
+                      </span>
+                      <span className="rounded-full bg-blue-500/10 text-blue-700 dark:text-sky-300 text-[10px] font-bold px-2 py-0.5">
+                        Auto-Recorded in EOD Ledger
+                      </span>
+                    </div>
+                    <div className="text-sm font-black text-[#1D1D1F] dark:text-white mt-0.5">
+                      ₹{patientFee} OPD Consultation Fee ({doctor.name})
+                    </div>
+                  </div>
+                </div>
+
+                {/* UPI Intent & Soundbox status */}
+                <div className="flex items-center gap-3">
+                  <div className="text-right text-xs">
+                    <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 justify-end">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Soundbox Reconciled
+                    </div>
+                    <div className="text-[10px] text-[#86868B] font-mono">
+                      UPI ID: {doctor.slug?.includes("aditi") ? "joshi.dental@icici" : "dermacare@icici"}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-white p-1 border border-black/[0.08] dark:border-white/[0.1] shadow-sm">
+                    <QRCodeDisplay
+                      value={`upi://pay?pa=dermacare@icici&pn=DermaCareClinic&am=${patientFee}&cu=INR&tn=Consultation-Token-${patient.token_number}`}
+                      size={48}
+                      level="M"
+                      fgColor="#000000"
+                      bgColor="#FFFFFF"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
 
             {/* Letterhead Calibrator Drawer */}
@@ -2334,7 +2581,95 @@ export default function DynamicConsultationStudioPage() {
       ) : (
 
         /* ================= DRAFTING CONSULTATION STUDIO ================= */
-        <div className="grid gap-6 lg:grid-cols-12">
+        <div className="space-y-5">
+          {/* DRUG ALLERGY WARNING BANNER */}
+          {patient.allergies && !patient.allergies.toLowerCase().includes("no known drug") && (
+            <div className="rounded-[22px] border-2 border-red-500/50 bg-red-500/10 dark:bg-red-950/40 p-4 text-xs font-semibold text-red-700 dark:text-red-300 flex items-center justify-between shadow-apple-sm animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <AlertOctagon className="h-5 w-5 text-red-600 flex-shrink-0 animate-pulse" />
+                <div>
+                  <div className="font-bold text-sm text-red-800 dark:text-red-200">
+                    ⚠️ CLINICAL DRUG ALLERGY RECORDED: {patient.allergies}
+                  </div>
+                  <div className="text-[11px] text-red-700/90 dark:text-red-300/80 mt-0.5">
+                    High-risk cross-sensitivity radar is active. Beta-lactams & high-risk triggers will be evaluated on sign.
+                  </div>
+                </div>
+              </div>
+              <span className="rounded-full bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider flex-shrink-0">
+                Safety Locked
+              </span>
+            </div>
+          )}
+
+          {/* CLINICAL MEMORY: RETURNING PATIENT RECORD (HISTORY ALREADY VISIBLE) */}
+          {lastClinicalVisit && (
+            <div className="rounded-[28px] border border-apple-blue/20 bg-gradient-to-r from-apple-blue/[0.06] via-indigo-500/[0.04] to-purple-500/[0.04] dark:from-apple-blue/15 dark:to-purple-950/20 p-5 shadow-apple-card space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-apple-blue/15 text-apple-blue dark:text-sky-300 flex-shrink-0">
+                    <History className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wider text-apple-blue dark:text-sky-400">
+                        🔁 Clinical Memory: Returning Patient Record
+                      </span>
+                      <span className="rounded-full bg-apple-blue/10 dark:bg-apple-blue/20 text-apple-blue dark:text-sky-300 text-[10px] font-bold px-2.5 py-0.5 border border-apple-blue/20">
+                        Prior Visit: {lastClinicalVisit.visit_date}
+                      </span>
+                      <span className="text-[10px] text-[#86868B]">
+                        by {lastClinicalVisit.doctor_name}
+                      </span>
+                      {patientHistory?.total_visits && (
+                        <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 font-mono">
+                          {patientHistory.total_visits} Total Visits
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs font-bold text-[#1D1D1F] dark:text-white mt-1">
+                      Prior Diagnosis: {lastClinicalVisit.provisional_diagnosis || "General Outpatient Assessment"}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-[#86868B] flex-wrap">
+                      {lastClinicalVisit.vitals && (
+                        <span className="font-mono bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded text-[10px]">
+                          Baseline: BP {lastClinicalVisit.vitals.bp || "120/80"} • Pulse {lastClinicalVisit.vitals.pulse || "76"} • Wt {lastClinicalVisit.vitals.weight || "60"}kg
+                        </span>
+                      )}
+                      <span>Past Meds:</span>
+                      {lastClinicalVisit.medications_summary?.map((m: string, i: number) => (
+                        <span key={i} className="px-2 py-0.5 rounded-md bg-white/70 dark:bg-white/10 font-mono text-[10px] text-[#1D1D1F] dark:text-gray-200 border border-black/[0.05] dark:border-white/[0.08]">
+                          {m}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0 pt-1 sm:pt-0">
+                  <button
+                    type="button"
+                    onClick={() => clonePreviousRx(false)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 text-xs font-bold shadow-apple-sm transition active:scale-95 cursor-pointer"
+                  >
+                    <Zap className="h-3.5 w-3.5 fill-current" />
+                    <span>🔄 Reuse Previous Rx</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => clonePreviousRx(true)}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-black/[0.1] dark:border-white/[0.12] text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] px-3.5 py-2 text-xs font-semibold transition active:scale-95 cursor-pointer"
+                    title="Clone prescription with 30-day extended duration for chronic refill"
+                  >
+                    <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+                    <span>📅 Extend 30 Days</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-6 lg:grid-cols-12">
           {/* LEFT: CLINICAL INPUTS & EXAMINATIONS */}
           <div className="lg:col-span-4 space-y-6">
             {/* Vitals Recording - Upgraded Quick-Pad with Safety Radar */}
@@ -3121,29 +3456,78 @@ export default function DynamicConsultationStudioPage() {
 
               {/* ACTION FOOTER */}
               <div className="pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-xs text-[#86868B]">
-                  <ShieldCheck className="h-4 w-4 text-apple-blue" />
-                  <span>NMC Generic Standards & SHA-256 Signature Activated</span>
+                <div className="flex items-center gap-2.5 text-xs text-[#86868B]">
+                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>₹{patientFee} Bill &amp; UPI QR Auto-Attached</span>
+                  </div>
+                  <span>•</span>
+                  <span>SHA-256 Activated</span>
                 </div>
 
-                <button
-                  onClick={handleSignPrescription}
-                  disabled={isSigning}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue hover:bg-[#0077ED] px-7 py-3.5 text-sm font-semibold text-white shadow-apple-sm active:scale-[0.98] transition disabled:opacity-50"
-                >
-                  {isSigning ? (
-                    <>
-                      <RotateCw className="h-5 w-5 animate-spin" />
-                      <span>Cryptographically Signing & Sealing Rx...</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="h-5 w-5" />
-                      <span>Sign Prescription & Generate Official Rx</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {/* Standard Sign & Review */}
+                  <button
+                    type="button"
+                    onClick={handleSignPrescription}
+                    disabled={isSigning || isSavingAndNext}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-black/[0.1] dark:border-white/[0.15] bg-white dark:bg-[#2C2C2E] hover:bg-black/[0.03] dark:hover:bg-white/[0.05] px-5 py-3 text-xs font-bold text-[#1D1D1F] dark:text-white shadow-sm active:scale-[0.98] transition disabled:opacity-50 cursor-pointer"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-apple-blue" />
+                    <span>Sign &amp; Review Rx</span>
+                  </button>
+
+                  {/* ⚡ SAVE & NEXT PATIENT (Continuous Clinic Loop) */}
+                  <button
+                    type="button"
+                    onClick={handleSaveAndNext}
+                    disabled={isSigning || isSavingAndNext}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 px-6 py-3 text-xs font-bold text-white shadow-apple-md active:scale-[0.98] transition disabled:opacity-50 cursor-pointer"
+                    title="Sign prescription, record ₹500 bill, dispatch WhatsApp, and call next patient (Ctrl + Enter)"
+                  >
+                    {isSavingAndNext ? (
+                      <>
+                        <RotateCw className="h-4 w-4 animate-spin" />
+                        <span>Saving, Dispatching &amp; Calling Next...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4 fill-white text-white" />
+                        <span>⚡ Save &amp; Next Patient ➔</span>
+                        <span className="rounded bg-white/20 px-1.5 py-0.2 text-[10px] font-mono text-white/90">
+                          Ctrl + ↵
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Floating Transition Modal for Next Patient (Zero Interruption) */}
+      {nextPatientNotice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1C1C1E] p-6 rounded-[28px] border border-emerald-500/30 shadow-apple-modal text-center space-y-4 max-w-sm w-full mx-4">
+            <div className="h-14 w-14 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto animate-bounce">
+              <CheckCheck className="h-7 w-7" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-[#1D1D1F] dark:text-white">Prescription Signed &amp; Dispatched!</h3>
+              <p className="text-xs text-[#86868B] mt-1">₹{patientFee} Bill created &amp; auto-recorded in clinic EOD ledger.</p>
+            </div>
+            <div className="p-3.5 rounded-2xl bg-apple-blue/10 border border-apple-blue/20">
+              <div className="text-[10px] font-bold text-apple-blue uppercase tracking-wider">Calling Next Patient</div>
+              <div className="text-lg font-black text-[#1D1D1F] dark:text-white mt-0.5">
+                Token #{nextPatientNotice.token} • {nextPatientNotice.name}
+              </div>
+            </div>
+            <div className="text-[11px] text-[#86868B] flex items-center justify-center gap-1.5 animate-pulse">
+              <RotateCw className="h-3.5 w-3.5 animate-spin text-apple-blue" />
+              <span>Opening Consultation Studio...</span>
             </div>
           </div>
         </div>

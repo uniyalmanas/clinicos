@@ -23,7 +23,8 @@ import {
   Layers,
   ArrowRight,
   ShieldCheck,
-  BadgeCheck
+  BadgeCheck,
+  Zap
 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 
@@ -1118,9 +1119,22 @@ export default function DashboardChambersPage() {
                             </div>
                           </div>
 
-                          <span className="text-[11px] font-medium text-slate-400 capitalize">
-                            Waiting
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleCallNext(doc);
+                                setTimeout(() => {
+                                  window.location.href = `/dashboard/consult/${p.appointment_number}`;
+                                }, 600);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm active:scale-95 transition cursor-pointer"
+                              title="1-Click Call next patient and open Consultation Studio"
+                            >
+                              <Zap className="h-3 w-3 fill-current" />
+                              <span>⚡ Call &amp; Consult</span>
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}
