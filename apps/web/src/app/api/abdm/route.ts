@@ -78,10 +78,22 @@ export async function POST(request: Request) {
 
       // Query database/NHA registry
       let existing: any[] = [];
-      if (patient_phone) {
+      if (patient_phone && masked) {
         existing = await db`
           SELECT * FROM abdm_patients 
-          WHERE patient_phone = ${patient_phone} OR (masked_aadhaar = ${masked} AND ${masked} IS NOT NULL)
+          WHERE patient_phone = ${patient_phone} OR masked_aadhaar = ${masked}
+          LIMIT 1;
+        `;
+      } else if (patient_phone) {
+        existing = await db`
+          SELECT * FROM abdm_patients 
+          WHERE patient_phone = ${patient_phone}
+          LIMIT 1;
+        `;
+      } else if (masked) {
+        existing = await db`
+          SELECT * FROM abdm_patients 
+          WHERE masked_aadhaar = ${masked}
           LIMIT 1;
         `;
       }
