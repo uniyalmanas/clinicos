@@ -61,6 +61,7 @@ export async function GET(
         visit_id: apt.appointment_number,
         visit_date: apt.appointment_date || apt.created_at?.toISOString().split("T")[0] || "Recent",
         doctor_name: apt.doctor_name || linkedRx?.doctor_name || "Dr. Rahul Sharma",
+        doctor_slug: apt.doctor_slug || linkedRx?.doctor_slug || "dr-rahul-sharma",
         doctor_specialization: "Dermatology & Skin Care",
         clinic_name: apt.clinic_name || linkedRx?.clinic_name || "Derma Care Skin & Laser Centre",
         provisional_diagnosis: linkedRx?.provisional_diagnosis || apt.symptoms_description || "Outpatient Assessment",

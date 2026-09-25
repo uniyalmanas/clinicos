@@ -46,6 +46,21 @@ const nextConfig = {
         destination: "/waiting-room",
         permanent: true,
       },
+      {
+        source: "/doctors",
+        destination: "/search",
+        permanent: false,
+      },
+      {
+        source: "/clinics",
+        destination: "/search",
+        permanent: false,
+      },
+      {
+        source: "/patient",
+        destination: "/patient/portal",
+        permanent: false,
+      },
     ];
   },
   webpack: (config, { isServer }) => {

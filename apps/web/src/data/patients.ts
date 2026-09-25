@@ -2,6 +2,7 @@ export interface ClinicalVisit {
   visit_id: string;
   visit_date: string;
   doctor_name: string;
+  doctor_slug?: string;
   doctor_specialization: string;
   clinic_name: string;
   provisional_diagnosis: string;
@@ -52,6 +53,7 @@ export const SEED_PATIENTS: PatientProfile[] = [
         visit_id: "vis-101-3",
         visit_date: "2026-09-16",
         doctor_name: "Dr. Rahul Sharma",
+        doctor_slug: "dr-rahul-sharma",
         doctor_specialization: "Dermatologist",
         clinic_name: "Derma Care Skin & Laser Centre",
         provisional_diagnosis: "Moderate to Severe Acne Vulgaris (Grade III)",
@@ -66,6 +68,7 @@ export const SEED_PATIENTS: PatientProfile[] = [
         visit_id: "vis-101-2",
         visit_date: "2026-07-28",
         doctor_name: "Dr. Rahul Sharma",
+        doctor_slug: "dr-rahul-sharma",
         doctor_specialization: "Dermatologist",
         clinic_name: "Derma Care Skin & Laser Centre",
         provisional_diagnosis: "Tinea Cruris (Fungal Infection)",
@@ -94,6 +97,7 @@ export const SEED_PATIENTS: PatientProfile[] = [
         visit_id: "vis-102-1",
         visit_date: "2026-09-17",
         doctor_name: "Dr. Rahul Sharma",
+        doctor_slug: "dr-rahul-sharma",
         doctor_specialization: "Dermatologist",
         clinic_name: "Derma Care Skin & Laser Centre",
         provisional_diagnosis: "Allergic Contact Dermatitis (Cosmetic induced)",
@@ -122,6 +126,7 @@ export const SEED_PATIENTS: PatientProfile[] = [
         visit_id: "vis-103-1",
         visit_date: "2026-09-15",
         doctor_name: "Dr. Rahul Sharma",
+        doctor_slug: "dr-rahul-sharma",
         doctor_specialization: "Dermatologist",
         clinic_name: "Derma Care Skin & Laser Centre",
         provisional_diagnosis: "Androgenetic Alopecia & Seborrheic Dermatitis",
@@ -151,6 +156,7 @@ export const SEED_PATIENTS: PatientProfile[] = [
         visit_id: "vis-104-1",
         visit_date: "2026-09-16",
         doctor_name: "Dr. Aditi Joshi",
+        doctor_slug: "dr-aditi-joshi",
         doctor_specialization: "Dental Surgeon",
         clinic_name: "Smile Craft Multi-Speciality Dental",
         provisional_diagnosis: "Deep Dentinal Caries #36 with Irreversible Pulpitis",

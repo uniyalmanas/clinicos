@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import { SEED_PATIENTS, PatientProfile } from "@/data/patients";
@@ -44,6 +44,31 @@ export default function PatientPortalPage() {
   const [currentPatient, setCurrentPatient] = useState<PatientProfile>(SEED_PATIENTS[0]);
   const [alarmSetMessage, setAlarmSetMessage] = useState<string | null>(null);
   const [forwardedChemistMsg, setForwardedChemistMsg] = useState<string | null>(null);
+
+  // Unique care team / existing doctors from patient's clinical history (Existing Doctor funnel)
+  const existingDoctors = useMemo(() => {
+    const map = new Map<string, {
+      name: string;
+      slug: string;
+      specialization: string;
+      clinic_name: string;
+      last_visit_date: string;
+    }>();
+
+    for (const v of currentPatient.visits || []) {
+      const slug = v.doctor_slug || v.doctor_name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      if (!map.has(slug)) {
+        map.set(slug, {
+          name: v.doctor_name,
+          slug: slug,
+          specialization: v.doctor_specialization,
+          clinic_name: v.clinic_name,
+          last_visit_date: v.visit_date
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [currentPatient.visits]);
 
   // Synchronize from live database or session on mount
   useEffect(() => {
@@ -372,6 +397,75 @@ export default function PatientPortalPage() {
           patientName={currentPatient.full_name}
         />
 
+        {/* =====================================================================
+            PATIENT PORTAL: EXISTING DOCTORS (Direct Booking into Doctor's Clinic)
+        ===================================================================== */}
+        {existingDoctors.length > 0 && (
+          <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.04] dark:border-white/[0.06] pb-4">
+              <div>
+                <h2 className="text-base font-bold tracking-tight text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                  <Stethoscope className="h-4 w-4 text-apple-blue" />
+                  <span>My ClinicOS Doctors</span>
+                </h2>
+                <p className="text-xs text-[#86868B] mt-0.5">
+                  Instant 1-click token &amp; follow-up booking directly with your clinic doctors
+                </p>
+              </div>
+              <Link
+                href="/search"
+                className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition"
+              >
+                <Search className="h-3.5 w-3.5 text-apple-teal" />
+                <span>Find More Doctors (Discovery)</span>
+              </Link>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {existingDoctors.map((doc) => (
+                <div
+                  key={doc.slug}
+                  className="rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/50 p-4 flex flex-col justify-between gap-3"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-[#1D1D1F] dark:text-white">
+                        {doc.name}
+                      </span>
+                      <span className="rounded-full bg-apple-blue/10 px-2 py-0.5 text-[10px] font-semibold text-apple-blue">
+                        {doc.specialization}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#86868B] mt-1 flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      <span>{doc.clinic_name}</span>
+                    </div>
+                    <div className="text-[10px] text-[#86868B] mt-0.5">
+                      Last Consultation: {doc.last_visit_date}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                    <Link
+                      href={`/book?doctor=${doc.slug}`}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-apple-blue hover:bg-[#0077ED] py-2 text-xs font-bold text-white shadow-apple-xs transition active:scale-95"
+                    >
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>Book Appointment</span>
+                    </Link>
+                    <Link
+                      href={`/doctors/${doc.slug}`}
+                      className="inline-flex items-center justify-center rounded-full border border-black/[0.08] dark:border-white/[0.1] px-3 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition"
+                    >
+                      <span>Clinic Profile</span>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* VISIT HISTORY TIMELINE */}
         <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card space-y-4">
           <h3 className="text-sm font-semibold text-[#1D1D1F] dark:text-white">
@@ -382,7 +476,7 @@ export default function PatientPortalPage() {
             {currentPatient.visits.map(v => (
               <div
                 key={v.visit_id}
-                className="rounded-[20px] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/40 border border-black/[0.04] dark:border-white/[0.06] p-4 flex items-start justify-between"
+                className="rounded-[20px] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/40 border border-black/[0.04] dark:border-white/[0.06] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
               >
                 <div>
                   <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white">
@@ -396,14 +490,23 @@ export default function PatientPortalPage() {
                   </div>
                 </div>
 
-                <Link
-                  href={`/p/${v.prescription_number}`}
-                  target="_blank"
-                  className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-3 py-1.5 text-xs font-medium text-apple-blue hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
-                >
-                  <FileText className="h-3 w-3" />
-                  <span>Rx PDF</span>
-                </Link>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href={`/p/${v.prescription_number}`}
+                    target="_blank"
+                    className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] dark:border-white/[0.1] px-3 py-1.5 text-xs font-medium text-apple-blue hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-95 transition"
+                  >
+                    <FileText className="h-3 w-3" />
+                    <span>Rx PDF</span>
+                  </Link>
+                  <Link
+                    href={`/book?doctor=${v.doctor_slug || 'dr-rahul-sharma'}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-apple-blue hover:bg-[#0077ED] px-3 py-1.5 text-xs font-semibold text-white shadow-apple-xs active:scale-95 transition"
+                  >
+                    <Calendar className="h-3 w-3" />
+                    <span>Book Follow-up</span>
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
