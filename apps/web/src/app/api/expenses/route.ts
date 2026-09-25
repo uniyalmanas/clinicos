@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       WHERE (clinic_slug = ${clinic_slug} OR clinic_slug IS NULL)
         AND amount = ${numAmount}
         AND (title ILIKE ${title} OR title ILIKE ${`%${title}%`})
-        AND date >= CURRENT_DATE - INTERVAL '30 days'
+        AND created_at >= NOW() - INTERVAL '30 days'
       LIMIT 1;
     `;
 
