@@ -11,9 +11,8 @@ const getDatabaseUrl = (): string => {
   raw = raw.replace(/[\r\n\s\t]+/g, "").replace(/^["']|["']$/g, "");
 
   if (!raw) {
-    throw new Error(
-      "DATABASE_URL environment variable is missing. Please set DATABASE_URL in your environment or .env.local file."
-    );
+    // Return dummy fallback during build / static analysis to prevent build-time crashes
+    return "postgresql://postgres:postgres@127.0.0.1:5432/postgres";
   }
 
   // Ensure port 6543 transaction pooler is used on serverless

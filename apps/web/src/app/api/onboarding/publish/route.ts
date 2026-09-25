@@ -3,6 +3,8 @@ import { sql } from "@/lib/db";
 import { hashPassword, signAccessToken } from "@/lib/auth";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();

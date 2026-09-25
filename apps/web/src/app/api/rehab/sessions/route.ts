@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // Strict anatomical physiological limits per joint
 const ANATOMICAL_LIMITS: Record<string, { max: number; min: number }> = {
   "shoulder": { min: 0, max: 180 },

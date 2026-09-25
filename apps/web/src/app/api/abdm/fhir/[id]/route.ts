@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 /**
  * ABDM Milestone 2 (HIP: Health Information Provider)
  * Generates an Ayushman Bharat Digital Mission (ABDM) FHIR R4 compliant bundle
