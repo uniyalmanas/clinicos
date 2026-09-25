@@ -113,6 +113,7 @@ export default function DashboardLayout({
     { label: "Patient History Vault", href: "/dashboard/patients", icon: Users },
     { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
     { label: "Clinic Configuration", href: "/dashboard/settings", icon: Settings },
+    { label: "Super Admin Console", href: "/dashboard/admin", icon: ShieldCheck, badge: "Owner" },
   ];
 
   if (!authChecked) {
@@ -193,25 +194,32 @@ export default function DashboardLayout({
             <ThemeToggle />
           </div>
 
-          <div className="flex items-center justify-between rounded-[14px] bg-white p-2.5 dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-apple-sm">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0071E3]/10 text-[#0071E3] text-xs font-bold dark:text-[#2997FF]">
+          {/* User Profile Card - Direct Access to Super Admin Console */}
+          <Link
+            href="/dashboard/admin"
+            className="flex items-center justify-between rounded-[14px] bg-white p-2.5 dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-apple-sm hover:border-[#0071E3]/40 dark:hover:border-[#2997FF]/40 transition group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0071E3]/10 text-[#0071E3] text-xs font-bold dark:text-[#2997FF] group-hover:bg-[#0071E3] group-hover:text-white transition">
                 RS
               </div>
-              <div className="text-left">
-                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Dr. Rahul Sharma</div>
-                <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">Dermatologist • Admin</div>
+              <div className="text-left min-w-0">
+                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white truncate">Dr. Rahul Sharma</div>
+                <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93] truncate">Medical Director • Super Admin</div>
               </div>
             </div>
-            <Link
-              href="/login"
-              onClick={handleLogout}
-              title="Return to Public Home"
-              className="p-1 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
-            >
-              <LogOut className="h-4 w-4" />
-            </Link>
-          </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#86868B] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] group-hover:translate-x-0.5 transition" />
+          </Link>
+
+          {/* Separate, Isolated Sign Out Action */}
+          <button
+            onClick={handleLogout}
+            type="button"
+            className="w-full flex items-center justify-center gap-1.5 rounded-[12px] py-1.5 text-[11px] font-semibold text-[#86868B] hover:text-[#FF453A] hover:bg-[#FF453A]/10 dark:text-[#8E8E93] dark:hover:text-[#FF453A] dark:hover:bg-[#FF453A]/10 transition"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Sign Out Session</span>
+          </button>
         </div>
       </aside>
 
@@ -253,8 +261,34 @@ export default function DashboardLayout({
                 );
               })}
             </nav>
-            <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08]">
+            <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2">
               <ThemeToggle showLabel />
+              <Link
+                href="/dashboard/admin"
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center justify-between rounded-[12px] bg-white p-2.5 dark:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08]"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0071E3]/10 text-[#0071E3] text-xs font-bold">
+                    RS
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Dr. Rahul Sharma</div>
+                    <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">Super Admin Console</div>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-[#86868B]" />
+              </Link>
+              <button
+                onClick={() => {
+                  setSidebarOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center justify-center gap-1.5 rounded-[12px] py-2 text-xs font-semibold text-[#FF453A] bg-[#FF453A]/10 hover:bg-[#FF453A]/20 transition"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Sign Out Session</span>
+              </button>
             </div>
           </div>
         </div>
