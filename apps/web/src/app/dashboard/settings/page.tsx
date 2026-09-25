@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
   Building2, 
   Stethoscope, 
@@ -17,8 +18,11 @@ import {
   MapPin,
   RefreshCw,
   Percent,
-  Check
+  Check,
+  ExternalLink,
+  Bell
 } from "lucide-react";
+import QRCodeDisplay from "@/components/QRCodeDisplay";
 
 export default function DashboardSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -407,28 +411,63 @@ export default function DashboardSettingsPage() {
 
         {/* PRINTABLE COUNTER QR & PUBLIC MICROSITE PREVIEW */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 border border-emerald-500/20">
+                LIVE TOKEN QUEUE QR
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">DIN-A5 / DIN-A4</span>
+            </div>
+
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Official Counter QR Acrylic Stand
+              Official Front Desk Acrylic Standee
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Print and place this QR on your reception counter for patient walk-in self check-in.
+            <p className="text-xs text-slate-500">
+              Patients scan with phone camera to track their live token position and receive proactive WhatsApp alerts 2 tokens away.
             </p>
 
-            <div className="mx-auto my-6 flex h-48 w-48 items-center justify-center rounded-2xl bg-white p-4 border border-slate-200 shadow-inner dark:bg-white dark:border-slate-800">
-              <QrCode className="h-40 w-40 text-slate-900" />
+            {/* REAL VECTOR QR CODE VIA QRCodeDisplay */}
+            <div className="mx-auto my-3 flex items-center justify-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm dark:bg-white dark:border-slate-800">
+              <QRCodeDisplay
+                value={`https://medic-sept-2026.vercel.app/waiting-room?clinic=${clinicSlug}&view=patient`}
+                size={160}
+                level="H"
+                fgColor="#000000"
+                bgColor="#FFFFFF"
+                centerBadgeText="ClinicOS"
+              />
             </div>
 
-            <div className="rounded-xl bg-slate-100 p-2.5 text-[11px] font-mono font-bold text-slate-800 dark:bg-slate-800 dark:text-slate-200 truncate">
-              {bookingUrl}
+            <div className="rounded-xl bg-slate-100 p-2.5 text-[10px] font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-300 truncate">
+              https://medic-sept-2026.vercel.app/waiting-room?clinic={clinicSlug}&amp;view=patient
             </div>
 
-            <button
-              onClick={() => window.print()}
-              className="mt-5 w-full rounded-2xl bg-slate-900 py-3 text-xs font-bold text-white shadow-sm hover:bg-slate-800 dark:bg-white dark:text-slate-900 transition flex items-center justify-center gap-2"
-            >
-              <Printer className="h-4 w-4" /> Print Acrylic Counter Stand (A5)
-            </button>
+            {/* Print Specifications */}
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-950/60 p-3 text-[11px] text-slate-600 dark:text-slate-400 text-left space-y-1 border border-slate-100 dark:border-slate-800">
+              <div className="font-bold text-slate-900 dark:text-white text-xs">Print Specifications:</div>
+              <div>&bull; <strong>Format</strong>: DIN-A5 (148 × 210 mm) tabletop tent card</div>
+              <div>&bull; <strong>Stock</strong>: 250 - 300 GSM Matte Art Card with fold guides</div>
+              <div>&bull; <strong>Bilingual</strong>: English &amp; Hindi instructions included</div>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <Link
+                href="/dashboard/standee"
+                className="w-full rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] py-3 text-xs font-bold text-white shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Launch Acrylic Standee Studio</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 py-2.5 text-xs font-bold text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Printer className="h-4 w-4" />
+                <span>Print Standee Directly (A5)</span>
+              </button>
+            </div>
           </div>
 
           {/* ACTIVE CLINIC DOCTORS ROSTER */}

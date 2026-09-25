@@ -24,7 +24,8 @@ import {
   ChevronRight,
   Play,
   Share2,
-  AlertCircle
+  AlertCircle,
+  Send
 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 
@@ -236,6 +237,72 @@ export default function WaitingRoomSmartDisplayPage() {
 
   const [sseConnected, setSseConnected] = useState<boolean>(false);
   const lastAnnouncedTokenRef = useRef<number | null>(null);
+
+  // Fix 1 & Fix 2: Dedicated Mobile Patient Token Tracker View State
+  const [viewMode, setViewMode] = useState<"tv" | "patient">("tv");
+  const [patientToken, setPatientToken] = useState<number>(4);
+  const [patientPhone, setPatientPhone] = useState<string>("+919876543210");
+  const [patientName, setPatientName] = useState<string>("Sneha Dobhal");
+  const [isSubscribing, setIsSubscribing] = useState<boolean>(false);
+  const [alertSuccessToast, setAlertSuccessToast] = useState<string | null>(null);
+  const [waDirectLink, setWaDirectLink] = useState<string | null>(null);
+  const [lastDispatchedPreview, setLastDispatchedPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const modeParam = params.get("mode") || params.get("view");
+      const tokenParam = params.get("token");
+      const phoneParam = params.get("phone");
+      const nameParam = params.get("name");
+
+      if (modeParam === "patient" || tokenParam || window.innerWidth < 768) {
+        setViewMode("patient");
+      }
+      if (tokenParam) {
+        const num = Number(tokenParam);
+        if (!isNaN(num) && num > 0) setPatientToken(num);
+      }
+      if (phoneParam) setPatientPhone(phoneParam);
+      if (nameParam) setPatientName(nameParam);
+    }
+  }, []);
+
+  const handleSubscribeTokenAlert = async (isTest: boolean = false) => {
+    setIsSubscribing(true);
+    setAlertSuccessToast(null);
+    try {
+      const currentToken = activeChamber.current_token || 1;
+      const res = await fetch("/api/clinic/token-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: isTest ? "test_alert" : "subscribe",
+          phone: patientPhone,
+          patient_name: patientName,
+          token_number: patientToken,
+          current_token: currentToken,
+          clinic_slug: "derma-care",
+          clinic_name: clinic.name,
+          chamber_name: activeChamber.chamber_name,
+          doctor_name: activeChamber.doctor_name
+        })
+      });
+
+      const json = await res.json();
+      if (res.ok) {
+        setAlertSuccessToast(json.message);
+        setWaDirectLink(json.whatsapp_direct_link || null);
+        setLastDispatchedPreview(json.alert_message_preview || null);
+      } else {
+        setAlertSuccessToast(`Alert Error: ${json.error}`);
+      }
+    } catch (e: any) {
+      setAlertSuccessToast(`Network Error: ${e.message}`);
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   // Live Clock updater
   useEffect(() => {
@@ -455,6 +522,10 @@ export default function WaitingRoomSmartDisplayPage() {
     return `${String(mins).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
+  const currentChamberToken = activeChamber?.current_token || 1;
+  const positionsAway = Math.max(0, patientToken - currentChamberToken);
+  const isWithin2Tokens = positionsAway <= 2 && positionsAway >= 0;
+
   return (
     <div 
       onClick={!audioUnlocked ? handleUserUnlockAudio : undefined}
@@ -522,6 +593,32 @@ export default function WaitingRoomSmartDisplayPage() {
 
           {/* Quick TV Actions */}
           <div className="flex items-center gap-2">
+            {/* View Mode Switcher: TV Screen vs Mobile Patient Tracker */}
+            <div className="flex items-center rounded-xl bg-white/[0.06] p-1 border border-white/[0.1] text-xs mr-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("tv")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                  viewMode === "tv"
+                    ? "bg-apple-blue text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>📺 TV Screen</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("patient")}
+                className={`px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                  viewMode === "patient"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span>📱 Patient Mobile View</span>
+              </button>
+            </div>
+
             <button
               onClick={() => setIsMuted(!isMuted)}
               className={`p-2.5 rounded-xl border transition active:scale-95 ${
@@ -553,8 +650,234 @@ export default function WaitingRoomSmartDisplayPage() {
         </div>
       </header>
 
-      {/* 3. MAIN DUAL-COLUMN WAITING ROOM MATRIX */}
-      <main className="flex-1 p-6 lg:p-8 max-w-[1800px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+      {/* 3. MAIN CONTENT: CONDITIONAL BETWEEN MOBILE PATIENT TRACKER & LOUNGE TV MATRIX */}
+      {viewMode === "patient" ? (
+        <main className="flex-1 p-4 sm:p-6 max-w-xl mx-auto w-full space-y-5 animate-in fade-in">
+          {/* Alert Success / Status Toast */}
+          {alertSuccessToast && (
+            <div className="rounded-2xl bg-emerald-500/15 border-2 border-emerald-500/40 p-4 text-emerald-300 text-xs font-semibold shadow-xl flex items-start gap-2.5 animate-in slide-in-from-top-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div>{alertSuccessToast}</div>
+                {waDirectLink && (
+                  <a
+                    href={waDirectLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-bold shadow transition"
+                  >
+                    <span>Open in WhatsApp</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* FIX 1: "YOUR TURN SOON" PULSING ANIMATION (When within 2 tokens of current) */}
+          {isWithin2Tokens && (
+            <div className="relative overflow-hidden rounded-[28px] border-2 border-emerald-500 bg-gradient-to-r from-emerald-950/90 via-[#0E2A1F] to-emerald-950/90 p-5 shadow-[0_0_60px_rgba(16,185,129,0.4)] ring-4 ring-emerald-500/30 animate-pulse text-center space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-black text-emerald-300 uppercase tracking-widest border border-emerald-500/40">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>🔔 Your Turn Soon! / आपकी बारी आने वाली है</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-white">
+                {positionsAway === 0
+                  ? "Your Token Is Being Called Now!"
+                  : `You are only ${positionsAway} token${positionsAway > 1 ? "s" : ""} away!`}
+              </div>
+              <p className="text-xs text-emerald-200/90 leading-snug">
+                Please proceed to Reception or Chamber 1 waiting area immediately.
+              </p>
+              <p className="text-[11px] text-emerald-400/80 font-medium">
+                &quot;कृपया रिसेप्शन या परामर्श कक्ष 1 के पास पहुंचें।&quot;
+              </p>
+            </div>
+          )}
+
+          {/* 1. CURRENT TOKEN IN CHAMBER (FIX 1) */}
+          <div className="rounded-[28px] border border-white/[0.08] bg-[#101625] p-5 shadow-xl space-y-3">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>1. Current Token in Chamber</span>
+              </span>
+              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
+                LIVE STATUS
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 py-2 border-y border-white/[0.06]">
+              <div>
+                <div className="text-xs text-slate-400 font-medium">Currently Consulting:</div>
+                <div className="text-5xl font-black text-white font-mono mt-1">
+                  #{String(activeChamber.current_token || 2).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-300 font-bold mt-1">
+                  {activeChamber.patient_name || "Priya Singh"}
+                </div>
+              </div>
+
+              <div className="text-right space-y-1">
+                <div className="text-xs font-bold text-sky-400">{activeChamber.chamber_name}</div>
+                <div className="text-xs text-slate-300">{activeChamber.doctor_name}</div>
+                <div className="text-[10px] text-slate-400 font-mono">
+                  In consultation: {formatSeconds(activeChamber.elapsed_seconds)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. PATIENT'S TOKEN NUMBER & 3. ESTIMATED WAIT TIME (FIX 1) */}
+          <div className="rounded-[28px] border border-apple-blue/30 bg-gradient-to-br from-[#121E36] to-[#0A101D] p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold uppercase tracking-wider text-sky-300 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-apple-blue" />
+                <span>2. Your Live Token Position</span>
+              </span>
+              <span className="rounded-full bg-apple-blue/20 text-sky-300 border border-apple-blue/30 text-[10px] font-bold px-2 py-0.5">
+                PATIENT STATUS
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-xs text-slate-400">Your Assigned Token:</div>
+                <div className="text-6xl font-black text-white font-mono mt-1 drop-shadow-md">
+                  #{String(patientToken).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-sky-300 font-semibold mt-1">
+                  {patientName}
+                </div>
+              </div>
+
+              {/* 3. ESTIMATED WAIT TIME */}
+              <div className="text-right bg-white/[0.04] p-3.5 rounded-2xl border border-white/[0.08] min-w-[150px]">
+                <div className="text-[10px] uppercase font-bold text-slate-400">
+                  Estimated Wait Time
+                </div>
+                <div className="text-2xl font-black font-mono text-emerald-400 mt-0.5">
+                  {positionsAway === 0 ? "0 mins" : `~${Math.max(5, positionsAway * 8)} mins`}
+                </div>
+                <div className="text-[11px] text-slate-300 font-semibold mt-0.5">
+                  {positionsAway === 0
+                    ? "It is your turn!"
+                    : `${positionsAway} patient${positionsAway > 1 ? "s" : ""} ahead`}
+                </div>
+              </div>
+            </div>
+
+            {/* Token Switcher Stepper */}
+            <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between gap-2 text-xs">
+              <span className="text-[11px] text-slate-400">Select your token:</span>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                  <button
+                    key={num}
+                    onClick={() => setPatientToken(num)}
+                    className={`h-7 w-7 rounded-lg text-xs font-mono font-bold transition ${
+                      patientToken === num
+                        ? "bg-apple-blue text-white shadow"
+                        : "bg-white/[0.06] text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    #{num}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* FIX 2: "NOTIFY ME" FUNCTIONALITY (SMS / WHATSAPP PROACTIVE ALERTING) */}
+          <div className="rounded-[28px] border border-white/[0.08] bg-[#101625] p-5 shadow-xl space-y-3.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-white flex items-center gap-1.5">
+                <Bell className="h-4 w-4 text-emerald-400" />
+                <span>🔔 Proactive Notifications (WhatsApp &amp; SMS)</span>
+              </span>
+              <span className="rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2 py-0.5 border border-emerald-500/20">
+                PROACTIVE ALERTING
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-snug">
+              Option to enter mobile number on scan page. System sends WhatsApp/SMS alert when token is 2 positions away from current: <em>&quot;Your turn is coming up! Please proceed to Reception.&quot;</em>
+            </p>
+
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="tel"
+                    placeholder="+91 98765 43210"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(e.target.value)}
+                    className="w-full rounded-xl border border-white/[0.1] bg-black/40 pl-9 pr-3 py-2 text-xs font-mono font-bold text-white focus:border-apple-blue focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isSubscribing || !patientPhone}
+                  onClick={() => handleSubscribeTokenAlert(false)}
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 text-xs font-bold shadow-md transition active:scale-95 cursor-pointer whitespace-nowrap flex items-center justify-center gap-1.5"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  <span>{isSubscribing ? "Activating..." : "Notify Me (WhatsApp/SMS)"}</span>
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                <span>Alert triggers 2 tokens away from consultation</span>
+                <button
+                  type="button"
+                  onClick={() => handleSubscribeTokenAlert(true)}
+                  className="text-sky-400 hover:underline font-semibold"
+                >
+                  Send Test Alert
+                </button>
+              </div>
+            </div>
+
+            {/* Last Dispatched Preview Banner */}
+            {lastDispatchedPreview && (
+              <div className="rounded-xl bg-black/50 border border-white/[0.08] p-3 text-[11px] font-mono text-slate-300 whitespace-pre-line">
+                <div className="text-[10px] uppercase font-bold text-emerald-400 mb-1">
+                  WhatsApp Alert Message Preview:
+                </div>
+                {lastDispatchedPreview}
+              </div>
+            )}
+          </div>
+
+          {/* BILINGUAL INSTRUCTIONS */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-xs space-y-1 text-slate-300">
+            <div className="font-bold text-white flex items-center gap-1.5">
+              <span>🌐 Bilingual Guidance / सहायता:</span>
+            </div>
+            <p className="text-[11px] leading-relaxed">
+              &quot;कैमरे से स्कैन करें और बाहर या गाड़ी में आराम से प्रतीक्षा करें। आपकी बारी आने पर सतर्क रहें।&quot;
+            </p>
+            <p className="text-[10px] text-slate-400">
+              Zero app download required. View live counter OPD status anywhere within clinic range.
+            </p>
+          </div>
+
+          {/* Toggle Back to TV Screen */}
+          <div className="pt-2 text-center">
+            <button
+              onClick={() => setViewMode("tv")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] hover:bg-white/[0.08] px-4 py-2 text-xs font-bold text-slate-300 hover:text-white transition"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+              <span>Switch to Lounge Smart TV Display</span>
+            </button>
+          </div>
+        </main>
+      ) : (
+        /* 3. MAIN DUAL-COLUMN WAITING ROOM MATRIX */
+        <main className="flex-1 p-6 lg:p-8 max-w-[1800px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         
         {/* LEFT COLUMN: HERO "NOW SERVING" CHAMBER SPOTLIGHT (7 Cols) */}
         <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
@@ -788,6 +1111,7 @@ export default function WaitingRoomSmartDisplayPage() {
           </div>
         </div>
       </main>
+      )}
 
       {/* 4. BOTTOM TICKER / CLINIC MARQUEE BAR */}
       <footer className="border-t border-white/[0.08] bg-[#0E121B] px-6 py-3 flex items-center gap-4 text-xs font-medium text-slate-300 overflow-hidden">
