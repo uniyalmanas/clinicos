@@ -271,7 +271,7 @@ function BookingExperience() {
     async function fetchLiveQueue() {
       setIsLoadingQueue(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/appointments/live-queue?doctor_slug=${selectedDoc?.slug}`);
+        const res = await fetch(`/api/appointments/live-queue?doctor_slug=${selectedDoc?.slug}`);
         if (res.ok && isMounted) {
           const data = await res.json();
           setLiveQueue({
@@ -397,7 +397,7 @@ function BookingExperience() {
       : appointmentDate;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/appointments/book`, {
+      const res = await fetch(`/api/appointments/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

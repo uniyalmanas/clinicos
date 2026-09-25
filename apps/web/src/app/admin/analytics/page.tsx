@@ -51,7 +51,7 @@ interface AnalyticsData {
   tenants: TenantRecord[];
 }
 
-const API_BASE = `${API_BASE_URL}/api/v1`;
+const API_BASE = `${API_BASE_URL}/api`;
 
 export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData>({

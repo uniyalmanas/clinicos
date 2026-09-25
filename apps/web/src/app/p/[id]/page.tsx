@@ -97,7 +97,7 @@ export default function PatientPrescriptionLockerPage() {
   useEffect(() => {
     const fetchRx = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/${rawId}`);
+        const res = await fetch(`/api/prescriptions/${rawId}`);
         if (res.ok) {
           const data = await res.json();
           setRx(data);

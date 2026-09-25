@@ -32,7 +32,7 @@ export default function DoctorQueuePage() {
   const refreshQueue = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+      const res = await fetch(`/api/clinic/desk-queue`);
       if (!res.ok) {
         throw new Error("Unable to load live queue");
       }

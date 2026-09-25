@@ -243,7 +243,7 @@ ClinicOS delivers direct neighborhood patient orders to local pharmacies with *0
     const tokenStr = `COS-MED-${tokenNum}`;
 
     try {
-      await fetch(`${API_BASE_URL}/api/v1/marketplace/inquiries`, {
+      await fetch(`/api/marketplace/inquiries`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

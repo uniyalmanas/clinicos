@@ -304,8 +304,8 @@ export default function DashboardPharmacyPage() {
     setIsLoadingInventory(true);
     try {
       const url = inventoryFilter === "all" 
-        ? `${API_BASE_URL}/api/v1/pharmacy/inventory`
-        : `${API_BASE_URL}/api/v1/pharmacy/inventory?filter_type=${inventoryFilter}`;
+        ? `/api/pharmacy/inventory`
+        : `/api/pharmacy/inventory?filter_type=${inventoryFilter}`;
       
       const res = await fetch(url);
       if (res.ok) {
@@ -327,8 +327,8 @@ export default function DashboardPharmacyPage() {
     setIsLoadingQueue(true);
     try {
       const [queueRes, billsRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/v1/pharmacy/prescriptions-queue`),
-        fetch(`${API_BASE_URL}/api/v1/pharmacy/bills`)
+        fetch(`/api/pharmacy/prescriptions-queue`),
+        fetch(`/api/pharmacy/bills`)
       ]);
 
       if (queueRes.ok) {
@@ -349,7 +349,7 @@ export default function DashboardPharmacyPage() {
   // Load Return Challans
   const fetchChallans = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/returns`);
+      const res = await fetch(`/api/pharmacy/returns`);
       if (res.ok) {
         const data = await res.json();
         setChallans(data.challans || []);
@@ -360,7 +360,7 @@ export default function DashboardPharmacyPage() {
   // Load Recalls
   const fetchRecalls = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/recall`);
+      const res = await fetch(`/api/pharmacy/recall`);
       if (res.ok) {
         const data = await res.json();
         setRecalledBatches(data.recalled_batches || []);
@@ -372,7 +372,7 @@ export default function DashboardPharmacyPage() {
   const fetchScheduleH1 = async () => {
     setIsLoadingH1(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/schedule-h1`);
+      const res = await fetch(`/api/pharmacy/schedule-h1`);
       if (res.ok) {
         const data = await res.json();
         setScheduleH1Logs(data.logs || []);
@@ -385,7 +385,7 @@ export default function DashboardPharmacyPage() {
   // Load Transfers
   const fetchTransfers = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/transfers`);
+      const res = await fetch(`/api/pharmacy/transfers`);
       if (res.ok) {
         const data = await res.json();
         setTransfers(data.transfers || []);
@@ -515,7 +515,7 @@ export default function DashboardPharmacyPage() {
   const handleCreateBatch = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/inventory`, {
+      const res = await fetch(`/api/pharmacy/inventory`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newBatchForm)
@@ -534,7 +534,7 @@ export default function DashboardPharmacyPage() {
   const handleUpdateStock = async () => {
     if (!selectedItemForStock) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/inventory/${selectedItemForStock.id}/stock`, {
+      const res = await fetch(`/api/pharmacy/inventory/${selectedItemForStock.id}/stock`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ new_stock: Number(newStockInput) })
@@ -555,7 +555,7 @@ export default function DashboardPharmacyPage() {
     if (!returnItem) return;
     setIsSubmittingReturn(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/returns`, {
+      const res = await fetch(`/api/pharmacy/returns`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -591,7 +591,7 @@ export default function DashboardPharmacyPage() {
   const handleToggleRecall = async (batchNumber: string, isRecalled: boolean, reason?: string) => {
     setIsSubmittingRecall(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/recall`, {
+      const res = await fetch(`/api/pharmacy/recall`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -623,7 +623,7 @@ export default function DashboardPharmacyPage() {
     e.preventDefault();
     setIsSubmittingTransfer(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/transfers`, {
+      const res = await fetch(`/api/pharmacy/transfers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -652,7 +652,7 @@ export default function DashboardPharmacyPage() {
   // Acknowledge Transfer Receipt
   const handleReceiveTransfer = async (transferId: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/transfers`, {
+      const res = await fetch(`/api/pharmacy/transfers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -673,7 +673,7 @@ export default function DashboardPharmacyPage() {
   // Cycle Count Spot-Check Verification
   const handleCycleCountVerify = async (item: PharmacyBatchItem, groundCount: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/cycle-count`, {
+      const res = await fetch(`/api/pharmacy/cycle-count`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -775,7 +775,7 @@ export default function DashboardPharmacyPage() {
         payment_notes: forceOfflineReconciliation ? (offlinePaymentNotes || "Manual payment offline fallback") : ""
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/pharmacy/dispense`, {
+      const res = await fetch(`/api/pharmacy/dispense`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

@@ -177,14 +177,14 @@ export default function AdminInquiriesPage() {
   const fetchLiveInquiries = async () => {
     setLoading(true);
     try {
-      const resInq = await fetch(`${API_BASE_URL}/api/v1/marketplace/inquiries`);
+      const resInq = await fetch(`/api/marketplace/inquiries`);
       if (resInq.ok) {
         const data = await resInq.json();
         if (Array.isArray(data) && data.length > 0) {
           setInquiries(data);
         }
       }
-      const resPart = await fetch(`${API_BASE_URL}/api/v1/marketplace/partners`);
+      const resPart = await fetch(`/api/marketplace/partners`);
       if (resPart.ok) {
         const data = await resPart.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -208,7 +208,7 @@ export default function AdminInquiriesPage() {
     );
 
     try {
-      await fetch(`${API_BASE_URL}/api/v1/marketplace/inquiries/${id}/status`, {
+      await fetch(`/api/marketplace/inquiries/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })

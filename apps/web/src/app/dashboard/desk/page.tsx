@@ -188,7 +188,7 @@ export default function DashboardDeskPage() {
   const fetchAutomations = async () => {
     try {
       setLoadingAutomations(true);
-      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/automations`);
+      const res = await fetch(`/api/clinic/automations`);
       if (res.ok) {
         const json = await res.json();
         if (json.automations) setAutomationsList(json.automations);
@@ -203,7 +203,7 @@ export default function DashboardDeskPage() {
   const handleTriggerAutomation = async (auto: any) => {
     setDispatchingId(auto.id);
     try {
-      await fetch(`${API_BASE_URL}/api/v1/clinic/trigger-automation/${auto.id}`, {
+      await fetch(`/api/clinic/trigger-automation/${auto.id}`, {
         method: "POST"
       }).catch(() => {});
       setAutomationsList(prev =>
@@ -242,7 +242,7 @@ export default function DashboardDeskPage() {
   useEffect(() => {
     let evtSource: EventSource | null = null;
     try {
-      evtSource = new EventSource(`${API_BASE_URL}/api/v1/clinic/stream`);
+      evtSource = new EventSource(`/api/clinic/stream`);
       evtSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
@@ -301,7 +301,7 @@ export default function DashboardDeskPage() {
   }, []);
   const fetchQueue = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+      const res = await fetch(`/api/clinic/desk-queue`);
       if (res.ok) {
         const json = await res.json();
         if (json.queue && json.queue.length > 0) {
@@ -337,7 +337,7 @@ export default function DashboardDeskPage() {
     const aptItem = queue.find(q => q.token_number === tokenNumber);
     if (aptItem?.appointment_number) {
       try {
-        await fetch(`${API_BASE_URL}/api/v1/clinic/call-token`, {
+        await fetch(`/api/clinic/call-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ appointment_number: aptItem.appointment_number })
@@ -364,7 +364,7 @@ export default function DashboardDeskPage() {
 
     if (aptItem.appointment_number) {
       try {
-        await fetch(`${API_BASE_URL}/api/v1/clinic/toggle-payment`, {
+        await fetch(`/api/clinic/toggle-payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -381,7 +381,7 @@ export default function DashboardDeskPage() {
     if (!walkInName || !walkInPhone) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/walk-in`, {
+      const res = await fetch(`/api/clinic/walk-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -95,7 +95,7 @@ export default function ClinicExpensesPage() {
     setDescription("");
 
     // Backend sync in background
-    fetch(`${API_BASE_URL}/api/v1/expenses`, {
+    fetch(`/api/expenses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

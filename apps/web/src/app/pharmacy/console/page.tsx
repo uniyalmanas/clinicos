@@ -47,7 +47,7 @@ export default function PharmacyConsolePage() {
   useEffect(() => {
     async function loadPrescriptionQueue() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/v1/pharmacy/prescriptions-queue`);
+        const response = await fetch(`/api/pharmacy/prescriptions-queue`);
         if (!response.ok) throw new Error("Unable to load prescription queue");
         const data = await response.json();
         const liveOrders: PharmacyOrder[] = (Array.isArray(data.queue) ? data.queue : []).map((item: any) => ({

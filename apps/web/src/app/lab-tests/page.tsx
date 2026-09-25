@@ -160,7 +160,7 @@ ClinicOS is a 0% commission local healthcare platform connecting Dehradun patien
     const tokenStr = `COS-LAB-${tokenNum}`;
 
     try {
-      await fetch(`${API_BASE_URL}/api/v1/marketplace/inquiries`, {
+      await fetch(`/api/marketplace/inquiries`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

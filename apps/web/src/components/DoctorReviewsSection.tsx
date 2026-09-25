@@ -44,7 +44,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
 
   const loadReviews = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/reviews?doctor_slug=${doctorSlug}`);
+      const res = await fetch(`/api/reviews?doctor_slug=${doctorSlug}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -66,7 +66,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/reviews`, {
+      const res = await fetch(`/api/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

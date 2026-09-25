@@ -133,8 +133,8 @@ export default function DynamicConsultationStudioPage() {
       setIsLoadingPatient(true);
 
       try {
-        const queueRes = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
-        const appointmentsRes = await fetch(`${API_BASE_URL}/api/v1/appointments`);
+        const queueRes = await fetch(`/api/clinic/desk-queue`);
+        const appointmentsRes = await fetch(`/api/appointments`);
 
         const queueJson = queueRes.ok ? await queueRes.json() : null;
         const appointmentsJson = appointmentsRes.ok ? await appointmentsRes.json() : null;
@@ -450,7 +450,7 @@ export default function DynamicConsultationStudioPage() {
       generic_name: p.generic_name
     }));
 
-    fetch(`${API_BASE_URL}/api/v1/prescriptions/check-interactions`, {
+    fetch(`/api/prescriptions/check-interactions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -538,7 +538,7 @@ export default function DynamicConsultationStudioPage() {
     setShowAdmitModal(true);
     setAdmitNotes(`Inpatient observation for ${provisionalDiagnosis}. Baseline Vitals: BP ${vitals.bp}, Pulse ${vitals.pulse}, SpO2 ${vitals.spo2}%.`);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds`);
+      const res = await fetch(`/api/beds`);
       if (res.ok) {
         const data = await res.json();
         const vacBeds = (data.beds || []).filter((b: any) => b.status === "vacant");
@@ -560,7 +560,7 @@ export default function DynamicConsultationStudioPage() {
     }
     setIsAdmittingBed(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/admit`, {
+      const res = await fetch(`/api/beds/admit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -725,7 +725,7 @@ export default function DynamicConsultationStudioPage() {
     const rxNumber = signedPrescription.prescription_number || "RX-2026-09-0014";
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/${rxNumber}/whatsapp-dispatch`, {
+      const res = await fetch(`/api/prescriptions/${rxNumber}/whatsapp-dispatch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -941,7 +941,7 @@ export default function DynamicConsultationStudioPage() {
 
     setIsScribing(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/scribe`, {
+      const res = await fetch(`/api/prescriptions/scribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dictation_text: textToProcess })
@@ -1029,7 +1029,7 @@ export default function DynamicConsultationStudioPage() {
         diet_advice: followupAdvice
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/prescriptions/generate`, {
+      const res = await fetch(`/api/prescriptions/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -1046,12 +1046,12 @@ export default function DynamicConsultationStudioPage() {
 
         // Schedule WhatsApp automations & Notify clinic desk that token is completed
         await Promise.all([
-          fetch(`${API_BASE_URL}/api/v1/clinic/complete-token`, {
+          fetch(`/api/clinic/complete-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ appointment_number: patient.appointment_number })
           }).catch(() => {}),
-          fetch(`${API_BASE_URL}/api/v1/clinic/schedule-automations`, {
+          fetch(`/api/clinic/schedule-automations`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

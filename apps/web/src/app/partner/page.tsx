@@ -69,7 +69,7 @@ export default function PartnerWithUsPage() {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/marketplace/partners`, {
+      const res = await fetch(`/api/marketplace/partners`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

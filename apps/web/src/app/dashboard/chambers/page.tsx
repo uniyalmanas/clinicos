@@ -197,7 +197,7 @@ export default function DashboardChambersPage() {
       // 1. Fetch doctors from API or fallback
       let docList = DEFAULT_POLYCLINIC_DOCTORS;
       try {
-        const docRes = await fetch(`${API_BASE_URL}/api/v1/doctors`);
+        const docRes = await fetch(`/api/doctors`);
         if (docRes.ok) {
           const fetchedDocs = await docRes.json();
           if (Array.isArray(fetchedDocs) && fetchedDocs.length > 0) {
@@ -228,7 +228,7 @@ export default function DashboardChambersPage() {
       await Promise.all(
         docList.map(async (doc) => {
           try {
-            const aptRes = await fetch(`${API_BASE_URL}/api/v1/appointments?doctor_slug=${doc.slug}&date=${todayStr}`);
+            const aptRes = await fetch(`/api/appointments?doctor_slug=${doc.slug}&date=${todayStr}`);
             if (aptRes.ok) {
               const apts = await aptRes.json();
               if (Array.isArray(apts) && apts.length > 0) {
@@ -584,7 +584,7 @@ export default function DashboardChambersPage() {
     playChimeForChamber(doc.chamber_name, doc.token_prefix, nextPt.token_number);
 
     try {
-      await fetch(`${API_BASE_URL}/api/v1/clinic/call-token`, {
+      await fetch(`/api/clinic/call-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -607,7 +607,7 @@ export default function DashboardChambersPage() {
     }));
 
     try {
-      await fetch(`${API_BASE_URL}/api/v1/clinic/complete-token`, {
+      await fetch(`/api/clinic/complete-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointment_number: appointmentNumber })
@@ -634,7 +634,7 @@ export default function DashboardChambersPage() {
     const nextTokenNum = Math.max(...existingQueue.map(q => q.token_number), 0) + 1;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/walk-in`, {
+      const res = await fetch(`/api/clinic/walk-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

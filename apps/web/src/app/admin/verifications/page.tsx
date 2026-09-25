@@ -33,7 +33,7 @@ interface DoctorRecord {
   verification_status: "verified" | "pending" | "rejected";
 }
 
-const API_BASE = `${API_BASE_URL}/api/v1`;
+const API_BASE = `${API_BASE_URL}/api`;
 
 export default function AdminVerificationsPage() {
   const [doctors, setDoctors] = useState<DoctorRecord[]>([

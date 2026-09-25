@@ -372,7 +372,7 @@ export default function WaitingRoomSmartDisplayPage() {
   // Poll real queue from API
   const fetchQueueFromAPI = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+      const res = await fetch(`/api/clinic/desk-queue`);
       if (res.ok) {
         const json = await res.json();
         if (json.queue && json.queue.length > 0) {
@@ -434,7 +434,7 @@ export default function WaitingRoomSmartDisplayPage() {
 
     let eventSource: EventSource | null = null;
     try {
-      eventSource = new EventSource(`${API_BASE_URL}/api/v1/clinic/stream`);
+      eventSource = new EventSource(`/api/clinic/stream`);
       eventSource.onopen = () => setSseConnected(true);
       eventSource.onmessage = (event) => {
         try {

@@ -101,7 +101,7 @@ export default function ShiftSettlementPage() {
   useEffect(() => {
     async function loadDeskData() {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/clinic/desk-queue`);
+        const res = await fetch(`/api/clinic/desk-queue`);
         if (res.ok) {
           const json = await res.json();
           if (json.collections) {
@@ -119,7 +119,7 @@ export default function ShiftSettlementPage() {
       }
 
       try {
-        const stlRes = await fetch(`${API_BASE_URL}/api/v1/clinic/settlements`);
+        const stlRes = await fetch(`/api/clinic/settlements`);
         if (stlRes.ok) {
           const stlJson = await stlRes.json();
           if (stlJson.settlements) {
@@ -223,7 +223,7 @@ export default function ShiftSettlementPage() {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/clinic/settle-shift`, {
+      const res = await fetch(`/api/clinic/settle-shift`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -234,10 +234,11 @@ export default function ShiftSettlementPage() {
         setCompletedSettlement(json.settlement);
         setPastSettlements(prev => [json.settlement, ...prev]);
       } else {
-        runFallbackSettlement(payload);
+        const errJson = await res.json().catch(() => ({}));
+        alert(`Settlement Error: ${errJson.detail || errJson.error || "Database failed to record shift settlement."}`);
       }
-    } catch (e) {
-      runFallbackSettlement(payload);
+    } catch (e: any) {
+      alert(`Network Error: ${e.message || "Failed to connect to clinic ledger server."}`);
     } finally {
       setIsSubmitting(false);
     }

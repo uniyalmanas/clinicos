@@ -336,7 +336,7 @@ export default function DashboardBedsPage() {
   const fetchBeds = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds`);
+      const res = await fetch(`/api/beds`);
       if (res.ok) {
         const data = await res.json();
         setBeds(data.beds || []);
@@ -356,7 +356,7 @@ export default function DashboardBedsPage() {
   const fetchLedger = async () => {
     setIsLoadingLedger(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/ledger`);
+      const res = await fetch(`/api/beds/ledger`);
       if (res.ok) {
         const data = await res.json();
         setBillingLedger(data.ledger || []);
@@ -370,13 +370,13 @@ export default function DashboardBedsPage() {
   // Load pending tasks across ward for shift handover
   const fetchTasksAndHandovers = async () => {
     try {
-      const resTasks = await fetch(`${API_BASE_URL}/api/v1/beds/tasks`);
+      const resTasks = await fetch(`/api/beds/tasks`);
       if (resTasks.ok) {
         const data = await resTasks.json();
         const pending = (data.tasks || []).filter((t: CareTask) => t.status === "pending");
         setAllPendingTasks(pending);
       }
-      const resHandovers = await fetch(`${API_BASE_URL}/api/v1/beds/tasks?view=handovers`);
+      const resHandovers = await fetch(`/api/beds/tasks?view=handovers`);
       if (resHandovers.ok) {
         const data = await resHandovers.json();
         setHandoverHistory(data.handovers || []);
@@ -522,7 +522,7 @@ export default function DashboardBedsPage() {
     if (!admitModalBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/admit`, {
+      const res = await fetch(`/api/beds/admit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -558,7 +558,7 @@ export default function DashboardBedsPage() {
     if (!sanitizationBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/clean`, {
+      const res = await fetch(`/api/beds/clean`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -583,7 +583,7 @@ export default function DashboardBedsPage() {
     if (!sanitizationBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/clean`, {
+      const res = await fetch(`/api/beds/clean`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -606,7 +606,7 @@ export default function DashboardBedsPage() {
   // 3. Discharge Order Initiate
   const handleInitiateDischargeOrder = async (bed: BedInfo) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/discharge-order`, {
+      const res = await fetch(`/api/beds/discharge-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -630,7 +630,7 @@ export default function DashboardBedsPage() {
     if (!dischargeSettlementBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/discharge`, {
+      const res = await fetch(`/api/beds/discharge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -662,7 +662,7 @@ export default function DashboardBedsPage() {
     if (!vitalsModalBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/tasks`, {
+      const res = await fetch(`/api/beds/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -692,7 +692,7 @@ export default function DashboardBedsPage() {
     if (!acknowledgeModalBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/tasks`, {
+      const res = await fetch(`/api/beds/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -728,7 +728,7 @@ export default function DashboardBedsPage() {
     if (!overrideTargetBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/ledger`, {
+      const res = await fetch(`/api/beds/ledger`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -764,7 +764,7 @@ export default function DashboardBedsPage() {
     if (!chargeModalBed) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/tasks`, {
+      const res = await fetch(`/api/beds/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -803,7 +803,7 @@ export default function DashboardBedsPage() {
   const handleExecuteShiftHandover = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/beds/tasks`, {
+      const res = await fetch(`/api/beds/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
