@@ -31,7 +31,10 @@ import {
   X,
   Info,
   DollarSign,
-  ChevronDown
+  ChevronDown,
+  Layers,
+  FileSpreadsheet,
+  CheckSquare
 } from "lucide-react";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
 
@@ -80,11 +83,13 @@ interface Doctor {
   chamber_name?: string;
 }
 
+type TabType = "tariff" | "shifts" | "roster" | "identity" | "standee";
+
 export default function DashboardSettingsPage() {
+  const [activeTab, setActiveTab] = useState<TabType>("tariff");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [savedToast, setSavedToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [clinicId, setClinicId] = useState("");
   const [clinicSlug, setClinicSlug] = useState("derma-care-dehradun");
 
@@ -137,67 +142,68 @@ export default function DashboardSettingsPage() {
   const [selectedDoctorForReactivate, setSelectedDoctorForReactivate] = useState<Doctor | null>(null);
   const [reactivatePin, setReactivatePin] = useState("");
 
-  // Load clinic data on mount
-  useEffect(() => {
-    async function loadClinic() {
-      try {
-        let slug = "derma-care-dehradun";
-        const userStr = localStorage.getItem("clinicos_user");
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          if (user.clinic_slug) slug = user.clinic_slug;
-          if (user.clinic_id) setClinicId(user.clinic_id);
-        }
-        setClinicSlug(slug);
-
-        const res = await fetch(`/api/clinics?slug=${encodeURIComponent(slug)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.id) setClinicId(data.id);
-          if (data.name) setClinicName(data.name);
-          if (data.tagline) setTagline(data.tagline);
-          if (data.reg_number) setRegNumber(data.reg_number);
-          if (data.upi_vpa) setUpiVpa(data.upi_vpa);
-          if (data.doctor_split_percentage) setDoctorSplit(Number(data.doctor_split_percentage));
-          if (data.address_line) setAddress(data.address_line);
-          if (data.city) setCity(data.city);
-          if (data.state) setState(data.state);
-          if (data.postal_code) setPostalCode(data.postal_code);
-          if (data.phone) setPhone(data.phone);
-
-          if (data.consultation_fee) setFee(Number(data.consultation_fee));
-          if (data.followup_fee) setFollowupFee(Number(data.followup_fee));
-          if (data.followup_validity_days) setValidityDays(Number(data.followup_validity_days));
-
-          if (data.doctors && data.doctors.length > 0) {
-            setDoctorsList(data.doctors);
-            setShiftDoctorSlug(data.doctors[0].slug);
-          }
-          if (data.tariff_versions && data.tariff_versions.length > 0) {
-            setTariffVersions(data.tariff_versions);
-          }
-          if (data.shift_guardrails && data.shift_guardrails.length > 0) {
-            setShiftGuardrails(data.shift_guardrails);
-          }
-          if (data.opening_hours) {
-            if (data.opening_hours.morning) setMorningShift(data.opening_hours.morning);
-            if (data.opening_hours.evening) setEveningShift(data.opening_hours.evening);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load clinic settings:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadClinic();
-  }, []);
-
-  const showNotification = (msg: string) => {
+  const showToast = (msg: string) => {
     setToastMessage(msg);
-    setSavedToast(true);
-    setTimeout(() => setSavedToast(false), 4500);
+    setTimeout(() => setToastMessage(null), 4500);
   };
+
+  // Load clinic data on mount
+  const fetchClinicData = async () => {
+    try {
+      setLoading(true);
+      let slug = "derma-care-dehradun";
+      const userStr = localStorage.getItem("clinicos_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.clinic_slug) slug = user.clinic_slug;
+        if (user.clinic_id) setClinicId(user.clinic_id);
+      }
+      setClinicSlug(slug);
+
+      const res = await fetch(`/api/clinics?slug=${encodeURIComponent(slug)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.id) setClinicId(data.id);
+        if (data.name) setClinicName(data.name);
+        if (data.tagline) setTagline(data.tagline);
+        if (data.reg_number) setRegNumber(data.reg_number);
+        if (data.upi_vpa) setUpiVpa(data.upi_vpa);
+        if (data.doctor_split_percentage) setDoctorSplit(Number(data.doctor_split_percentage));
+        if (data.address_line) setAddress(data.address_line);
+        if (data.city) setCity(data.city);
+        if (data.state) setState(data.state);
+        if (data.postal_code) setPostalCode(data.postal_code);
+        if (data.phone) setPhone(data.phone);
+
+        if (data.consultation_fee) setFee(Number(data.consultation_fee));
+        if (data.followup_fee) setFollowupFee(Number(data.followup_fee));
+        if (data.followup_validity_days) setValidityDays(Number(data.followup_validity_days));
+
+        if (data.doctors && data.doctors.length > 0) {
+          setDoctorsList(data.doctors);
+          setShiftDoctorSlug(data.doctors[0].slug);
+        }
+        if (data.tariff_versions && data.tariff_versions.length > 0) {
+          setTariffVersions(data.tariff_versions);
+        }
+        if (data.shift_guardrails && data.shift_guardrails.length > 0) {
+          setShiftGuardrails(data.shift_guardrails);
+        }
+        if (data.opening_hours) {
+          if (data.opening_hours.morning) setMorningShift(data.opening_hours.morning);
+          if (data.opening_hours.evening) setEveningShift(data.opening_hours.evening);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load clinic settings:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClinicData();
+  }, []);
 
   // 1. General Profile Save
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -235,7 +241,7 @@ export default function DashboardSettingsPage() {
           user.clinic_name = clinicName;
           localStorage.setItem("clinicos_user", JSON.stringify(user));
         }
-        showNotification("Practice profile and contact details saved to Supabase!");
+        showToast("Practice profile and contact details saved to Supabase!");
       } else {
         const err = await res.json();
         alert(`Failed to save: ${err.detail || "Server error"}`);
@@ -291,7 +297,7 @@ export default function DashboardSettingsPage() {
       setShowTariffModal(false);
       setTariffReason("");
       setTariffPin("");
-      showNotification(data.message || "New immutable tariff version published successfully!");
+      showToast(data.message || "New immutable tariff version published successfully!");
     } catch (err: any) {
       setTariffError(err.message || "Network error");
     }
@@ -335,7 +341,7 @@ export default function DashboardSettingsPage() {
         setShiftGuardrails(data.shift_guardrails);
       }
       setShowShiftModal(false);
-      showNotification(`Shift Guardrail for ${shiftChamber} successfully synchronized!`);
+      showToast(`Shift Guardrail for ${shiftChamber} successfully synchronized!`);
     } catch (err: any) {
       setShiftConflictError(err.message || "Failed to save shift guardrail");
     }
@@ -356,7 +362,7 @@ export default function DashboardSettingsPage() {
       const data = await res.json();
       if (res.ok && data.shift_guardrails) {
         setShiftGuardrails(data.shift_guardrails);
-        showNotification("Shift guardrail removed.");
+        showToast("Shift guardrail removed.");
       }
     } catch (err: any) {
       alert("Failed to delete shift: " + err.message);
@@ -394,14 +400,13 @@ export default function DashboardSettingsPage() {
         return;
       }
 
-      // Update doctor in local state
       setDoctorsList(prev => prev.map(doc => 
         doc.slug === selectedDoctorForOffboard.slug ? { ...doc, ...data.doctor } : doc
       ));
 
       setSelectedDoctorForOffboard(null);
       setOffboardPin("");
-      showNotification(`Doctor safely archived. Final settlement: ₹${data.settlement.doctor_net_payout} calculated.`);
+      showToast(`Doctor safely archived. Final settlement: ₹${data.settlement.doctor_net_payout} calculated.`);
     } catch (err: any) {
       setOffboardError(err.message || "Failed to offboard doctor");
     } finally {
@@ -442,7 +447,7 @@ export default function DashboardSettingsPage() {
 
       setSelectedDoctorForReactivate(null);
       setReactivatePin("");
-      showNotification(`Doctor ${data.doctor.full_name} restored to active roster!`);
+      showToast(`Doctor ${data.doctor.full_name} restored to active roster!`);
     } catch (err: any) {
       alert(err.message || "Failed to reactivate doctor");
     }
@@ -458,368 +463,353 @@ export default function DashboardSettingsPage() {
     change_reason: "Fiscal Year 2026 Q3 OPD Tariff Baseline & Specialist Split Agreement"
   };
 
+  const activeDoctorsCount = doctorsList.filter(d => d.is_active !== false).length;
+
   return (
-    <div className="space-y-6 pb-12">
-      {/* 10/10 EXACT HEADER & SUBTITLE */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* Toast Notification (Apple HIG Toast) */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-[16px] bg-[#1D1D1F] px-4 py-3 text-xs font-semibold text-white shadow-2xl dark:bg-white dark:text-[#1D1D1F] border border-white/10 animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 dark:text-emerald-600 shrink-0" />
+          <span>{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="ml-2 text-white/60 hover:text-white dark:text-black/60">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* 1. TOP HEADER & ACTION CONTROLS */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-bold mb-1 border border-blue-200/50 dark:border-blue-900/50">
-            <ShieldCheck className="h-3.5 w-3.5" /> Clinical Governance & Operational Master Console
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 border border-blue-500/20 text-[11px] font-black uppercase tracking-wider text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+              <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+              <span>Manager PIN 4491 Governed</span>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <ShieldCheck className="h-3 w-3" />
+              <span>DPDP &amp; NMC Compliant</span>
+            </span>
           </div>
-          <h1 className="text-xl font-black text-slate-900 dark:text-white">
-            Clinic Master Configuration & Roster Settings
+
+          <h1 className="mt-1.5 text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
+            Clinic Master Configuration &amp; Roster Settings
           </h1>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5 font-medium">
             Versioned Financial Rules • Shift-Aware Token Guardrails • Proactive Patient Alerts • Safe Roster Management
           </p>
         </div>
 
-        {savedToast && (
-          <div className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-xl animate-in fade-in">
-            <CheckCircle2 className="h-4 w-4 text-white" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button 
+            onClick={() => fetchClinicData()}
+            className="flex items-center gap-1.5 rounded-[12px] bg-white dark:bg-[#1C1C1E] px-3.5 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white border border-black/[0.08] dark:border-white/[0.12] hover:bg-black/[0.03] dark:hover:bg-white/[0.06] transition shadow-apple-sm"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-[#0071E3]" : "text-[#86868B] dark:text-[#8E8E93]"}`} />
+            <span>Sync Live</span>
+          </button>
+
+          <button 
+            onClick={() => {
+              setShowTariffModal(true);
+              setTariffError("");
+            }}
+            className="flex items-center gap-1.5 rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-4 py-2 text-xs font-bold text-white shadow-sm transition active:scale-98"
+          >
+            <History className="h-3.5 w-3.5" />
+            <span>Publish Rate Version</span>
+          </button>
+        </div>
       </div>
 
-      {/* 4 CLINICAL GOVERNANCE PILLARS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
-              <History className="h-4 w-4" />
+      {/* 2. 4 CLINICAL GOVERNANCE PILLARS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="rounded-[18px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-4 shadow-apple-sm">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-xs">
+              <CreditCard className="h-4 w-4" />
+              <span>Effective-Dated Tariffs</span>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-              PIN 4491 Locked
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+              PIN 4491
             </span>
           </div>
-          <div className="text-xs font-bold text-slate-900 dark:text-white">Effective-Dated Tariffs</div>
-          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
             Time-scoped rate versions prevent retroactive dispute. Past appointments retain booking-time financial splits.
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+        <div className="rounded-[18px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-4 shadow-apple-sm">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-xs">
               <Clock className="h-4 w-4" />
+              <span>Shift-Token Guardrails</span>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-              30m Cutoff Rule
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+              30m Cutoff
             </span>
           </div>
-          <div className="text-xs font-bold text-slate-900 dark:text-white">Shift-Token Guardrails</div>
-          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-            Automatic cutoff closes token issuance 30 mins before shift end. "Last 3 tokens" grace alert prevents clinic queue overhang.
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+            Automatic cutoff closes token issuance 30 mins before shift end. "Last 3 tokens" grace alert prevents overhang.
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400">
+        <div className="rounded-[18px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-4 shadow-apple-sm">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold text-xs">
               <DoorOpen className="h-4 w-4" />
+              <span>Chamber Conflict Engine</span>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300">
-              Overlap Blocked
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+              Collision Lock
             </span>
           </div>
-          <div className="text-xs font-bold text-slate-900 dark:text-white">Chamber Conflict Engine</div>
-          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-            Physical chamber scheduler blocks assigning two doctors to the same room during overlapping duty shifts.
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+            Physical room allocator blocks assigning two doctors to the same physical chamber during overlapping hours.
           </p>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+        <div className="rounded-[18px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-4 shadow-apple-sm">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
               <ShieldCheck className="h-4 w-4" />
+              <span>Safe Doctor Lifecycle</span>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-              DPDP & NMC Safe
+            <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+              DPDP Safe
             </span>
           </div>
-          <div className="text-xs font-bold text-slate-900 dark:text-white">Safe Doctor Lifecycle</div>
-          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-            Deactivating freezes new bookings while preserving 100% of historical EMR & auto-calculating final payout settlements.
+          <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+            Deactivation freezes new bookings while preserving 100% of historical EMR &amp; auto-calculating final settlements.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* MAIN COLUMN (8 COLS) */}
-        <div className="lg:col-span-8 space-y-6">
+      {/* 3. QUICK METRICS OVERVIEW BAR */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
+          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">Active Consultation Fee</span>
+          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">₹{activeTariff.consultation_fee}</div>
+        </div>
 
-          {/* 1. PRACTICE IDENTITY FORM */}
-          <form onSubmit={handleSaveProfile} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-brand-600" />
-                Practice Profile & Contact Identity
-              </h2>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                Tenant: {clinicSlug}
-              </span>
-            </div>
+        <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
+          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">Visiting Split Ratio</span>
+          <div className="text-xl sm:text-2xl font-black text-[#0071E3] dark:text-[#2997FF] mt-1">
+            {activeTariff.doctor_split_percentage}% / {100 - Number(activeTariff.doctor_split_percentage)}%
+          </div>
+        </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 text-xs">
-              <div className="sm:col-span-2">
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Registered Clinic / Hospital Name</label>
-                <input
-                  type="text"
-                  value={clinicName}
-                  onChange={e => setClinicName(e.target.value)}
-                  required
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-bold shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
+        <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
+          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">Tariff Versions</span>
+          <div className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white mt-1">{tariffVersions.length}</div>
+        </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Speciality Subtitle / Tagline</label>
-                <input
-                  type="text"
-                  value={tagline}
-                  onChange={e => setTagline(e.target.value)}
-                  placeholder="e.g. Advanced Dermatology & Laser Surgery"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
+        <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
+          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">Chamber Guardrails</span>
+          <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{shiftGuardrails.length} Active</div>
+        </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Clinical Est. Act / NABH Reg #</label>
-                <input
-                  type="text"
-                  value={regNumber}
-                  onChange={e => setRegNumber(e.target.value)}
-                  placeholder="e.g. UK-CEA-REG-2024"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
+        <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
+          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">Clinical Roster</span>
+          <div className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white mt-1">{activeDoctorsCount} Active</div>
+        </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Helpline / Official WhatsApp Number</label>
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  required
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
+        <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
+          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">Token Cutoff Window</span>
+          <div className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 mt-1">30 Mins Prior</div>
+        </div>
+      </div>
 
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Soundbox / Counter UPI ID (VPA)</label>
-                <input
-                  type="text"
-                  value={upiVpa}
-                  onChange={e => setUpiVpa(e.target.value)}
-                  placeholder="clinicname@bank"
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="font-semibold text-slate-700 dark:text-slate-300">Street Address & Landmark</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
-                  required
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm focus:border-brand-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 dark:text-slate-300">City</label>
-                <input
-                  type="text"
-                  value={city}
-                  onChange={e => setCity(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">State</label>
-                  <input
-                    type="text"
-                    value={state}
-                    onChange={e => setState(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">PIN Code</label>
-                  <input
-                    type="text"
-                    value={postalCode}
-                    onChange={e => setPostalCode(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
+      {/* 4. APPLE SEGMENTED NAVIGATION CONTROL (TABS) */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-[14px] bg-[#ECEEF2] p-1 dark:bg-white/[0.06] overflow-x-auto w-full md:w-auto">
+          {[
+            { id: "tariff", label: "Tariffs & Splits", icon: CreditCard },
+            { id: "shifts", label: "Shifts & Guardrails", icon: Clock },
+            { id: "roster", label: "Doctor Roster & Offboarding", icon: Users },
+            { id: "identity", label: "Practice Profile", icon: Building2 },
+            { id: "standee", label: "Front Desk Standee Studio", icon: QrCode }
+          ].map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
               <button
-                type="submit"
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabType)}
+                className={`flex items-center gap-2 rounded-[10px] px-3.5 py-2 text-xs font-semibold transition whitespace-nowrap ${
+                  isActive
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-apple-sm font-bold"
+                    : "text-[#86868B] dark:text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
+                }`}
               >
-                {saving ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                {saving ? "Saving..." : "Save Identity Changes"}
+                <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#0071E3] dark:text-[#2997FF]" : "text-[#86868B] dark:text-[#8E8E93]"}`} />
+                <span>{tab.label}</span>
               </button>
-            </div>
-          </form>
+            );
+          })}
+        </div>
 
-          {/* 2. FIX 1: EFFECTIVE-DATED TARIFF & DOCTOR SPLIT VERSIONING */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <div className="text-xs text-[#86868B] dark:text-[#8E8E93] font-mono">
+          Tenant: <strong className="text-[#1D1D1F] dark:text-white">{clinicSlug}</strong>
+        </div>
+      </div>
+
+      {/* 5. TAB 1: TARIFFS & REVENUE SPLITS (FIX 1) */}
+      {activeTab === "tariff" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Active Tariff Card */}
+          <div className="rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-card space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] dark:border-white/[0.08] pb-4">
               <div>
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-emerald-600" />
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Effective-Dated Consultation Tariffs & Visiting Splits
-                  </h2>
+                <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Currently Active Tariff (Enforced at Counter &amp; Public Booking)</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Immutable version records: Changes take effect on designated dates without retroactively overwriting past payouts.
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+                  Tariff version locked: Past consultations retain booking-time rates and cannot be altered retroactively.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setShowTariffModal(true);
-                  setTariffError("");
-                }}
-                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition"
-              >
-                <History className="h-3.5 w-3.5" />
-                <span>Publish New Rate Version</span>
-              </button>
-            </div>
-
-            {/* Currently Active Tariff Highlight */}
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  Currently Active Tariff (Enforced at Counter & Online Booking)
-                </span>
-                <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-500/20">
                   Effective From: {new Date(activeTariff.effective_from).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/40 dark:border-slate-800">
-                  <div className="text-[10px] text-slate-500">Consultation Fee</div>
-                  <div className="text-base font-black text-emerald-600 dark:text-emerald-400">₹{activeTariff.consultation_fee}</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/40 dark:border-slate-800">
-                  <div className="text-[10px] text-slate-500">Follow-up Fee</div>
-                  <div className="text-base font-black text-slate-800 dark:text-white">₹{activeTariff.followup_fee}</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/40 dark:border-slate-800">
-                  <div className="text-[10px] text-slate-500">Free Follow-up</div>
-                  <div className="text-base font-black text-slate-800 dark:text-white">{activeTariff.followup_validity_days} Days</div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/40 dark:border-slate-800">
-                  <div className="text-[10px] text-slate-500">Revenue Split</div>
-                  <div className="text-base font-black text-blue-600 dark:text-blue-400">
-                    {activeTariff.doctor_split_percentage}% / {100 - Number(activeTariff.doctor_split_percentage)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-emerald-200/30 dark:border-slate-800">
-                <span><strong>Audit Justification:</strong> {activeTariff.change_reason}</span>
-                <span className="font-mono text-[10px] text-slate-500">{activeTariff.authorized_by}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTariffModal(true);
+                    setTariffError("");
+                  }}
+                  className="rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-4 py-2 text-xs font-bold text-white shadow-apple-sm transition"
+                >
+                  Create New Revision
+                </button>
               </div>
             </div>
 
-            {/* Tariff Version History Audit Trail Table */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <History className="h-3.5 w-3.5 text-slate-400" />
-                  Immutable Tariff Change-Log (Audit Trail)
-                </span>
-                <span className="text-[10px] font-mono text-slate-400">
-                  {tariffVersions.length} versions recorded
-                </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-[16px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-center">
+                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Standard Consultation</div>
+                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">₹{activeTariff.consultation_fee}</div>
               </div>
 
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
-                    <tr>
-                      <th className="p-3">Effective Date</th>
-                      <th className="p-3">Standard Fee</th>
-                      <th className="p-3">Follow-up</th>
-                      <th className="p-3">Split Ratio</th>
-                      <th className="p-3">Reason / Justification</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {tariffVersions.map((v, i) => (
-                      <tr key={v.id || i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                        <td className="p-3 font-mono font-medium text-slate-700 dark:text-slate-300">
-                          {new Date(v.effective_from).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">
-                          ₹{v.consultation_fee}
-                        </td>
-                        <td className="p-3 text-slate-600 dark:text-slate-400">
-                          ₹{v.followup_fee} ({v.followup_validity_days}d)
-                        </td>
-                        <td className="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">
-                          {v.doctor_split_percentage}/{100 - Number(v.doctor_split_percentage)}
-                        </td>
-                        <td className="p-3 text-slate-600 dark:text-slate-400 max-w-xs truncate" title={v.change_reason}>
-                          {v.change_reason}
-                        </td>
-                        <td className="p-3">
-                          {v.is_active ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
-                              ACTIVE
-                            </span>
-                          ) : new Date(v.effective_from) > new Date() ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300">
-                              SCHEDULED
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                              ARCHIVED
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="p-3.5 rounded-[16px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-center">
+                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Follow-up Fee</div>
+                <div className="text-2xl font-black text-[#1D1D1F] dark:text-white mt-1">₹{activeTariff.followup_fee}</div>
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-2">
-                <Info className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                <span>Financial Integrity Rule: Changes to tariff do not alter prior receipts or doctor payout calculations.</span>
+
+              <div className="p-3.5 rounded-[16px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-center">
+                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Free Follow-up Validity</div>
+                <div className="text-2xl font-black text-[#1D1D1F] dark:text-white mt-1">{activeTariff.followup_validity_days} Days</div>
               </div>
+
+              <div className="p-3.5 rounded-[16px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-center">
+                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Visiting Split Ratio</div>
+                <div className="text-2xl font-black text-[#0071E3] dark:text-[#2997FF] mt-1">
+                  {activeTariff.doctor_split_percentage}% / {100 - Number(activeTariff.doctor_split_percentage)}%
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-[#86868B] dark:text-[#8E8E93] pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
+              <span><strong>Audit Justification:</strong> {activeTariff.change_reason}</span>
+              <span className="font-mono text-[11px] mt-1 sm:mt-0">{activeTariff.authorized_by}</span>
             </div>
           </div>
 
-          {/* 3. FIX 2: SHIFT-AWARE TOKEN GUARDRAILS & CHAMBER CONFLICT ENGINE */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
+          {/* Immutable Tariff Change-Log (Audit Trail Table) */}
+          <div className="rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-card space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                  <History className="h-4 w-4 text-[#0071E3]" />
+                  Immutable Tariff Version Change-Log (Audit Trail)
+                </h3>
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+                  Permanent record of fee adjustments and revenue split agreements.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-[#86868B] dark:text-[#8E8E93]">
+                {tariffVersions.length} recorded versions
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-[16px] border border-black/[0.06] dark:border-white/[0.08]">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-black/[0.02] dark:bg-white/[0.02] text-[#86868B] dark:text-[#8E8E93] font-semibold border-b border-black/[0.06] dark:border-white/[0.08]">
+                  <tr>
+                    <th className="p-3">Effective Date</th>
+                    <th className="p-3">Standard Fee</th>
+                    <th className="p-3">Follow-up</th>
+                    <th className="p-3">Split Ratio</th>
+                    <th className="p-3">Reason / Justification</th>
+                    <th className="p-3">Authorized By</th>
+                    <th className="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06]">
+                  {tariffVersions.map((v, i) => (
+                    <tr key={v.id || i} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.02]">
+                      <td className="p-3 font-mono font-bold text-[#1D1D1F] dark:text-white">
+                        {new Date(v.effective_from).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="p-3 font-bold text-emerald-600 dark:text-emerald-400">
+                        ₹{v.consultation_fee}
+                      </td>
+                      <td className="p-3 text-[#1D1D1F] dark:text-[#F5F5F7]">
+                        ₹{v.followup_fee} ({v.followup_validity_days}d)
+                      </td>
+                      <td className="p-3 font-mono font-bold text-[#0071E3] dark:text-[#2997FF]">
+                        {v.doctor_split_percentage}/{100 - Number(v.doctor_split_percentage)}
+                      </td>
+                      <td className="p-3 text-[#86868B] dark:text-[#8E8E93] max-w-xs truncate" title={v.change_reason}>
+                        {v.change_reason}
+                      </td>
+                      <td className="p-3 font-mono text-[10px] text-[#86868B] dark:text-[#8E8E93]">
+                        {v.authorized_by}
+                      </td>
+                      <td className="p-3">
+                        {v.is_active ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-500/20">
+                            ACTIVE
+                          </span>
+                        ) : new Date(v.effective_from) > new Date() ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-500/20">
+                            SCHEDULED
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/[0.04] text-[#86868B] dark:bg-white/[0.06] dark:text-[#8E8E93]">
+                            ARCHIVED
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center gap-2 p-3 rounded-[14px] bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/40 text-xs text-blue-800 dark:text-blue-300">
+              <Info className="h-4 w-4 shrink-0 text-[#0071E3]" />
+              <span>Financial Immutability Rule: Updates never overwrite prior receipts or payouts. Past billing ledgers remain 100% auditable.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. TAB 2: SHIFTS & GUARDRAILS (FIX 2) */}
+      {activeTab === "shifts" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-card space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] dark:border-white/[0.08] pb-4">
+              <div>
+                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                   <Clock className="h-4 w-4 text-amber-600" />
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                    OPD Consultation Shifts & Chamber Conflict Engine
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Shift cutoff stops token issuance 30m before shift close; room overlap validation prevents double-booking doctors.
+                  OPD Consultation Shifts &amp; Chamber Guardrails
+                </h3>
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+                  Enforces 30m cutoff before shift end and blocks assigning two doctors to the same physical room.
                 </p>
               </div>
 
@@ -829,48 +819,52 @@ export default function DashboardSettingsPage() {
                   setShowShiftModal(true);
                   setShiftConflictError("");
                 }}
-                className="inline-flex items-center gap-2 rounded-2xl bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition"
+                className="rounded-[12px] bg-amber-600 hover:bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-apple-sm transition"
               >
-                <DoorOpen className="h-3.5 w-3.5" />
-                <span>Schedule Chamber Shift</span>
+                + Schedule Chamber Shift
               </button>
             </div>
 
-            {/* Active Chamber Shifts Guardrail Grid */}
+            {/* Chamber Shift Cards Grid */}
             <div className="grid gap-3 sm:grid-cols-2">
               {shiftGuardrails.map((shift, idx) => (
-                <div key={shift.id || idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2 relative">
+                <div 
+                  key={shift.id || idx} 
+                  className="p-4 rounded-[18px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] space-y-3 relative shadow-apple-sm"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <DoorOpen className="h-3.5 w-3.5 text-amber-600" />
+                    <span className="text-xs font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
+                      <DoorOpen className="h-4 w-4 text-amber-600" />
                       {shift.chamber_name}
                     </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 font-bold">
+                    <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 font-bold border border-amber-500/20">
                       {shift.shift_name}
                     </span>
                   </div>
 
-                  <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">
                     {shift.doctor_name}
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-mono">
+                  <div className="flex items-center justify-between text-[11px] text-[#86868B] dark:text-[#8E8E93] font-mono">
                     <span>Timing: {shift.start_time} - {shift.end_time}</span>
                     <span>Cap: {shift.token_capacity} tokens</span>
                   </div>
 
-                  <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 space-y-1">
+                  <div className="p-2.5 rounded-[12px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] text-[10px] text-[#86868B] dark:text-[#8E8E93] space-y-1">
                     <div className="flex items-center justify-between">
                       <span>• Token Cutoff Window:</span>
                       <strong className="text-amber-600 dark:text-amber-400 font-mono">{shift.token_cutoff_minutes} mins prior</strong>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>• Overhang Grace Period:</span>
-                      <strong className="text-slate-700 dark:text-slate-300 font-mono">{shift.grace_period_mins} mins</strong>
+                      <strong className="text-[#1D1D1F] dark:text-white font-mono">{shift.grace_period_mins} mins</strong>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>• Unseen Token Auto-Cancel:</span>
-                      <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{shift.auto_cancel_unseen ? "ENABLED (SMS Reschedule)" : "DISABLED"}</strong>
+                      <span>• Unseen Auto-Cancel:</span>
+                      <strong className="text-emerald-600 dark:text-emerald-400 font-mono">
+                        {shift.auto_cancel_unseen ? "ENABLED (SMS Reschedule)" : "DISABLED"}
+                      </strong>
                     </div>
                   </div>
 
@@ -887,28 +881,33 @@ export default function DashboardSettingsPage() {
               ))}
             </div>
 
-            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs flex items-start gap-2.5">
+            <div className="p-3.5 rounded-[16px] bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40 text-xs flex items-start gap-2.5">
               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <div className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">
+              <div className="text-amber-900 dark:text-amber-200 text-[11px] leading-relaxed">
                 <strong>Anti-Overhang Operational Guardrail:</strong> Token issuance closes strictly 30 minutes before shift conclusion. Receptionists and QR stands will display <em>"Shift Token Limit Reached"</em> to ensure doctors finish consultations on schedule without abandoning queued patients.
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* 4. FIX 3: SAFE DOCTOR ROSTER & OFFBOARDING / FINAL SETTLEMENT */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+      {/* 7. TAB 3: DOCTOR ROSTER & SAFE OFFBOARDING (FIX 3) */}
+      {activeTab === "roster" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-card space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-black/[0.06] dark:border-white/[0.08] pb-4">
               <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  Active Clinical Roster & Safe Offboarding Management
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  DPDP & NMC compliant lifecycle: Deactivation freezes new appointments while strictly preserving all historical EMR, prescriptions & billing.
+                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                  <Users className="h-4 w-4 text-[#0071E3]" />
+                  Active Clinical Roster &amp; Safe Offboarding Management
+                </h3>
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+                  DPDP &amp; NMC compliant lifecycle: Deactivation freezes new appointments while strictly preserving all historical EMR, prescriptions &amp; billing.
                 </p>
               </div>
-              <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-full border border-blue-200/50 dark:border-blue-900/50">
-                {doctorsList.filter(d => d.is_active !== false).length} Active Consultants
+
+              <span className="text-[11px] font-mono font-bold text-[#0071E3] dark:text-[#2997FF] bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-full border border-blue-500/20">
+                {activeDoctorsCount} Active Consultants
               </span>
             </div>
 
@@ -918,27 +917,27 @@ export default function DashboardSettingsPage() {
                 return (
                   <div
                     key={doc.id || idx}
-                    className={`p-4 rounded-2xl border transition ${
+                    className={`p-4 rounded-[18px] border transition ${
                       isActive 
-                        ? "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800" 
-                        : "bg-slate-50 dark:bg-slate-950/60 border-dashed border-slate-300 dark:border-slate-800 opacity-80"
+                        ? "bg-white dark:bg-[#1C1C1E] border-black/[0.06] dark:border-white/[0.08] shadow-apple-sm" 
+                        : "bg-black/[0.02] dark:bg-white/[0.02] border-dashed border-black/[0.12] dark:border-white/[0.12] opacity-80"
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">{doc.full_name}</h4>
+                          <h4 className="text-xs font-bold text-[#1D1D1F] dark:text-white">{doc.full_name}</h4>
                           {isActive ? (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-500/20">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Active Practice
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-500/20">
                               <Lock className="h-2.5 w-2.5" /> Safe Archived (EMR Preserved)
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
+                        <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-0.5">
                           {doc.specialization} • Assigned: {doc.chamber_name || "Chamber 1 - OPD Main"} • Consultation Fee: ₹{doc.consultation_fee || fee}
                         </div>
                         {!isActive && (
@@ -957,7 +956,7 @@ export default function DashboardSettingsPage() {
                               setOffboardError("");
                               setOffboardPin("");
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/60 transition"
                           >
                             <UserMinus className="h-3.5 w-3.5" />
                             <span>Safe Deactivate</span>
@@ -969,7 +968,7 @@ export default function DashboardSettingsPage() {
                               setSelectedDoctorForReactivate(doc);
                               setReactivatePin("");
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition"
                           >
                             <UserCheck className="h-3.5 w-3.5" />
                             <span>1-Click Reactivate</span>
@@ -983,110 +982,254 @@ export default function DashboardSettingsPage() {
             </div>
           </div>
         </div>
+      )}
 
-        {/* SIDE COLUMN (4 COLS): PRINTABLE COUNTER QR & PUBLIC MICROSITE PREVIEW */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 border border-emerald-500/20">
-                LIVE TOKEN QUEUE QR
+      {/* 8. TAB 4: PRACTICE PROFILE & IDENTITY */}
+      {activeTab === "identity" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <form onSubmit={handleSaveProfile} className="rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-card space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-4">
+              <div>
+                <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-[#0071E3]" />
+                  Practice Profile &amp; Contact Identity
+                </h3>
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+                  Appears on official prescriptions, receipt headers, and patient portal SMS links.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-black/[0.04] text-[#1D1D1F] dark:bg-white/[0.06] dark:text-[#8E8E93]">
+                Tenant Slug: {clinicSlug}
               </span>
-              <span className="text-[10px] font-mono text-slate-400">DIN-A5 / DIN-A4</span>
             </div>
 
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              Official Front Desk Acrylic Standee
-            </h3>
-            <p className="text-xs text-slate-500">
-              Patients scan with phone camera to track live token position and receive automated WhatsApp alerts 2 tokens away.
-            </p>
+            <div className="grid gap-4 sm:grid-cols-2 text-xs">
+              <div className="sm:col-span-2">
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Registered Clinic / Hospital Name</label>
+                <input
+                  type="text"
+                  value={clinicName}
+                  onChange={e => setClinicName(e.target.value)}
+                  required
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-bold shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                />
+              </div>
 
-            {/* REAL VECTOR QR CODE VIA QRCodeDisplay */}
-            <div className="mx-auto my-3 flex items-center justify-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm dark:bg-white dark:border-slate-800">
-              <QRCodeDisplay
-                value={`https://medic-sept-2026.vercel.app/waiting-room?clinic=${clinicSlug}&view=patient`}
-                size={160}
-                level="H"
-                fgColor="#000000"
-                bgColor="#FFFFFF"
-                centerBadgeText="ClinicOS"
-              />
+              <div>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Speciality Subtitle / Tagline</label>
+                <input
+                  type="text"
+                  value={tagline}
+                  onChange={e => setTagline(e.target.value)}
+                  placeholder="e.g. Advanced Dermatology & Laser Surgery"
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Clinical Est. Act / NABH Reg #</label>
+                <input
+                  type="text"
+                  value={regNumber}
+                  onChange={e => setRegNumber(e.target.value)}
+                  placeholder="e.g. UK-CEA-REG-2024"
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Helpline / Official WhatsApp Number</label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  required
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Soundbox / Counter UPI ID (VPA)</label>
+                <input
+                  type="text"
+                  value={upiVpa}
+                  onChange={e => setUpiVpa(e.target.value)}
+                  placeholder="clinicname@bank"
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Street Address &amp; Landmark</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  required
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">City</label>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={e => setCity(e.target.value)}
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">State</label>
+                  <input
+                    type="text"
+                    value={state}
+                    onChange={e => setState(e.target.value)}
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">PIN Code</label>
+                  <input
+                    type="text"
+                    value={postalCode}
+                    onChange={e => setPostalCode(e.target.value)}
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-xl bg-slate-100 p-2.5 text-[10px] font-mono text-slate-700 dark:bg-slate-800 dark:text-slate-300 truncate">
-              https://medic-sept-2026.vercel.app/waiting-room?clinic={clinicSlug}&amp;view=patient
-            </div>
-
-            {/* Print Specifications */}
-            <div className="rounded-xl bg-slate-50 dark:bg-slate-950/60 p-3 text-[11px] text-slate-600 dark:text-slate-400 text-left space-y-1 border border-slate-100 dark:border-slate-800">
-              <div className="font-bold text-slate-900 dark:text-white text-xs">Print Specifications:</div>
-              <div>&bull; <strong>Format</strong>: DIN-A5 (148 × 210 mm) tabletop tent card</div>
-              <div>&bull; <strong>Stock</strong>: 250 - 300 GSM Matte Art Card with fold guides</div>
-              <div>&bull; <strong>Bilingual</strong>: English &amp; Hindi instructions included</div>
-            </div>
-
-            <div className="space-y-2 pt-1">
-              <Link
-                href="/dashboard/standee"
-                className="w-full rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] py-3 text-xs font-bold text-white shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>Launch Acrylic Standee Studio</span>
-              </Link>
-
+            <div className="pt-2 flex justify-end">
               <button
-                type="button"
-                onClick={() => window.print()}
-                className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 py-2.5 text-xs font-bold text-slate-900 dark:text-white shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2 cursor-pointer"
+                type="submit"
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-5 py-2.5 text-xs font-bold text-white shadow-apple-sm disabled:opacity-50 transition"
               >
-                <Printer className="h-4 w-4" />
-                <span>Print Standee Directly (A5)</span>
+                {saving ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                {saving ? "Saving Changes..." : "Save Identity Changes"}
               </button>
             </div>
-          </div>
+          </form>
+        </div>
+      )}
 
-          {/* QUICK AUDIT SUMMARY CARD */}
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-3">
-            <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              Clinical Governance Summary
-            </h4>
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Tariff Versions Stored</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">{tariffVersions.length}</span>
+      {/* 9. TAB 5: FRONT DESK STANDEE STUDIO & COUNTER QR */}
+      {activeTab === "standee" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="grid gap-6 lg:grid-cols-12">
+            {/* Standee Preview Card */}
+            <div className="lg:col-span-6 rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 text-center shadow-apple-card space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 border border-emerald-500/20">
+                  LIVE TOKEN QUEUE QR
+                </span>
+                <span className="text-[10px] font-mono text-[#86868B] dark:text-[#8E8E93]">DIN-A5 / DIN-A4</span>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Active Shift Guardrails</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{shiftGuardrails.length}</span>
+
+              <div>
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
+                  Official Front Desk Acrylic Standee
+                </h3>
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
+                  Patients scan with phone camera to track live token position and receive automated WhatsApp alerts 2 tokens away.
+                </p>
               </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Chamber Overlap Engine</span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">STRICT ENFORCEMENT</span>
+
+              {/* REAL VECTOR QR CODE VIA QRCodeDisplay */}
+              <div className="mx-auto my-3 flex items-center justify-center p-4 rounded-[20px] bg-white border border-black/[0.08] shadow-apple-sm max-w-xs">
+                <QRCodeDisplay
+                  value={`https://medic-sept-2026.vercel.app/waiting-room?clinic=${clinicSlug}&view=patient`}
+                  size={180}
+                  level="H"
+                  fgColor="#000000"
+                  bgColor="#FFFFFF"
+                  centerBadgeText="ClinicOS"
+                />
               </div>
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800">
-                <span className="text-slate-600 dark:text-slate-400">Authorization PIN Protocol</span>
-                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">PIN 4491 REQUIRED</span>
+
+              <div className="rounded-[12px] bg-black/[0.03] dark:bg-white/[0.04] p-2.5 text-[11px] font-mono text-[#1D1D1F] dark:text-[#F5F5F7] truncate">
+                https://medic-sept-2026.vercel.app/waiting-room?clinic={clinicSlug}&amp;view=patient
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Link
+                  href="/dashboard/standee"
+                  className="flex-1 rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] py-2.5 text-xs font-bold text-white shadow-apple-sm transition flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Launch Acrylic Standee Studio</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-4 py-2.5 text-xs font-semibold text-[#1D1D1F] dark:text-white shadow-apple-sm hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition flex items-center gap-1.5"
+                >
+                  <Printer className="h-4 w-4" />
+                  <span>Direct Print (A5)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Print Specs & Standee Features */}
+            <div className="lg:col-span-6 space-y-4">
+              <div className="rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-card space-y-3">
+                <h4 className="text-xs font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                  <Printer className="h-4 w-4 text-[#0071E3]" />
+                  Standee Physical Specifications
+                </h4>
+
+                <div className="space-y-2 text-xs text-[#86868B] dark:text-[#8E8E93]">
+                  <div className="flex justify-between p-2 rounded-[10px] bg-black/[0.02] dark:bg-white/[0.04]">
+                    <span>Format</span>
+                    <strong className="text-[#1D1D1F] dark:text-white">DIN-A5 (148 × 210 mm) Tabletop Tent</strong>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-[10px] bg-black/[0.02] dark:bg-white/[0.04]">
+                    <span>Paper Stock</span>
+                    <strong className="text-[#1D1D1F] dark:text-white">300 GSM Matte Art Card</strong>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-[10px] bg-black/[0.02] dark:bg-white/[0.04]">
+                    <span>Language Support</span>
+                    <strong className="text-[#1D1D1F] dark:text-white">Bilingual (English &amp; Hindi)</strong>
+                  </div>
+                  <div className="flex justify-between p-2 rounded-[10px] bg-black/[0.02] dark:bg-white/[0.04]">
+                    <span>Proactive Alerts</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400">WhatsApp 2-Tokens Away Notification</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[22px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-card space-y-3">
+                <h4 className="text-xs font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-emerald-600" />
+                  Zero-App Patient Queue Tracker
+                </h4>
+                <p className="text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                  Patients scan the standee with any smartphone camera app. The queue updates live without requiring an app download or account creation. When their turn is 2 tokens away, an automated WhatsApp alert is dispatched directly to their phone.
+                </p>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* MODAL 1: PUBLISH VERSIONED TARIFF (FIX 1) */}
       {showTariffModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-[24px] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.12] shadow-apple-modal p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
               <div className="flex items-center gap-2">
                 <History className="h-5 w-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
                   Publish Effective-Dated Tariff Version
                 </h3>
               </div>
               <button 
                 onClick={() => setShowTariffModal(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-xl text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1094,56 +1237,56 @@ export default function DashboardSettingsPage() {
 
             <form onSubmit={handlePublishTariff} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300">Effective Date</label>
+                <label className="font-bold text-[#1D1D1F] dark:text-white">Effective Date</label>
                 <input
                   type="date"
                   value={tariffEffectiveDate}
                   onChange={e => setTariffEffectiveDate(e.target.value)}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                 />
-                <span className="text-[10px] text-slate-500">
+                <span className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">
                   Select today for immediate enforcement, or a future date for scheduled revisions.
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Consultation Fee (₹)</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Consultation (₹)</label>
                   <input
                     type="number"
                     value={fee}
                     onChange={e => setFee(Number(e.target.value))}
                     required
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono font-bold text-emerald-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-emerald-400"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono font-bold text-emerald-600 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-emerald-400"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Follow-up Fee (₹)</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Follow-up (₹)</label>
                   <input
                     type="number"
                     value={followupFee}
                     onChange={e => setFollowupFee(Number(e.target.value))}
                     required
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Free Validity (Days)</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Free Days</label>
                   <input
                     type="number"
                     value={validityDays}
                     onChange={e => setValidityDays(Number(e.target.value))}
                     required
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Doctor Revenue Split</label>
-                  <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{doctorSplit}% Doctor / {100 - doctorSplit}% Clinic</span>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Doctor Split Ratio</label>
+                  <span className="font-mono font-bold text-[#0071E3] dark:text-[#2997FF]">{doctorSplit}% Doctor / {100 - doctorSplit}% Clinic</span>
                 </div>
                 <input
                   type="range"
@@ -1152,24 +1295,24 @@ export default function DashboardSettingsPage() {
                   step="5"
                   value={doctorSplit}
                   onChange={e => setDoctorSplit(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-800 accent-blue-600"
+                  className="w-full h-2 bg-black/[0.08] dark:bg-white/[0.12] rounded-lg appearance-none cursor-pointer accent-[#0071E3]"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300">Audit Change Justification Reason *</label>
+                <label className="font-bold text-[#1D1D1F] dark:text-white">Audit Change Justification Reason *</label>
                 <input
                   type="text"
                   value={tariffReason}
                   onChange={e => setTariffReason(e.target.value)}
                   placeholder="e.g. Q4 2026 Revision - Revised Specialist Dermatologist Split"
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                 />
               </div>
 
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                <label className="font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5 mb-1">
+              <div className="p-3 rounded-[14px] bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40">
+                <label className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5 mb-1">
                   <Lock className="h-3.5 w-3.5" />
                   Manager Authorization PIN Required (Default: 4491)
                 </label>
@@ -1180,12 +1323,12 @@ export default function DashboardSettingsPage() {
                   placeholder="Enter 4-digit PIN (4491)"
                   maxLength={4}
                   required
-                  className="w-full rounded-xl border border-amber-300 bg-white p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:border-amber-700 dark:bg-slate-950 dark:text-white"
+                  className="w-full rounded-[10px] border border-amber-300 dark:border-amber-700 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
                 />
               </div>
 
               {tariffError && (
-                <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium">
+                <div className="p-2.5 rounded-[12px] bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 font-medium">
                   {tariffError}
                 </div>
               )}
@@ -1194,13 +1337,13 @@ export default function DashboardSettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowTariffModal(false)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] px-4 py-2 font-semibold text-[#86868B] dark:text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-emerald-600 px-5 py-2 font-bold text-white hover:bg-emerald-700 shadow-sm"
+                  className="rounded-[12px] bg-emerald-600 px-5 py-2 font-bold text-white hover:bg-emerald-700 shadow-apple-sm"
                 >
                   Authorize &amp; Save Version
                 </button>
@@ -1212,18 +1355,18 @@ export default function DashboardSettingsPage() {
 
       {/* MODAL 2: SCHEDULE CHAMBER SHIFT & OVERLAP DETECTION (FIX 2) */}
       {showShiftModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-[24px] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.12] shadow-apple-modal p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
               <div className="flex items-center gap-2">
                 <DoorOpen className="h-5 w-5 text-amber-600" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
                   Schedule Chamber Shift Guardrail
                 </h3>
               </div>
               <button 
                 onClick={() => setShowShiftModal(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-xl text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1232,11 +1375,11 @@ export default function DashboardSettingsPage() {
             <form onSubmit={handleSaveShiftGuardrail} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Physical Chamber</label>
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">Physical Chamber</label>
                   <select
                     value={shiftChamber}
                     onChange={e => setShiftChamber(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   >
                     <option value="Chamber 1 - OPD Main">Chamber 1 - OPD Main</option>
                     <option value="Chamber 2 - Laser & Aesthetics">Chamber 2 - Laser &amp; Aesthetics</option>
@@ -1246,11 +1389,11 @@ export default function DashboardSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Assign Doctor</label>
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">Assign Doctor</label>
                   <select
                     value={shiftDoctorSlug}
                     onChange={e => setShiftDoctorSlug(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   >
                     {doctorsList.filter(d => d.is_active !== false).map(doc => (
                       <option key={doc.slug} value={doc.slug}>
@@ -1263,11 +1406,11 @@ export default function DashboardSettingsPage() {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Shift Name</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Shift Name</label>
                   <select
                     value={shiftName}
                     onChange={e => setShiftName(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   >
                     <option value="Morning OPD">Morning OPD</option>
                     <option value="Evening OPD">Evening OPD</option>
@@ -1276,66 +1419,66 @@ export default function DashboardSettingsPage() {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Start Time</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Start Time</label>
                   <input
                     type="text"
                     value={shiftStartTime}
                     onChange={e => setShiftStartTime(e.target.value)}
                     placeholder="10:00 AM"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">End Time</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">End Time</label>
                   <input
                     type="text"
                     value={shiftEndTime}
                     onChange={e => setShiftEndTime(e.target.value)}
                     placeholder="02:00 PM"
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Token Cutoff (Mins Prior)</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Token Cutoff (Mins Prior)</label>
                   <input
                     type="number"
                     value={shiftCutoffMins}
                     onChange={e => setShiftCutoffMins(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   />
-                  <span className="text-[10px] text-slate-500">Closes token issuance before shift ends</span>
+                  <span className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">Closes token issuance before shift ends</span>
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Max Token Capacity</label>
+                  <label className="font-semibold text-[#1D1D1F] dark:text-white">Max Token Capacity</label>
                   <input
                     type="number"
                     value={shiftCapacity}
                     onChange={e => setShiftCapacity(Number(e.target.value))}
-                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 font-mono shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2 p-2.5 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
                 <input
                   type="checkbox"
                   id="autoCancelToggle"
                   checked={shiftAutoCancel}
                   onChange={e => setShiftAutoCancel(e.target.checked)}
-                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-black/[0.2] text-[#0071E3] focus:ring-[#0071E3]"
                 />
-                <label htmlFor="autoCancelToggle" className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="autoCancelToggle" className="text-[11px] font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
                   Auto-cancel unseen tokens at shift end + dispatch automated WhatsApp reschedule voucher
                 </label>
               </div>
 
               {shiftConflictError && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 font-bold flex items-start gap-2">
+                <div className="p-3 rounded-[12px] bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-300 font-bold flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
                   <div className="leading-tight">{shiftConflictError}</div>
                 </div>
@@ -1345,13 +1488,13 @@ export default function DashboardSettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowShiftModal(false)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] px-4 py-2 font-semibold text-[#86868B] dark:text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-amber-600 px-5 py-2 font-bold text-white hover:bg-amber-700 shadow-sm"
+                  className="rounded-[12px] bg-amber-600 px-5 py-2 font-bold text-white hover:bg-amber-700 shadow-apple-sm"
                 >
                   Validate Chamber &amp; Save
                 </button>
@@ -1363,49 +1506,49 @@ export default function DashboardSettingsPage() {
 
       {/* MODAL 3: SAFE DOCTOR OFFBOARDING PROTOCOL (FIX 3) */}
       {selectedDoctorForOffboard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-[24px] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.12] shadow-apple-modal p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
               <div className="flex items-center gap-2">
                 <UserMinus className="h-5 w-5 text-rose-600" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
                   Safe Doctor Deactivation Protocol
                 </h3>
               </div>
               <button 
                 onClick={() => setSelectedDoctorForOffboard(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-xl text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+            <div className="p-3.5 rounded-[16px] bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
               <strong>DPDP Act &amp; NMC Compliance Notice:</strong> Deactivating <strong>{selectedDoctorForOffboard.full_name}</strong> freezes new appointment bookings immediately. All historical medical records, past prescriptions, and bills remain 100% permanently linked and intact without data loss.
             </div>
 
             {/* Automated Final Settlement Calculation */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-              <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+            <div className="p-4 rounded-[16px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] space-y-2 text-xs">
+              <div className="flex items-center justify-between font-bold text-[#1D1D1F] dark:text-white">
                 <span className="flex items-center gap-1.5">
                   <DollarSign className="h-4 w-4 text-emerald-600" />
                   Automated Final Payout Settlement
                 </span>
-                <span className="font-mono text-[10px] text-blue-600 bg-blue-100 dark:bg-blue-950/60 px-2 py-0.5 rounded-full">
+                <span className="font-mono text-[10px] text-blue-600 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-500/20">
                   SETTLE-DR-2026-9921
                 </span>
               </div>
 
-              <div className="space-y-1 text-slate-600 dark:text-slate-400 text-[11px] pt-1 border-t border-slate-200/60 dark:border-slate-800">
+              <div className="space-y-1 text-[#86868B] dark:text-[#8E8E93] text-[11px] pt-1 border-t border-black/[0.06] dark:border-white/[0.08]">
                 <div className="flex justify-between">
                   <span>Unsettled OPD Completed Visits:</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white">14 Visits</span>
+                  <span className="font-mono font-bold text-[#1D1D1F] dark:text-white">14 Visits</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Gross Consultation Revenue:</span>
-                  <span className="font-mono text-slate-900 dark:text-white">₹8,400.00</span>
+                  <span className="font-mono text-[#1D1D1F] dark:text-white">₹8,400.00</span>
                 </div>
-                <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400 text-xs pt-1 border-t border-dashed border-slate-200 dark:border-slate-700">
+                <div className="flex justify-between font-bold text-emerald-600 dark:text-emerald-400 text-xs pt-1 border-t border-dashed border-black/[0.08] dark:border-white/[0.12]">
                   <span>Calculated Final Payout (80% Doctor Share):</span>
                   <span className="font-mono text-sm">₹6,720.00</span>
                 </div>
@@ -1414,11 +1557,11 @@ export default function DashboardSettingsPage() {
 
             <form onSubmit={handleOffboardDoctor} className="space-y-4 text-xs">
               <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300">Deactivation Reason *</label>
+                <label className="font-bold text-[#1D1D1F] dark:text-white">Deactivation Reason *</label>
                 <select
                   value={offboardReason}
                   onChange={e => setOffboardReason(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
                 >
                   <option value="Contract Term Completion">Contract Term Completion</option>
                   <option value="Relocation / Resignation">Relocation / Resignation</option>
@@ -1427,8 +1570,8 @@ export default function DashboardSettingsPage() {
                 </select>
               </div>
 
-              <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-                <label className="font-bold text-rose-900 dark:text-rose-300 flex items-center gap-1.5 mb-1">
+              <div className="p-3 rounded-[14px] bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40">
+                <label className="font-bold text-rose-900 dark:text-rose-200 flex items-center gap-1.5 mb-1">
                   <Lock className="h-3.5 w-3.5" />
                   Manager Authorization PIN Required (Default: 4491)
                 </label>
@@ -1439,12 +1582,12 @@ export default function DashboardSettingsPage() {
                   placeholder="Enter 4-digit PIN (4491)"
                   maxLength={4}
                   required
-                  className="w-full rounded-xl border border-rose-300 bg-white p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:border-rose-800 dark:bg-slate-950 dark:text-white"
+                  className="w-full rounded-[10px] border border-rose-300 dark:border-rose-800 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
                 />
               </div>
 
               {offboardError && (
-                <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 font-medium">
+                <div className="p-2.5 rounded-[12px] bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 font-medium">
                   {offboardError}
                 </div>
               )}
@@ -1453,14 +1596,14 @@ export default function DashboardSettingsPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedDoctorForOffboard(null)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] px-4 py-2 font-semibold text-[#86868B] dark:text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={offboardingLoading}
-                  className="rounded-xl bg-rose-600 px-5 py-2 font-bold text-white hover:bg-rose-700 shadow-sm disabled:opacity-50"
+                  className="rounded-[12px] bg-rose-600 px-5 py-2 font-bold text-white hover:bg-rose-700 shadow-apple-sm disabled:opacity-50"
                 >
                   {offboardingLoading ? "Settling..." : "Approve Settlement & Safe Archive"}
                 </button>
@@ -1472,30 +1615,30 @@ export default function DashboardSettingsPage() {
 
       {/* MODAL 4: 1-CLICK DOCTOR REACTIVATION */}
       {selectedDoctorForReactivate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-[24px] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.12] shadow-apple-modal p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
               <div className="flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
                   Reactivate Doctor Practice
                 </h3>
               </div>
               <button 
                 onClick={() => setSelectedDoctorForReactivate(null)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-xl text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
               Restore <strong>{selectedDoctorForReactivate.full_name}</strong> to live appointment booking and reception queue. All past clinical notes and credentials remain intact.
             </p>
 
             <form onSubmit={handleReactivateDoctor} className="space-y-4 text-xs">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                <label className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5 mb-1">
+              <div className="p-3 rounded-[14px] bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/40">
+                <label className="font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5 mb-1">
                   <Lock className="h-3.5 w-3.5" />
                   Manager Authorization PIN Required (Default: 4491)
                 </label>
@@ -1506,7 +1649,7 @@ export default function DashboardSettingsPage() {
                   placeholder="Enter 4-digit PIN (4491)"
                   maxLength={4}
                   required
-                  className="w-full rounded-xl border border-emerald-300 bg-white p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:border-emerald-800 dark:bg-slate-950 dark:text-white"
+                  className="w-full rounded-[10px] border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
                 />
               </div>
 
@@ -1514,13 +1657,13 @@ export default function DashboardSettingsPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedDoctorForReactivate(null)}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] px-4 py-2 font-semibold text-[#86868B] dark:text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-emerald-600 px-5 py-2 font-bold text-white hover:bg-emerald-700 shadow-sm"
+                  className="rounded-[12px] bg-emerald-600 px-5 py-2 font-bold text-white hover:bg-emerald-700 shadow-apple-sm"
                 >
                   Authorize Reactivation
                 </button>
