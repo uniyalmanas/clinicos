@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     // 4. Check if Day-Close is locked
     const dayCloseRecord = await sql`
-      SELECT id, is_locked, audit_hash FROM clinic_eod_closings
+      SELECT id, status, audit_hash FROM clinic_eod_closings
       WHERE clinic_slug = ${clinicSlug} AND closing_date = ${todayStr}
       LIMIT 1;
     `;
