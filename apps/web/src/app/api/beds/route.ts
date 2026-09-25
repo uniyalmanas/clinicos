@@ -35,6 +35,9 @@ export async function GET(req: NextRequest) {
         b.sanitization_nurse_qa, b.sanitization_nurse_at, b.sanitization_nurse_by,
         b.active_vitals_protocol, b.last_vitals_logged_at, b.last_vitals_json, 
         b.vitals_breach_alert, b.itemized_charges_total, b.created_at,
+        b.breach_tier, b.breach_triggered_at, b.breach_acknowledged,
+        b.breach_acknowledged_at, b.breach_acknowledged_by,
+        b.breach_intervention_log, b.breach_escalation_history,
         w.name AS ward_name, w.ward_type, w.daily_rate, w.hourly_rate
       FROM clinic_beds b
       LEFT JOIN clinic_wards w ON w.id = b.ward_id
@@ -174,6 +177,13 @@ export async function GET(req: NextRequest) {
         last_vitals_logged_at: b.last_vitals_logged_at,
         last_vitals: b.last_vitals_json ? (typeof b.last_vitals_json === "string" ? JSON.parse(b.last_vitals_json) : b.last_vitals_json) : { bp: "120/80", pulse: 74, spo2: 98, temp: 98.4 },
         vitals_breach_alert: Boolean(b.vitals_breach_alert),
+        breach_tier: Number(b.breach_tier || 1),
+        breach_triggered_at: b.breach_triggered_at,
+        breach_acknowledged: Boolean(b.breach_acknowledged),
+        breach_acknowledged_at: b.breach_acknowledged_at,
+        breach_acknowledged_by: b.breach_acknowledged_by,
+        breach_intervention_log: b.breach_intervention_log,
+        breach_escalation_history: b.breach_escalation_history ? (typeof b.breach_escalation_history === "string" ? JSON.parse(b.breach_escalation_history) : b.breach_escalation_history) : [],
         pending_care_tasks_count: tasks.pending,
         completed_care_tasks_count: tasks.completed
       };
