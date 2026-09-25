@@ -48,7 +48,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
 
   const loadDocs = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/documents?patient_phone=${encodeURIComponent(patientPhone)}`);
+      const res = await fetch(`/api/documents?patient_phone=${encodeURIComponent(patientPhone)}`);
       if (res.ok) {
         const json = await res.json();
         setDocuments(json.documents || []);
@@ -70,7 +70,7 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
 
     setUploading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/documents/upload`, {
+      const res = await fetch(`/api/documents/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -233,7 +233,17 @@ export default function DashboardPatientsPage() {
     if (!selectedPatient || !selectedVisitForAmend || !amendmentReason) return;
 
     try {
-      const updatedMedications = [...selectedVisitForAmend.prescribed_medications];
+      let currentMeds: any[] = [];
+      if (Array.isArray(selectedVisitForAmend.prescribed_medications)) {
+        currentMeds = [...selectedVisitForAmend.prescribed_medications];
+      } else if (typeof selectedVisitForAmend.prescribed_medications === "string") {
+        try {
+          const parsed = JSON.parse(selectedVisitForAmend.prescribed_medications);
+          if (Array.isArray(parsed)) currentMeds = [...parsed];
+        } catch {}
+      }
+
+      const updatedMedications = [...currentMeds];
       if (amendedMedication) {
         updatedMedications.push({
           medicine: amendedMedication,
@@ -344,10 +354,30 @@ export default function DashboardPatientsPage() {
     }
   };
 
+  // Safe deterministic audit date formatter (eliminates SSR hydration mismatch)
+  const formatAuditDate = (dateVal?: string | Date | null) => {
+    if (!dateVal) return "";
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return String(dateVal);
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      const hh = pad(d.getHours());
+      const mm = pad(d.getMinutes());
+      const dd = pad(d.getDate());
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const mon = months[d.getMonth()] || pad(d.getMonth() + 1);
+      const yyyy = d.getFullYear();
+      return `${hh}:${mm} • ${dd} ${mon} ${yyyy}`;
+    } catch {
+      return String(dateVal);
+    }
+  };
+
   // Group lab results by parameter for historical trending
   const labParamsMap = new Map<string, EMRLabResult[]>();
-  if (selectedPatient?.lab_results) {
+  if (selectedPatient?.lab_results && Array.isArray(selectedPatient.lab_results)) {
     for (const r of selectedPatient.lab_results) {
+      if (!r || !r.parameter_name) continue;
       const arr = labParamsMap.get(r.parameter_name) || [];
       arr.push(r);
       labParamsMap.set(r.parameter_name, arr);
@@ -547,25 +577,25 @@ export default function DashboardPatientsPage() {
           {selectedPatient ? (
             <div className="rounded-[28px] border border-black/[0.06] bg-white p-6 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-5">
               {/* DUPLICATE WARNING BANNER (FIX 4) */}
-              {selectedPatient.is_duplicate_flagged && selectedPatient.duplicate_tickets && selectedPatient.duplicate_tickets.length > 0 && (
+              {selectedPatient.is_duplicate_flagged && selectedPatient.duplicate_tickets && selectedPatient.duplicate_tickets.length > 0 && selectedPatient.duplicate_tickets[0] && (
                 <div className="rounded-[20px] border border-purple-500/30 bg-purple-500/10 p-4 text-xs text-purple-900 dark:text-purple-200 shadow-sm animate-in fade-in space-y-2">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-2.5">
                       <Users className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
                       <div>
                         <div className="font-bold text-[12px] flex items-center gap-1.5">
-                          <span>🚨 Duplicate Identity Flagged: {selectedPatient.duplicate_tickets[0].similarity_score}% Match</span>
+                          <span>🚨 Duplicate Identity Flagged: {selectedPatient.duplicate_tickets[0]?.similarity_score}% Match</span>
                           <span className="rounded bg-purple-500/20 px-1.5 py-0.2 text-[10px]">
-                            {selectedPatient.duplicate_tickets[0].status}
+                            {selectedPatient.duplicate_tickets[0]?.status}
                           </span>
                         </div>
                         <p className="mt-0.5 text-[11px] text-purple-800/90 dark:text-purple-200/90">
-                          {selectedPatient.duplicate_tickets[0].reconciliation_notes}
+                          {selectedPatient.duplicate_tickets[0]?.reconciliation_notes}
                         </p>
                       </div>
                     </div>
 
-                    {selectedPatient.duplicate_tickets[0].status === "PENDING_DUAL_ADMIN" && (
+                    {selectedPatient.duplicate_tickets[0]?.status === "PENDING_DUAL_ADMIN" && (
                       <button
                         type="button"
                         onClick={() => {
@@ -755,33 +785,43 @@ export default function DashboardPatientsPage() {
                         </div>
 
                         {/* Specialty Template Vitals */}
-                        <div className="flex flex-wrap gap-2 text-[10px] font-mono text-[#86868B]">
-                          {vis.vitals?.bp && (
-                            <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
-                              BP: {vis.vitals.bp}
-                            </span>
-                          )}
-                          {vis.vitals?.pulse && (
-                            <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
-                              Pulse: {vis.vitals.pulse} bpm
-                            </span>
-                          )}
-                          {vis.vitals?.spo2 && (
-                            <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
-                              SpO2: {vis.vitals.spo2}%
-                            </span>
-                          )}
-                          {vis.vitals?.weight && (
-                            <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
-                              Weight: {vis.vitals.weight} kg
-                            </span>
-                          )}
-                          {vis.vitals?.head_circ_cm && (
-                            <span className="rounded-[6px] bg-purple-500/10 text-purple-700 dark:text-purple-300 px-2 py-0.5 border border-purple-500/20 font-bold">
-                              Head Circ: {vis.vitals.head_circ_cm} cm (Pediatric)
-                            </span>
-                          )}
-                        </div>
+                        {(() => {
+                          let vitalsObj: any = vis.vitals;
+                          if (typeof vitalsObj === "string") {
+                            try { vitalsObj = JSON.parse(vitalsObj); } catch { vitalsObj = {}; }
+                          }
+                          if (!vitalsObj || typeof vitalsObj !== "object") vitalsObj = {};
+
+                          return (
+                            <div className="flex flex-wrap gap-2 text-[10px] font-mono text-[#86868B]">
+                              {vitalsObj.bp && (
+                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                  BP: {vitalsObj.bp}
+                                </span>
+                              )}
+                              {vitalsObj.pulse && (
+                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                  Pulse: {vitalsObj.pulse} bpm
+                                </span>
+                              )}
+                              {vitalsObj.spo2 && (
+                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                  SpO2: {vitalsObj.spo2}%
+                                </span>
+                              )}
+                              {vitalsObj.weight && (
+                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                  Weight: {vitalsObj.weight} kg
+                                </span>
+                              )}
+                              {vitalsObj.head_circ_cm && (
+                                <span className="rounded-[6px] bg-purple-500/10 text-purple-700 dark:text-purple-300 px-2 py-0.5 border border-purple-500/20 font-bold">
+                                  Head Circ: {vitalsObj.head_circ_cm} cm (Pediatric)
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {/* Subjective & Objective SOAP */}
                         <div className="text-xs space-y-1 text-[#1D1D1F] dark:text-white/90">
@@ -800,20 +840,34 @@ export default function DashboardPatientsPage() {
                         </div>
 
                         {/* Prescribed Medications */}
-                        {vis.prescribed_medications && vis.prescribed_medications.length > 0 && (
-                          <div className="rounded-[14px] bg-white p-3 border border-black/[0.04] dark:bg-[#1C1C1E] dark:border-white/[0.04] text-xs">
-                            <div className="text-[11px] font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1 mb-1">
-                              <Pill className="h-3 w-3 text-[#0071E3]" /> Prescribed Medications:
+                        {(() => {
+                          let medsArr: any[] = [];
+                          if (Array.isArray(vis.prescribed_medications)) {
+                            medsArr = vis.prescribed_medications;
+                          } else if (typeof vis.prescribed_medications === "string") {
+                            try {
+                              const parsed = JSON.parse(vis.prescribed_medications);
+                              if (Array.isArray(parsed)) medsArr = parsed;
+                            } catch {}
+                          }
+
+                          if (!medsArr || medsArr.length === 0) return null;
+
+                          return (
+                            <div className="rounded-[14px] bg-white p-3 border border-black/[0.04] dark:bg-[#1C1C1E] dark:border-white/[0.04] text-xs">
+                              <div className="text-[11px] font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1 mb-1">
+                                <Pill className="h-3 w-3 text-[#0071E3]" /> Prescribed Medications:
+                              </div>
+                              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-[#86868B]">
+                                {medsArr.map((m: any, idx: number) => (
+                                  <li key={idx}>
+                                    <strong className="text-[#1D1D1F] dark:text-white font-medium">{m.medicine}</strong> ({m.dose})
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
-                            <ul className="list-disc list-inside space-y-0.5 text-[11px] text-[#86868B]">
-                              {vis.prescribed_medications.map((m, idx) => (
-                                <li key={idx}>
-                                  <strong className="text-[#1D1D1F] dark:text-white font-medium">{m.medicine}</strong> ({m.dose})
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Amendment Addendum Details */}
                         {vis.amendment_reason && (
@@ -862,7 +916,9 @@ export default function DashboardPatientsPage() {
 
                   {/* Parameter Trend Cards */}
                   {Array.from(labParamsMap.entries()).map(([paramName, results]) => {
+                    if (!results || results.length === 0) return null;
                     const latest = results[results.length - 1];
+                    if (!latest) return null;
                     const isHigh = latest.flag === "HIGH" || latest.flag === "CRITICAL_HIGH";
                     const isLow = latest.flag === "LOW" || latest.flag === "CRITICAL_LOW";
 
@@ -969,7 +1025,7 @@ export default function DashboardPatientsPage() {
                         {selectedPatient.audit_trail?.map(a => (
                           <tr key={a.id} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition">
                             <td className="px-4 py-3 font-mono text-[10px] text-[#86868B]">
-                              {new Date(a.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} • {new Date(a.created_at).toLocaleDateString()}
+                              {formatAuditDate(a.created_at)}
                             </td>
                             <td className="px-3 py-3">
                               <span className="rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[9px] font-bold font-mono">

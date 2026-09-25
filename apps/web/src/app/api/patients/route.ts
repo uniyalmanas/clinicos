@@ -55,8 +55,41 @@ export async function GET(req: NextRequest) {
     // Map nested data per patient UHID
     const patientsFull = patients.map((p: any) => {
       const patientAllergies = allergies.filter((a: any) => a.patient_uhid === p.uhid);
-      const patientLabs = labResults.filter((l: any) => l.patient_uhid === p.uhid);
-      const patientVisits = visits.filter((v: any) => v.patient_uhid === p.uhid);
+      const patientLabs = labResults
+        .filter((l: any) => l.patient_uhid === p.uhid)
+        .map((l: any) => ({
+          ...l,
+          parameter_value: Number(l.parameter_value) != null && !isNaN(Number(l.parameter_value)) ? Number(l.parameter_value) : l.parameter_value,
+          reference_min: Number(l.reference_min) != null && !isNaN(Number(l.reference_min)) ? Number(l.reference_min) : l.reference_min,
+          reference_max: Number(l.reference_max) != null && !isNaN(Number(l.reference_max)) ? Number(l.reference_max) : l.reference_max
+        }));
+
+      const patientVisits = visits
+        .filter((v: any) => v.patient_uhid === p.uhid)
+        .map((v: any) => {
+          let parsedVitals = v.vitals;
+          if (typeof parsedVitals === "string") {
+            try {
+              parsedVitals = JSON.parse(parsedVitals);
+            } catch {
+              parsedVitals = {};
+            }
+          }
+          let parsedMeds = v.prescribed_medications;
+          if (typeof parsedMeds === "string") {
+            try {
+              parsedMeds = JSON.parse(parsedMeds);
+            } catch {
+              parsedMeds = [];
+            }
+          }
+          return {
+            ...v,
+            vitals: parsedVitals && typeof parsedVitals === "object" ? parsedVitals : {},
+            prescribed_medications: Array.isArray(parsedMeds) ? parsedMeds : []
+          };
+        });
+
       const patientAudits = auditEntries.filter((a: any) => a.patient_uhid === p.uhid);
       const patientMerges = mergeTickets.filter((m: any) => m.source_uhid === p.uhid || m.target_uhid === p.uhid);
 
