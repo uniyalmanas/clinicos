@@ -1,4 +1,4 @@
-MASTER PROMPT — BUILD A HEALTHCARE DIGITAL PLATFORM FOR INDEPENDENT DOCTORS, CLINICS & PHARMACIES
+BUILD A HEALTHCARE DIGITAL PLATFORM FOR INDEPENDENT DOCTORS, CLINICS & PHARMACIES
 
 You are acting as a senior product architect, UX designer, AI engineer, full-stack engineer, database architect, security engineer, and startup CTO.
 
