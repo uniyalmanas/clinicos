@@ -18,7 +18,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "plan_id is required" }, { status: 400 });
     }
 
-    // Insert session record
+    let safeExercises = exercises_performed;
+    if (typeof safeExercises === "string") {
+      try {
+        safeExercises = JSON.parse(safeExercises);
+      } catch {
+        safeExercises = [];
+      }
+    }
+    if (!Array.isArray(safeExercises)) {
+      safeExercises = [];
+    }
+
+    // Insert session record safely using db.json
     const session = await db`
       INSERT INTO therapy_sessions (
         plan_id,
@@ -34,7 +46,7 @@ export async function POST(request: Request) {
         ${parseInt(pain_score_before) || 5},
         ${parseInt(pain_score_after) || 3},
         ${range_of_motion || "Within functional limits"},
-        ${JSON.stringify(exercises_performed || [])}::jsonb,
+        ${db.json(safeExercises)},
         ${therapist_notes || "Session completed successfully."}
       ) RETURNING *;
     `;
