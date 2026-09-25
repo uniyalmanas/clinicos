@@ -849,7 +849,7 @@ export default function ForDoctorsPage() {
                 <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Solo Practice Pro</h3>
                 <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">For busy independent single-doctor chambers.</p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹499</span>
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹599</span>
                   <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">/ month</span>
                 </div>
                 <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
@@ -874,7 +874,7 @@ export default function ForDoctorsPage() {
                 <h3 className="text-lg font-bold text-[#1D1D1F] dark:text-white">Multi-Doctor Polyclinic</h3>
                 <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">For polyclinics and multi-chamber centers.</p>
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹1,999</span>
+                  <span className="text-4xl font-extrabold text-[#1D1D1F] dark:text-white font-mono">₹1,299</span>
                   <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">/ month</span>
                 </div>
                 <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">

@@ -1019,9 +1019,9 @@ export default function SuperAdminPage() {
                   onChange={(e: any) => setSelectedPlan(e.target.value)}
                   className="w-full p-2.5 rounded-xl bg-[#F5F5F7] dark:bg-[#2C2C2E] border-none text-xs font-bold text-[#1D1D1F] dark:text-white"
                 >
-                  <option value="starter">Solo Starter (₹999 / mo)</option>
-                  <option value="growth">Polyclinic Growth (₹2,499 / mo)</option>
-                  <option value="enterprise">Hospital Enterprise (₹4,999 / mo)</option>
+                  <option value="starter">Solo Practice (₹599 / mo)</option>
+                  <option value="growth">Polyclinic Growth (₹1,299 / mo)</option>
+                  <option value="enterprise">Hospital Enterprise (₹2,999 / mo)</option>
                 </select>
               </div>
 

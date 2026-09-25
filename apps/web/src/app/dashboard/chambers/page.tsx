@@ -713,7 +713,7 @@ export default function DashboardChambersPage() {
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-              Live Polyclinic Chambers (₹1,999/mo Architecture)
+              Live Polyclinic Chambers (₹1,299/mo Architecture)
             </span>
           </div>
           <h1 className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
@@ -806,20 +806,20 @@ export default function DashboardChambersPage() {
         </div>
       </div>
 
-      {/* 3. 💎 POLYCLINIC ARCHITECTURE VALUE PROPOSITION (₹1,999/MO JUSTIFICATION) */}
+      {/* 3. 💎 POLYCLINIC ARCHITECTURE VALUE PROPOSITION (₹1,299/MO JUSTIFICATION) */}
       <div className="rounded-3xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 via-blue-500/5 to-emerald-500/5 p-5 shadow-apple-card space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-black uppercase tracking-wider">
-                ₹1,999/mo Polyclinic Tier
+                ₹1,299/mo Polyclinic Tier
               </span>
               <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">
                 Multi-Consultant Operations Engine
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-              Built specifically for polyclinic owners managing parallel specialists. Why owners pay ₹1,999/month:
+              Built specifically for polyclinic owners managing parallel specialists. Why owners pay ₹1,299/month:
             </p>
           </div>
 

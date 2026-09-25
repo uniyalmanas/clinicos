@@ -48,7 +48,16 @@ export default function DashboardLayout({
     const userStr = localStorage.getItem("clinicos_user");
     if (userStr) {
       try {
-        setCurrentUser(JSON.parse(userStr));
+        const parsed = JSON.parse(userStr);
+        setCurrentUser(parsed);
+        const role = (parsed?.role || "").toLowerCase();
+        // Route protection: prevent reception/staff from opening owner finance, settings or superadmin console
+        if (role === "receptionist" || role === "front_desk" || role === "staff") {
+          if (pathname.includes("/dashboard/finance") || pathname.includes("/dashboard/admin") || pathname.includes("/dashboard/settings")) {
+            router.replace("/dashboard/desk");
+            return;
+          }
+        }
       } catch (e) {}
     }
     setAuthChecked(true);
@@ -116,6 +125,31 @@ export default function DashboardLayout({
     { label: "Super Admin Console", href: "/dashboard/admin", icon: ShieldCheck, badge: "Owner" },
   ];
 
+  const userRole = (currentUser?.role || "super_admin").toLowerCase();
+  const isPrivileged = userRole === "super_admin" || userRole === "admin" || userRole === "owner" || userRole === "doctor";
+
+  // Persona-aware navigation: Staff users use operational desks; Doctor/Owner sees finance & admin
+  const filteredNavItems = navItems.filter((item) => {
+    if (userRole === "super_admin" || userRole === "admin" || userRole === "owner") return true;
+    if (userRole === "doctor") {
+      return ["/dashboard", "/dashboard/desk", "/dashboard/chambers", "/waiting-room", "/dashboard/finance", "/dashboard/patients", "/dashboard/standee"].includes(item.href);
+    }
+    if (userRole === "receptionist" || userRole === "front_desk" || userRole === "staff") {
+      return ["/dashboard/desk", "/waiting-room", "/dashboard/patients", "/dashboard/standee"].includes(item.href);
+    }
+    if (userRole === "pharmacist") {
+      return ["/dashboard/pharmacy", "/waiting-room"].includes(item.href);
+    }
+    if (userRole === "lab_tech") {
+      return ["/dashboard/lab", "/waiting-room"].includes(item.href);
+    }
+    return true;
+  });
+
+  const profileInitials = currentUser?.full_name 
+    ? currentUser.full_name.split(" ").map((w: string) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()
+    : "RS";
+
   if (!authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#ECEEF2] text-xs text-[#86868B] dark:bg-black dark:text-[#8E8E93]">
@@ -147,14 +181,14 @@ export default function DashboardLayout({
               <span className="flex h-2 w-2 rounded-full bg-[#30D158] animate-pulse"></span>
             </div>
             <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-0.5 truncate">
-              {currentUser?.full_name ? `${currentUser.full_name} (${currentUser.role})` : "Active Clinic Workspace"}
+              {currentUser?.full_name ? `${currentUser.full_name} (${currentUser.role || 'Staff'})` : "Active Clinic Workspace"}
             </p>
           </div>
         </div>
 
         {/* Navigation links */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
@@ -194,18 +228,22 @@ export default function DashboardLayout({
             <ThemeToggle />
           </div>
 
-          {/* User Profile Card - Direct Access to Super Admin Console */}
+          {/* User Profile Card */}
           <Link
-            href="/dashboard/admin"
+            href={isPrivileged ? "/dashboard/admin" : "/dashboard/desk"}
             className="flex items-center justify-between rounded-[14px] bg-white p-2.5 dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] shadow-apple-sm hover:border-[#0071E3]/40 dark:hover:border-[#2997FF]/40 transition group"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0071E3]/10 text-[#0071E3] text-xs font-bold dark:text-[#2997FF] group-hover:bg-[#0071E3] group-hover:text-white transition">
-                RS
+                {profileInitials}
               </div>
               <div className="text-left min-w-0">
-                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white truncate">Dr. Rahul Sharma</div>
-                <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93] truncate">Medical Director • Super Admin</div>
+                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white truncate">
+                  {currentUser?.full_name || "Dr. Rahul Sharma"}
+                </div>
+                <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93] truncate">
+                  {isPrivileged ? "Medical Director • Clinic Admin" : "Front Desk • Staff Account"}
+                </div>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-[#86868B] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] group-hover:translate-x-0.5 transition" />
@@ -241,7 +279,7 @@ export default function DashboardLayout({
               </button>
             </div>
             <nav className="mt-4 flex-1 space-y-1">
-              {navItems.map((item) => {
+              {filteredNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
@@ -264,17 +302,21 @@ export default function DashboardLayout({
             <div className="pt-4 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2">
               <ThemeToggle showLabel />
               <Link
-                href="/dashboard/admin"
+                href={isPrivileged ? "/dashboard/admin" : "/dashboard/desk"}
                 onClick={() => setSidebarOpen(false)}
                 className="flex items-center justify-between rounded-[12px] bg-white p-2.5 dark:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08]"
               >
                 <div className="flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0071E3]/10 text-[#0071E3] text-xs font-bold">
-                    RS
+                    {profileInitials}
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Dr. Rahul Sharma</div>
-                    <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">Super Admin Console</div>
+                    <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">
+                      {currentUser?.full_name || "Dr. Rahul Sharma"}
+                    </div>
+                    <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">
+                      {isPrivileged ? "Medical Director • Clinic Admin" : "Front Desk • Staff Account"}
+                    </div>
                   </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-[#86868B]" />

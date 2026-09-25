@@ -54,11 +54,13 @@ export async function GET(req: NextRequest) {
       GROUP BY clinic_id;
     `;
 
-    // Plan pricing map in INR
+    // Plan pricing map in INR (Aligned with ClinicOS core SaaS thesis)
     const planRates: Record<string, { name: string; monthly: number }> = {
-      starter: { name: "Solo Starter", monthly: 999 },
-      growth: { name: "Polyclinic Growth", monthly: 2499 },
-      enterprise: { name: "Hospital Enterprise", monthly: 4999 },
+      solo: { name: "Solo Doctor Practice", monthly: 599 },
+      starter: { name: "Solo Doctor Practice", monthly: 599 },
+      polyclinic: { name: "Multi-Doctor Polyclinic", monthly: 1299 },
+      growth: { name: "Multi-Doctor Polyclinic", monthly: 1299 },
+      enterprise: { name: "Hospital Enterprise", monthly: 2999 },
       trial: { name: "14-Day Pilot Trial", monthly: 0 }
     };
 

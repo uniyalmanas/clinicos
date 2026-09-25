@@ -831,7 +831,7 @@ export default function HomePage() {
                 Run your practice with DocSphere ClinicOS
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                Keep 100% of your patient earnings. Get 30-second digital prescriptions, acoustic waiting room chimes, front-desk reception PWAs, and 9 PM cash drawer closing reconciliation for just ₹499/month.
+                Keep 100% of your patient earnings. Get 30-second digital prescriptions, acoustic waiting room chimes, front-desk reception PWAs, and 9 PM cash drawer closing reconciliation for just ₹599/month.
               </p>
             </div>
             <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
