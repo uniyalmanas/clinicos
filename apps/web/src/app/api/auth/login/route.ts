@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { verifyPassword, signAccessToken } from "@/lib/auth";
+import { verifyPassword, signAccessToken, AUTH_COOKIE_OPTIONS } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -84,14 +84,10 @@ export async function POST(req: Request) {
       clinic_slug: clinicSlug,
     });
 
-    // Also set standard HttpOnly cookie for seamless SSR session
+    // Set standard secure HttpOnly cookie for seamless SSR session & XSS defense
     response.cookies.set({
-      name: "clinicos_token",
+      ...AUTH_COOKIE_OPTIONS,
       value: token,
-      httpOnly: false, // Accessible to client-side localStorage sync
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax",
     });
 
     return response;

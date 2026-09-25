@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -199,20 +200,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // FIX 2: Resolve dispute and release or adjust escrow
+    // Resolve dispute and release or adjust escrow
     if (action === "resolve_escrow") {
       if (!dispute_id) {
         return NextResponse.json({ error: "dispute_id is required" }, { status: 400 });
       }
-      if (manager_pin !== "4491" && manager_pin !== "1234") {
-        return NextResponse.json({ error: "Finance Head PIN authorization required to release escrow" }, { status: 403 });
+
+      let resolverName = "Finance Head";
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+        resolverName = `${auth.user.full_name} (${auth.membership.role})`;
+      } catch (authErr: any) {
+        return NextResponse.json({ error: authErr.message || "Unauthorized: Clinic administrator / owner session required to release escrow." }, { status: 403 });
       }
 
       const updated = await sql`
         UPDATE clinic_doctor_payout_disputes
         SET 
           status = 'RESOLVED_RELEASED',
-          resolved_by = 'Dr. Rahul Sharma (Finance Head)',
+          resolved_by = ${resolverName},
           resolution_notes = 'Escrow audit completed. Amount released for disbursement in next ledger cycle.',
           updated_at = NOW()
         WHERE id = ${dispute_id}
@@ -221,7 +227,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         status: "success",
-        message: "✓ Escrow resolved and released. Funds cleared for payout.",
+        message: `✓ Escrow resolved and released by ${resolverName}. Funds cleared for payout.`,
         dispute: updated[0]
       });
     }

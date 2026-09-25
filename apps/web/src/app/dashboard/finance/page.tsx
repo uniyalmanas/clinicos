@@ -44,7 +44,6 @@ import {
   PettyCashFloat, 
   DenominationBreakdown, 
   calculateDenominationTotal,
-  MANAGER_PIN_DEFAULT,
   VARIANCE_THRESHOLD_INR,
   EXPENSE_APPROVAL_THRESHOLD_INR,
   PETTY_CASH_MIN_THRESHOLD_INR
@@ -414,8 +413,7 @@ export default function DashboardFinancePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "resolve_escrow",
-          dispute_id: disputeId,
-          manager_pin: "4491"
+          dispute_id: disputeId
         })
       });
 
@@ -575,7 +573,7 @@ export default function DashboardFinancePage() {
         ["Date", "Transaction Type", "Voucher/Ref #", "Category", "Description / Entity", "Payment Mode", "Approval Status", "Inflow (Cr)", "Outflow (Dr)", "Net Balance"],
         [today, "Patient Consultations", "OPD-BATCH-TODAY", "Consultation Revenue", "OPD Footfall (44 Patients: 36 Walk-ins, 8 Booked)", "Soundbox UPI / Cash", "APPROVED", "31400.00", "0.00", "31400.00"],
         [today, "Pharmacy Dispensary", "RX-DISP-TODAY", "Dispensary Sales", "In-clinic dispensary medicines & topical lotions", "UPI Soundbox", "APPROVED", "398.00", "0.00", "31798.00"],
-        [today, "Petty Cash Float Outflow", "VCH-0925-01", "Consumables", "Nitrile examination gloves & Spirit cotton", "Cash Drawer", "APPROVED (PIN: 4491)", "0.00", "1450.00", "30348.00"],
+        [today, "Petty Cash Float Outflow", "VCH-0925-01", "Consumables", "Nitrile examination gloves & Spirit cotton", "Cash Drawer", "APPROVED (Admin Session)", "0.00", "1450.00", "30348.00"],
         [today, "Doctor Revenue Split", "DOC-NEHA-80", "Consultant Share", "Dr. Neha Kapoor (14 Pediatric Consults, ₹700 refund deducted)", "UPI Direct", "APPROVED", "0.00", "7140.00", "23208.00"],
         [today, "Doctor Revenue Split", "DOC-VIKRAM-75", "Consultant Share", "Dr. Vikram Negi (6 Cosmetic Procedures, ₹400 consumables deducted)", "UPI Direct", "APPROVED", "0.00", "5000.00", "18208.00"]
       ];
@@ -1043,7 +1041,7 @@ export default function DashboardFinancePage() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-[#86868B]">
-                Vouchers &gt; ₹500 require Manager PIN (e.g. 4491) or will be held in PENDING_APPROVAL status.
+                Vouchers &gt; ₹500 require Practice Manager authorization or will be held in PENDING_APPROVAL status.
               </p>
 
               {/* Presets */}
@@ -1140,15 +1138,15 @@ export default function DashboardFinancePage() {
                   <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 space-y-2">
                     <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-bold text-[11px]">
                       <Lock className="h-3.5 w-3.5" />
-                      <span>Amount &gt; ₹500 requires Manager PIN Approval</span>
+                      <span>Amount &gt; ₹500 requires Manager Authorization</span>
                     </div>
                     <p className="text-[10px] text-amber-800/80 dark:text-amber-200/80">
-                      Enter Dr. Rahul Sharma&apos;s PIN (4491) now to auto-approve, or submit as PENDING_APPROVAL.
+                      Enter Practice Manager Security PIN now to auto-approve, or submit as PENDING_APPROVAL.
                     </p>
                     <input
                       type="password"
                       maxLength={6}
-                      placeholder="Enter Manager PIN (e.g. 4491)"
+                      placeholder="Enter Manager Security PIN"
                       value={expenseManagerPin}
                       onChange={(e) => setExpenseManagerPin(e.target.value)}
                       className="w-full rounded-[10px] border border-amber-500/30 bg-white p-2 text-xs font-mono font-bold text-[#1D1D1F] dark:bg-black/40 dark:text-white"
@@ -1917,12 +1915,12 @@ export default function DashboardFinancePage() {
                 />
 
                 <label className="font-bold text-[#1D1D1F] dark:text-white block mt-2">
-                  Manager Override PIN (Optional: enters 4491 to bypass POS lock)
+                  Practice Manager Security PIN (Optional: bypasses POS lock on verified variance)
                 </label>
                 <input
                   type="password"
                   maxLength={6}
-                  placeholder="Enter Manager PIN 4491"
+                  placeholder="Enter Manager Security PIN"
                   value={shiftOverridePin}
                   onChange={(e) => setShiftOverridePin(e.target.value)}
                   className="w-full rounded-xl border border-black/[0.08] p-2 text-xs font-mono dark:border-white/[0.1] dark:bg-black/30 dark:text-white"
@@ -1966,16 +1964,16 @@ export default function DashboardFinancePage() {
             </div>
 
             <p className="text-xs text-[#86868B]">
-              Enter Dr. Rahul Sharma&apos;s Finance Head PIN (4491) to authorize shift variance and restore front desk billing access.
+              Enter Authorized Medical Director or Clinic Admin Security PIN to authorize shift variance and restore front desk billing access.
             </p>
 
             <div>
-              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Manager PIN</label>
+              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Manager Security PIN</label>
               <input
                 type="password"
                 maxLength={6}
                 autoFocus
-                placeholder="Enter 4491"
+                placeholder="Enter Security PIN"
                 value={unlockPinInput}
                 onChange={(e) => setUnlockPinInput(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-black/[0.08] p-2.5 text-center font-mono text-base font-black dark:border-white/[0.1] dark:bg-black/40 dark:text-white"
@@ -2029,7 +2027,7 @@ export default function DashboardFinancePage() {
                 type="password"
                 maxLength={6}
                 autoFocus
-                placeholder="Enter PIN 4491"
+                placeholder="Enter Manager Security PIN"
                 value={managerPinInput}
                 onChange={(e) => setManagerPinInput(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-black/[0.08] p-2.5 text-center font-mono text-base font-black dark:border-white/[0.1] dark:bg-black/40 dark:text-white"

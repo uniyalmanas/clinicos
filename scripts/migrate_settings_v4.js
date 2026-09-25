@@ -17,7 +17,7 @@ async function migrateV4() {
       followup_fee NUMERIC(10,2) NOT NULL DEFAULT 300.00,
       followup_validity_days INTEGER NOT NULL DEFAULT 7,
       doctor_split_percentage NUMERIC(5,2) NOT NULL DEFAULT 80.00,
-      authorized_by VARCHAR(255) DEFAULT 'Clinic Administrator (PIN 4491)',
+      authorized_by VARCHAR(255) DEFAULT 'Clinic Administrator (Admin Session)',
       change_reason TEXT NOT NULL,
       is_active BOOLEAN DEFAULT TRUE,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -50,7 +50,7 @@ async function migrateV4() {
         300.00,
         7,
         80.00,
-        'Dr. Ananya Sharma (Medical Director, PIN 4491)',
+        'Dr. Ananya Sharma (Medical Director, Admin Session)',
         'Fiscal Year 2026 Q3 OPD Tariff Baseline & Specialist Split Agreement',
         true,
         '2026-09-01T00:00:00Z'
@@ -62,7 +62,7 @@ async function migrateV4() {
         250.00,
         5,
         75.00,
-        'Clinic Admin (PIN 4491)',
+        'Clinic Admin (Admin Session)',
         'Historical Base Rate: Summer 2026 OPD Fee Structure (Archived)',
         false,
         '2026-06-01T00:00:00Z'

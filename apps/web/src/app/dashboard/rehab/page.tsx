@@ -1986,7 +1986,7 @@ export default function RehabDashboardPage() {
                 <label className="block text-[11px] font-semibold text-[#86868B] mb-1">Senior E-Sign PIN</label>
                 <input
                   type="password"
-                  placeholder="Enter 4-digit PIN (e.g. 1234)"
+                  placeholder="Enter Senior Doctor PIN"
                   value={seniorPin}
                   onChange={(e) => setSeniorPin(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border font-mono outline-none focus:border-rose-500"

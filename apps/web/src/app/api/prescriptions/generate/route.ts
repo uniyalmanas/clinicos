@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { createHash, randomUUID } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Enforce Server-Side Doctor Authority & Tenant Isolation
+    let auth;
+    try {
+      auth = await authorizeClinicUser(req, { 
+        requiredRoles: ["owner", "clinic_admin", "doctor"] 
+      });
+    } catch (authErr: any) {
+      return NextResponse.json({ 
+        error: "Unauthorized prescription generation: Valid doctor or clinic owner session is mandatory.",
+        detail: authErr.message
+      }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       appointment_number,
-      doctor_slug = "dr-rahul-sharma",
-      doctor_name = "Dr. Rahul Sharma",
-      doctor_reg_number = "UKMC-8942-2012",
-      clinic_id,
-      clinic_name = "Derma Care Skin & Laser Centre",
-      clinic_address = "14, Rajpur Road, Near Ashley Hall, Dehradun",
       patient_name,
       patient_phone,
       patient_age = 25,
@@ -35,6 +43,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Patient name and phone are required" }, { status: 400 });
     }
 
+    // 2. Authoritative Server Identity Resolution
+    const clinicId = auth.clinic.id;
+    const clinicName = auth.clinic.name || "ClinicOS Practice";
+    const clinicAddress = [auth.clinic.address_line, auth.clinic.city, auth.clinic.state].filter(Boolean).join(", ") || "Dehradun, Uttarakhand";
+
+    // Doctor profile resolution from authenticated session
+    let doctorName = auth.user.full_name;
+    let doctorRegNumber = "NMC-VERIFIED";
+    let doctorSlug = `dr-${auth.user.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
+    if (auth.doctor) {
+      doctorName = auth.doctor.full_name || doctorName;
+      doctorRegNumber = auth.doctor.medical_council_reg_number || auth.doctor.reg_number || doctorRegNumber;
+      doctorSlug = auth.doctor.slug || doctorSlug;
+    } else {
+      // Check if a doctor record exists for this user in this clinic
+      const docMatch = await sql`
+        SELECT * FROM doctors 
+        WHERE clinic_id::text = ${clinicId}::text AND (lower(full_name) = ${auth.user.full_name.toLowerCase()} OR email = ${auth.user.email || ''})
+        LIMIT 1;
+      `;
+      if (docMatch.length > 0) {
+        doctorName = docMatch[0].full_name;
+        doctorRegNumber = docMatch[0].medical_council_reg_number || doctorRegNumber;
+        doctorSlug = docMatch[0].slug;
+      }
+    }
+
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -43,8 +79,8 @@ export async function POST(req: NextRequest) {
 
     const calculatedFollowup = followup_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    // Standardize prescription items according to NMC & Marley standard
-    const standardizedItems = items.map((item: any) => ({
+    // Standardize prescription items according to NMC & Marley clinical standard
+    const standardizedItems = (items || []).map((item: any) => ({
       medicine_name: item.medicine_name || item.name || "Medicine",
       generic_name: (item.generic_name || item.generic || "").toUpperCase(),
       dosage_form: item.dosage_form || "Tablet",
@@ -55,13 +91,13 @@ export async function POST(req: NextRequest) {
       special_instructions: item.special_instructions || "Take as advised"
     }));
 
-    // Cryptographic SHA-256 Tamper-Proof Digital Signature Hash
-    const signPayload = `${rxNumber}|${doctor_reg_number}|${patient_name}|${patient_phone}|${JSON.stringify(standardizedItems)}|${today.toISOString()}`;
-    const digitalSignatureHash = createHash("sha256").update(signPayload).digest("hex");
-    const qrVerificationCode = `VERIFY-${doctor_slug.slice(3, 8).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
+    // 3. Cryptographic Prescription Integrity Hash (SHA-256)
+    // Server authoritative payload: cannot be tampered by client
+    const integrityPayload = `${rxNumber}|${clinicId}|${doctorRegNumber}|${patient_name}|${patient_phone}|${JSON.stringify(standardizedItems)}|${today.toISOString()}`;
+    const integrityHash = createHash("sha256").update(integrityPayload).digest("hex");
+    const qrVerificationCode = `VERIFY-${doctorSlug.replace(/^dr-/, "").slice(0, 5).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const id = randomUUID();
-    const clinicUuid = clinic_id || "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
     const inserted = await sql`
       INSERT INTO prescriptions (
@@ -75,11 +111,11 @@ export async function POST(req: NextRequest) {
         ${id},
         ${rxNumber},
         ${appointment_number || `APT-${randSuffix}`},
-        ${clinicUuid},
-        ${doctor_name},
-        ${doctor_reg_number},
-        ${clinic_name},
-        ${clinic_address},
+        ${clinicId},
+        ${doctorName},
+        ${doctorRegNumber},
+        ${clinicName},
+        ${clinicAddress},
         ${patient_name},
         ${patient_phone},
         ${Number(patient_age) || 25},
@@ -90,7 +126,7 @@ export async function POST(req: NextRequest) {
         ${JSON.stringify(standardizedItems)},
         ${instructions},
         ${calculatedFollowup},
-        ${digitalSignatureHash},
+        ${integrityHash},
         ${qrVerificationCode},
         ${JSON.stringify(Array.isArray(lab_tests) ? lab_tests : [])},
         ${JSON.stringify(Array.isArray(procedures) ? procedures : [])},
@@ -101,12 +137,12 @@ export async function POST(req: NextRequest) {
       RETURNING *;
     `;
 
-    // Mark the linked appointment as 'completed'
+    // Mark the linked appointment as 'completed' (Scoped to this clinic)
     if (appointment_number) {
       await sql`
         UPDATE appointments 
         SET status = 'completed' 
-        WHERE appointment_number = ${appointment_number};
+        WHERE appointment_number = ${appointment_number} AND (clinic_id::text = ${clinicId}::text OR clinic_id IS NULL);
       `;
     }
 
@@ -114,6 +150,10 @@ export async function POST(req: NextRequest) {
       status: "success",
       prescription: {
         ...inserted[0],
+        doctor_slug: doctorSlug,
+        prescription_integrity_hash: integrityHash,
+        integrity_hash: integrityHash,
+        integrity_seal_label: "Prescription Integrity Hash (SHA-256)",
         items: standardizedItems,
         vitals: typeof inserted[0].vitals === "string" ? JSON.parse(inserted[0].vitals) : inserted[0].vitals,
         symptoms: typeof inserted[0].symptoms === "string" ? JSON.parse(inserted[0].symptoms) : inserted[0].symptoms

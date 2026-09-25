@@ -127,7 +127,7 @@ async function seed() {
       'CLINICAL_OVERRIDE_APPROVED',
       'DESENSITIZATION_PROTOCOL',
       'Supervised oral desensitization protocol in clinical day-care. Emergency resuscitation tray on standby.',
-      'Dr. Rahul Sharma (PIN: 4491)',
+      'Dr. Rahul Sharma (Senior Consultant)',
       true
     );
   `;
@@ -235,7 +235,7 @@ async function seed() {
         { medicine: "BROAD SPECTRUM GEL SUNSCREEN SPF 50", dose: "Apply mornings and 20 min before sun exposure", route: "Topical" }
       ])},
       'Added broad-spectrum non-comedogenic sunscreen to mitigate photosensitivity risks associated with oral tetracyclines.',
-      'Dr. Rahul Sharma (PIN: 4491)',
+      'Dr. Rahul Sharma (Senior Consultant)',
       'SEAL-EMR-SHA256-42EFB1893D'
     );
   `;

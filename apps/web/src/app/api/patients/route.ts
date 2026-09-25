@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { createHash, randomUUID } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 import { 
   checkAllergyConflict, 
   EMRAllergy, 
   HIGH_RISK_ATC_CLASSES,
   VERIFIED_SENIOR_DOCTORS,
   CLINICAL_OVERRIDE_REASON_CODES,
-  maskEmergencyPhone
+  maskEmergencyPhone,
+  SeniorDoctorCredential
 } from "@/data/emrGovernance";
 
 export const dynamic = "force-dynamic";
@@ -243,11 +245,21 @@ export async function POST(req: NextRequest) {
         doctor_pin 
       } = body;
 
-      // Real-Time Role & NMC Credential Check
-      const seniorDoctor = VERIFIED_SENIOR_DOCTORS.find(d => d.pin === doctor_pin);
-      if (!seniorDoctor) {
+      // Real-Time Role & NMC Credential Check via Authenticated Session
+      let seniorDoctor: SeniorDoctorCredential;
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["doctor", "owner", "clinic_admin"] });
+        seniorDoctor = {
+          doctor_name: auth.doctor?.full_name || auth.user.full_name,
+          role: "Senior Consultant",
+          nmc_reg_number: auth.doctor?.medical_council_reg_number || "NMC-UK-2024-REG",
+          state_medical_council: "Uttarakhand Medical Council",
+          specialization: auth.doctor?.specialization || "Clinical Medicine",
+          is_active: true,
+        };
+      } catch (authErr: any) {
         return NextResponse.json({ 
-          error: "Override Denied: Only Senior Consultants with verified active NMC credentials can override a Fatal Allergy Hard-Stop." 
+          error: authErr.message || "Override Denied: Only Senior Consultants with verified active NMC credentials can override a Fatal Allergy Hard-Stop." 
         }, { status: 403 });
       }
 
@@ -397,8 +409,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "patient_uhid, visit_number, and amendment_reason are mandatory" }, { status: 400 });
       }
 
-      if (manager_pin !== "4491" && manager_pin !== "1234") {
-        return NextResponse.json({ error: "Senior Doctor PIN required to e-sign amendment addendum" }, { status: 403 });
+      let authorizedDoctor = doctor_name || "Consultant Doctor";
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin", "doctor"] });
+        authorizedDoctor = `${auth.user.full_name} (${auth.membership.role})`;
+      } catch (authErr: any) {
+        return NextResponse.json({ error: authErr.message || "Senior Doctor / Clinical Lead authorization required to e-sign amendment addendum" }, { status: 403 });
       }
 
       // Find current latest version
@@ -442,7 +458,7 @@ export async function POST(req: NextRequest) {
           ${assessment_plan},
           ${JSON.stringify(prescribed_medications)},
           ${amendment_reason},
-          ${`${doctor_name} (PIN: 4491)`},
+          ${authorizedDoctor},
           ${tamperSeal}
         ) RETURNING *;
       `;
@@ -470,10 +486,14 @@ export async function POST(req: NextRequest) {
     // FIX 4: DUPLICATE RESOLUTION & DUAL-ADMIN MERGE WORKFLOW
     // =========================================================================
     if (action === "resolve_duplicate_merge") {
-      const { ticket_id, approver_2 = "Dr. Rahul Sharma (Medical Director)", pin } = body;
+      const { ticket_id } = body;
 
-      if (pin !== "4491" && pin !== "1234") {
-        return NextResponse.json({ error: "Second Admin Authorization PIN required to merge patient identities" }, { status: 403 });
+      let approver_2 = "Medical Director";
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+        approver_2 = `${auth.user.full_name} (${auth.membership.role})`;
+      } catch (authErr: any) {
+        return NextResponse.json({ error: authErr.message || "Second Admin Authorization required to merge patient identities" }, { status: 403 });
       }
 
       const ticketRows = await sql`

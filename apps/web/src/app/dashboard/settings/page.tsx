@@ -156,8 +156,8 @@ export default function DashboardSettingsPage() {
 
   const handleOnboardDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onboardPin !== "4491") {
-      setOnboardError("Invalid Manager PIN. PIN 4491 required to authorize doctor onboarding.");
+    if (!onboardPin.trim()) {
+      setOnboardError("Practice Manager PIN is required to authorize onboarding.");
       return;
     }
     setOnboarding(true);
@@ -313,8 +313,8 @@ export default function DashboardSettingsPage() {
     e.preventDefault();
     setTariffError("");
 
-    if (tariffPin !== "4491") {
-      setTariffError("Invalid Manager PIN. Authorization requires PIN 4491.");
+    if (!tariffPin.trim()) {
+      setTariffError("Manager authorization PIN is required.");
       return;
     }
 
@@ -430,8 +430,8 @@ export default function DashboardSettingsPage() {
     if (!selectedDoctorForOffboard) return;
     setOffboardError("");
 
-    if (offboardPin !== "4491") {
-      setOffboardError("Invalid Manager PIN. Authorization requires PIN 4491.");
+    if (!offboardPin.trim()) {
+      setOffboardError("Manager authorization PIN is required.");
       return;
     }
 
@@ -474,8 +474,8 @@ export default function DashboardSettingsPage() {
     e.preventDefault();
     if (!selectedDoctorForReactivate) return;
 
-    if (reactivatePin !== "4491") {
-      alert("Invalid Manager PIN. PIN 4491 is required to reactivate.");
+    if (!reactivatePin.trim()) {
+      alert("Manager authorization PIN is required.");
       return;
     }
 
@@ -514,7 +514,7 @@ export default function DashboardSettingsPage() {
     followup_fee: 300,
     followup_validity_days: 7,
     doctor_split_percentage: 80,
-    authorized_by: "Dr. Ananya Sharma (PIN 4491)",
+    authorized_by: "Clinic Administrator (Admin Session)",
     change_reason: "Fiscal Year 2026 Q3 OPD Tariff Baseline & Specialist Split Agreement"
   };
 
@@ -539,7 +539,7 @@ export default function DashboardSettingsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-0.5 border border-blue-500/20 text-[11px] font-black uppercase tracking-wider text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
               <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-              <span>Manager PIN 4491 Governed</span>
+              <span>Practice Manager Governed</span>
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
               <ShieldCheck className="h-3 w-3" />
@@ -587,7 +587,7 @@ export default function DashboardSettingsPage() {
               <span>Effective-Dated Tariffs</span>
             </div>
             <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-              PIN 4491
+              RBAC Verified
             </span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
@@ -1383,14 +1383,14 @@ export default function DashboardSettingsPage() {
               <div className="p-3 rounded-[14px] bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40">
                 <label className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5 mb-1">
                   <Lock className="h-3.5 w-3.5" />
-                  Manager Authorization PIN Required (Default: 4491)
+                  Practice Manager Security PIN Required
                 </label>
                 <input
                   type="password"
                   value={tariffPin}
                   onChange={e => setTariffPin(e.target.value)}
-                  placeholder="Enter 4-digit PIN (4491)"
-                  maxLength={4}
+                  placeholder="Enter Manager Security PIN"
+                  maxLength={6}
                   required
                   className="w-full rounded-[10px] border border-amber-300 dark:border-amber-700 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
                 />
@@ -1642,14 +1642,14 @@ export default function DashboardSettingsPage() {
               <div className="p-3 rounded-[14px] bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40">
                 <label className="font-bold text-rose-900 dark:text-rose-200 flex items-center gap-1.5 mb-1">
                   <Lock className="h-3.5 w-3.5" />
-                  Manager Authorization PIN Required (Default: 4491)
+                  Practice Manager Security PIN Required
                 </label>
                 <input
                   type="password"
                   value={offboardPin}
                   onChange={e => setOffboardPin(e.target.value)}
-                  placeholder="Enter 4-digit PIN (4491)"
-                  maxLength={4}
+                  placeholder="Enter Manager Security PIN"
+                  maxLength={6}
                   required
                   className="w-full rounded-[10px] border border-rose-300 dark:border-rose-800 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
                 />
@@ -1709,14 +1709,14 @@ export default function DashboardSettingsPage() {
               <div className="p-3 rounded-[14px] bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/40">
                 <label className="font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5 mb-1">
                   <Lock className="h-3.5 w-3.5" />
-                  Manager Authorization PIN Required (Default: 4491)
+                  Practice Manager Security PIN Required
                 </label>
                 <input
                   type="password"
                   value={reactivatePin}
                   onChange={e => setReactivatePin(e.target.value)}
-                  placeholder="Enter 4-digit PIN (4491)"
-                  maxLength={4}
+                  placeholder="Enter Manager Security PIN"
+                  maxLength={6}
                   required
                   className="w-full rounded-[10px] border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
                 />
@@ -1851,14 +1851,14 @@ export default function DashboardSettingsPage() {
               <div className="p-3.5 rounded-[16px] bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50">
                 <label className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5 mb-1">
                   <Lock className="h-3.5 w-3.5 text-[#0071E3]" />
-                  Practice Manager PIN (Default: 4491)
+                  Practice Manager Security PIN
                 </label>
                 <input
                   type="password"
                   value={onboardPin}
                   onChange={e => setOnboardPin(e.target.value)}
-                  placeholder="Enter 4-digit PIN (4491)"
-                  maxLength={4}
+                  placeholder="Enter Manager Security PIN"
+                  maxLength={6}
                   required
                   className="w-full rounded-[10px] border border-blue-300 dark:border-blue-800 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
                 />

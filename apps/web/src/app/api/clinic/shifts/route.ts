@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -86,11 +87,15 @@ export async function POST(req: NextRequest) {
       manager_override_pin
     } = body;
 
-    // ACTION: UNLOCK POS WITH MANAGER PIN
+    // ACTION: UNLOCK POS WITH MANAGER AUTHORIZATION
     if (action === "unlock_pos") {
-      const { shift_id, pin } = body;
-      if (pin !== "4491" && pin !== "1234") {
-        return NextResponse.json({ error: "Invalid Manager PIN. POS remains locked." }, { status: 403 });
+      const { shift_id } = body;
+      let managerName = "Clinic Administrator";
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+        managerName = `${auth.user.full_name} (${auth.membership.role})`;
+      } catch (authErr: any) {
+        return NextResponse.json({ error: authErr.message || "Invalid or unauthorized session. Practice Manager authorization required to unlock POS." }, { status: 403 });
       }
 
       let updated;
@@ -99,8 +104,8 @@ export async function POST(req: NextRequest) {
           UPDATE clinic_shift_handovers
           SET 
             is_pos_locked = false,
-            manager_override_pin = '4491',
-            manager_override_by = 'Dr. Rahul Sharma (Finance Head)',
+            manager_override_pin = 'AUTH_SESSION',
+            manager_override_by = ${managerName},
             handover_status = 'RECONCILED_OVERRIDE',
             updated_at = NOW()
           WHERE id = ${shift_id} OR is_pos_locked = true
@@ -111,8 +116,8 @@ export async function POST(req: NextRequest) {
           UPDATE clinic_shift_handovers
           SET 
             is_pos_locked = false,
-            manager_override_pin = '4491',
-            manager_override_by = 'Dr. Rahul Sharma (Finance Head)',
+            manager_override_pin = 'AUTH_SESSION',
+            manager_override_by = ${managerName},
             handover_status = 'RECONCILED_OVERRIDE',
             updated_at = NOW()
           WHERE is_pos_locked = true
@@ -122,7 +127,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         status: "success",
-        message: "POS successfully unlocked by Manager PIN. Next shift counter access granted.",
+        message: `POS successfully unlocked by ${managerName}. Next shift counter access granted.`,
         unlocked_shift: updated[0] || null
       });
     }
@@ -159,13 +164,23 @@ export async function POST(req: NextRequest) {
     const variance = countedNum - expectedCash;
     const variancePct = expectedCash > 0 ? parseFloat(((Math.abs(variance) / expectedCash) * 100).toFixed(2)) : 0;
 
-    // FIX 3: Variance Tolerance Logic (> ₹100 or > 1.0% of shift total)
+    // Variance Tolerance Logic (> ₹100 or > 1.0% of shift total)
     const isBreach = Math.abs(variance) > 100 || variancePct > 1.0;
-    const isAuthorizedByPin = manager_override_pin === "4491" || manager_override_pin === "1234";
+    let isAuthorizedByManager = false;
+    let overrideBy: string | null = null;
+
+    if (isBreach) {
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+        isAuthorizedByManager = true;
+        overrideBy = `${auth.user.full_name} (${auth.membership.role})`;
+      } catch {
+        isAuthorizedByManager = false;
+      }
+    }
 
     let varianceStatus = "BALANCED";
     let isPosLocked = false;
-    let overrideBy = null;
 
     if (Math.abs(variance) === 0) {
       varianceStatus = "BALANCED";
@@ -175,10 +190,9 @@ export async function POST(req: NextRequest) {
       isPosLocked = false;
     } else {
       // Variance breach!
-      if (isAuthorizedByPin) {
+      if (isAuthorizedByManager) {
         varianceStatus = "VARIANCE_AUTHORIZED";
         isPosLocked = false;
-        overrideBy = "Dr. Rahul Sharma (Finance Head PIN: 4491)";
       } else {
         varianceStatus = "VARIANCE_BREACH";
         isPosLocked = true; // Blocks next shift's POS access until resolved
@@ -211,7 +225,7 @@ export async function POST(req: NextRequest) {
         ${varianceStatus},
         ${isPosLocked},
         ${variance_reason || (isBreach ? `Discrepancy of ₹${Math.abs(variance)} exceeds ₹100/1% threshold.` : "Cash drawer balanced.")},
-        ${isAuthorizedByPin ? "4491" : null},
+        ${isAuthorizedByManager ? "AUTH_SESSION" : null},
         ${overrideBy},
         ${isPosLocked ? "HANDOVER_BLOCKED" : "RECONCILED"},
         NOW()

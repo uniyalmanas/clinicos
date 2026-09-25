@@ -38,10 +38,10 @@ The front page (`/`) implements an uncluttered, patient-first hierarchy optimize
    - **Dr. Vikram Sethi**: DNB (Pediatrics & Neonatology), UKMC Reg. `7312`, Dron Child & Newborn (Chakrata Rd), ₹500 (*Next Slot 11:30 AM*).
 5. **Top Specialties Catalog**: Top 8 high-demand medical specialties (General Physician, Dermatology, Dentistry, Pediatrics, Orthopaedics, Gynaecology, ENT, Diabetology) with custom SVG vector icons, linked directly to the full 24-specialty directory (`/specialties`).
 6. **For Doctors (DocSphere ClinicOS)**: Dedicated provider suite showcasing the 30-second prescription pad, reception desk PWA, and polyclinic multi-chamber hub, backed by an interactive 5-module live sandbox simulator.
-7. **Transparent 3-Tier Doctor Pricing**:
-   - **₹0 / forever (Starter Doctor)**: Digital profile, Google Maps discovery, up to 30 appointments/month.
-   - **₹499 / month (Solo Practice Pro)**: Unlimited live token queues, 30-second Rx studio, WhatsApp PDF dispatch, Soundbox UPI reconciliation.
-   - **₹1,999 / month (Multi-Doctor Polyclinic)**: Up to 8 consulting chambers, front-desk reception PWA, drawer audit ledger, acoustic counter chime system.
+7. **Transparent ClinicOS Pricing (SaaS Model)**:
+   - **₹0 / forever (Patients & Front-Desk Staff)**: ₹0 markup, direct OPD token reservations, mobile ticker, and zero staff seat fees.
+   - **₹599 / month (Solo Practice Pro)**: Single doctor clinic, unlimited live token queues, 30-second Rx studio, WhatsApp PDF dispatch, and Soundbox UPI reconciliation.
+   - **₹1,299 / month (Multi-Doctor Polyclinic)**: Multi-doctor practice, up to 8 consulting chambers, front-desk reception PWA, drawer audit ledger, and acoustic counter chime system.
 8. **Modern FAQ Accordions**: Interactive open/close accordion modules answering common questions on zero-markup pricing, app-free mobile token tracking, queue safety, and clinic onboarding.
 9. **Minimalist Apple-Styled Footer**: Clean navigation linking to specialties, appointment booking, patient records, and the live production domain (`https://medic-sept-2026.vercel.app/`).
 
@@ -211,7 +211,7 @@ ClinicOS incorporates battle-tested clinical workflows into a sub-50ms reactive 
 - **NMC (National Medical Commission)**: Upper-case generic drug prescribing guidelines and registered doctor credentials.
 - **ABDM (Ayushman Bharat Digital Mission)**: FHIR R4 document standard for health record exchange.
 - **IRDAI**: Cashless hospitalization pre-authorization format.
-- **Digital Signatures**: SHA-256 cryptographic verification seal on all clinical records.
+- **Prescription Integrity Hash**: SHA-256 cryptographic verification seal on all clinical records.
 - **DPDP Act Compliant**: Direct confidential doctor-patient relationships without third-party phone number marketing.
 
 ---

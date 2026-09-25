@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { createHmac } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,13 +25,15 @@ export async function POST(req: NextRequest) {
     let isVerified = false;
 
     if (payment_mode === "cash" || payment_mode === "counter_soundbox" || payment_mode === "counter_cash") {
-      // Counter collections require authorized staff / manager PIN or token
-      const { staff_pin } = body;
-      if (staff_pin && (staff_pin === "4491" || staff_pin === "1234")) {
+      // Counter collections require authorized staff / receptionist / doctor / admin session
+      try {
+        await authorizeClinicUser(req, {
+          requiredRoles: ["owner", "clinic_admin", "staff", "receptionist", "doctor"]
+        });
         isVerified = true;
-      } else {
+      } catch (authErr: any) {
         return NextResponse.json(
-          { error: "Counter payment confirmation requires staff PIN authorization." },
+          { error: authErr.message || "Counter payment confirmation requires authenticated clinic staff authorization." },
           { status: 401 }
         );
       }

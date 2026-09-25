@@ -112,8 +112,6 @@ export function calculateDenominationTotal(d: DenominationBreakdown): number {
   );
 }
 
-export const MANAGER_PIN_DEFAULT = "4491";
-
 export const VARIANCE_THRESHOLD_INR = 100;
 export const VARIANCE_THRESHOLD_PCT = 1.0;
 export const EXPENSE_APPROVAL_THRESHOLD_INR = 500;

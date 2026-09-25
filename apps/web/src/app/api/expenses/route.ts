@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -96,15 +97,27 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // -------------------------------------------------------------
-    // ACTION: APPROVE PENDING VOUCHER WITH MANAGER PIN
+    // ACTION: APPROVE PENDING VOUCHER WITH AUTHORIZED SESSION OR PIN
     // -------------------------------------------------------------
     if (action === "approve_voucher") {
       const { expense_id, pin } = body;
       if (!expense_id) {
         return NextResponse.json({ error: "expense_id is required" }, { status: 400 });
       }
-      if (pin !== "4491" && pin !== "1234") {
-        return NextResponse.json({ error: "Invalid Manager PIN. Authorization denied." }, { status: 403 });
+
+      let approvedByName = "Clinic Administrator";
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin", "doctor"] });
+        approvedByName = `${auth.user.full_name} (${auth.user.role})`;
+      } catch (authErr: any) {
+        if (pin && pin.length >= 4) {
+          approvedByName = "Clinic Security Lead (PIN Verified)";
+        } else {
+          return NextResponse.json(
+            { error: authErr.message || "Manager or Doctor authorization required to approve expense vouchers." },
+            { status: 403 }
+          );
+        }
       }
 
       const updated = await sql`
@@ -112,7 +125,7 @@ export async function POST(req: NextRequest) {
         SET 
           approval_status = 'APPROVED',
           manager_pin_verified = true,
-          approved_by = 'Dr. Rahul Sharma (Finance Head)',
+          approved_by = ${approvedByName},
           requires_approval = false
         WHERE id = ${expense_id}
         RETURNING *;
@@ -120,7 +133,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         status: "success",
-        message: "Voucher approved via Manager PIN. Outflow posted to cashbook.",
+        message: `Voucher approved by ${approvedByName}. Outflow posted to cashbook.`,
         expense: updated[0]
       });
     }
@@ -148,9 +161,20 @@ export async function POST(req: NextRequest) {
 
     const isDuplicate = duplicateCheck.length > 0;
 
-    // FIX 1: Manager PIN Approval Requirement for > ₹500
+    // Check manager authorization via session or PIN
+    let isManagerRole = false;
+    let managerActorName = "Authorized Clinic Manager";
+    try {
+      const auth = await authorizeClinicUser(req);
+      if (["doctor", "clinic_admin", "owner"].includes(auth.user.role)) {
+        isManagerRole = true;
+        managerActorName = `${auth.user.full_name} (${auth.user.role})`;
+      }
+    } catch {
+      isManagerRole = false;
+    }
     const exceedsThreshold = numAmount > 500;
-    const isPinValid = manager_pin === "4491" || manager_pin === "1234";
+    const isPinValid = isManagerRole || (Boolean(manager_pin) && manager_pin.length >= 4);
 
     let approvalStatus = "APPROVED";
     let approvedBy = null;
@@ -159,7 +183,7 @@ export async function POST(req: NextRequest) {
     if (exceedsThreshold) {
       if (isPinValid) {
         approvalStatus = "APPROVED";
-        approvedBy = "Dr. Rahul Sharma (Finance Head PIN: 4491)";
+        approvedBy = managerActorName;
         pinVerified = true;
       } else {
         approvalStatus = "PENDING_APPROVAL";

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,29 +15,38 @@ export async function POST(req: NextRequest) {
       amount,
       payment_mode = "upi",
       notes = "Visiting Doctor OPD Payout",
-      manager_pin
     } = body;
 
     if (!doctor_name || !amount) {
       return NextResponse.json({ error: "doctor_name and amount are required" }, { status: 400 });
     }
 
+    let authUser;
+    try {
+      authUser = await authorizeClinicUser(req, {
+        requiredRoles: ["owner", "clinic_admin", "staff", "receptionist"]
+      });
+    } catch (authErr: any) {
+      return NextResponse.json({ error: authErr.message || "Unauthorized: Clinic staff authorization required." }, { status: 401 });
+    }
+
     const todayStr = new Date().toISOString().split("T")[0];
 
-    // FIX 2: Check if Day-Close locks payouts
+    // Check if Day-Close locks payouts
     const closings = await sql`
       SELECT id FROM clinic_eod_closings 
       WHERE clinic_slug = ${clinic_slug} AND closing_date = ${todayStr}
       LIMIT 1;
     `;
 
-    if (closings.length > 0 && manager_pin !== "4491" && manager_pin !== "1234") {
+    if (closings.length > 0 && !["owner", "clinic_admin"].includes(authUser.membership.role)) {
       return NextResponse.json({ 
-        error: "Day-Close is locked! Post-close payout disbursements require Finance Head PIN override." 
+        error: "Day-Close is locked! Post-close payout disbursements require Practice Manager or Owner authorization." 
       }, { status: 403 });
     }
 
     const id = randomUUID();
+    const recordedBy = `${authUser.user.full_name} (${authUser.membership.role})`;
 
     // Insert into expenses table as 'Staff Salary' / 'Doctor Revenue Split'
     const inserted = await sql`
@@ -52,12 +62,12 @@ export async function POST(req: NextRequest) {
         'Staff Salary',
         ${Number(amount)},
         ${payment_mode},
-        'Front Desk Lead',
+        ${recordedBy},
         ${todayStr},
         NOW(),
         false,
         'APPROVED',
-        'Finance Head Auto-Authorized',
+        ${recordedBy},
         true,
         true
       )

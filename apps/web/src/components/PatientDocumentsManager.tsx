@@ -44,7 +44,26 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
   const [docType, setDocType] = useState("Blood Test");
   const [notes, setNotes] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+
+  const handleDownloadDocument = async (doc: DocumentItem) => {
+    try {
+      setDownloading(true);
+      const res = await fetch(`/api/documents/signed-url?id=${encodeURIComponent(doc.id)}`);
+      const data = await res.json();
+      if (res.ok && data.signed_url) {
+        window.open(data.signed_url, "_blank", "noopener,noreferrer");
+      } else {
+        alert(data.error || "Unable to retrieve document download link.");
+      }
+    } catch (err) {
+      console.error("Error retrieving signed URL:", err);
+      alert("Failed to download document.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const loadDocs = async () => {
     try {
@@ -220,11 +239,12 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
                 Close
               </button>
               <button
-                onClick={() => alert(`Downloading ${previewDoc.file_name}`)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-apple-teal hover:bg-[#00B49A] px-5 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
+                disabled={downloading}
+                onClick={() => handleDownloadDocument(previewDoc)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-apple-teal hover:bg-[#00B49A] px-5 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition disabled:opacity-50"
               >
                 <Download className="h-3.5 w-3.5" />
-                Download PDF
+                <span>{downloading ? "Retrieving Signed Link..." : "Download Private PDF"}</span>
               </button>
             </div>
           </div>

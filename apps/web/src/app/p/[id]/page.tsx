@@ -443,10 +443,10 @@ export default function PatientPrescriptionLockerPage() {
               <div>
                 <div className="flex items-center gap-2 font-bold text-[#34C759] dark:text-[#30D158] print:text-black">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>Cryptographically Sealed & Signed</span>
+                  <span>Prescription Integrity Hash (SHA-256)</span>
                 </div>
                 <div className="font-mono text-[9px] text-[#86868B] mt-1 max-w-sm break-all">
-                  SHA-256: {rx.digital_signature_hash}
+                  SHA-256 Seal: {rx.digital_signature_hash}
                 </div>
                 <div className="font-mono text-[10px] text-[#86868B] mt-0.5">
                   Verification Code: <strong>{rx.qr_verification_code}</strong>

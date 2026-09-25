@@ -152,7 +152,6 @@ export interface SeniorDoctorCredential {
   state_medical_council: string;
   specialization: string;
   is_active: boolean;
-  pin: string;
 }
 
 export const VERIFIED_SENIOR_DOCTORS: SeniorDoctorCredential[] = [
@@ -162,8 +161,7 @@ export const VERIFIED_SENIOR_DOCTORS: SeniorDoctorCredential[] = [
     nmc_reg_number: "NMC-DL-2014-99821",
     state_medical_council: "Delhi Medical Council (DMC)",
     specialization: "Internal Medicine & Critical Care",
-    is_active: true,
-    pin: "4491"
+    is_active: true
   },
   {
     doctor_name: "Dr. Neha Kapoor",
@@ -171,8 +169,7 @@ export const VERIFIED_SENIOR_DOCTORS: SeniorDoctorCredential[] = [
     nmc_reg_number: "NMC-MH-2011-88412",
     state_medical_council: "Maharashtra Medical Council (MMC)",
     specialization: "Pediatrics & Neonatology",
-    is_active: true,
-    pin: "5512"
+    is_active: true
   }
 ];
 

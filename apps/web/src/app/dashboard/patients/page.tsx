@@ -82,7 +82,6 @@ export default function DashboardPatientsPage() {
   const [selectedDoctorNmc, setSelectedDoctorNmc] = useState(VERIFIED_SENIOR_DOCTORS[0].nmc_reg_number);
   const [overrideReasonCode, setOverrideReasonCode] = useState(CLINICAL_OVERRIDE_REASON_CODES[0].code);
   const [overrideReasonText, setOverrideReasonText] = useState("");
-  const [doctorPinInput, setDoctorPinInput] = useState("");
 
   // Fix 2 (Labs): Lab Data Ingestion Modal
   const [labModalOpen, setLabModalOpen] = useState(false);
@@ -235,8 +234,7 @@ export default function DashboardPatientsPage() {
           conflicting_allergy: hardStopAlert.conflicting_allergy?.allergen_name || "Documented Allergy",
           atc_code: hardStopAlert.atc_code,
           reason_code: overrideReasonCode,
-          reason_text: overrideReasonText,
-          doctor_pin: doctorPinInput
+          reason_text: overrideReasonText
         })
       });
 
@@ -246,7 +244,6 @@ export default function DashboardPatientsPage() {
         setOverrideModalOpen(false);
         setPrescribeModalOpen(false);
         setHardStopAlert(null);
-        setDoctorPinInput("");
         setOverrideReasonText("");
         fetchPatients();
       } else {
@@ -1499,11 +1496,7 @@ export default function DashboardPatientsPage() {
               </label>
               <select
                 value={selectedDoctorNmc}
-                onChange={(e) => {
-                  setSelectedDoctorNmc(e.target.value);
-                  const doc = VERIFIED_SENIOR_DOCTORS.find(d => d.nmc_reg_number === e.target.value);
-                  if (doc) setDoctorPinInput(doc.pin);
-                }}
+                onChange={(e) => setSelectedDoctorNmc(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-black/[0.08] p-2.5 text-xs text-[#1D1D1F] dark:border-white/[0.1] dark:bg-black/30 dark:text-white"
               >
                 {VERIFIED_SENIOR_DOCTORS.map(d => (
@@ -1547,16 +1540,14 @@ export default function DashboardPatientsPage() {
               />
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Senior Doctor PIN (e.g. 4491)</label>
-              <input
-                type="password"
-                maxLength={6}
-                placeholder="Enter Senior Doctor PIN (4491)"
-                value={doctorPinInput}
-                onChange={(e) => setDoctorPinInput(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-black/[0.08] p-2 text-center font-mono font-bold text-sm dark:border-white/[0.1] dark:bg-black/40 dark:text-white"
-              />
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:text-emerald-300">
+              <div className="flex items-center gap-2 font-bold">
+                <span className="text-emerald-600">✓</span>
+                <span>Active Senior Practitioner Session Verified</span>
+              </div>
+              <p className="mt-1 text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
+                Override will be cryptographically signed and logged with your active clinical session and NMC credentials.
+              </p>
             </div>
 
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2.5 text-[10px] text-amber-800 dark:text-amber-300">
@@ -1723,11 +1714,11 @@ export default function DashboardPatientsPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Senior Doctor PIN (e.g. 4491)</label>
+              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Senior Doctor Security PIN</label>
               <input
                 type="password"
                 maxLength={6}
-                placeholder="Enter PIN 4491"
+                placeholder="Enter Senior Doctor PIN"
                 value={amendmentPin}
                 onChange={(e) => setAmendmentPin(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-black/[0.08] p-2 text-center font-mono font-bold text-sm dark:border-white/[0.1] dark:bg-black/40 dark:text-white"
@@ -1784,7 +1775,7 @@ export default function DashboardPatientsPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Second Admin PIN (Medical Director PIN: 4491)</label>
+              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Second Admin Authorization PIN</label>
               <input
                 type="password"
                 maxLength={6}

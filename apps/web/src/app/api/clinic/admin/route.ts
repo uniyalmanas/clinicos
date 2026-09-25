@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -289,7 +290,7 @@ export async function GET(req: Request) {
     // 9. Immutable Administrative Audit Log
     const audit_logs = [
       { id: "aud-1", timestamp: "2026-09-25T10:14:00Z", user: "Dr. Rahul Sharma", action: "SUPER_ADMIN_LOGIN", details: "MFA Authenticated from 192.168.1.10 (Clinic Admin Console)" },
-      { id: "aud-2", timestamp: "2026-09-25T09:42:00Z", user: "Dr. Rahul Sharma", action: "TARIFF_VERSION_PUBLISHED", details: "Tariff v4.2 effective dated to 2026-09-01 (PIN 4491 verified)" },
+      { id: "aud-2", timestamp: "2026-09-25T09:42:00Z", user: "Dr. Rahul Sharma", action: "TARIFF_VERSION_PUBLISHED", details: "Tariff v4.2 effective dated to 2026-09-01 (Admin Session verified)" },
       { id: "aud-3", timestamp: "2026-09-25T08:45:00Z", user: "Aarav Sharma", action: "STAFF_SHIFT_STARTED", details: "Morning OPD Front Desk Drawer opened with ₹2,000 float" },
       { id: "aud-4", timestamp: "2026-09-24T19:30:00Z", user: "Dr. Rahul Sharma", action: "EOD_FINANCIAL_LOCK", details: "Day closing locked for 24-Sep-2026, Net cash ₹8,950 verified" },
       { id: "aud-5", timestamp: "2026-09-24T16:10:00Z", user: "Dr. Rahul Sharma", action: "CHAMBER_SHIFT_UPDATED", details: "Chamber 1 Morning OPD guardrails synchronized with 30m cutoff" }
@@ -317,19 +318,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action } = body;
 
+    let auth;
+    try {
+      auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+    } catch (authErr: any) {
+      return NextResponse.json(
+        { detail: authErr.message || "Unauthorized: Clinic administrator / owner session required." },
+        { status: 403 }
+      );
+    }
+
+    const clinic = auth.clinic;
+    const actorName = `${auth.user.full_name} (${auth.membership.role})`;
+
     // 1. ACTION: Toggle User Account Lock (Revoke / Restore Staff Access)
     if (action === "toggle_user_lock") {
-      const { user_id, is_active, manager_pin } = body;
-
-      if (manager_pin !== "4491") {
-        return NextResponse.json({ detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" }, { status: 401 });
-      }
+      const { user_id, is_active } = body;
 
       return NextResponse.json({
         success: true,
         message: is_active 
-          ? `User access restored. Staff account is now unlocked.` 
-          : `Staff account revoked and locked immediately. Active sessions terminated per DPDP security policy.`,
+          ? `User access restored. Staff account is now unlocked by ${actorName}.` 
+          : `Staff account revoked and locked immediately by ${actorName}. Active sessions terminated per DPDP security policy.`,
         user_id,
         is_active
       });
@@ -337,15 +347,11 @@ export async function POST(req: Request) {
 
     // 2. ACTION: Update Role-Based Access Control (RBAC) Permissions
     if (action === "update_rbac_permissions") {
-      const { role_key, permissions, manager_pin } = body;
-
-      if (manager_pin !== "4491") {
-        return NextResponse.json({ detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" }, { status: 401 });
-      }
+      const { role_key, permissions } = body;
 
       return NextResponse.json({
         success: true,
-        message: `RBAC Permission Matrix updated for ${role_key}. New security privileges are active system-wide.`,
+        message: `RBAC Permission Matrix updated for ${role_key} by ${actorName}. New security privileges are active system-wide.`,
         role_key,
         permissions
       });
@@ -353,11 +359,7 @@ export async function POST(req: Request) {
 
     // 3. ACTION: Save Global Clinic Parameters (Tariffs, Legal, Discount Tiers)
     if (action === "save_global_config") {
-      const { global_config, discount_tiers, manager_pin } = body;
-
-      if (manager_pin !== "4491") {
-        return NextResponse.json({ detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" }, { status: 401 });
-      }
+      const { global_config, discount_tiers } = body;
 
       // Synchronize with clinics table
       if (global_config.clinic_name) {
@@ -372,13 +374,13 @@ export async function POST(req: Request) {
             consultation_fee = COALESCE(${Number(global_config.default_consultation_fee) || 600}, consultation_fee),
             followup_fee = COALESCE(${Number(global_config.default_followup_fee) || 300}, followup_fee),
             doctor_split_percentage = COALESCE(${Number(global_config.default_doctor_split) || 80}, doctor_split_percentage)
-          WHERE lower(slug) = 'derma-care-dehradun';
+          WHERE id::text = ${clinic.id}::text OR lower(slug) = ${clinic.slug.toLowerCase()};
         `;
       }
 
       return NextResponse.json({
         success: true,
-        message: "Global clinic configuration, tariffs, and legal identifiers updated successfully across all operational modules.",
+        message: `Global clinic configuration, tariffs, and legal identifiers updated successfully by ${actorName}.`,
         global_config,
         discount_tiers
       });
@@ -444,24 +446,20 @@ export async function POST(req: Request) {
 
     // 5. ACTION: Apply Simulation Results Directly to Live Practice
     if (action === "apply_simulation_to_live") {
-      const { new_fee, split_pct, manager_pin } = body;
-
-      if (manager_pin !== "4491") {
-        return NextResponse.json({ detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" }, { status: 401 });
-      }
+      const { new_fee, split_pct } = body;
 
       await sql`
         UPDATE clinics
         SET
           consultation_fee = ${Number(new_fee) || 600},
           doctor_split_percentage = ${Number(split_pct) || 80}
-        WHERE lower(slug) = 'derma-care-dehradun';
+        WHERE id::text = ${clinic.id}::text OR lower(slug) = ${clinic.slug.toLowerCase()};
       `;
 
       await sql`
         UPDATE doctors
         SET consultation_fee = ${Number(new_fee) || 600}
-        WHERE clinic_slug = 'derma-care-dehradun';
+        WHERE clinic_id::text = ${clinic.id}::text OR clinic_slug = ${clinic.slug};
       `;
 
       // Insert immutable version log
@@ -477,13 +475,13 @@ export async function POST(req: Request) {
           change_reason,
           is_active
         ) VALUES (
-          'derma-care-dehradun',
+          ${clinic.slug},
           NOW(),
           ${Number(new_fee) || 600},
           300.00,
           7,
           ${Number(split_pct) || 80},
-          'Dr. Rahul Sharma (Super Admin What-If Simulation, PIN 4491)',
+          ${`${actorName} (Simulation Applied)`},
           'Simulated Scenario Applied to Live Production: Optimized Tariff & Split',
           true
         );
@@ -491,7 +489,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Simulation successfully applied! Live consultation tariff updated to ₹${new_fee} with ${split_pct}/${100 - Number(split_pct)} split across the practice.`
+        message: `Simulation successfully applied by ${actorName}! Live consultation tariff updated to ₹${new_fee} with ${split_pct}/${100 - Number(split_pct)} split across the practice.`
       });
     }
 
@@ -519,13 +517,8 @@ export async function POST(req: Request) {
         consultation_fee, 
         chamber_name, 
         medical_council_reg_number,
-        doctor_split_percentage,
-        manager_pin 
+        doctor_split_percentage 
       } = body;
-
-      if (manager_pin !== "4491") {
-        return NextResponse.json({ detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" }, { status: 401 });
-      }
 
       if (!full_name || !specialization) {
         return NextResponse.json({ detail: "Doctor full name and clinical specialization are mandatory." }, { status: 400 });
@@ -548,17 +541,17 @@ export async function POST(req: Request) {
         INSERT INTO doctors (
           id, slug, full_name, specialization, qualification_summary,
           medical_council_reg_number, consultation_fee, followup_fee,
-          chamber_name, clinic_slug, is_active, created_at
+          chamber_name, clinic_slug, clinic_id, is_active, created_at
         ) VALUES (
           ${doctorId}, ${docSlug}, ${cleanName}, ${specialization.trim()},
           'MBBS, MD / Senior Consultant', ${councilReg}, ${fee}, ${fFee},
-          ${chamber}, 'derma-care-dehradun', true, NOW()
+          ${chamber}, ${clinic.slug}, ${clinic.id}, true, NOW()
         );
       `;
 
       return NextResponse.json({
         success: true,
-        message: `Dr. ${cleanName} (${specialization}) onboarded to clinic roster with ₹${fee} fee in ${chamber}.`,
+        message: `Dr. ${cleanName} (${specialization}) onboarded to clinic roster with ₹${fee} fee in ${chamber} by ${actorName}.`,
         doctor: {
           id: doctorId,
           slug: docSlug,

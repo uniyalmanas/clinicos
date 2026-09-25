@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -78,11 +79,15 @@ export async function POST(req: Request) {
         return NextResponse.json({ detail: "Clinic slug and change reason are mandatory" }, { status: 400 });
       }
 
-      // Security Guardrail: Manager PIN Authentication (4491)
-      if (manager_pin !== "4491") {
+      // Security Guardrail: Clinic Admin / Owner Authorization
+      let authorizedName = "Clinic Administrator";
+      try {
+        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+        authorizedName = `${auth.user.full_name} (${auth.membership.role})`;
+      } catch (authErr: any) {
         return NextResponse.json(
-          { detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" },
-          { status: 401 }
+          { detail: authErr.message || "Unauthorized: Only clinic owners and administrators can modify tariff versions." },
+          { status: 403 }
         );
       }
 
@@ -118,7 +123,7 @@ export async function POST(req: Request) {
           ${Number(followup_fee) || 300},
           ${Number(followup_validity_days) || 7},
           ${Number(doctor_split_percentage) || 80},
-          'Dr. Ananya Sharma (Medical Director, PIN 4491)',
+          ${authorizedName},
           ${change_reason},
           ${isCurrentlyActive}
         )
@@ -292,10 +297,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ detail: "Doctor slug is required" }, { status: 400 });
       }
 
-      if (manager_pin !== "4491") {
+      try {
+        await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+      } catch (authErr: any) {
         return NextResponse.json(
-          { detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" },
-          { status: 401 }
+          { detail: authErr.message || "Unauthorized: Only clinic owners and administrators can offboard doctors." },
+          { status: 403 }
         );
       }
 
@@ -345,10 +352,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ detail: "Doctor slug is required" }, { status: 400 });
       }
 
-      if (manager_pin !== "4491") {
+      try {
+        await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
+      } catch (authErr: any) {
         return NextResponse.json(
-          { detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" },
-          { status: 401 }
+          { detail: authErr.message || "Unauthorized: Only clinic owners and administrators can reactivate doctors." },
+          { status: 403 }
         );
       }
 

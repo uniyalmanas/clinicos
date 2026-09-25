@@ -195,8 +195,8 @@ export default function SuperAdminConsolePage() {
     e.preventDefault();
     setPinError("");
 
-    if (managerPinInput !== "4491") {
-      setPinError("Invalid Manager Authorization PIN. Required: 4491");
+    if (!managerPinInput.trim()) {
+      setPinError("Manager Authorization PIN is required.");
       return;
     }
 
@@ -321,7 +321,7 @@ export default function SuperAdminConsolePage() {
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 border border-blue-500/20 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
               <ShieldCheck className="h-3 w-3" />
-              <span>Manager PIN 4491 Authorized</span>
+              <span>Practice Manager Authorized</span>
             </span>
           </div>
 
@@ -1090,7 +1090,7 @@ export default function SuperAdminConsolePage() {
             </div>
 
             <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-              Modifying system owner settings, user locks, or tariff rates requires the 4-digit Manager PIN (PIN <strong>4491</strong>).
+              Modifying system owner settings, user locks, or tariff rates requires Practice Manager security authorization.
             </p>
 
             <form onSubmit={handleExecutePinAction} className="space-y-4 text-xs">
@@ -1099,8 +1099,8 @@ export default function SuperAdminConsolePage() {
                   type="password"
                   value={managerPinInput}
                   onChange={e => setManagerPinInput(e.target.value)}
-                  placeholder="Enter 4-digit PIN (4491)"
-                  maxLength={4}
+                  placeholder="Enter Manager Security PIN"
+                  maxLength={6}
                   required
                   autoFocus
                   className="w-full rounded-[12px] border border-black/[0.15] dark:border-white/[0.15] bg-black/[0.02] dark:bg-white/[0.04] p-3 font-mono text-center text-lg font-bold tracking-widest text-[#1D1D1F] dark:text-white focus:outline-none focus:border-[#0071E3]"

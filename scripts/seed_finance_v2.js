@@ -142,7 +142,7 @@ async function seed() {
         WHEN amount > 500 AND title ILIKE '%Snack%' THEN 'PENDING_APPROVAL' 
         ELSE 'APPROVED' 
       END,
-      approved_by = CASE WHEN amount > 500 AND NOT (title ILIKE '%Snack%') THEN 'Dr. Rahul Sharma (PIN: 4491)' ELSE NULL END,
+      approved_by = CASE WHEN amount > 500 AND NOT (title ILIKE '%Snack%') THEN 'Dr. Rahul Sharma (Finance Head)' ELSE NULL END,
       manager_pin_verified = CASE WHEN amount > 500 AND NOT (title ILIKE '%Snack%') THEN true ELSE false END,
       ocr_scanned_amt = amount,
       ocr_vendor = CASE 
