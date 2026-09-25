@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { randomUUID } from "crypto";
 
 export async function GET(req: Request) {
   try {
@@ -505,6 +506,66 @@ export async function POST(req: Request) {
           : target === "resync_lab"
             ? "Bi-directional LIS accession stream resynchronized. 6 diagnostic reports imported into Patient Vaults."
             : "Diagnostic health check completed: 5/5 services responded with 100% operational SLA."
+      });
+    }
+
+    // 7. ACTION: Onboard New Visiting Doctor to Clinic Roster
+    if (action === "onboard_doctor") {
+      const { 
+        full_name, 
+        specialization, 
+        consultation_fee, 
+        chamber_name, 
+        medical_council_reg_number,
+        doctor_split_percentage,
+        manager_pin 
+      } = body;
+
+      if (manager_pin !== "4491") {
+        return NextResponse.json({ detail: "Manager Authorization Failed: Invalid Security PIN (Required: 4491)" }, { status: 401 });
+      }
+
+      if (!full_name || !specialization) {
+        return NextResponse.json({ detail: "Doctor full name and clinical specialization are mandatory." }, { status: 400 });
+      }
+
+      const cleanName = full_name.trim();
+      let docSlug = cleanName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      if (!docSlug.startsWith("dr-")) docSlug = `dr-${docSlug}`;
+
+      const doctorId = randomUUID();
+      const fee = Number(consultation_fee) || 700;
+      const fFee = Math.round(fee * 0.5);
+      const chamber = chamber_name || "Chamber 2 - Laser Suite";
+      const councilReg = medical_council_reg_number || "UKMC-REG-2024";
+
+      await sql`
+        INSERT INTO doctors (
+          id, slug, full_name, specialization, qualification_summary,
+          medical_council_reg_number, consultation_fee, followup_fee,
+          chamber_name, clinic_slug, is_active, created_at
+        ) VALUES (
+          ${doctorId}, ${docSlug}, ${cleanName}, ${specialization.trim()},
+          'MBBS, MD / Senior Consultant', ${councilReg}, ${fee}, ${fFee},
+          ${chamber}, 'derma-care-dehradun', true, NOW()
+        );
+      `;
+
+      return NextResponse.json({
+        success: true,
+        message: `Dr. ${cleanName} (${specialization}) onboarded to clinic roster with ₹${fee} fee in ${chamber}.`,
+        doctor: {
+          id: doctorId,
+          slug: docSlug,
+          full_name: cleanName,
+          specialization: specialization.trim(),
+          consultation_fee: fee,
+          chamber_name: chamber,
+          is_active: true
+        }
       });
     }
 

@@ -142,6 +142,61 @@ export default function DashboardSettingsPage() {
   const [selectedDoctorForReactivate, setSelectedDoctorForReactivate] = useState<Doctor | null>(null);
   const [reactivatePin, setReactivatePin] = useState("");
 
+  // Onboard New Doctor State
+  const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [newDocName, setNewDocName] = useState("");
+  const [newDocSpecialty, setNewDocSpecialty] = useState("");
+  const [newDocFee, setNewDocFee] = useState(700);
+  const [newDocChamber, setNewDocChamber] = useState("Chamber 2 - Laser Suite");
+  const [newDocReg, setNewDocReg] = useState("UKMC-REG-2024");
+  const [newDocSplit, setNewDocSplit] = useState(80);
+  const [onboardPin, setOnboardPin] = useState("");
+  const [onboardError, setOnboardError] = useState("");
+  const [onboarding, setOnboarding] = useState(false);
+
+  const handleOnboardDoctor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onboardPin !== "4491") {
+      setOnboardError("Invalid Manager PIN. PIN 4491 required to authorize doctor onboarding.");
+      return;
+    }
+    setOnboarding(true);
+    setOnboardError("");
+    try {
+      const res = await fetch("/api/clinic/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "onboard_doctor",
+          full_name: newDocName,
+          specialization: newDocSpecialty,
+          consultation_fee: newDocFee,
+          chamber_name: newDocChamber,
+          medical_council_reg_number: newDocReg,
+          doctor_split_percentage: newDocSplit,
+          manager_pin: onboardPin
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setOnboardError(data.detail || "Failed to onboard doctor");
+        return;
+      }
+      showToast(data.message || "Doctor onboarded successfully!");
+      if (data.doctor) {
+        setDoctorsList(prev => [...prev, data.doctor]);
+      }
+      setShowOnboardModal(false);
+      setNewDocName("");
+      setNewDocSpecialty("");
+      setOnboardPin("");
+    } catch (err: any) {
+      setOnboardError(err.message || "Failed to onboard doctor");
+    } finally {
+      setOnboarding(false);
+    }
+  };
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4500);
@@ -906,9 +961,23 @@ export default function DashboardSettingsPage() {
                 </p>
               </div>
 
-              <span className="text-[11px] font-mono font-bold text-[#0071E3] dark:text-[#2997FF] bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-full border border-blue-500/20">
-                {activeDoctorsCount} Active Consultants
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono font-bold text-[#0071E3] dark:text-[#2997FF] bg-blue-50 dark:bg-blue-950/60 px-3 py-1 rounded-full border border-blue-500/20">
+                  {activeDoctorsCount} Active Consultants
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOnboardError("");
+                    setOnboardPin("");
+                    setShowOnboardModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-bold shadow-apple-sm transition active:scale-95"
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  <span>+ Onboard Visiting Doctor</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -1666,6 +1735,149 @@ export default function DashboardSettingsPage() {
                   className="rounded-[12px] bg-emerald-600 px-5 py-2 font-bold text-white hover:bg-emerald-700 shadow-apple-sm"
                 >
                   Authorize Reactivation
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: ONBOARD NEW VISITING DOCTOR */}
+      {showOnboardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-[24px] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.12] shadow-apple-modal p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-[#0071E3]" />
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
+                  Onboard Visiting Consultant / Doctor
+                </h3>
+              </div>
+              <button 
+                onClick={() => setShowOnboardModal(false)}
+                className="p-1 rounded-xl text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleOnboardDoctor} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">Doctor Full Name</label>
+                  <input
+                    type="text"
+                    value={newDocName}
+                    onChange={e => setNewDocName(e.target.value)}
+                    placeholder="e.g. Dr. Ananya Rawat"
+                    required
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">Specialization</label>
+                  <input
+                    type="text"
+                    value={newDocSpecialty}
+                    onChange={e => setNewDocSpecialty(e.target.value)}
+                    placeholder="e.g. Cosmetologist & Laser Specialist"
+                    required
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">Council Registration #</label>
+                  <input
+                    type="text"
+                    value={newDocReg}
+                    onChange={e => setNewDocReg(e.target.value)}
+                    placeholder="e.g. UKMC-5591-2018"
+                    required
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-mono shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">Assigned Physical Chamber</label>
+                  <select
+                    value={newDocChamber}
+                    onChange={e => setNewDocChamber(e.target.value)}
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white font-semibold"
+                  >
+                    <option value="Chamber 1 - OPD Main">Chamber 1 - OPD Main</option>
+                    <option value="Chamber 2 - Laser Suite">Chamber 2 - Laser Suite</option>
+                    <option value="Chamber 3 - Minor OT">Chamber 3 - Minor OT</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">Consultation Fee (₹)</label>
+                  <input
+                    type="number"
+                    value={newDocFee}
+                    onChange={e => setNewDocFee(Number(e.target.value))}
+                    min={100}
+                    step={50}
+                    required
+                    className="mt-1 w-full rounded-[12px] border border-black/[0.10] bg-black/[0.02] p-2.5 font-bold shadow-sm dark:border-white/[0.12] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="font-bold text-[#1D1D1F] dark:text-white">
+                    Visiting Payout Split: <span className="text-[#0071E3] font-mono">{newDocSplit}% Doctor</span> / <span className="text-emerald-600 font-mono">{100 - newDocSplit}% Clinic</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={40}
+                    max={95}
+                    step={5}
+                    value={newDocSplit}
+                    onChange={e => setNewDocSplit(Number(e.target.value))}
+                    className="mt-2 w-full accent-[#0071E3]"
+                  />
+                </div>
+              </div>
+
+              {onboardError && (
+                <div className="p-3 rounded-[12px] bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>{onboardError}</span>
+                </div>
+              )}
+
+              <div className="p-3.5 rounded-[16px] bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50">
+                <label className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5 mb-1">
+                  <Lock className="h-3.5 w-3.5 text-[#0071E3]" />
+                  Practice Manager PIN (Default: 4491)
+                </label>
+                <input
+                  type="password"
+                  value={onboardPin}
+                  onChange={e => setOnboardPin(e.target.value)}
+                  placeholder="Enter 4-digit PIN (4491)"
+                  maxLength={4}
+                  required
+                  className="w-full rounded-[10px] border border-blue-300 dark:border-blue-800 bg-white dark:bg-[#1C1C1E] p-2 font-mono text-center text-sm font-bold tracking-widest shadow-sm dark:text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowOnboardModal(false)}
+                  className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] px-4 py-2 font-semibold text-[#86868B] dark:text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={onboarding}
+                  className="rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-5 py-2 font-bold text-white shadow-apple-sm disabled:opacity-50 transition"
+                >
+                  {onboarding ? "Authorizing..." : "Onboard Doctor to Roster"}
                 </button>
               </div>
             </form>
