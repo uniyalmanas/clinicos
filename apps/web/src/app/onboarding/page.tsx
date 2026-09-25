@@ -55,6 +55,7 @@ export default function OnboardingPage() {
   const [extractedData, setExtractedData] = useState<any>(null);
   const [editableBio, setEditableBio] = useState("");
   const [isEditingBio, setIsEditingBio] = useState(false);
+  const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
   const [publishedResult, setPublishedResult] = useState<any>(null);
 
   // File upload handler
@@ -156,6 +157,7 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: phone,
+          practice_type: practiceType,
           doctor: extractedData.doctor,
           clinic: extractedData.clinic,
           ai_bio: editableBio
@@ -170,8 +172,14 @@ export default function OnboardingPage() {
             id: json.doctor_id,
             phone: phone,
             full_name: extractedData.doctor.full_name,
-            role: "doctor",
-            clinic_id: json.clinic_id
+            role: "owner",
+            clinic_id: json.clinic_id,
+            clinic_name: extractedData.clinic.name,
+            clinic_slug: json.clinic_slug,
+            practice_type: json.practice_type || practiceType,
+            plan_type: json.plan_type,
+            plan_price_inr: json.plan_price_inr,
+            max_doctors: json.max_doctors
           }));
         }
         setPublishedResult(json);
@@ -212,30 +220,35 @@ export default function OnboardingPage() {
               <Check className="h-8 w-8" />
             </div>
             <h2 className="mt-4 text-2xl font-extrabold text-slate-900 dark:text-white">
-              Your Clinic is Officially Online!
+              {publishedResult.practice_type === "clinic" ? "Polyclinic Workspace Activated!" : "Solo Practice Workspace Activated!"}
             </h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-              {publishedResult.message} Your professional doctor profile and digital clinic page are now live in the central directory.
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 dark:bg-brand-950 dark:text-brand-300">
+              <span>{publishedResult.practice_type === "clinic" ? "🏥 Multi-Doctor Polyclinic (₹1,299/mo)" : "👨‍⚕️ Solo Practice Pro (₹599/mo)"}</span>
+              <span>·</span>
+              <span>{publishedResult.max_doctors === 1 ? "1 Doctor Chamber" : "Up to 10 Doctors"}</span>
+            </div>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+              {publishedResult.message} Your professional practice is now connected to the ClinicOS central engine.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
+                href="/dashboard"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700 transition"
+              >
+                {publishedResult.practice_type === "clinic" ? "Launch Polyclinic Workspace" : "Launch Solo Doctor Workspace"}
+              </Link>
+              <Link
                 href={publishedResult.doctor_url}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-brand-700"
               >
-                <Stethoscope className="h-4 w-4" /> View Live Doctor Profile
-              </Link>
-              <Link
-                href="/dashboard"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-emerald-700"
-              >
-                Launch OPD Console
+                <Stethoscope className="h-4 w-4" /> View Live Profile
               </Link>
               <Link
                 href={publishedResult.clinic_url}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
-                <Building2 className="h-4 w-4" /> Digital Clinic Page
+                <Building2 className="h-4 w-4" /> Clinic Page
               </Link>
             </div>
           </div>
@@ -245,9 +258,71 @@ export default function OnboardingPage() {
             {/* Left Pane: Input Console */}
             <div className="lg:col-span-5 space-y-6">
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                {/* 1. PRACTICE TYPE: SOLO DOCTOR VS CLINIC */}
+                <div className="mb-5 pb-5 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between pb-2">
+                    <label className="text-xs font-black uppercase tracking-wider text-brand-700 dark:text-brand-400">
+                      Step 1 · How do you practice?
+                    </label>
+                    <span className="text-[10px] font-semibold text-slate-500">
+                      {practiceType === "solo" ? "₹599 / month" : "₹1,299 / month"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setPracticeType("solo")}
+                      className={`relative flex flex-col text-left p-3 rounded-xl border transition ${
+                        practiceType === "solo"
+                          ? "border-brand-600 bg-brand-50/50 shadow-sm ring-2 ring-brand-500/20 dark:bg-brand-950/30 dark:border-brand-500"
+                          : "border-slate-200 bg-slate-50/50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl">👨‍⚕️</span>
+                        {practiceType === "solo" && <CheckCircle2 className="h-4 w-4 text-brand-600 dark:text-brand-400" />}
+                      </div>
+                      <div className="mt-2 text-xs font-bold text-slate-900 dark:text-white">
+                        Solo Doctor
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        I run my own practice
+                      </div>
+                      <div className="mt-2.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[10px] font-semibold text-brand-700 dark:text-brand-400">
+                        1 Doctor · ₹599/mo
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPracticeType("clinic")}
+                      className={`relative flex flex-col text-left p-3 rounded-xl border transition ${
+                        practiceType === "clinic"
+                          ? "border-brand-600 bg-brand-50/50 shadow-sm ring-2 ring-brand-500/20 dark:bg-brand-950/30 dark:border-brand-500"
+                          : "border-slate-200 bg-slate-50/50 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl">🏥</span>
+                        {practiceType === "clinic" && <CheckCircle2 className="h-4 w-4 text-brand-600 dark:text-brand-400" />}
+                      </div>
+                      <div className="mt-2 text-xs font-bold text-slate-900 dark:text-white">
+                        Polyclinic
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        I manage multiple doctors
+                      </div>
+                      <div className="mt-2.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 text-[10px] font-semibold text-brand-700 dark:text-brand-400">
+                        Multi-Doctor · ₹1,299/mo
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-brand-600" /> Tell AI About Your Clinic
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-brand-600" /> Step 2 · Tell AI About Your Practice
                   </h2>
                   <span className="text-[11px] font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full dark:bg-brand-950 dark:text-brand-300">
                     Zero Manual Forms

@@ -24,7 +24,8 @@ import {
   Microscope,
   Dumbbell,
   ShieldCheck,
-  QrCode
+  QrCode,
+  Sparkles
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -38,6 +39,9 @@ export default function DashboardLayout({
   const [chimePlaying, setChimePlaying] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [practiceMode, setPracticeMode] = useState<"solo" | "clinic">("solo");
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [upgradeNotification, setUpgradeNotification] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("clinicos_token");
@@ -50,6 +54,9 @@ export default function DashboardLayout({
       try {
         const parsed = JSON.parse(userStr);
         setCurrentUser(parsed);
+        if (parsed.practice_type === "clinic" || parsed.practice_type === "solo") {
+          setPracticeMode(parsed.practice_type);
+        }
         const role = (parsed?.role || "").toLowerCase();
         // Route protection: prevent reception/staff from opening owner finance, settings or superadmin console
         if (role === "receptionist" || role === "front_desk" || role === "staff") {
@@ -67,6 +74,36 @@ export default function DashboardLayout({
     localStorage.removeItem("clinicos_token");
     localStorage.removeItem("clinicos_user");
     router.replace("/login");
+  };
+
+  const handleUpgradeToClinic = async () => {
+    try {
+      setIsUpgrading(true);
+      const token = localStorage.getItem("clinicos_token");
+      const res = await fetch("/api/clinic/admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action: "upgrade_plan", target_plan: "multi_clinic" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Upgrade request failed.");
+
+      setPracticeMode("clinic");
+      if (currentUser) {
+        const updated = { ...currentUser, practice_type: "clinic", subscription_plan: "multi_clinic" };
+        setCurrentUser(updated);
+        localStorage.setItem("clinicos_user", JSON.stringify(updated));
+      }
+      setUpgradeNotification("Upgraded to Polyclinic Plan (₹1,299/mo). Doctor roster unlocked!");
+      setTimeout(() => setUpgradeNotification(null), 5000);
+    } catch (e: any) {
+      alert(e.message || "Failed to upgrade practice plan");
+    } finally {
+      setIsUpgrading(false);
+    }
   };
 
   // Web Audio chime for quick counter alert (Apple style clean tone)
@@ -107,32 +144,47 @@ export default function DashboardLayout({
     }
   };
 
-  const navItems = [
-    { label: "Clinic Overview", href: "/dashboard", icon: Stethoscope },
+  // 1 Doctor Plan Navigation (Solo Practice - ₹599/mo)
+  const soloNavItems = [
+    { label: "Solo Overview", href: "/dashboard", icon: Stethoscope },
+    { label: "Appointments & Queue", href: "/dashboard/desk", icon: UserCheck, badge: "Queue" },
+    { label: "Doctor Chamber & Rx", href: "/dashboard/chambers", icon: Stethoscope, badge: "OPD" },
+    { label: "Patient Records Vault", href: "/dashboard/patients", icon: Users },
+    { label: "Billing & Day Closing", href: "/dashboard/finance", icon: CreditCard, badge: "₹" },
+    { label: "ABDM / ABHA Gateway", href: "/dashboard/abdm", icon: QrCode, badge: "Govt" },
+    { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
+    { label: "Practice Settings", href: "/dashboard/settings", icon: Settings },
+  ];
+
+  // Multi-Doctor Plan Navigation (Polyclinic - ₹1,299/mo)
+  const clinicNavItems = [
+    { label: "Polyclinic Overview", href: "/dashboard", icon: Stethoscope },
     { label: "Reception Token Desk", href: "/dashboard/desk", icon: UserCheck, badge: "Live" },
-    { label: "Doctor Chambers", href: "/dashboard/chambers", icon: Stethoscope, badge: "OPD" },
-    { label: "Waiting Lounge TV", href: "/waiting-room", icon: Building2, badge: "Display" },
+    { label: "Doctor Chambers & OPD", href: "/dashboard/chambers", icon: Stethoscope, badge: "OPD" },
+    { label: "Waiting Lounge TV", href: "/waiting-room", icon: Building2, badge: "TV" },
     { label: "Pharmacy & Dispense", href: "/dashboard/pharmacy", icon: Pill, badge: "POS" },
     { label: "Inpatient Beds & Wards", href: "/dashboard/beds", icon: Bed },
     { label: "Pathology & Lab LIS", href: "/dashboard/lab", icon: Microscope, badge: "LIS" },
     { label: "Physio & Rehab", href: "/dashboard/rehab", icon: Dumbbell },
     { label: "TPA & Cashless Claims", href: "/dashboard/insurance", icon: ShieldCheck, badge: "TPA" },
     { label: "ABDM / ABHA Gateway", href: "/dashboard/abdm", icon: QrCode, badge: "Govt" },
-    { label: "Day Closing & Finance", href: "/dashboard/finance", icon: CreditCard, badge: "EOD" },
-    { label: "Patient History Vault", href: "/dashboard/patients", icon: Users },
+    { label: "Settlements & Finance", href: "/dashboard/finance", icon: CreditCard, badge: "EOD" },
+    { label: "Master Patient Vault", href: "/dashboard/patients", icon: Users },
     { label: "Front Desk QR Standee", href: "/dashboard/standee", icon: Settings },
     { label: "Clinic Configuration", href: "/dashboard/settings", icon: Settings },
-    { label: "Super Admin Console", href: "/dashboard/admin", icon: ShieldCheck, badge: "Owner" },
+    { label: "Doctors & Staff Admin", href: "/dashboard/admin", icon: ShieldCheck, badge: "Admin" },
   ];
+
+  const activeNavItems = practiceMode === "solo" ? soloNavItems : clinicNavItems;
 
   const userRole = (currentUser?.role || "super_admin").toLowerCase();
   const isPrivileged = userRole === "super_admin" || userRole === "admin" || userRole === "owner" || userRole === "doctor";
 
   // Persona-aware navigation: Staff users use operational desks; Doctor/Owner sees finance & admin
-  const filteredNavItems = navItems.filter((item) => {
+  const filteredNavItems = activeNavItems.filter((item) => {
     if (userRole === "super_admin" || userRole === "admin" || userRole === "owner") return true;
     if (userRole === "doctor") {
-      return ["/dashboard", "/dashboard/desk", "/dashboard/chambers", "/waiting-room", "/dashboard/finance", "/dashboard/patients", "/dashboard/standee"].includes(item.href);
+      return ["/dashboard", "/dashboard/desk", "/dashboard/chambers", "/waiting-room", "/dashboard/finance", "/dashboard/patients", "/dashboard/standee", "/dashboard/admin"].includes(item.href);
     }
     if (userRole === "receptionist" || userRole === "front_desk" || userRole === "staff") {
       return ["/dashboard/desk", "/waiting-room", "/dashboard/patients", "/dashboard/standee"].includes(item.href);
@@ -184,6 +236,40 @@ export default function DashboardLayout({
               {currentUser?.full_name ? `${currentUser.full_name} (${currentUser.role || 'Staff'})` : "Active Clinic Workspace"}
             </p>
           </div>
+
+          {/* Practice Mode Switcher (Solo 1-Dr vs Clinic Multi-Dr) */}
+          <div className="mt-2.5 rounded-[12px] bg-black/[0.04] p-1 dark:bg-white/[0.06] flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPracticeMode("solo")}
+              className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-[9px] text-[10px] font-bold transition ${
+                practiceMode === "solo"
+                  ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                  : "text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white"
+              }`}
+              title="Solo Practice: 1 Doctor (₹599/mo)"
+            >
+              <span>👨‍⚕️ Solo (₹599)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPracticeMode("clinic")}
+              className={`flex-1 flex items-center justify-center gap-1 py-1 rounded-[9px] text-[10px] font-bold transition ${
+                practiceMode === "clinic"
+                  ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                  : "text-[#86868B] hover:text-[#1D1D1F] dark:text-[#8E8E93] dark:hover:text-white"
+              }`}
+              title="Polyclinic: Multi-Doctor (₹1,299/mo)"
+            >
+              <span>🏥 Clinic (₹1,299)</span>
+            </button>
+          </div>
+
+          {upgradeNotification && (
+            <div className="mt-2 rounded-[10px] bg-[#30D158]/15 border border-[#30D158]/30 px-2 py-1 text-[10px] text-[#30D158] font-semibold text-center">
+              {upgradeNotification}
+            </div>
+          )}
         </div>
 
         {/* Navigation links */}
@@ -223,6 +309,30 @@ export default function DashboardLayout({
 
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2">
+          {/* Upgrade Callout for Solo Practice */}
+          {practiceMode === "solo" && (
+            <div className="rounded-[14px] bg-gradient-to-br from-[#0071E3]/10 to-[#5856D6]/10 p-2.5 border border-[#0071E3]/20 dark:border-[#2997FF]/20">
+              <div className="flex items-center justify-between text-[11px] font-bold text-[#0071E3] dark:text-[#2997FF]">
+                <span className="flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Solo Practice Pro
+                </span>
+                <span className="rounded-full bg-[#0071E3]/15 px-1.5 py-0.5 text-[9px] font-bold">1 Doctor</span>
+              </div>
+              <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-1 leading-snug">
+                Need multiple doctors, fee splits & chamber rosters?
+              </p>
+              <button
+                type="button"
+                onClick={handleUpgradeToClinic}
+                disabled={isUpgrading}
+                className="mt-2 w-full flex items-center justify-center gap-1 rounded-[9px] bg-[#0071E3] py-1.5 text-[10px] font-bold text-white shadow-sm hover:bg-[#0077ED] transition active:scale-95 disabled:opacity-50"
+              >
+                {isUpgrading ? "Upgrading Plan..." : "Upgrade to Polyclinic (₹1,299/mo)"}
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center justify-between px-2 text-xs">
             <span className="text-[11px] font-medium text-[#86868B] dark:text-[#8E8E93]">Appearance</span>
             <ThemeToggle />
@@ -278,7 +388,34 @@ export default function DashboardLayout({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="mt-4 flex-1 space-y-1">
+
+            {/* Mobile Practice Mode Switcher */}
+            <div className="mt-3 rounded-[12px] bg-black/[0.04] p-1 dark:bg-white/[0.06] flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPracticeMode("solo")}
+                className={`flex-1 flex items-center justify-center py-1 rounded-[9px] text-[10px] font-bold transition ${
+                  practiceMode === "solo"
+                    ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                    : "text-[#86868B] dark:text-[#8E8E93]"
+                }`}
+              >
+                👨‍⚕️ Solo (₹599)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPracticeMode("clinic")}
+                className={`flex-1 flex items-center justify-center py-1 rounded-[9px] text-[10px] font-bold transition ${
+                  practiceMode === "clinic"
+                    ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                    : "text-[#86868B] dark:text-[#8E8E93]"
+                }`}
+              >
+                🏥 Clinic (₹1,299)
+              </button>
+            </div>
+
+            <nav className="mt-3 flex-1 space-y-1 overflow-y-auto">
               {filteredNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -287,14 +424,21 @@ export default function DashboardLayout({
                     key={item.href}
                     href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 rounded-[12px] px-3.5 py-2.5 text-xs font-semibold ${
+                    className={`flex items-center justify-between rounded-[12px] px-3.5 py-2.5 text-xs font-semibold ${
                       isActive
                         ? "bg-black/[0.08] text-[#1D1D1F] dark:bg-white/[0.12] dark:text-white"
                         : "text-[#86868B] hover:bg-black/[0.04] dark:text-[#8E8E93] dark:hover:bg-white/[0.06]"
                     }`}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <span className="rounded-full bg-black/[0.04] px-1.5 py-0.5 text-[9px] font-bold text-[#86868B] dark:bg-white/[0.08] dark:text-[#8E8E93]">
+                        {item.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -348,13 +492,16 @@ export default function DashboardLayout({
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2 text-xs text-[#86868B] dark:text-[#8E8E93]">
-              <span>Derma Care Clinic</span>
+              <span className="font-medium">{currentUser?.clinic_name || "Derma Care Clinic"}</span>
               <ChevronRight className="h-3 w-3 text-[#86868B]" />
               <strong className="text-[#1D1D1F] dark:text-white capitalize">
                 {pathname === "/dashboard"
-                  ? "Daily OPD Overview"
+                  ? (practiceMode === "solo" ? "Solo Practice OPD" : "Polyclinic Overview")
                   : pathname.replace("/dashboard/", "").replace("-", " ")}
               </strong>
+              <span className="ml-2 hidden sm:inline-flex items-center gap-1 rounded-full bg-[#0071E3]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] border border-[#0071E3]/20">
+                {practiceMode === "solo" ? "👨‍⚕️ Solo (1 Dr · ₹599/mo)" : "🏥 Polyclinic (Multi-Dr · ₹1,299/mo)"}
+              </span>
             </div>
           </div>
 

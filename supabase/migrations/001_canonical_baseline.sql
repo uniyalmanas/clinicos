@@ -17,11 +17,47 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 1. CLINICS (TENANT ENTITY ROOT)
+-- 1. USER ACCOUNTS (AUTHENTICATION IDENTITY ROOT)
+CREATE TABLE IF NOT EXISTS user_accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    phone TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE,
+    password_hash TEXT NOT NULL,
+    full_name TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('patient', 'doctor', 'clinic_admin', 'staff', 'receptionist', 'owner', 'superadmin')),
+    is_active BOOLEAN DEFAULT TRUE,
+    is_verified BOOLEAN DEFAULT FALSE,
+    avatar_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON user_accounts(phone);
+CREATE INDEX IF NOT EXISTS idx_users_email ON user_accounts(email);
+
+-- 2. ORGANIZATIONS (SUBSCRIBER BUSINESS ENTITY)
+CREATE TABLE IF NOT EXISTS organizations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_user_id UUID REFERENCES user_accounts(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    practice_type TEXT NOT NULL DEFAULT 'solo' CHECK (practice_type IN ('solo', 'clinic')),
+    plan_type TEXT NOT NULL DEFAULT 'solo_practice' CHECK (plan_type IN ('solo_practice', 'multi_clinic', 'starter', 'growth', 'enterprise')),
+    plan_price_inr NUMERIC(10,2) NOT NULL DEFAULT 599.00,
+    max_doctors INTEGER NOT NULL DEFAULT 1,
+    subscription_status TEXT NOT NULL DEFAULT 'active',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
+CREATE INDEX IF NOT EXISTS idx_organizations_owner ON organizations(owner_user_id);
+
+-- 3. CLINICS (TENANT ENTITY ROOT)
 CREATE TABLE IF NOT EXISTS clinics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE SET NULL,
     slug TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
+    practice_type TEXT NOT NULL DEFAULT 'solo' CHECK (practice_type IN ('solo', 'clinic')),
     tagline TEXT,
     about TEXT,
     phone TEXT,
@@ -53,30 +89,16 @@ CREATE TABLE IF NOT EXISTS clinics (
 );
 CREATE INDEX IF NOT EXISTS idx_clinics_slug ON clinics(slug);
 CREATE INDEX IF NOT EXISTS idx_clinics_city ON clinics(city);
+CREATE INDEX IF NOT EXISTS idx_clinics_org ON clinics(organization_id);
 
--- 2. USER ACCOUNTS & CLINIC MEMBERSHIPS (AUTHENTICATION & RBAC)
-CREATE TABLE IF NOT EXISTS user_accounts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    phone TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE,
-    password_hash TEXT NOT NULL,
-    full_name TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('patient', 'doctor', 'clinic_admin', 'staff', 'receptionist', 'owner', 'superadmin')),
-    is_active BOOLEAN DEFAULT TRUE,
-    is_verified BOOLEAN DEFAULT FALSE,
-    avatar_url TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_users_phone ON user_accounts(phone);
-CREATE INDEX IF NOT EXISTS idx_users_email ON user_accounts(email);
-
+-- 4. CLINIC MEMBERSHIPS (ROLE-BASED ACCESS CONTROL)
 CREATE TABLE IF NOT EXISTS clinic_memberships (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     clinic_id UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES user_accounts(id) ON DELETE CASCADE,
     role TEXT NOT NULL CHECK (role IN ('owner', 'clinic_admin', 'doctor', 'staff', 'receptionist')),
     is_primary BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(clinic_id, user_id)
 );

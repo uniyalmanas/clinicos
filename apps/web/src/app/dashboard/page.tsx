@@ -33,7 +33,8 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   Calendar,
-  Users
+  Users,
+  Sparkles
 } from "lucide-react";
 
 // Professional Dental Tooth SVG Vector Icon
@@ -80,6 +81,10 @@ function playTokenCallChime() {
 }
 
 export default function DashboardOverviewPage() {
+  // Practice Plan state (Solo 1-Dr vs Clinic Multi-Dr)
+  const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
+  const [isUpgradingPlan, setIsUpgradingPlan] = useState(false);
+
   // Toast & Sync state
   const [actionToast, setActionToast] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -90,6 +95,52 @@ export default function DashboardOverviewPage() {
   const [upiCollected, setUpiCollected] = useState(6650);
   const [cashCollected, setCashCollected] = useState(1800);
   const [openTokensCount, setOpenTokensCount] = useState(3);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("clinicos_user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u?.practice_type === "clinic" || u?.practice_type === "solo") {
+          setPracticeType(u.practice_type);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleUpgradePlan = async () => {
+    try {
+      setIsUpgradingPlan(true);
+      const token = localStorage.getItem("clinicos_token");
+      const res = await fetch("/api/clinic/admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action: "upgrade_plan", target_plan: "multi_clinic" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Upgrade request failed.");
+
+      setPracticeType("clinic");
+      const userStr = localStorage.getItem("clinicos_user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        u.practice_type = "clinic";
+        u.subscription_plan = "multi_clinic";
+        localStorage.setItem("clinicos_user", JSON.stringify(u));
+      }
+      showNotification("Upgraded to Polyclinic Plan (₹1,299/mo). Chamber 2 & Multi-Doctor Roster unlocked!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (e: any) {
+      showNotification(e.message || "Plan upgrade failed.");
+    } finally {
+      setIsUpgradingPlan(false);
+    }
+  };
 
   // Chamber 1 state (Dr. Rahul Sharma - Dermatology)
   const [chamber1Paused, setChamber1Paused] = useState(false);
@@ -351,17 +402,22 @@ export default function DashboardOverviewPage() {
             CMD
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-base sm:text-lg font-black text-[#1D1D1F] dark:text-white tracking-tight uppercase">
-                Clinic Command Board
+                {practiceType === "solo" ? "Solo Practice Command Board" : "Polyclinic Command Board"}
               </h1>
               <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>Live Sync ({secondsSinceSync}s)</span>
               </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#0071E3]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] border border-[#0071E3]/20">
+                {practiceType === "solo" ? "👨‍⚕️ 1 Doctor Plan (₹599/mo)" : "🏥 Multi-Doctor Polyclinic (₹1,299/mo)"}
+              </span>
             </div>
             <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-              Real-time OPD Triage • Clinical Memory Lookup • Soundbox-Reconciled Counter Billing
+              {practiceType === "solo"
+                ? "Solo Doctor Workspace • Focused Single OPD Chamber • Soundbox-Reconciled Billing"
+                : "Polyclinic Multi-Chamber Triage • Multi-Doctor Rosters • Soundbox-Reconciled Billing"}
             </p>
           </div>
         </div>
@@ -611,7 +667,51 @@ export default function DashboardOverviewPage() {
           </div>
         </div>
 
-        {/* 🟢 CHAMBER 2: Dr. Aditi (Dental) */}
+        {/* 🟢 CHAMBER 2: Conditional for Solo (Upgrade Teaser) vs Clinic (Live Dr. Aditi Dental) */}
+        {practiceType === "solo" ? (
+          <div className="rounded-3xl border border-dashed border-[#0071E3]/40 bg-gradient-to-br from-[#0071E3]/5 to-[#5856D6]/5 p-5 sm:p-6 shadow-apple-card flex flex-col justify-between space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3]/10 px-3 py-1 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] border border-[#0071E3]/20">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Solo Practice Pro Active (₹599/mo)
+                </span>
+                <span className="rounded-full bg-black/[0.05] dark:bg-white/[0.08] px-2 py-0.5 text-[10px] font-bold text-[#86868B] dark:text-[#8E8E93]">
+                  Chamber 2 Reserved
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-[#1D1D1F] dark:text-white">
+                Chamber 2 · Multi-Doctor Roster
+              </h2>
+              <p className="text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
+                Your practice is currently registered on the <strong>Solo Doctor Plan</strong> (1 Doctor Chamber). 
+                To onboard <strong>Dr. Aditi Joshi (Dental)</strong>, visiting consultants, operate multiple counters simultaneously, and automate doctor fee splits, upgrade to the <strong>Polyclinic Plan</strong>.
+              </p>
+              <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+                <div className="rounded-xl bg-white/70 dark:bg-white/5 p-2.5 border border-black/[0.05] dark:border-white/[0.05]">
+                  <div className="font-bold text-[#1D1D1F] dark:text-white">👨‍⚕️ Solo (Active)</div>
+                  <div className="text-[#86868B] text-[10px] mt-0.5">1 Doctor • ₹599/mo • Unlimited Patients</div>
+                </div>
+                <div className="rounded-xl bg-[#0071E3]/10 dark:bg-[#0071E3]/20 p-2.5 border border-[#0071E3]/30">
+                  <div className="font-bold text-[#0071E3] dark:text-[#2997FF]">🏥 Polyclinic</div>
+                  <div className="text-[#86868B] text-[10px] mt-0.5">Up to 10 Doctors • ₹1,299/mo • Doctor Splits</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleUpgradePlan}
+                disabled={isUpgradingPlan}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-bold shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>{isUpgradingPlan ? "Upgrading Practice Plan..." : "Upgrade to Multi-Doctor Polyclinic (₹1,299/mo)"}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className={`rounded-3xl border ${chamber2Paused ? "border-amber-400/40 bg-amber-50/10" : "border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E]"} p-5 sm:p-6 shadow-apple-card space-y-4`}>
           {/* Chamber Header */}
           <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
@@ -783,6 +883,7 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
         </div>
+        )}
 
       </div>
 

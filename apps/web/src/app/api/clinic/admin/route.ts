@@ -524,6 +524,25 @@ export async function POST(req: Request) {
         return NextResponse.json({ detail: "Doctor full name and clinical specialization are mandatory." }, { status: 400 });
       }
 
+      // Plan Guardrail Check: Solo Plan (1 Doctor limit) vs Clinic Plan (Multi-Doctor)
+      const existingDoctors = await sql`
+        SELECT COUNT(*)::int as count FROM doctors
+        WHERE (clinic_id::text = ${clinic.id}::text OR clinic_slug = ${clinic.slug}) AND is_active = true
+      `;
+      const currentDoctorCount = existingDoctors[0]?.count || 0;
+      const maxAllowedDoctors = clinic.max_doctors || (clinic.practice_type === "clinic" ? 10 : 1);
+
+      if (currentDoctorCount >= maxAllowedDoctors && clinic.practice_type !== "clinic") {
+        return NextResponse.json({
+          detail: "Plan Limit Reached: Solo Practice Pro (₹599/mo) is restricted to 1 Doctor. Upgrade to the Multi-Doctor Polyclinic Plan (₹1,299/mo) to onboard additional practitioners.",
+          plan_limit_breached: true,
+          current_count: currentDoctorCount,
+          max_allowed: maxAllowedDoctors,
+          required_plan: "multi_clinic",
+          required_price_inr: 1299.00
+        }, { status: 403 });
+      }
+
       const cleanName = full_name.trim();
       let docSlug = cleanName
         .toLowerCase()
@@ -561,6 +580,50 @@ export async function POST(req: Request) {
           chamber_name: chamber,
           is_active: true
         }
+      });
+    }
+
+    // 8. ACTION: Upgrade Practice Plan (Solo ₹599 -> Polyclinic ₹1,299/mo)
+    if (action === "upgrade_plan") {
+      const { target_plan = "multi_clinic" } = body;
+      const newPlan = target_plan === "multi_clinic" ? "multi_clinic" : "solo_practice";
+      const newPracticeType = newPlan === "multi_clinic" ? "clinic" : "solo";
+      const newPrice = newPlan === "multi_clinic" ? 1299.00 : 599.00;
+      const newMaxDoctors = newPlan === "multi_clinic" ? 10 : 1;
+
+      // Update clinic record
+      await sql`
+        UPDATE clinics
+        SET 
+          practice_type = ${newPracticeType},
+          subscription_plan = ${newPlan}
+        WHERE id::text = ${clinic.id}::text OR slug = ${clinic.slug};
+      `;
+
+      if (clinic.organization_id) {
+        try {
+          await sql`
+            UPDATE organizations
+            SET 
+              practice_type = ${newPracticeType},
+              plan_type = ${newPlan},
+              plan_price_inr = ${newPrice},
+              max_doctors = ${newMaxDoctors},
+              updated_at = NOW()
+            WHERE id::text = ${clinic.organization_id}::text;
+          `;
+        } catch (e) {
+          console.warn("Organization upgrade warning:", e);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Practice plan successfully upgraded to ${newPlan === 'multi_clinic' ? 'Multi-Doctor Polyclinic (₹1,299/mo)' : 'Solo Practice Pro (₹599/mo)'} by ${actorName}. Doctor seats capacity updated to ${newMaxDoctors}.`,
+        practice_type: newPracticeType,
+        plan_type: newPlan,
+        plan_price_inr: newPrice,
+        max_doctors: newMaxDoctors
       });
     }
 

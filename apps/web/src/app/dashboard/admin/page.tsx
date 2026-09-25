@@ -123,6 +123,10 @@ export default function SuperAdminConsolePage() {
     }
   });
 
+  // Practice Plan state
+  const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
+  const [isUpgradingPlan, setIsUpgradingPlan] = useState(false);
+
   // Modal / PIN authorization
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pinAction, setPinAction] = useState<string>("");
@@ -133,6 +137,37 @@ export default function SuperAdminConsolePage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4500);
+  };
+
+  const handleUpgradePlan = async () => {
+    try {
+      setIsUpgradingPlan(true);
+      const token = localStorage.getItem("clinicos_token");
+      const res = await fetch("/api/clinic/admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action: "upgrade_plan", target_plan: "multi_clinic" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Upgrade failed.");
+
+      setPracticeType("clinic");
+      const userStr = localStorage.getItem("clinicos_user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        u.practice_type = "clinic";
+        u.subscription_plan = "multi_clinic";
+        localStorage.setItem("clinicos_user", JSON.stringify(u));
+      }
+      showToast("Practice upgraded to Multi-Doctor Polyclinic (₹1,299/mo). Capacity: 10 Doctors.");
+    } catch (e: any) {
+      showToast(e.message || "Upgrade failed.");
+    } finally {
+      setIsUpgradingPlan(false);
+    }
   };
 
   // Fetch admin telemetry on mount
@@ -158,6 +193,15 @@ export default function SuperAdminConsolePage() {
   };
 
   useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("clinicos_user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u?.practice_type === "clinic" || u?.practice_type === "solo") {
+          setPracticeType(u.practice_type);
+        }
+      }
+    } catch (e) {}
     fetchAdminData();
   }, []);
 
@@ -322,6 +366,13 @@ export default function SuperAdminConsolePage() {
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 border border-blue-500/20 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
               <ShieldCheck className="h-3 w-3" />
               <span>Practice Manager Authorized</span>
+            </span>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 border text-[10px] font-bold ${
+              practiceType === "solo"
+                ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+            }`}>
+              {practiceType === "solo" ? "👨‍⚕️ Solo Practice Pro (1 Doctor · ₹599/mo)" : "🏥 Polyclinic Multi-Doctor (10 Seats · ₹1,299/mo)"}
             </span>
           </div>
 
@@ -643,6 +694,38 @@ export default function SuperAdminConsolePage() {
                 {staffUsers.filter(u => u.is_active).length} Active Accounts
               </span>
             </div>
+
+            {/* Plan Capacity & Upgrade Banner */}
+            {practiceType === "solo" ? (
+              <div className="rounded-[16px] bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-blue-500/10 border border-amber-500/20 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Solo Practice Pro Plan Active (1 Doctor Seat Capacity)</span>
+                  </div>
+                  <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+                    Your practice is limited to 1 Doctor. Staff &amp; receptionists are included unlimited at no extra cost. To onboard visiting consultants or run multiple doctor chambers, upgrade to Polyclinic.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleUpgradePlan}
+                  disabled={isUpgradingPlan}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-4 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 disabled:opacity-50"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>{isUpgradingPlan ? "Upgrading..." : "Upgrade to Polyclinic (₹1,299/mo)"}</span>
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-[14px] bg-emerald-500/10 border border-emerald-500/20 p-3 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>Multi-Doctor Polyclinic Plan Active • Capacity: 10 Doctor Seats</span>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400">₹1,299/month</span>
+              </div>
+            )}
 
             <div className="space-y-3">
               {staffUsers.map((user) => (

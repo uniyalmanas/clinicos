@@ -52,7 +52,8 @@ export async function POST(req: Request) {
 
     // Lookup active clinic membership if applicable
     const memberships = await sql`
-      SELECT cm.clinic_id, cm.role, c.name as clinic_name, c.slug as clinic_slug
+      SELECT cm.clinic_id, cm.role, c.name as clinic_name, c.slug as clinic_slug,
+             c.practice_type, c.subscription_plan, c.organization_id
       FROM clinic_memberships cm
       LEFT JOIN clinics c ON c.id = cm.clinic_id
       WHERE cm.user_id = ${user.id} AND cm.is_active = true
@@ -63,6 +64,9 @@ export async function POST(req: Request) {
     const clinicId = memberships.length > 0 ? memberships[0].clinic_id : null;
     const clinicName = memberships.length > 0 ? memberships[0].clinic_name : null;
     const clinicSlug = memberships.length > 0 ? memberships[0].clinic_slug : null;
+    const practiceType = memberships.length > 0 ? (memberships[0].practice_type || "solo") : "solo";
+    const subscriptionPlan = memberships.length > 0 ? (memberships[0].subscription_plan || "solo_practice") : "solo_practice";
+    const organizationId = memberships.length > 0 ? memberships[0].organization_id : null;
 
     const token = signAccessToken({
       sub: user.id,
@@ -82,6 +86,9 @@ export async function POST(req: Request) {
       clinic_id: clinicId,
       clinic_name: clinicName,
       clinic_slug: clinicSlug,
+      practice_type: practiceType,
+      subscription_plan: subscriptionPlan,
+      organization_id: organizationId,
     });
 
     // Set standard secure HttpOnly cookie for seamless SSR session & XSS defense

@@ -57,6 +57,9 @@ export default function LoginPage() {
         clinic_id: data.clinic_id || null,
         clinic_name: data.clinic_name || null,
         clinic_slug: data.clinic_slug || null,
+        practice_type: data.practice_type || "solo",
+        subscription_plan: data.subscription_plan || "solo_practice",
+        organization_id: data.organization_id || null,
       };
       localStorage.setItem("clinicos_user", JSON.stringify(user));
 
@@ -115,6 +118,9 @@ export default function LoginPage() {
         clinic_id: data.clinic_id || null,
         clinic_name: data.clinic_name || null,
         clinic_slug: data.clinic_slug || null,
+        practice_type: data.practice_type || "solo",
+        subscription_plan: data.subscription_plan || "solo_practice",
+        organization_id: data.organization_id || null,
       }));
       router.push(targetUrl);
     } catch (err: any) {

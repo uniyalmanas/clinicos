@@ -128,6 +128,8 @@ const DEFAULT_POLYCLINIC_DOCTORS: DoctorChamber[] = [
 ];
 
 export default function DashboardChambersPage() {
+  const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
+  const [isUpgradingPlan, setIsUpgradingPlan] = useState(false);
   const [doctors, setDoctors] = useState<DoctorChamber[]>(DEFAULT_POLYCLINIC_DOCTORS);
   const [appointmentsByDoc, setAppointmentsByDoc] = useState<Record<string, AppointmentItem[]>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -140,6 +142,52 @@ export default function DashboardChambersPage() {
   const [walkinName, setWalkinName] = useState("");
   const [walkinPhone, setWalkinPhone] = useState("+91 ");
   const [isSubmittingWalkin, setIsSubmittingWalkin] = useState(false);
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("clinicos_user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u?.practice_type === "clinic" || u?.practice_type === "solo") {
+          setPracticeType(u.practice_type);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleUpgradePlan = async () => {
+    try {
+      setIsUpgradingPlan(true);
+      const token = localStorage.getItem("clinicos_token");
+      const res = await fetch("/api/clinic/admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action: "upgrade_plan", target_plan: "multi_clinic" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Upgrade failed.");
+
+      setPracticeType("clinic");
+      const userStr = localStorage.getItem("clinicos_user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        u.practice_type = "clinic";
+        u.subscription_plan = "multi_clinic";
+        localStorage.setItem("clinicos_user", JSON.stringify(u));
+      }
+      setChimeMsg("Practice upgraded to Multi-Doctor Polyclinic Plan (₹1,299/mo). All 4 chambers unlocked!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (e: any) {
+      alert(e.message || "Plan upgrade failed.");
+    } finally {
+      setIsUpgradingPlan(false);
+    }
+  };
 
   // Play Harmonic Dual-Tone Web Audio Chime
   const playChimeForChamber = (chamberName: string, tokenPrefix: string, tokenNum: number) => {
@@ -705,6 +753,8 @@ export default function DashboardChambersPage() {
     }
   };
 
+  const displayedDoctors = practiceType === "solo" ? doctors.slice(0, 1) : doctors;
+
   return (
     <div className="space-y-6">
       {/* 1. TOP HEADER */}
@@ -713,20 +763,24 @@ export default function DashboardChambersPage() {
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-              Live Polyclinic Chambers (₹1,299/mo Architecture)
+              {practiceType === "solo" ? "👨‍⚕️ Solo Practice Chamber (₹599/mo Architecture)" : "🏥 Live Polyclinic Chambers (₹1,299/mo Architecture)"}
             </span>
           </div>
           <h1 className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-            Simultaneous Multi-Doctor Chambers
+            {practiceType === "solo" ? "Doctor Consultation & Rx Chamber" : "Simultaneous Multi-Doctor Chambers"}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Real-time OPD queue dispatch across active consultation rooms &amp; procedure chairs • Independent token series
+            {practiceType === "solo"
+              ? "Focused single doctor OPD queue dispatch • Live digital prescription writing • Instant Soundbox billing"
+              : "Real-time OPD queue dispatch across active consultation rooms & procedure chairs • Independent token series"}
           </p>
           <div className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-3.5 py-1.5 text-xs font-mono font-bold shadow-xs flex-wrap">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-slate-400 dark:text-slate-500">LIVE OPD PROOF:</span>
+            <span className="text-slate-400 dark:text-slate-500">LIVE OPD STATUS:</span>
             <span className="text-emerald-400 dark:text-emerald-600 font-black">
-              DERM #12 in room · 3 waiting | DENTAL #5 procedure · 2 waiting
+              {practiceType === "solo" 
+                ? "DERM #12 in room · 3 waiting | 1 Doctor Seat Active"
+                : "DERM #12 in room · 3 waiting | DENTAL #5 procedure · 2 waiting"}
             </span>
           </div>
         </div>
@@ -746,7 +800,7 @@ export default function DashboardChambersPage() {
             className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-black shadow-md shadow-emerald-600/25 transition active:scale-95 cursor-pointer"
           >
             <Volume2 className="h-4 w-4 animate-pulse" />
-            <span>[ 📞 CALL ANY CHAMBER ]</span>
+            <span>[ 📞 CALL NEXT PATIENT ]</span>
           </button>
 
           <Link
@@ -778,12 +832,12 @@ export default function DashboardChambersPage() {
             <span>Real-Time Chamber Roster Telemetry</span>
           </div>
           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-            4 Active Chambers • Zero Queue Collision
+            {practiceType === "solo" ? "1 Active Chamber • Solo Practice Pro" : "4 Active Chambers • Zero Queue Collision"}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {doctors.map(doc => {
+        <div className={`grid gap-3 ${practiceType === "solo" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"}`}>
+          {displayedDoctors.map(doc => {
             const queue = appointmentsByDoc[doc.slug] || [];
             const statusLine = getLiveStatusLine(doc, queue);
             return (
@@ -874,8 +928,8 @@ export default function DashboardChambersPage() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
-          {doctors.map((doc, idx) => {
+        <div className={`grid gap-6 ${practiceType === "solo" ? "grid-cols-1" : "lg:grid-cols-2"}`}>
+          {displayedDoctors.map((doc, idx) => {
             const queue = appointmentsByDoc[doc.slug] || [];
             const inConsultation = queue.find(p => p.status === "in_consultation");
             const waitingPatients = queue.filter(p => p.status === "waiting" || p.status === "confirmed" || p.status === "in_waiting");
@@ -1096,6 +1150,38 @@ export default function DashboardChambersPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Solo Plan Upgrade Card */}
+      {practiceType === "solo" && (
+        <div className="rounded-3xl border border-dashed border-[#0071E3]/40 bg-gradient-to-r from-[#0071E3]/5 via-[#5856D6]/5 to-transparent p-6 shadow-apple-card flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3]/10 px-3 py-1 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] border border-[#0071E3]/20">
+                <Sparkles className="h-3.5 w-3.5" />
+                Solo Practice Pro (1 Doctor Active · ₹599/mo)
+              </span>
+              <span className="text-xs font-bold text-[#1D1D1F] dark:text-white">
+                Chambers 2, 3 &amp; 4 Available for Upgrade
+              </span>
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-[#1D1D1F] dark:text-white">
+              Need to onboard visiting specialists or run simultaneous OPD counters?
+            </h3>
+            <p className="text-xs text-[#86868B] dark:text-[#8E8E93] max-w-3xl">
+              The <strong>Polyclinic Plan (₹1,299/mo)</strong> unlocks multi-doctor rosters (Dentistry, Pediatrics, General Medicine), independent token sequences, and automated doctor/clinic fee split calculations.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleUpgradePlan}
+            disabled={isUpgradingPlan}
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white px-5 py-3 text-xs font-bold shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>{isUpgradingPlan ? "Upgrading..." : "Upgrade to Polyclinic (₹1,299/mo)"}</span>
+          </button>
         </div>
       )}
 

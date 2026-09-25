@@ -43,6 +43,10 @@ export interface AuthClinic {
   id: string;
   name: string;
   slug: string;
+  organization_id?: string | null;
+  practice_type?: "solo" | "clinic";
+  plan_type?: string;
+  max_doctors?: number;
   address_line?: string;
   city?: string;
   state?: string;
@@ -201,7 +205,7 @@ export async function authorizeClinicUser(
 
     if (targetClinicId) {
       membershipQuery = await sql`
-        SELECT cm.clinic_id, cm.role, c.id as c_id, c.name as clinic_name, c.slug as clinic_slug, c.address_line, c.city, c.state
+        SELECT cm.clinic_id, cm.role, c.*, c.id as c_id, c.name as clinic_name, c.slug as clinic_slug
         FROM clinic_memberships cm
         JOIN clinics c ON c.id = cm.clinic_id
         WHERE cm.user_id = ${user.id} AND cm.clinic_id = ${targetClinicId}::uuid AND cm.is_active = true
@@ -209,7 +213,7 @@ export async function authorizeClinicUser(
       `;
     } else {
       membershipQuery = await sql`
-        SELECT cm.clinic_id, cm.role, c.id as c_id, c.name as clinic_name, c.slug as clinic_slug, c.address_line, c.city, c.state
+        SELECT cm.clinic_id, cm.role, c.*, c.id as c_id, c.name as clinic_name, c.slug as clinic_slug
         FROM clinic_memberships cm
         JOIN clinics c ON c.id = cm.clinic_id
         WHERE cm.user_id = ${user.id} AND cm.is_active = true
@@ -266,6 +270,10 @@ export async function authorizeClinicUser(
           id: membership.c_id || membership.clinic_id,
           name: membership.clinic_name || "ClinicOS Practice",
           slug: membership.clinic_slug || "derma-care-dehradun",
+          organization_id: membership.organization_id || null,
+          practice_type: (membership.practice_type === "clinic" ? "clinic" : "solo") as "solo" | "clinic",
+          plan_type: membership.practice_type === "clinic" ? "multi_clinic" : "solo_practice",
+          max_doctors: membership.practice_type === "clinic" ? 10 : 1,
           address_line: membership.address_line,
           city: membership.city,
           state: membership.state,
@@ -274,6 +282,9 @@ export async function authorizeClinicUser(
           id: targetClinicId || "derma-care-dehradun",
           name: "ClinicOS Practice",
           slug: "derma-care-dehradun",
+          practice_type: "solo",
+          plan_type: "solo_practice",
+          max_doctors: 1,
         };
 
     const authDoctor: AuthDoctor | null = doctorProfile

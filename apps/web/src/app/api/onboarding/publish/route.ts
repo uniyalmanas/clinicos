@@ -8,7 +8,12 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { phone, doctor, clinic, ai_bio } = body;
+    let { phone, doctor, clinic, ai_bio, practice_type } = body;
+
+    const practiceType: "solo" | "clinic" = practice_type === "clinic" ? "clinic" : "solo";
+    const planType = practiceType === "clinic" ? "multi_clinic" : "solo_practice";
+    const planPrice = practiceType === "clinic" ? 1299.00 : 599.00;
+    const maxDoctors = practiceType === "clinic" ? 10 : 1;
 
     // Support flat payload as well as nested payload
     if (!doctor) {
@@ -43,86 +48,7 @@ export async function POST(req: Request) {
 
     const cleanPhone = (phone || "+919876543299").trim();
 
-    // Generate unique doctor slug
-    let docSlug = doctor.full_name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    if (!docSlug.startsWith("dr-")) {
-      docSlug = `dr-${docSlug}`;
-    }
-
-    // Check slug collision
-    const existingDoc = await sql`SELECT id FROM doctors WHERE slug = ${docSlug} LIMIT 1`;
-    if (existingDoc.length > 0) {
-      docSlug = `${docSlug}-${Math.floor(100 + Math.random() * 900)}`;
-    }
-
-    // Generate unique clinic slug
-    let clinicSlug = clinic.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    const existingClinic = await sql`SELECT id FROM clinics WHERE slug = ${clinicSlug} LIMIT 1`;
-    if (existingClinic.length > 0) {
-      clinicSlug = `${clinicSlug}-${Math.floor(100 + Math.random() * 900)}`;
-    }
-
-    const clinicId = crypto.randomUUID();
-    const doctorId = crypto.randomUUID();
-
-    const facilities = ["Full AC", "Waiting Lounge", "WiFi", "Wheelchair Accessible", "Digital Prescriptions"];
-    const openingHours = clinic.opening_hours || {
-      "Monday - Saturday": "10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM",
-      Sunday: "Closed",
-    };
-
-    // 1. Insert Clinic
-    await sql`
-      INSERT INTO clinics (
-        id, slug, name, phone, address_line, city, state, postal_code,
-        facilities, opening_hours, status,
-        subscription_status, subscription_plan, created_at
-      ) VALUES (
-        ${clinicId}, ${clinicSlug}, ${clinic.name.trim()}, ${cleanPhone},
-        ${clinic.address_line || "Rajpur Road"}, ${clinic.city || "Dehradun"},
-        ${clinic.state || "Uttarakhand"}, ${clinic.postal_code || "248001"},
-        ${JSON.stringify(facilities)}, ${JSON.stringify(openingHours)},
-        'active', 'trial', 'starter', NOW()
-      )
-    `;
-
-    // 2. Insert Doctor
-    const consultationFee = Number(doctor.consultation_fee) || 500;
-    const followupFee = Number(doctor.followup_fee) || Math.round(consultationFee * 0.4);
-    const services = Array.isArray(doctor.services) ? doctor.services : ["General Consultation"];
-
-    await sql`
-      INSERT INTO doctors (
-        id, slug, full_name, title, specialization, qualification_summary,
-        medical_council_reg_number, medical_council_state, years_of_experience,
-        consultation_fee, followup_fee, followup_validity_days, services_offered,
-        verification_status, rating, total_reviews,
-        clinic_id, clinic_name, clinic_slug, clinic_address,
-        opd_timings, phone, bio, created_at
-      ) VALUES (
-        ${doctorId}, ${docSlug}, ${doctor.full_name.trim()}, 'Dr.',
-        ${doctor.specialization || "General Physician"},
-        ${doctor.qualifications || "MBBS"},
-        ${doctor.medical_council_reg_number || "UKMC-VERIFIED-2026"},
-        ${doctor.medical_council_state || "Uttarakhand Medical Council"},
-        ${Number(doctor.years_of_experience) || 5},
-        ${consultationFee}, ${followupFee}, 7,
-        ${JSON.stringify(services)}, 'verified', 5.0, 1,
-        ${clinicId}, ${clinic.name.trim()}, ${clinicSlug},
-        ${clinic.address_line || "Rajpur Road, Dehradun"},
-        'Mon - Sat: 10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM',
-        ${cleanPhone}, ${ai_bio || doctor.full_name + " is a specialist in Dehradun."},
-        NOW()
-      )
-    `;
-
-    // 3. Create or link user account so doctor can log in immediately
+    // 1. Create or link user account first (Account Root)
     let userId: string;
     const existingUser = await sql`SELECT id FROM user_accounts WHERE phone = ${cleanPhone} LIMIT 1`;
 
@@ -130,7 +56,7 @@ export async function POST(req: Request) {
       userId = existingUser[0].id;
       await sql`
         UPDATE user_accounts
-        SET role = 'doctor', is_verified = true
+        SET role = 'owner', is_verified = true
         WHERE id = ${userId}
       `;
     } else {
@@ -142,25 +68,119 @@ export async function POST(req: Request) {
         ) VALUES (
           ${userId}, ${cleanPhone}, ${cleanPhone + "@clinicos.in"},
           ${defaultPasswordHash}, ${doctor.full_name.trim()},
-          'doctor', true, true, NOW()
+          'owner', true, true, NOW()
         )
       `;
     }
 
-    // 4. Create clinic membership
+    // 2. Generate Slugs
+    let docSlug = doctor.full_name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (!docSlug.startsWith("dr-")) {
+      docSlug = `dr-${docSlug}`;
+    }
+    const existingDoc = await sql`SELECT id FROM doctors WHERE slug = ${docSlug} LIMIT 1`;
+    if (existingDoc.length > 0) {
+      docSlug = `${docSlug}-${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    let clinicSlug = clinic.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const existingClinic = await sql`SELECT id FROM clinics WHERE slug = ${clinicSlug} LIMIT 1`;
+    if (existingClinic.length > 0) {
+      clinicSlug = `${clinicSlug}-${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    const orgId = crypto.randomUUID();
+    const clinicId = crypto.randomUUID();
+    const doctorId = crypto.randomUUID();
+    const orgSlug = `${clinicSlug}-org`;
+
+    // 3. Insert Organization (Organization Root with Plan Tier Guardrails)
+    try {
+      await sql`
+        INSERT INTO organizations (
+          id, owner_user_id, name, slug, practice_type, plan_type, plan_price_inr, max_doctors, subscription_status, created_at
+        ) VALUES (
+          ${orgId}, ${userId}, ${`${clinic.name.trim()} Organization`}, ${orgSlug},
+          ${practiceType}, ${planType}, ${planPrice}, ${maxDoctors}, 'active', NOW()
+        )
+        ON CONFLICT (slug) DO UPDATE
+        SET practice_type = ${practiceType}, plan_type = ${planType}, plan_price_inr = ${planPrice}, max_doctors = ${maxDoctors};
+      `;
+    } catch (orgErr) {
+      console.warn("Organizations table insert skipped or fallback:", orgErr);
+    }
+
+    // 4. Insert Clinic
+    const facilities = ["Full AC", "Waiting Lounge", "WiFi", "Wheelchair Accessible", "Digital Prescriptions"];
+    const openingHours = clinic.opening_hours || {
+      "Monday - Saturday": "10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM",
+      Sunday: "Closed",
+    };
+
+    await sql`
+      INSERT INTO clinics (
+        id, organization_id, slug, name, practice_type, phone, address_line, city, state, postal_code,
+        facilities, opening_hours, status,
+        subscription_status, subscription_plan, created_at
+      ) VALUES (
+        ${clinicId}, ${orgId}, ${clinicSlug}, ${clinic.name.trim()}, ${practiceType}, ${cleanPhone},
+        ${clinic.address_line || "Rajpur Road"}, ${clinic.city || "Dehradun"},
+        ${clinic.state || "Uttarakhand"}, ${clinic.postal_code || "248001"},
+        ${JSON.stringify(facilities)}, ${JSON.stringify(openingHours)},
+        'active', 'active', ${planType}, NOW()
+      )
+    `;
+
+    // 5. Insert Doctor
+    const consultationFee = Number(doctor.consultation_fee) || 500;
+    const followupFee = Number(doctor.followup_fee) || Math.round(consultationFee * 0.4);
+    const services = Array.isArray(doctor.services) ? doctor.services : ["General Consultation"];
+
+    await sql`
+      INSERT INTO doctors (
+        id, slug, full_name, title, specialization, qualification_summary,
+        medical_council_reg_number, medical_council_state, years_of_experience,
+        consultation_fee, followup_fee, followup_validity_days, services_offered,
+        verification_status, rating, total_reviews,
+        clinic_id, user_id, clinic_name, clinic_slug, clinic_address,
+        opd_timings, phone, bio, created_at
+      ) VALUES (
+        ${doctorId}, ${docSlug}, ${doctor.full_name.trim()}, 'Dr.',
+        ${doctor.specialization || "General Physician"},
+        ${doctor.qualifications || "MBBS"},
+        ${doctor.medical_council_reg_number || "UKMC-VERIFIED-2026"},
+        ${doctor.medical_council_state || "Uttarakhand Medical Council"},
+        ${Number(doctor.years_of_experience) || 5},
+        ${consultationFee}, ${followupFee}, 7,
+        ${JSON.stringify(services)}, 'verified', 5.0, 1,
+        ${clinicId}, ${userId}, ${clinic.name.trim()}, ${clinicSlug},
+        ${clinic.address_line || "Rajpur Road, Dehradun"},
+        'Mon - Sat: 10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM',
+        ${cleanPhone}, ${ai_bio || doctor.full_name + " is a specialist in Dehradun."},
+        NOW()
+      )
+    `;
+
+    // 6. Create clinic membership (Role: owner / doctor)
     const membershipId = crypto.randomUUID();
     await sql`
       INSERT INTO clinic_memberships (
         id, user_id, clinic_id, role, is_active, created_at
       ) VALUES (
-        ${membershipId}, ${userId}, ${clinicId}, 'doctor', true, NOW()
+        ${membershipId}, ${userId}, ${clinicId}, 'owner', true, NOW()
       )
     `;
 
-    // 5. Sign token for instant session
+    // 7. Sign token for instant session
     const accessToken = signAccessToken({
       sub: userId,
-      role: "doctor",
+      role: "owner",
       clinic_id: clinicId,
       phone: cleanPhone,
       full_name: doctor.full_name.trim(),
@@ -172,10 +192,14 @@ export async function POST(req: Request) {
       doctor_slug: docSlug,
       clinic_id: clinicId,
       clinic_slug: clinicSlug,
+      practice_type: practiceType,
+      plan_type: planType,
+      plan_price_inr: planPrice,
+      max_doctors: maxDoctors,
       doctor_url: `/doctors/${docSlug}`,
       clinic_url: `/clinics/${clinicSlug}`,
       access_token: accessToken,
-      message: `Congratulations ${doctor.full_name}! Your clinic is now officially online and bookable.`,
+      message: `Congratulations ${doctor.full_name}! Your ${practiceType === 'solo' ? 'Solo Practice Pro' : 'Polyclinic'} workspace is now officially active.`,
     });
 
     // Set cookie
