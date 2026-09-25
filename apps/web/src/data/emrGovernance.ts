@@ -19,6 +19,11 @@ export interface EMRPatient {
   gender: "Male" | "Female" | "Other";
   blood_group: string;
   emergency_contact: string;
+  emergency_contact_relationship?: string;
+  emergency_contact_phone?: string;
+  emergency_contact_consent_status?: string;
+  emergency_contact_consent_date?: string;
+  emergency_contact_encrypted_hash?: string;
   identity_hash: string;
   is_duplicate_flagged: boolean;
   merged_into_uhid?: string | null;
@@ -27,6 +32,7 @@ export interface EMRPatient {
   lab_results?: EMRLabResult[];
   audit_trail?: EMRAuditEntry[];
   duplicate_tickets?: EMRDuplicateMergeTicket[];
+  secure_exports?: EMRSecureExport[];
 }
 
 export interface EMRAllergy {
@@ -106,12 +112,77 @@ export interface EMRClinicalVisit {
 export interface EMRAuditEntry {
   id: string;
   patient_uhid: string;
-  action_type: "VIEW_RECORD" | "EDIT_NOTE" | "EXPORT_PDF" | "PRINT_SUMMARY" | "OVERRIDE_ALLERGY" | "MERGE_PATIENT";
+  action_type: 
+    | "VIEW_RECORD" 
+    | "EDIT_NOTE" 
+    | "EXPORT_PDF" 
+    | "PRINT_SUMMARY" 
+    | "OVERRIDE_ALLERGY" 
+    | "MERGE_PATIENT" 
+    | "EMERGENCY_CONTACT_ACCESSED" 
+    | "EMERGENCY_DISPATCH_INITIATED" 
+    | "EXPORT_WATERMARKED_EMR" 
+    | "NMC_CREDENTIAL_VERIFIED";
   user_name: string;
   user_role: string;
   details: string;
   ip_address: string;
   created_at: string;
+}
+
+export interface EMRSecureExport {
+  id: string;
+  patient_uhid: string;
+  export_type: "RIGHT_TO_ACCESS_PATIENT" | "SPECIALIST_REFERRAL" | "EMERGENCY_TRANSFER";
+  recipient_name: string;
+  recipient_id: string;
+  patient_otp_verified: boolean;
+  otp_session_id: string;
+  watermark_text: string;
+  expiry_hours: number;
+  expires_at: string;
+  tamper_seal_hash: string;
+  created_at: string;
+}
+
+export interface SeniorDoctorCredential {
+  doctor_name: string;
+  role: "Senior Consultant" | "Medical Director" | "Head of Department";
+  nmc_reg_number: string;
+  state_medical_council: string;
+  specialization: string;
+  is_active: boolean;
+  pin: string;
+}
+
+export const VERIFIED_SENIOR_DOCTORS: SeniorDoctorCredential[] = [
+  {
+    doctor_name: "Dr. Rahul Sharma",
+    role: "Senior Consultant",
+    nmc_reg_number: "NMC-DL-2014-99821",
+    state_medical_council: "Delhi Medical Council (DMC)",
+    specialization: "Internal Medicine & Critical Care",
+    is_active: true,
+    pin: "4491"
+  },
+  {
+    doctor_name: "Dr. Neha Kapoor",
+    role: "Head of Department",
+    nmc_reg_number: "NMC-MH-2011-88412",
+    state_medical_council: "Maharashtra Medical Council (MMC)",
+    specialization: "Pediatrics & Neonatology",
+    is_active: true,
+    pin: "5512"
+  }
+];
+
+export function maskEmergencyPhone(phone?: string): string {
+  if (!phone) return "+91 ••••• •••••";
+  const clean = phone.replace(/[^0-9]/g, "");
+  if (clean.length >= 10) {
+    return `+91 ${clean.slice(-10, -5)} •••••`;
+  }
+  return "+91 ••••• •••••";
 }
 
 export interface EMRDuplicateMergeTicket {
@@ -148,10 +219,11 @@ export const HIGH_RISK_ATC_CLASSES: Record<string, { class_name: string; cross_r
 };
 
 export const CLINICAL_OVERRIDE_REASON_CODES = [
-  { code: "DESENSITIZATION_PROTOCOL", label: "Supervised Desensitization Protocol (ICU/Day-Care Monitoring)" },
-  { code: "BENEFIT_OUTWEIGHS_RISK", label: "Life-Threatening Infection: Benefit Outweighs Risk (No Spectrum Alternative)" },
+  { code: "LIFE_SAVING_EMERGENCY", label: "Life-Saving Emergency (Immediate resuscitation / no viable spectrum alternative)" },
+  { code: "DESENSITIZATION_PROTOCOL", label: "Supervised Desensitization Protocol (ICU / Clinical Day-Care monitoring)" },
+  { code: "NO_VIABLE_ALTERNATIVE", label: "Severe Refractory Infection: Benefit Outweighs Risk (Microbiology sensitivity verified)" },
   { code: "PREVIOUS_TOLERANCE_VERIFIED", label: "Negative Allergy Challenge Test Confirmed by Allergist" },
-  { code: "PATIENT_INFORMED_CONSENT", label: "Informed Clinical Consent Executed with Patient / Guardian" }
+  { code: "PATIENT_INFORMED_CONSENT", label: "Informed Clinical Consent Executed with Patient / Legal Guardian" }
 ];
 
 export function checkAllergyConflict(drugName: string, patientAllergies: EMRAllergy[]): AllergyContraindicationCheck | null {
