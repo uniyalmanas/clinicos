@@ -93,17 +93,32 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid Manager PIN. POS remains locked." }, { status: 403 });
       }
 
-      const updated = await sql`
-        UPDATE clinic_shift_handovers
-        SET 
-          is_pos_locked = false,
-          manager_override_pin = '4491',
-          manager_override_by = 'Dr. Rahul Sharma (Finance Head)',
-          handover_status = 'RECONCILED_OVERRIDE',
-          updated_at = NOW()
-        WHERE id = ${shift_id} OR is_pos_locked = true
-        RETURNING *;
-      `;
+      let updated;
+      if (shift_id) {
+        updated = await sql`
+          UPDATE clinic_shift_handovers
+          SET 
+            is_pos_locked = false,
+            manager_override_pin = '4491',
+            manager_override_by = 'Dr. Rahul Sharma (Finance Head)',
+            handover_status = 'RECONCILED_OVERRIDE',
+            updated_at = NOW()
+          WHERE id = ${shift_id} OR is_pos_locked = true
+          RETURNING *;
+        `;
+      } else {
+        updated = await sql`
+          UPDATE clinic_shift_handovers
+          SET 
+            is_pos_locked = false,
+            manager_override_pin = '4491',
+            manager_override_by = 'Dr. Rahul Sharma (Finance Head)',
+            handover_status = 'RECONCILED_OVERRIDE',
+            updated_at = NOW()
+          WHERE is_pos_locked = true
+          RETURNING *;
+        `;
+      }
 
       return NextResponse.json({
         status: "success",
