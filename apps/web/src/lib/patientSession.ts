@@ -40,9 +40,23 @@ export function getActivePatientSession(): PatientSession | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as PatientSession;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      id: typeof parsed.id === "string" && parsed.id ? parsed.id : `pat-${Date.now().toString(36)}`,
+      full_name: typeof parsed.full_name === "string" && parsed.full_name.trim() ? parsed.full_name.trim() : "Patient",
+      phone: typeof parsed.phone === "string" ? parsed.phone : "",
+      age: typeof parsed.age === "number" ? parsed.age : undefined,
+      gender: typeof parsed.gender === "string" ? parsed.gender : undefined,
+      active_booking: parsed.active_booking && typeof parsed.active_booking === "object" ? parsed.active_booking : undefined,
+      created_at: typeof parsed.created_at === "string" ? parsed.created_at : new Date().toISOString(),
+      last_active: typeof parsed.last_active === "string" ? parsed.last_active : new Date().toISOString(),
+    };
   } catch (err) {
     console.error("Failed to parse patient session from localStorage:", err);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {}
     return null;
   }
 }
@@ -111,15 +125,18 @@ export function usePatientSession() {
       setSession(customEvent.detail ?? getActivePatientSession());
     };
 
-    window.addEventListener(SESSION_EVENT_KEY, handleSessionChange);
-    window.addEventListener("storage", (e) => {
+    const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY) {
         setSession(getActivePatientSession());
       }
-    });
+    };
+
+    window.addEventListener(SESSION_EVENT_KEY, handleSessionChange);
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
       window.removeEventListener(SESSION_EVENT_KEY, handleSessionChange);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
@@ -135,10 +152,15 @@ export function usePatientSession() {
     return updateActiveBooking(booking, name, phone);
   }, []);
 
+  const safeSession = session ? {
+    ...session,
+    full_name: typeof session.full_name === "string" && session.full_name.trim() ? session.full_name.trim() : "Patient"
+  } : null;
+
   return {
-    session,
+    session: safeSession,
     isLoaded,
-    isLoggedIn: Boolean(session && session.phone),
+    isLoggedIn: Boolean(safeSession && safeSession.phone),
     login,
     logout,
     saveBooking,

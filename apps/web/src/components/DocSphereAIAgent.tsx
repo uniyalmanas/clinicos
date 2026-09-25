@@ -73,9 +73,13 @@ export default function DocSphereAIAgent({
 
   // Check speech recognition capability
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hasSupport = !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
-      setSpeechSupported(hasSupport);
+    try {
+      if (typeof window !== "undefined") {
+        const hasSupport = !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+        setSpeechSupported(hasSupport);
+      }
+    } catch {
+      setSpeechSupported(false);
     }
   }, []);
 

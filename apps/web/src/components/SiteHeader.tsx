@@ -95,7 +95,7 @@ export default function SiteHeader({ showProviderLink = true }: SiteHeaderProps)
           <ThemeToggle />
 
           {/* If Patient has registered / booked an appointment: The site becomes their account! */}
-          {isLoggedIn && session ? (
+          {isLoggedIn && session && (
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -103,14 +103,14 @@ export default function SiteHeader({ showProviderLink = true }: SiteHeaderProps)
                 className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-950/40 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/80 transition shadow-2xs cursor-pointer"
               >
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-bold">
-                  {session.full_name[0]?.toUpperCase() || "P"}
+                  {(session.full_name?.[0] || "P").toUpperCase()}
                 </div>
-                <span className="max-w-[110px] truncate">{session.full_name.split(" ")[0]}</span>
+                <span className="max-w-[110px] truncate">{session.full_name?.split(" ")[0] || "Patient"}</span>
 
                 {/* Active Live Token Pill Badge */}
                 {session.active_booking && (
                   <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white animate-pulse">
-                    <span>Token #{session.active_booking.token_number}</span>
+                    <span>Token #{session.active_booking.token_number || 1}</span>
                   </span>
                 )}
 
@@ -122,10 +122,10 @@ export default function SiteHeader({ showProviderLink = true }: SiteHeaderProps)
                 <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-3 shadow-apple-card z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
                   <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-2.5 mb-2 px-1">
                     <div className="font-bold text-[#1D1D1F] dark:text-white truncate">
-                      {session.full_name}
+                      {session.full_name || "Patient"}
                     </div>
                     <div className="text-[11px] text-[#86868B] font-mono">
-                      {session.phone}
+                      {session.phone || ""}
                     </div>
                   </div>
 
@@ -134,17 +134,17 @@ export default function SiteHeader({ showProviderLink = true }: SiteHeaderProps)
                     <div className="rounded-xl border border-apple-amber/20 bg-apple-amber/10 p-3 mb-2 space-y-1">
                       <div className="flex items-center justify-between text-[11px] font-bold text-[#1D1D1F] dark:text-white">
                         <span>Active OPD Token</span>
-                        <span className="font-mono text-apple-amber">#{session.active_booking.token_number}</span>
+                        <span className="font-mono text-apple-amber">#{session.active_booking.token_number || 1}</span>
                       </div>
                       <div className="text-[11px] text-gray-700 dark:text-gray-300 truncate">
-                        {session.active_booking.doctor_name}
+                        {session.active_booking.doctor_name || "Doctor Consultation"}
                       </div>
                       <div className="text-[10px] text-[#86868B] flex items-center gap-1 truncate">
                         <Building2 className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{session.active_booking.clinic_name}</span>
+                        <span className="truncate">{session.active_booking.clinic_name || "Clinic"}</span>
                       </div>
                       <Link
-                        href={`/book?doctor=${session.active_booking.doctor_slug}`}
+                        href={session.active_booking.doctor_slug ? `/book?doctor=${session.active_booking.doctor_slug}` : "/book"}
                         onClick={() => setIsDropdownOpen(false)}
                         className="mt-1 block text-[10px] font-semibold text-apple-blue hover:underline"
                       >
@@ -188,7 +188,7 @@ export default function SiteHeader({ showProviderLink = true }: SiteHeaderProps)
                 </div>
               )}
             </div>
-          ) : null}
+          )}
 
           {/* Discreet Doctor Entrance for Healthcare Providers */}
           {showProviderLink && (

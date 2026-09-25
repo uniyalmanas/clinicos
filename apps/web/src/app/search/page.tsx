@@ -623,12 +623,12 @@ function SearchDiscoveryContent() {
                 title="Open My Health Vault"
               >
                 <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-white text-[9px] font-bold">
-                  {session.full_name[0]?.toUpperCase() || "P"}
+                  {(session.full_name?.[0] || "P").toUpperCase()}
                 </div>
-                <span className="hidden sm:inline max-w-[85px] truncate">{session.full_name.split(" ")[0]}</span>
+                <span className="hidden sm:inline max-w-[85px] truncate">{session.full_name?.split(" ")[0] || "Patient"}</span>
                 {session.active_booking && (
                   <span className="rounded-full bg-emerald-600 px-1.5 py-0.2 text-[9px] font-bold text-white">
-                    #{session.active_booking.token_number}
+                    #{session.active_booking.token_number || 1}
                   </span>
                 )}
               </Link>
