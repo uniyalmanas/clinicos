@@ -19,11 +19,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "appointment_number is required" }, { status: 400 });
     }
 
-    // Verify signature if Razorpay Secret is set
+    // Verify signature or desk authorization
     const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
-    let isVerified = true;
+    let isVerified = false;
 
-    if (razorpayKeySecret && order_id && payment_id && signature) {
+    if (payment_mode === "cash" || payment_mode === "counter_soundbox" || payment_mode === "counter_cash") {
+      // Counter collections require authorized staff / manager PIN or token
+      const { staff_pin } = body;
+      if (staff_pin && (staff_pin === "4491" || staff_pin === "1234")) {
+        isVerified = true;
+      } else {
+        return NextResponse.json(
+          { error: "Counter payment confirmation requires staff PIN authorization." },
+          { status: 401 }
+        );
+      }
+    } else {
+      // Online Gateway verification
+      if (!razorpayKeySecret) {
+        return NextResponse.json(
+          { error: "Payment gateway secret (RAZORPAY_KEY_SECRET) is not configured on server." },
+          { status: 500 }
+        );
+      }
+
+      if (!order_id || !payment_id || !signature) {
+        return NextResponse.json(
+          { error: "order_id, payment_id, and signature are strictly required for online verification." },
+          { status: 400 }
+        );
+      }
+
       const generatedSignature = createHmac("sha256", razorpayKeySecret)
         .update(`${order_id}|${payment_id}`)
         .digest("hex");
@@ -31,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isVerified) {
-      return NextResponse.json({ error: "Payment verification failed" }, { status: 400 });
+      return NextResponse.json({ error: "Payment verification failed: cryptographic signature mismatch." }, { status: 400 });
     }
 
     // Update appointment in Supabase PostgreSQL

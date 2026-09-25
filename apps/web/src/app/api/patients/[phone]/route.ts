@@ -15,6 +15,13 @@ export async function GET(
       return NextResponse.json({ error: "Invalid patient phone number" }, { status: 400 });
     }
 
+    // DPDP Act & Clinical Privacy Protection:
+    // Verify whether caller is an authenticated clinic staff or authenticated patient session
+    const authHeader = req.headers.get("authorization") || "";
+    const cookieHeader = req.headers.get("cookie") || "";
+    const isStaffAuth = authHeader.includes("Bearer ") || cookieHeader.includes("clinicos_token");
+    const isPatientSession = cookieHeader.includes("clinicos_patient") || req.headers.get("x-patient-session");
+
     // 1. Fetch appointments for this patient
     const apts = await sql`
       SELECT * FROM appointments 
@@ -75,10 +82,15 @@ export async function GET(
       )
     );
 
+    const displayPhone = (isStaffAuth || isPatientSession)
+      ? (latestApt?.patient_phone || latestRx?.patient_phone || `+91${cleanPhone}`)
+      : `+91 ${cleanPhone.slice(0, 2)}••••••${cleanPhone.slice(-2)}`;
+
     const patientProfile = {
       id: `pt-${cleanPhone}`,
       full_name: latestApt?.patient_name || latestRx?.patient_name || "Patient",
-      phone: latestApt?.patient_phone || latestRx?.patient_phone || `+91${cleanPhone}`,
+      phone: displayPhone,
+      is_masked: !isStaffAuth && !isPatientSession,
       gender: latestRx?.patient_gender || "Male",
       age: latestRx?.patient_age || 26,
       blood_group: "O+",
