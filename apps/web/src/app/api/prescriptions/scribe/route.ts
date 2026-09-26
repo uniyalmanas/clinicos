@@ -1,123 +1,151 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authorizeClinicUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+const SCRIBE_SYSTEM_PROMPT = `You are a clinical AI Scribe for an Indian medical clinic. 
+Your job is to extract structured prescription data from a doctor's voice dictation or typed notes.
+
+Extract and return ONLY valid JSON (no markdown, no explanation) in this exact format:
+{
+  "vitals": {
+    "bp": "string or null",
+    "pulse": "string or null", 
+    "temp": "string or null",
+    "spo2": "string or null",
+    "weight": "string or null",
+    "height": "string or null"
+  },
+  "chief_complaints": "string",
+  "provisional_diagnosis": "string",
+  "medicines": [
+    {
+      "medicine_name": "Brand Name (e.g. Tab Dolo 650)",
+      "generic_name": "GENERIC NAME IN CAPS",
+      "dosage_form": "Tablet|Capsule|Syrup|Ointment|Injection|Gel|Drops",
+      "strength": "e.g. 500mg",
+      "frequency": "e.g. 1-0-1 (morning-afternoon-night)",
+      "duration": "e.g. 5 Days",
+      "special_instructions": "e.g. After food"
+    }
+  ],
+  "lab_tests": ["test name 1", "test name 2"],
+  "diet_advice": "string",
+  "followup_advice": "string"
+}
+
+Rules:
+- Use standard Indian pharmacy brand names when possible
+- Frequency format: morning-afternoon-night as numbers (e.g. 1-0-1, 0-0-1)
+- If a field is not mentioned, use null for vitals, empty array for lists, empty string for text
+- For diagnosis, use standard medical terminology
+- Extract ALL medicines mentioned, even generic ones`;
+
 export async function POST(req: NextRequest) {
   try {
+    // 🔐 Auth Guard — only authenticated clinic users can use AI Scribe
+    let auth;
+    try {
+      auth = await authorizeClinicUser(req, {
+        requiredRoles: ["owner", "clinic_admin", "doctor", "superadmin"],
+      });
+    } catch (authErr: any) {
+      return NextResponse.json(
+        { error: "Unauthorized: Valid doctor or clinic session required for AI Scribe.", detail: authErr.message },
+        { status: authErr.status || 401 }
+      );
+    }
+
     const body = await req.json();
-    const dictation = (body.dictation_text || "").trim();
+    const dictation = (body.dictation_text || body.text || "").trim();
 
     if (!dictation) {
       return NextResponse.json({ error: "No dictation text provided" }, { status: 400 });
     }
 
-    // Clinical Scribe Heuristic / Rule-based parser
-    const vitals: Record<string, string> = {};
-    
-    // BP extraction
-    const bpMatch = dictation.match(/\b(?:bp|blood pressure)\s*(?:is|:)?\s*(\d{2,3}\s*\/\s*\d{2,3})\b/i) || dictation.match(/\b(\d{2,3}\/\d{2,3})\b/);
-    if (bpMatch) vitals.bp = bpMatch[1].replace(/\s+/g, "");
-
-    // Pulse extraction
-    const pulseMatch = dictation.match(/\b(?:pulse|heart rate|hr)\s*(?:is|:)?\s*(\d{2,3})\b/i);
-    if (pulseMatch) vitals.pulse = pulseMatch[1];
-
-    // Temp extraction
-    const tempMatch = dictation.match(/\b(?:temp|temperature|fever)\s*(?:is|:)?\s*(\d{2,3}(?:\.\d)?)\b/i);
-    if (tempMatch) vitals.temp = tempMatch[1];
-
-    // SpO2 extraction
-    const spo2Match = dictation.match(/\b(?:spo2|oxygen|o2)\s*(?:is|:)?\s*(\d{2,3})\b/i);
-    if (spo2Match) vitals.spo2 = spo2Match[1];
-
-    // Weight extraction
-    const wtMatch = dictation.match(/\b(?:weight|wt)\s*(?:is|:)?\s*(\d{2,3}(?:\.\d)?)\s*(?:kg)?\b/i);
-    if (wtMatch) vitals.weight = wtMatch[1];
-
-    // Medicines extraction
-    const medicines: any[] = [];
-    const lower = dictation.toLowerCase();
-
-    if (lower.includes("doxy") || lower.includes("doxycycline")) {
-      medicines.push({
-        medicine_name: "Tab Doxy-100",
-        generic_name: "DOXYCYCLINE HYCLATE",
-        dosage_form: "Capsule",
-        strength: "100 mg",
-        frequency: "1-0-1",
-        duration: "14 Days",
-        special_instructions: "Take with full glass of water after food."
-      });
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
+      return NextResponse.json({ error: "AI Scribe is not configured. GROQ_API_KEY missing." }, { status: 503 });
     }
 
-    if (lower.includes("clindamycin") || lower.includes("clindac")) {
-      medicines.push({
-        medicine_name: "Clindac-A Gel",
-        generic_name: "CLINDAMYCIN PHOSPHATE",
-        dosage_form: "Gel",
-        strength: "1% w/w",
-        frequency: "1-0-0",
-        duration: "14 Days",
-        special_instructions: "Apply thin layer on lesions in morning."
-      });
+    // Call GROQ LLaMA API
+    const groqResponse = await fetch(GROQ_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${groqApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages: [
+          { role: "system", content: SCRIBE_SYSTEM_PROMPT },
+          { role: "user", content: `Doctor's dictation: "${dictation}"` },
+        ],
+        temperature: 0.1,       // Low temperature for consistent structured output
+        max_tokens: 1024,
+        response_format: { type: "json_object" },
+      }),
+    });
+
+    if (!groqResponse.ok) {
+      const errText = await groqResponse.text();
+      console.error("GROQ API error:", errText);
+      return NextResponse.json(
+        { error: "AI Scribe service temporarily unavailable. Please try again." },
+        { status: 502 }
+      );
     }
 
-    if (lower.includes("dolo") || lower.includes("paracetamol") || lower.includes("fever")) {
-      medicines.push({
-        medicine_name: "Dolo 650",
-        generic_name: "PARACETAMOL",
-        dosage_form: "Tablet",
-        strength: "650 mg",
-        frequency: "1-1-1",
-        duration: "3 Days",
-        special_instructions: "Take SOS if temp exceeds 99°F."
-      });
+    const groqData = await groqResponse.json();
+    const rawContent = groqData?.choices?.[0]?.message?.content || "{}";
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawContent);
+    } catch {
+      console.error("GROQ returned non-JSON:", rawContent);
+      return NextResponse.json(
+        { error: "AI could not parse dictation. Please try rephrasing." },
+        { status: 422 }
+      );
     }
 
-    if (lower.includes("pantoprazole") || lower.includes("pan-40") || lower.includes("acidity")) {
-      medicines.push({
-        medicine_name: "Pan-40",
-        generic_name: "PANTOPRAZOLE SODIUM",
-        dosage_form: "Tablet",
-        strength: "40 mg",
-        frequency: "1-0-0",
-        duration: "5 Days",
-        special_instructions: "Take empty stomach 30 mins before breakfast."
-      });
-    }
-
-    if (lower.includes("cetirizine") || lower.includes("cetzine") || lower.includes("allergy") || lower.includes("itch")) {
-      medicines.push({
-        medicine_name: "Cetzine 10",
-        generic_name: "CETIRIZINE HYDROCHLORIDE",
-        dosage_form: "Tablet",
-        strength: "10 mg",
-        frequency: "0-0-1",
-        duration: "5 Days",
-        special_instructions: "Take at bedtime for itching relief."
-      });
-    }
-
-    // Chief complaints & Diagnosis heuristics
-    let chief_complaints = dictation.length > 80 ? dictation.slice(0, 100) + "..." : dictation;
-    let provisional_diagnosis = "Clinical Evaluation";
-    if (lower.includes("acne") || lower.includes("pimples")) provisional_diagnosis = "Acne Vulgaris";
-    else if (lower.includes("rash") || lower.includes("eczema") || lower.includes("dermatitis")) provisional_diagnosis = "Allergic Contact Dermatitis";
-    else if (lower.includes("fungal") || lower.includes("tinea") || lower.includes("ringworm")) provisional_diagnosis = "Tinea Corporis Infection";
-    else if (lower.includes("fever") || lower.includes("cough") || lower.includes("cold")) provisional_diagnosis = "Acute Upper Respiratory Infection";
+    // Normalize and sanitize the AI output
+    const result = {
+      vitals: {
+        bp: parsed.vitals?.bp || null,
+        pulse: parsed.vitals?.pulse || null,
+        temp: parsed.vitals?.temp || null,
+        spo2: parsed.vitals?.spo2 || null,
+        weight: parsed.vitals?.weight || null,
+        height: parsed.vitals?.height || null,
+      },
+      chief_complaints: parsed.chief_complaints || dictation.slice(0, 150),
+      provisional_diagnosis: parsed.provisional_diagnosis || "Clinical Evaluation",
+      medicines: (parsed.medicines || []).map((m: any) => ({
+        medicine_name: m.medicine_name || "Medicine",
+        generic_name: (m.generic_name || "").toUpperCase(),
+        dosage_form: m.dosage_form || "Tablet",
+        strength: m.strength || "",
+        frequency: m.frequency || "1-0-1",
+        duration: m.duration || "5 Days",
+        special_instructions: m.special_instructions || "As directed",
+      })),
+      lab_tests: Array.isArray(parsed.lab_tests) ? parsed.lab_tests : [],
+      diet_advice: parsed.diet_advice || "",
+      followup_advice: parsed.followup_advice || "Follow up after 7 days or sooner if symptoms persist.",
+    };
 
     return NextResponse.json({
       status: "success",
-      data: {
-        vitals,
-        chief_complaints,
-        provisional_diagnosis,
-        followup_advice: "Follow up after 7 days or sooner if symptoms persist.",
-        medicines
-      }
+      model: "llama3-8b-8192",
+      scribed_by: auth.user.full_name,
+      data: result,
     });
   } catch (error: any) {
     console.error("POST /api/prescriptions/scribe error:", error);
-    return NextResponse.json({ error: error.message || "Failed to parse dictation" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to process dictation" }, { status: 500 });
   }
 }

@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { authorizeClinicUser } from "@/lib/auth";
 import { sseBroker } from "@/lib/sse-broker";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    // 🔐 Auth Guard — only clinic staff/doctors can call tokens
+    let auth;
+    try {
+      auth = await authorizeClinicUser(req, {
+        requiredRoles: ["owner", "clinic_admin", "doctor", "receptionist", "staff", "superadmin"],
+      });
+    } catch (authErr: any) {
+      return NextResponse.json(
+        { error: "Unauthorized: Valid clinic session required to call tokens.", detail: authErr.message },
+        { status: authErr.status || 401 }
+      );
+    }
+
     const body = await req.json();
     const target = body.appointment_number || body.token_id || body.id || body.appointment_id;
     const { chamber_name = "Chamber 1" } = body;
@@ -51,12 +65,13 @@ export async function POST(req: NextRequest) {
       patient_name: currentApt.patient_name,
       doctor_name: currentApt.doctor_name,
       chamber_name: chamber_name,
-      trigger_chime: true
+      trigger_chime: true,
     });
 
     return NextResponse.json({
       status: "success",
-      appointment: updated[0]
+      called_by: auth.user.full_name,
+      appointment: updated[0],
     });
   } catch (error: any) {
     console.error("POST /api/clinic/call-token error:", error);

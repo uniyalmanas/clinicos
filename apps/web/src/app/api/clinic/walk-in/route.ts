@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { authorizeClinicUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    // 🔐 Auth Guard — only clinic staff can register walk-ins
+    let auth;
+    try {
+      auth = await authorizeClinicUser(req, {
+        requiredRoles: ["owner", "clinic_admin", "receptionist", "staff", "superadmin"],
+      });
+    } catch (authErr: any) {
+      return NextResponse.json(
+        { error: "Unauthorized: Valid clinic staff session required to register walk-in.", detail: authErr.message },
+        { status: authErr.status || 401 }
+      );
+    }
+
     const body = await req.json();
     const {
       patient_name,
@@ -13,8 +27,8 @@ export async function POST(req: NextRequest) {
       fee_amount = 600,
       payment_mode = "upi",
       doctor_slug = "dr-rahul-sharma",
-      clinic_slug = "derma-care-dehradun",
-      symptoms_description = "Walk-in consultation"
+      clinic_slug = auth.clinic.slug,
+      symptoms_description = "Walk-in consultation",
     } = body;
 
     if (!patient_name || !patient_phone) {
@@ -44,7 +58,7 @@ export async function POST(req: NextRequest) {
       `;
       const nextToken = Number(tokenQuery[0]?.next_token || 1);
 
-      // Marley 7-day Fee Validity Check
+      // 7-day free followup validity check
       const validityDays = doc?.followup_validity_days || 7;
       const pastConsultation = await tx`
         SELECT id, created_at FROM appointments
@@ -60,8 +74,11 @@ export async function POST(req: NextRequest) {
 
       const dateCompact = todayStr.replace(/-/g, "").slice(2);
       const randSuffix = Math.floor(1000 + Math.random() * 9000);
-      const aptNumber = `APT-${dateCompact}-WLK-${nextToken.toString().padStart(2, '0')}-${randSuffix}`;
+      const aptNumber = `APT-${dateCompact}-WLK-${nextToken.toString().padStart(2, "0")}-${randSuffix}`;
       const id = randomUUID();
+
+      // Use authenticated clinic ID for tenant isolation
+      const resolvedClinicId = doc?.clinic_id || auth.clinic.id;
 
       return await tx`
         INSERT INTO appointments (
@@ -73,9 +90,9 @@ export async function POST(req: NextRequest) {
           ${id},
           ${aptNumber},
           ${doctor_slug},
-          ${doc?.clinic_id || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'},
-          ${doc?.full_name || 'Dr. Rahul Sharma'},
-          ${doc?.clinic_name || 'Derma Care Skin & Laser Centre'},
+          ${resolvedClinicId},
+          ${doc?.full_name || "Doctor"},
+          ${doc?.clinic_name || auth.clinic.name},
           ${patient_name},
           ${patient_phone},
           ${todayStr},
@@ -95,6 +112,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       status: "admitted",
       is_free_followup: isFreeFollowup,
+      registered_by: auth.user.full_name,
       appointment: {
         appointment_number: inserted[0].appointment_number,
         token_number: inserted[0].token_number,
@@ -105,8 +123,8 @@ export async function POST(req: NextRequest) {
         fee_amount: Number(inserted[0].fee_amount),
         payment_status: inserted[0].payment_status,
         payment_mode: inserted[0].payment_mode,
-        is_walk_in: true
-      }
+        is_walk_in: true,
+      },
     });
   } catch (error: any) {
     console.error("POST /api/clinic/walk-in error:", error);
