@@ -12,27 +12,10 @@
 --                       └── PATIENTS & CLINIC DATA
 -- ============================================================================
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- NOTE: organizations table is already created in 001_canonical_baseline.sql
+-- This migration only adds clinic columns and seeds default organizations.
 
--- 1. ORGANIZATIONS (SUBSCRIBER BUSINESS ENTITY)
-CREATE TABLE IF NOT EXISTS organizations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    owner_user_id UUID REFERENCES user_accounts(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    slug TEXT UNIQUE NOT NULL,
-    practice_type TEXT NOT NULL DEFAULT 'solo' CHECK (practice_type IN ('solo', 'clinic')),
-    plan_type TEXT NOT NULL DEFAULT 'solo_practice' CHECK (plan_type IN ('solo_practice', 'multi_clinic', 'starter', 'growth', 'enterprise')),
-    plan_price_inr NUMERIC(10,2) NOT NULL DEFAULT 599.00,
-    max_doctors INTEGER NOT NULL DEFAULT 1,
-    subscription_status TEXT NOT NULL DEFAULT 'active',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
-CREATE INDEX IF NOT EXISTS idx_organizations_owner ON organizations(owner_user_id);
-
--- 2. ADD ORGANIZATION REFERENCES & PRACTICE TYPE TO CLINICS
+-- 1. ADD ORGANIZATION REFERENCES & PRACTICE TYPE TO CLINICS
 DO $$ 
 BEGIN 
     IF NOT EXISTS (
@@ -52,7 +35,7 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS idx_clinics_org ON clinics(organization_id);
 
--- 3. MIGRATE / SEED DEFAULT ORGANIZATIONS FOR EXISTING CLINICS
+-- 2. MIGRATE / SEED DEFAULT ORGANIZATIONS FOR EXISTING CLINICS
 -- Derma Care (Polyclinic Multi-Doctor)
 INSERT INTO organizations (id, name, slug, practice_type, plan_type, plan_price_inr, max_doctors, subscription_status)
 VALUES (
