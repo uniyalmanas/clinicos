@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import InteractiveHeroSearch from "@/components/InteractiveHeroSearch";
-import DocSphereAIAgent from "@/components/DocSphereAIAgent";
+// DocSphereAIAgent removed from homepage — patient AI consultant is V2
 import {
   GeneralPhysicianIcon,
   DermatologyIcon,
@@ -828,10 +828,10 @@ export default function HomePage() {
                 <span>For Independent Doctors &amp; Polyclinics</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
-                Run your practice with DocSphere ClinicOS
+                Run your practice with ClinicOS
               </h3>
               <p className="mt-2 text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                Keep 100% of your patient earnings. Get 30-second digital prescriptions, acoustic waiting room chimes, front-desk reception PWAs, and 9 PM cash drawer closing reconciliation for just ₹599/month.
+                Register a patient in 10 seconds. Prescribe in 30. Close your day in one tap. No paperwork, no app downloads. Just your clinic — running better. Starts at ₹599/month.
               </p>
             </div>
             <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -839,7 +839,7 @@ export default function HomePage() {
                 href="/for-doctors"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0071E3] px-7 py-3.5 text-xs sm:text-sm font-bold text-white shadow-apple-sm hover:bg-[#0077ED] transition active:scale-95"
               >
-                <span>Explore Provider Tools</span>
+                <span>See How It Works</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -858,7 +858,7 @@ export default function HomePage() {
               Frequently Asked Questions
             </h2>
             <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93]">
-              Everything you need to know about DocSphere zero-markup healthcare.
+              Everything you need to know about ClinicOS.
             </p>
           </div>
 
@@ -888,35 +888,30 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 9. APPLE MINIMAL FOOTER */}
+      {/* 9. FOOTER */}
       <footer className="border-t border-black/[0.06] bg-[#ECEEF2] py-12 px-4 dark:border-white/[0.08] dark:bg-[#000000] sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-[#86868B] dark:text-[#8E8E93]">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-center sm:text-left">
             <div className="flex items-center gap-2">
               <Stethoscope className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-              <Link href="https://medic-sept-2026.vercel.app/" className="font-bold text-[#1D1D1F] dark:text-white hover:underline">
-                DocSphere
+              <Link href="/" className="font-bold text-[#1D1D1F] dark:text-white hover:underline">
+                ClinicOS
               </Link>
             </div>
             <span className="hidden sm:inline">•</span>
-            <span>Zero-Markup Healthcare Infrastructure for Dehradun, Uttarakhand</span>
+            <span>Simple operating system for independent clinics</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-5 font-semibold">
             <Link href="/search" className="hover:text-[#1D1D1F] dark:hover:text-white">Find Doctors</Link>
             <Link href="/specialties" className="hover:text-[#1D1D1F] dark:hover:text-white">Specialties</Link>
             <Link href="/book" className="hover:text-[#1D1D1F] dark:hover:text-white">Book Token</Link>
-            <Link href="/patient/portal" className="hover:text-[#1D1D1F] dark:hover:text-white">Prescriptions &amp; Bills</Link>
-            <Link href="/onboarding" className="text-[#0071E3] dark:text-[#2997FF] hover:underline font-bold">For Doctors (ClinicOS)</Link>
+            <Link href="/patient/portal" className="hover:text-[#1D1D1F] dark:hover:text-white">Patient Portal</Link>
+            <Link href="/onboarding" className="text-[#0071E3] dark:text-[#2997FF] hover:underline font-bold">For Doctors</Link>
           </div>
         </div>
       </footer>
-
-      {/* MULTI-TASK DOCSPHERE AI CONSULTANT AGENT */}
-      <DocSphereAIAgent
-        isOpenExternal={isAiAgentOpen}
-        onCloseExternal={() => setIsAiAgentOpen(false)}
-      />
     </div>
   );
 }
+

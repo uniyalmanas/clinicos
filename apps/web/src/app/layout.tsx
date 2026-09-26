@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DocSphere / ClinicOS | Digital Infrastructure for Healthcare",
-  description: "Give every independent doctor and clinic a professional digital presence, live token engine, 30-second prescriptions, and AI-assisted workflows.",
+  title: "ClinicOS — The Simple Operating System for Independent Clinics",
+  description: "Register a patient in 10 seconds. Prescribe in 30 seconds. Close your day in one tap. ClinicOS is built for India's independent OPD clinics. No app needed. Starts at ₹599/month.",
   manifest: "/manifest.json",
 };
 
