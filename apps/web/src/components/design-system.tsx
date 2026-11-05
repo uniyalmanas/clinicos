@@ -285,7 +285,7 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
       aria-modal="true"
     >
       <div
-        className="relative z-10 w-full ${MODAL_SIZES[size]} bg-white rounded-3xl border border-white/[0.08] dark:bg-[#1C1C1E] dark:border-white/[0.08] shadow-2xl animate-in fade-in duration-200"
+        className={`relative z-10 w-full ${MODAL_SIZES[size]} bg-white rounded-3xl border border-white/[0.08] dark:bg-[#1C1C1E] dark:border-white/[0.08] shadow-2xl animate-in fade-in duration-200`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (

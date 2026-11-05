@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { ClinicSyncProvider, useClinicSync } from "@/lib/clinic-sync";
 import { MedicineSchedule } from "@/components/MedicineSchedule";
+import { ConsultationRecorder, type ConsultationExtraction } from "@/components/ConsultationRecorder";
+import { PatientVaultPanel } from "@/components/PatientVaultPanel";
 import { Button, Card, Badge, DESIGN_TOKENS } from "@/components/design-system";
 
 type Appointment = {
@@ -289,7 +291,7 @@ function SchedulePane({ appointments, loadingAppointments, activeAptId, setActiv
   );
 }
 
-function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, speedRx, setSpeedRx, addMolecule, removeMolecule, bmi, sys, dia, hr, spo2, temp, weight, height, handleCompleteVisit, setShowHistory, showToast }: { currentPatient: Appointment | null; vitals: any; setVitals: (v: any) => void; soap: any; setSoap: (v: any) => void; speedRx: any[]; setSpeedRx: (v: any) => void; addMolecule: (mol: any) => void; removeMolecule: (idx: number) => void; bmi: number; sys: number; dia: number; hr: number; spo2: number; temp: number; weight: number; height: number; handleCompleteVisit: () => void; setShowHistory: (v: boolean) => void; showToast: (msg: string) => void }) {
+function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, speedRx, setSpeedRx, addMolecule, removeMolecule, bmi, sys, dia, hr, spo2, temp, weight, height, handleCompleteVisit, setShowHistory, showToast, doctorSlug, doctorName, onConsultationExtracted, onReportApproved }: { currentPatient: Appointment | null; vitals: any; setVitals: (v: any) => void; soap: any; setSoap: (v: any) => void; speedRx: any[]; setSpeedRx: (v: any) => void; addMolecule: (mol: any) => void; removeMolecule: (idx: number) => void; bmi: number; sys: number; dia: number; hr: number; spo2: number; temp: number; weight: number; height: number; handleCompleteVisit: () => void; setShowHistory: (v: boolean) => void; showToast: (msg: string) => void; doctorSlug?: string | null; doctorName?: string | null; onConsultationExtracted: (data: ConsultationExtraction) => void; onReportApproved: (report: any) => void }) {
   if (!currentPatient) {
     return (
       <Card variant="elevated" className="flex flex-col items-center justify-center py-16 text-center">
@@ -327,6 +329,18 @@ function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, sp
           <span className="font-bold text-[10px] text-amber-700 dark:text-amber-300 underline shrink-0 group-hover:opacity-80">History →</span>
         </div>
       </div>
+
+      {/* AI Consultation Scribe — record the conversation once */}
+      <ConsultationRecorder
+        appointmentNumber={currentPatient.appointment_number}
+        patientName={currentPatient.patient_name}
+        patientPhone={currentPatient.patient_phone}
+        doctorSlug={doctorSlug}
+        doctorName={doctorName}
+        onExtracted={onConsultationExtracted}
+        onApproved={onReportApproved}
+        showToast={showToast}
+      />
 
       {/* Vitals */}
       <Card variant="elevated">
@@ -451,6 +465,8 @@ export default function DashboardTodayPage() {
   const [soap, setSoap] = useState({ subjective: "", objective: "", assessment: "", plan: "" });
   const [speedRx, setSpeedRx] = useState<any[]>([]);
   const [useMockData, setUseMockData] = useState(false);
+  // Bumped after a report is approved so the vault panel reloads immediately.
+  const [vaultRefreshKey, setVaultRefreshKey] = useState(0);
 
   const TODAY_STR = new Date().toISOString().split("T")[0];
   const TODAY_DISPLAY = new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
@@ -575,6 +591,55 @@ export default function DashboardTodayPage() {
   };
   const removeMolecule = (i: number) => setSpeedRx((p) => p.filter((_, ix) => ix !== i));
 
+  const handleConsultationExtracted = useCallback((data: ConsultationExtraction) => {
+    setSoap((prev: any) => ({
+      subjective: prev.subjective || data.chiefComplaints || "",
+      objective: prev.objective || data.doctorReport?.vitals_assessment || "",
+      assessment: prev.assessment || data.diagnosis || "",
+      plan: prev.plan || data.patientReport?.followup_instruction || "",
+    }));
+
+    if (data.vitals && typeof data.vitals === "object") {
+      const raw = data.vitals as Record<string, string | null>;
+      const digits = (value: string | null | undefined) => String(value || "").replace(/[^0-9.]/g, "");
+      const bpParts = String(raw.bp || "").split("/");
+      setVitals((prev: any) => ({
+        ...prev,
+        systolic: prev.systolic || digits(bpParts[0]),
+        diastolic: prev.diastolic || digits(bpParts[1]),
+        heartRate: prev.heartRate || digits(raw.pulse),
+        spo2: prev.spo2 || digits(raw.spo2),
+        temperature: prev.temperature || digits(raw.temp),
+        weight: prev.weight || digits(raw.weight),
+        height: prev.height || digits(raw.height),
+      }));
+    }
+
+    if (Array.isArray(data.medicines) && data.medicines.length > 0) {
+      setSpeedRx((prev: any[]) => {
+        const existing = new Set(prev.map((item) => item.generic));
+        const additions = data.medicines!
+          .map((medicine) => ({
+            brand: medicine.medicine_name || medicine.generic_name || "Medicine",
+            generic: medicine.generic_name || medicine.medicine_name || "MEDICINE",
+            form: medicine.dosage_form || "Tab",
+            dose: medicine.frequency || "1-0-1",
+            days: medicine.duration || "3 Days",
+          }))
+          .filter((medicine) => !existing.has(medicine.generic));
+        return [...prev, ...additions];
+      });
+    }
+  }, []);
+
+  const handleReportApproved = useCallback(
+    (report: any) => {
+      showToast(`Consultation report saved to ${report?.patient_name || "the patient"}'s vault`);
+      setVaultRefreshKey((key) => key + 1);
+    },
+    [showToast]
+  );
+
   return (
     <ClinicSyncProvider>
       <div className="h-full flex flex-col bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7]">
@@ -628,30 +693,34 @@ export default function DashboardTodayPage() {
                 <SchedulePane appointments={appointments} loadingAppointments={loadingAppointments} activeAptId={activeAptId} setActiveAptId={setActiveAptId} setVitals={setVitals} setSoap={setSoap} setSpeedRx={setSpeedRx} TODAY_DISPLAY={TODAY_DISPLAY} />
               </div>
               <div className={currentPatient ? "lg:col-span-6" : "lg:col-span-8"}>
-                <ConsultationPane currentPatient={currentPatient} vitals={vitals} setVitals={setVitals} soap={soap} setSoap={setSoap} speedRx={speedRx} setSpeedRx={setSpeedRx} addMolecule={addMolecule} removeMolecule={removeMolecule} bmi={bmi} sys={sys} dia={dia} hr={hr} spo2={spo2} temp={temp} weight={weight} height={height} handleCompleteVisit={handleCompleteVisit} setShowHistory={setShowHistory} showToast={showToast} />
+                <ConsultationPane currentPatient={currentPatient} vitals={vitals} setVitals={setVitals} soap={soap} setSoap={setSoap} speedRx={speedRx} setSpeedRx={setSpeedRx} addMolecule={addMolecule} removeMolecule={removeMolecule} bmi={bmi} sys={sys} dia={dia} hr={hr} spo2={spo2} temp={temp} weight={weight} height={height} handleCompleteVisit={handleCompleteVisit} setShowHistory={setShowHistory} showToast={showToast} doctorSlug={doctor?.slug} doctorName={doctor?.full_name} onConsultationExtracted={handleConsultationExtracted} onReportApproved={handleReportApproved} />
               </div>
               {currentPatient && (
-                <div className="lg:col-span-3 order-last lg:order-none">
-                  <Card variant="elevated" className="p-5">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6] mb-4">Patient Vault</h3>
+                <div className="lg:col-span-3 order-last lg:order-none space-y-4">
+                  <Card variant="elevated" className="p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
                         <User className="h-5 w-5" />
                       </div>
-                      <div>
-                        <div className="font-semibold text-sm text-[#1D1D1F] dark:text-white">{currentPatient.patient_name}</div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sm text-[#1D1D1F] dark:text-white truncate">{currentPatient.patient_name}</div>
                         <div className="text-[10px] text-[#6E6E73] dark:text-[#636366]">{currentPatient.patient_phone ? `+91 ${currentPatient.patient_phone}` : "—"}</div>
                       </div>
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <Button variant="outline" size="sm" onClick={() => showToast(`Vault opened for ${currentPatient.patient_name}`)} fullWidth className="text-xs py-2">
-                        <Phone className="h-3.5 w-3.5 mr-1" /> History
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} fullWidth className="text-xs py-2">
+                        <History className="h-3.5 w-3.5 mr-1" /> History
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => showToast(`Records for ${currentPatient.patient_name}`)} fullWidth className="text-xs py-2">
+                      <Button variant="outline" size="sm" onClick={() => showToast(`Billing for ${currentPatient.patient_name}: ₹${currentPatient.fee_amount} (${currentPatient.payment_status})`)} fullWidth className="text-xs py-2">
                         <Banknote className="h-3.5 w-3.5 mr-1" /> Billing
                       </Button>
                     </div>
                   </Card>
+
+                  <PatientVaultPanel
+                    patientPhone={currentPatient.patient_phone}
+                    refreshKey={vaultRefreshKey}
+                  />
                 </div>
               )}
             </div>

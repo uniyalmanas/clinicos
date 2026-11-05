@@ -103,6 +103,29 @@ interface Allergy {
   reaction_description: string | null;
 }
 
+interface PatientVisitReport {
+  id: string;
+  appointment_number: string | null;
+  doctor_name: string | null;
+  language: string;
+  provisional_diagnosis: string | null;
+  medicines: Array<{
+    medicine_name?: string;
+    generic_name?: string;
+    frequency?: string;
+    duration?: string;
+  }>;
+  patient_report: {
+    condition_overview?: string;
+    medicine_schedule?: Array<{ timing?: string; medicine?: string; instructions?: string }>;
+    home_care_guidance?: string;
+    emergency_warning_signs?: string;
+    followup_instruction?: string;
+  };
+  created_at: string;
+  approved_at: string | null;
+}
+
 interface PatientRecord {
   id: string;
   uhid: string | null;
@@ -117,6 +140,7 @@ interface PatientRecord {
   primary_clinic_slug?: string | null;
   visits: Visit[];
   documents: unknown[];
+  consultation_reports?: PatientVisitReport[];
 }
 
 type AuthState = "checking" | "signed_out" | "awaiting_code" | "signed_in";
@@ -1031,6 +1055,131 @@ function PatientPortalView() {
                                 </Link>
                               </div>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* VISIT SUMMARIES — plain-language reports from recorded consultations */}
+                    {!!record.consultation_reports?.length && (
+                      <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-sm font-semibold text-[#1D1D1F] dark:text-white">
+                              My visit summaries ({record.consultation_reports.length})
+                            </h3>
+                            <p className="mt-0.5 text-[11px] text-[#86868B]">
+                              Your doctor&apos;s explanation, written in your language.
+                            </p>
+                          </div>
+                          <Sparkles className="h-4 w-4 shrink-0 text-violet-500" />
+                        </div>
+
+                        <div className="space-y-3">
+                          {record.consultation_reports.map((report) => (
+                            <details
+                              key={report.id}
+                              className="group rounded-[20px] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/40 border border-black/[0.04] dark:border-white/[0.06] p-4"
+                            >
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                                <div>
+                                  <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white">
+                                    {report.provisional_diagnosis || "Consultation summary"}
+                                  </div>
+                                  <div className="mt-0.5 text-[11px] text-[#86868B]">
+                                    {report.doctor_name || "Doctor"}
+                                    {report.created_at
+                                      ? ` on ${new Date(report.created_at).toLocaleDateString("en-IN", {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        })}`
+                                      : ""}
+                                    {report.language && report.language !== "auto"
+                                      ? ` • ${report.language}`
+                                      : ""}
+                                  </div>
+                                </div>
+                                <span className="text-[10px] font-semibold text-apple-blue">
+                                  View
+                                </span>
+                              </summary>
+
+                              <div className="mt-3 space-y-3 border-t border-black/[0.06] dark:border-white/[0.08] pt-3">
+                                {report.patient_report?.condition_overview && (
+                                  <div>
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#86868B]">
+                                      What we found
+                                    </div>
+                                    <p className="mt-1 text-xs leading-relaxed text-[#1D1D1F] dark:text-[#F5F5F7]">
+                                      {report.patient_report.condition_overview}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {!!report.patient_report?.medicine_schedule?.length && (
+                                  <div>
+                                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#86868B]">
+                                      <Pill className="h-3 w-3" /> Medicines
+                                    </div>
+                                    <div className="mt-1 space-y-1">
+                                      {report.patient_report.medicine_schedule.map((slot, index) => (
+                                        <div
+                                          key={index}
+                                          className="rounded-lg bg-white/70 dark:bg-black/20 p-2 text-[11px]"
+                                        >
+                                          <div className="flex items-center gap-1 font-semibold text-[#1D1D1F] dark:text-white">
+                                            <Clock className="h-3 w-3 text-apple-blue" />
+                                            {slot.timing || "When needed"}
+                                          </div>
+                                          <div className="text-[#6E6E73] dark:text-[#A1A1A6]">
+                                            {slot.medicine}
+                                          </div>
+                                          {slot.instructions && (
+                                            <div className="mt-0.5 text-[10px] text-[#86868B]">
+                                              {slot.instructions}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {report.patient_report?.home_care_guidance && (
+                                  <div>
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#86868B]">
+                                      Home care
+                                    </div>
+                                    <p className="mt-1 text-xs leading-relaxed text-[#1D1D1F] dark:text-[#F5F5F7]">
+                                      {report.patient_report.home_care_guidance}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {report.patient_report?.emergency_warning_signs && (
+                                  <div className="rounded-lg border border-amber-500/25 bg-amber-50/50 dark:border-amber-800/30 dark:bg-amber-950/20 p-2">
+                                    <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                                      <AlertCircle className="h-3 w-3" /> Return immediately if
+                                    </div>
+                                    <p className="mt-1 text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
+                                      {report.patient_report.emergency_warning_signs}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {report.patient_report?.followup_instruction && (
+                                  <div>
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#86868B]">
+                                      Next visit
+                                    </div>
+                                    <p className="mt-1 text-xs leading-relaxed text-[#1D1D1F] dark:text-[#F5F5F7]">
+                                      {report.patient_report.followup_instruction}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </details>
                           ))}
                         </div>
                       </div>

@@ -226,10 +226,35 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const dictation = (body.dictation_text || body.text || "").trim();
+    const language = String(body.language || "auto").toLowerCase();
 
     if (!dictation) {
       return apiError(400, "No dictation text provided.", "missing_dictation");
     }
+
+    const LANGUAGE_NAMES: Record<string, string> = {
+      auto: "the same Indian language the patient spoke in the conversation",
+      english: "simple English",
+      hindi: "simple Hindi in Devanagari script",
+      marathi: "simple Marathi in Devanagari script",
+      tamil: "simple Tamil script",
+      telugu: "simple Telugu script",
+      bengali: "simple Bengali script",
+      gujarati: "simple Gujarati script",
+      kannada: "simple Kannada script",
+      malayalam: "simple Malayalam script",
+      punjabi: "simple Punjabi in Gurmukhi script",
+      urdu: "simple Urdu in Nastaliq script",
+      odia: "simple Odia script",
+      assamese: "simple Assamese script",
+    };
+    const languageName = LANGUAGE_NAMES[language] || LANGUAGE_NAMES.auto;
+    const systemPrompt = `${SCRIBE_SYSTEM_PROMPT}
+
+LANGUAGE RULE (important):
+- Keep \`clinical_report_doctor\` in professional English for the doctor.
+- Write every field of \`patient_health_report\` in ${languageName}. Use everyday words a person with no medical training can understand. Do not use English medical jargon in the patient report unless you immediately explain it in the same sentence.
+- Keep medicine brand names exactly as the doctor said them; explanation text around them should be in the patient's language.`;
 
     const groqApiKey = process.env.GROQ_API_KEY;
     if (!groqApiKey) {
@@ -254,7 +279,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           model: "llama3-8b-8192",
           messages: [
-            { role: "system", content: SCRIBE_SYSTEM_PROMPT },
+            { role: "system", content: systemPrompt },
             { role: "user", content: `Doctor's voice dictation: "${dictation}"` },
           ],
           temperature: 0.1,

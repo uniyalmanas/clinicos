@@ -106,8 +106,56 @@ export async function GET(
           ORDER BY uploaded_at DESC;
         `;
 
+    // Approved AI consultation reports. Wrapped because the table only exists
+    // after migration 009; older databases must still serve the rest of the
+    // record.
+    let consultationReports: any[] = [];
+    try {
+      consultationReports = scopeClinicId
+        ? await sql`
+            SELECT id, appointment_number, patient_name, patient_phone, doctor_name,
+                   doctor_slug, language, duration_seconds, transcript,
+                   chief_complaints, provisional_diagnosis, vitals, medicines,
+                   lab_tests, doctor_report, patient_report, status, approved_at,
+                   created_at
+            FROM consultation_reports
+            WHERE patient_phone = ${cleanPhone}
+              AND clinic_id::text = ${scopeClinicId}::text
+              AND status = 'approved'
+            ORDER BY created_at DESC
+            LIMIT 50;
+          `
+        : await sql`
+            SELECT id, appointment_number, patient_name, patient_phone, doctor_name,
+                   doctor_slug, language, duration_seconds, transcript,
+                   chief_complaints, provisional_diagnosis, vitals, medicines,
+                   lab_tests, doctor_report, patient_report, status, approved_at,
+                   created_at
+            FROM consultation_reports
+            WHERE patient_phone = ${cleanPhone}
+              AND status = 'approved'
+            ORDER BY created_at DESC
+            LIMIT 50;
+          `;
+    } catch (err) {
+      console.warn("consultation_reports unavailable:", err);
+    }
+
+    // The doctor's clinical note and the raw transcript are for clinicians.
+    // A patient reading their own record receives only the plain-language copy.
+    if (patientAuth.ok) {
+      consultationReports = consultationReports.map((report: any) => ({
+        ...report,
+        transcript: "",
+        doctor_report: {},
+      }));
+    }
+
     // A clinic member may only see a patient who actually has a record there.
-    if (scopeClinicId && appointments.length + prescriptions.length + documents.length === 0) {
+    if (
+      scopeClinicId &&
+      appointments.length + prescriptions.length + documents.length + consultationReports.length === 0
+    ) {
       return apiError(
         403,
         "This patient has no records at your clinic.",
@@ -210,6 +258,7 @@ export async function GET(
       primary_clinic_slug: appointments[0]?.clinic_slug || prescriptions[0]?.clinic_slug || "derma-care-dehradun",
       visits,
       documents,
+      consultation_reports: consultationReports,
     };
 
     await logAudit({
