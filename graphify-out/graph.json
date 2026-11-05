@@ -270,7 +270,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "pharmacyorder",
       "source_file": "apps/web/src/app/pharmacy/console/page.tsx",
@@ -283,7 +283,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "clinicfleetrecord",
       "source_file": "apps/web/src/app/superadmin/page.tsx",
@@ -296,7 +296,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "masterkpis",
       "source_file": "apps/web/src/app/superadmin/page.tsx",
@@ -309,24 +309,102 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "themetoggleprops",
       "source_file": "apps/web/src/components/ThemeToggle.tsx",
       "source_location": "L6"
     },
     {
-      "id": "apps_web_src_components_voiceclinicrecorder_voiceclinicrecorderprops",
-      "label": "VoiceClinicRecorderProps",
+      "id": "apps_web_src_app_patient_portal_page_allergy",
+      "label": "Allergy",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
+      "community": 13,
+      "community_name": "patients/route.ts",
       "file_type": "code",
-      "norm_label": "voiceclinicrecorderprops",
-      "source_file": "apps/web/src/components/VoiceClinicRecorder.tsx",
-      "source_location": "L17"
+      "norm_label": "allergy",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L100"
+    },
+    {
+      "id": "apps_web_src_app_patient_portal_page_authstate",
+      "label": "AuthState",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "authstate",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L122"
+    },
+    {
+      "id": "apps_web_src_app_patient_portal_page_mepatient",
+      "label": "MePatient",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "mepatient",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L73"
+    },
+    {
+      "id": "apps_web_src_app_patient_portal_page_patientrecord",
+      "label": "PatientRecord",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "patientrecord",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L106"
+    },
+    {
+      "id": "apps_web_src_app_patient_portal_page_visit",
+      "label": "Visit",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "visit",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L82"
+    },
+    {
+      "id": "apps_web_src_components_googleterrainmap_doctormapitem",
+      "label": "DoctorMapItem",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "doctormapitem",
+      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
+      "source_location": "L23"
+    },
+    {
+      "id": "apps_web_src_components_googleterrainmap_props",
+      "label": "Props",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "props",
+      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
+      "source_location": "L52"
     },
     {
       "id": "apps_web_src_data_emrgovernance_allergycontraindicationcheck",
@@ -444,6 +522,32 @@
       "norm_label": "seniordoctorcredential",
       "source_file": "apps/web/src/data/emrGovernance.ts",
       "source_location": "L148"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession_activebooking",
+      "label": "ActiveBooking",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "activebooking",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L5"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession_patientsession",
+      "label": "PatientSession",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "patientsession",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L21"
     },
     {
       "id": "apps_web_src_lib_notifications_delivery",
@@ -927,30 +1031,69 @@
       "source_location": "L59"
     },
     {
-      "id": "apps_web_src_components_googleterrainmap_doctormapitem",
-      "label": "DoctorMapItem",
+      "id": "apps_web_src_app_dashboard_admin_page_admintab",
+      "label": "AdminTab",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
+      "community_name": "react",
       "file_type": "code",
-      "norm_label": "doctormapitem",
-      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
-      "source_location": "L23"
+      "norm_label": "admintab",
+      "source_file": "apps/web/src/app/dashboard/admin/page.tsx",
+      "source_location": "L46"
     },
     {
-      "id": "apps_web_src_components_googleterrainmap_props",
+      "id": "apps_web_src_components_interactiveclinicmap_mapdoctor",
+      "label": "MapDoctor",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "mapdoctor",
+      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
+      "source_location": "L19"
+    },
+    {
+      "id": "apps_web_src_components_interactiveclinicmap_props",
       "label": "Props",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
+      "community_name": "react",
       "file_type": "code",
       "norm_label": "props",
-      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
-      "source_location": "L52"
+      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
+      "source_location": "L35"
+    },
+    {
+      "id": "apps_web_src_components_voiceclinicrecorder_voiceclinicrecorderprops",
+      "label": "VoiceClinicRecorderProps",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "voiceclinicrecorderprops",
+      "source_file": "apps/web/src/components/VoiceClinicRecorder.tsx",
+      "source_location": "L17"
+    },
+    {
+      "id": "apps_web_src_components_voicedictation_voicedictationprops",
+      "label": "VoiceDictationProps",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "voicedictationprops",
+      "source_file": "apps/web/src/components/VoiceDictation.tsx",
+      "source_location": "L29"
     },
     {
       "id": "apps_web_src_app_dashboard_layout_navitemprops",
@@ -1096,110 +1239,6 @@
       "source_location": "L37"
     },
     {
-      "id": "apps_web_src_app_dashboard_beds_page_bedinfo",
-      "label": "BedInfo",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "bedinfo",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L63"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_beds_page_bedstatus",
-      "label": "BedStatus",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "bedstatus",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L46"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_beds_page_billingledgerentry",
-      "label": "BillingLedgerEntry",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "billingledgerentry",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L157"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_beds_page_billingoverriderecord",
-      "label": "BillingOverrideRecord",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "billingoverriderecord",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L170"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_beds_page_caretask",
-      "label": "CareTask",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "caretask",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L139"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_beds_page_dischargeinvoice",
-      "label": "DischargeInvoice",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "dischargeinvoice",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L118"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_beds_page_shifthandoverrecord",
-      "label": "ShiftHandoverRecord",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "shifthandoverrecord",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L185"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_beds_page_wardinfo",
-      "label": "WardInfo",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "wardinfo",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L53"
-    },
-    {
       "id": "apps_web_src_app_dashboard_chambers_page_appointmentitem",
       "label": "AppointmentItem",
       "_callable": true,
@@ -1224,110 +1263,6 @@
       "norm_label": "doctorchamber",
       "source_file": "apps/web/src/app/dashboard/chambers/page.tsx",
       "source_location": "L31"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_pharmacy_page_pharmacybatchitem",
-      "label": "PharmacyBatchItem",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "pharmacybatchitem",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L44"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_pharmacy_page_pharmacybill",
-      "label": "PharmacyBill",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "pharmacybill",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L93"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_pharmacy_page_pharmacybillitem",
-      "label": "PharmacyBillItem",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "pharmacybillitem",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L80"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_pharmacy_page_returnchallan",
-      "label": "ReturnChallan",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "returnchallan",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L113"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_pharmacy_page_scheduleh1log",
-      "label": "ScheduleH1Log",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "scheduleh1log",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L145"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_pharmacy_page_stocktransfer",
-      "label": "StockTransfer",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "stocktransfer",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L129"
-    },
-    {
-      "id": "apps_web_src_components_doctorreviewssection_reviewitem",
-      "label": "ReviewItem",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "reviewitem",
-      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
-      "source_location": "L7"
-    },
-    {
-      "id": "apps_web_src_components_doctorreviewssection_reviewsdata",
-      "label": "ReviewsData",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "reviewsdata",
-      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
-      "source_location": "L19"
     },
     {
       "id": "apps_web_src_components_patientdocumentsmanager_documentitem",
@@ -1382,116 +1317,12 @@
       "source_location": "L41"
     },
     {
-      "id": "apps_web_src_app_patient_portal_page_allergy",
-      "label": "Allergy",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "allergy",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L100"
-    },
-    {
-      "id": "apps_web_src_app_patient_portal_page_authstate",
-      "label": "AuthState",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "authstate",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L122"
-    },
-    {
-      "id": "apps_web_src_app_patient_portal_page_mepatient",
-      "label": "MePatient",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "mepatient",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L73"
-    },
-    {
-      "id": "apps_web_src_app_patient_portal_page_patientrecord",
-      "label": "PatientRecord",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "patientrecord",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L106"
-    },
-    {
-      "id": "apps_web_src_app_patient_portal_page_visit",
-      "label": "Visit",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "visit",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L82"
-    },
-    {
-      "id": "apps_web_src_components_siteheader_siteheaderprops",
-      "label": "SiteHeaderProps",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "siteheaderprops",
-      "source_file": "apps/web/src/components/SiteHeader.tsx",
-      "source_location": "L22"
-    },
-    {
-      "id": "apps_web_src_lib_patientsession_activebooking",
-      "label": "ActiveBooking",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "activebooking",
-      "source_file": "apps/web/src/lib/patientSession.ts",
-      "source_location": "L5"
-    },
-    {
-      "id": "apps_web_src_lib_patientsession_patientsession",
-      "label": "PatientSession",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "patientsession",
-      "source_file": "apps/web/src/lib/patientSession.ts",
-      "source_location": "L21"
-    },
-    {
       "id": "apps_web_src_app_doctors_slug_page_props",
       "label": "Props",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 39,
+      "community": 35,
       "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
       "norm_label": "props",
@@ -1504,7 +1335,7 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 39,
+      "community": 35,
       "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
       "norm_label": "aireceptionistprops",
@@ -1517,12 +1348,38 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 39,
+      "community": 35,
       "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
       "norm_label": "chatmessage",
       "source_file": "apps/web/src/components/AIReceptionistWidget.tsx",
       "source_location": "L30"
+    },
+    {
+      "id": "apps_web_src_components_doctorreviewssection_reviewitem",
+      "label": "ReviewItem",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "doctors/[slug]/page.tsx",
+      "file_type": "code",
+      "norm_label": "reviewitem",
+      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
+      "source_location": "L7"
+    },
+    {
+      "id": "apps_web_src_components_doctorreviewssection_reviewsdata",
+      "label": "ReviewsData",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "doctors/[slug]/page.tsx",
+      "file_type": "code",
+      "norm_label": "reviewsdata",
+      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
+      "source_location": "L19"
     },
     {
       "id": "apps_web_src_components_backbutton_backbuttonprops",
@@ -1531,7 +1388,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "backbuttonprops",
       "source_file": "apps/web/src/components/BackButton.tsx",
@@ -1798,43 +1655,17 @@
       "source_location": "L313"
     },
     {
-      "id": "apps_web_src_app_dashboard_admin_page_admintab",
-      "label": "AdminTab",
+      "id": "apps_web_src_components_siteheader_siteheaderprops",
+      "label": "SiteHeaderProps",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 47,
       "community_name": "next",
       "file_type": "code",
-      "norm_label": "admintab",
-      "source_file": "apps/web/src/app/dashboard/admin/page.tsx",
-      "source_location": "L46"
-    },
-    {
-      "id": "apps_web_src_components_interactiveclinicmap_mapdoctor",
-      "label": "MapDoctor",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "mapdoctor",
-      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
-      "source_location": "L19"
-    },
-    {
-      "id": "apps_web_src_components_interactiveclinicmap_props",
-      "label": "Props",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "props",
-      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
-      "source_location": "L35"
+      "norm_label": "siteheaderprops",
+      "source_file": "apps/web/src/components/SiteHeader.tsx",
+      "source_location": "L22"
     },
     {
       "id": "apps_web_src_components_medicineschedule_medicine",
@@ -1925,7 +1756,7 @@
       "file_type": "code",
       "norm_label": "appointment",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L27"
+      "source_location": "L29"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_doctor",
@@ -1938,7 +1769,7 @@
       "file_type": "code",
       "norm_label": "doctor",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L41"
+      "source_location": "L44"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_usercontext",
@@ -1951,20 +1782,7 @@
       "file_type": "code",
       "norm_label": "usercontext",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L49"
-    },
-    {
-      "id": "apps_web_src_components_voicedictation_voicedictationprops",
-      "label": "VoiceDictationProps",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "today/page.tsx",
-      "file_type": "code",
-      "norm_label": "voicedictationprops",
-      "source_file": "apps/web/src/components/VoiceDictation.tsx",
-      "source_location": "L29"
+      "source_location": "L52"
     },
     {
       "id": "apps_web_src_components_patientvaultpanel_document",
@@ -1991,6 +1809,188 @@
       "norm_label": "patientvaultpanelprops",
       "source_file": "apps/web/src/components/PatientVaultPanel.tsx",
       "source_location": "L34"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_bedinfo",
+      "label": "BedInfo",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "bedinfo",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L63"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_bedstatus",
+      "label": "BedStatus",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "bedstatus",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L46"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_billingledgerentry",
+      "label": "BillingLedgerEntry",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "billingledgerentry",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L157"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_billingoverriderecord",
+      "label": "BillingOverrideRecord",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "billingoverriderecord",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L170"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_caretask",
+      "label": "CareTask",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "caretask",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L139"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_dischargeinvoice",
+      "label": "DischargeInvoice",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "dischargeinvoice",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L118"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_shifthandoverrecord",
+      "label": "ShiftHandoverRecord",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "shifthandoverrecord",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L185"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_wardinfo",
+      "label": "WardInfo",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "wardinfo",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L53"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page_pharmacybatchitem",
+      "label": "PharmacyBatchItem",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "pharmacybatchitem",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L44"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page_pharmacybill",
+      "label": "PharmacyBill",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "pharmacybill",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L93"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page_pharmacybillitem",
+      "label": "PharmacyBillItem",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "pharmacybillitem",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L80"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page_returnchallan",
+      "label": "ReturnChallan",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "returnchallan",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L113"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page_scheduleh1log",
+      "label": "ScheduleH1Log",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "scheduleh1log",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L145"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page_stocktransfer",
+      "label": "StockTransfer",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "stocktransfer",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L129"
     },
     {
       "id": "apps_web_src_app_api_lab_results_route_criticalrule",
@@ -2471,22 +2471,10 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "clinicexpensespage()",
       "source_file": "apps/web/src/app/clinic/expenses/page.tsx",
-      "source_location": "L22"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_consult_page_prescriptionsarchivepage",
-      "label": "PrescriptionsArchivePage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "prescriptionsarchivepage()",
-      "source_file": "apps/web/src/app/dashboard/consult/page.tsx",
       "source_location": "L22"
     },
     {
@@ -2495,7 +2483,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "doctorconsultindexpage()",
       "source_file": "apps/web/src/app/doctor/consult/page.tsx",
@@ -2507,7 +2495,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "playtokencallchime()",
       "source_file": "apps/web/src/app/doctor/consult/page.tsx",
@@ -2519,23 +2507,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "doctorqueuepage()",
       "source_file": "apps/web/src/app/doctor/queue/page.tsx",
       "source_location": "L17"
-    },
-    {
-      "id": "apps_web_src_app_error_globalerrorpage",
-      "label": "GlobalErrorPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "globalerrorpage()",
-      "source_file": "apps/web/src/app/error.tsx",
-      "source_location": "L7"
     },
     {
       "id": "apps_web_src_app_for_doctors_page_fordoctorspage",
@@ -2543,23 +2519,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "fordoctorspage()",
       "source_file": "apps/web/src/app/for-doctors/page.tsx",
       "source_location": "L34"
-    },
-    {
-      "id": "apps_web_src_app_onboarding_page_onboardingpage",
-      "label": "OnboardingPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "onboardingpage()",
-      "source_file": "apps/web/src/app/onboarding/page.tsx",
-      "source_location": "L31"
     },
     {
       "id": "apps_web_src_app_pharmacy_console_page_pharmacyconsolepage",
@@ -2567,7 +2531,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "pharmacyconsolepage()",
       "source_file": "apps/web/src/app/pharmacy/console/page.tsx",
@@ -2579,7 +2543,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "loadprescriptionqueue()",
       "source_file": "apps/web/src/app/pharmacy/console/page.tsx",
@@ -2591,23 +2555,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "superadminpage()",
       "source_file": "apps/web/src/app/superadmin/page.tsx",
       "source_location": "L84"
-    },
-    {
-      "id": "apps_web_src_components_interactiveplayground_interactiveplayground",
-      "label": "InteractivePlayground()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "interactiveplayground()",
-      "source_file": "apps/web/src/components/InteractivePlayground.tsx",
-      "source_location": "L21"
     },
     {
       "id": "apps_web_src_components_themetoggle_themetoggle",
@@ -2615,23 +2567,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "themetoggle()",
       "source_file": "apps/web/src/components/ThemeToggle.tsx",
       "source_location": "L11"
-    },
-    {
-      "id": "apps_web_src_components_voiceclinicrecorder_voiceclinicrecorder",
-      "label": "VoiceClinicRecorder()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "voiceclinicrecorder()",
-      "source_file": "apps/web/src/components/VoiceClinicRecorder.tsx",
-      "source_location": "L23"
     },
     {
       "id": "apps_web_src_app_api_patients_route_get",
@@ -2670,6 +2610,126 @@
       "source_location": "L59"
     },
     {
+      "id": "apps_web_src_app_patient_portal_page_patientportalpage",
+      "label": "PatientPortalPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "patientportalpage()",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L1111"
+    },
+    {
+      "id": "apps_web_src_app_patient_portal_page_patientportalview",
+      "label": "PatientPortalView()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "patientportalview()",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L126"
+    },
+    {
+      "id": "apps_web_src_app_patient_portal_page_playtokencallchime",
+      "label": "playTokenCallChime()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "playtokencallchime()",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L42"
+    },
+    {
+      "id": "apps_web_src_app_search_page_doctorportrait",
+      "label": "DoctorPortrait()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "doctorportrait()",
+      "source_file": "apps/web/src/app/search/page.tsx",
+      "source_location": "L312"
+    },
+    {
+      "id": "apps_web_src_app_search_page_normalizespecialty",
+      "label": "normalizeSpecialty()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "normalizespecialty()",
+      "source_file": "apps/web/src/app/search/page.tsx",
+      "source_location": "L358"
+    },
+    {
+      "id": "apps_web_src_app_search_page_searchdiscoverycontent",
+      "label": "SearchDiscoveryContent()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "searchdiscoverycontent()",
+      "source_file": "apps/web/src/app/search/page.tsx",
+      "source_location": "L395"
+    },
+    {
+      "id": "apps_web_src_app_search_page_searchdiscoverypage",
+      "label": "SearchDiscoveryPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "searchdiscoverypage()",
+      "source_file": "apps/web/src/app/search/page.tsx",
+      "source_location": "L1203"
+    },
+    {
+      "id": "apps_web_src_components_googleterrainmap_googleterrainmap",
+      "label": "GoogleTerrainMap()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "googleterrainmap()",
+      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
+      "source_location": "L59"
+    },
+    {
+      "id": "apps_web_src_components_googleterrainmap_googleterrainmap_initmap",
+      "label": "initMap()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "initmap()",
+      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
+      "source_location": "L79"
+    },
+    {
+      "id": "apps_web_src_components_patientdocumentsmanager_patientdocumentsmanager",
+      "label": "PatientDocumentsManager()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "patientdocumentsmanager()",
+      "source_file": "apps/web/src/components/PatientDocumentsManager.tsx",
+      "source_location": "L38"
+    },
+    {
       "id": "apps_web_src_data_emrgovernance_checkallergyconflict",
       "label": "checkAllergyConflict()",
       "_callable": true,
@@ -2692,6 +2752,66 @@
       "norm_label": "maskemergencyphone()",
       "source_file": "apps/web/src/data/emrGovernance.ts",
       "source_location": "L176"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession_clearpatientsession",
+      "label": "clearPatientSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "clearpatientsession()",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L101"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession_getactivepatientsession",
+      "label": "getActivePatientSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "getactivepatientsession()",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L38"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession_setactivepatientsession",
+      "label": "setActivePatientSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "setactivepatientsession()",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L67"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession_updateactivebooking",
+      "label": "updateActiveBooking()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "updateactivebooking()",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L81"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession_usepatientsession",
+      "label": "usePatientSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "usepatientsession()",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L114"
     },
     {
       "id": "apps_web_src_app_api_notifications_whatsapp_route_appbaseurl",
@@ -3714,76 +3834,112 @@
       "source_location": "L103"
     },
     {
-      "id": "apps_web_src_app_search_page_doctorportrait",
-      "label": "DoctorPortrait()",
+      "id": "apps_web_src_app_dashboard_admin_page_superadminconsolepage",
+      "label": "SuperAdminConsolePage()",
       "_callable": true,
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
+      "community_name": "react",
       "file_type": "code",
-      "norm_label": "doctorportrait()",
-      "source_file": "apps/web/src/app/search/page.tsx",
-      "source_location": "L312"
+      "norm_label": "superadminconsolepage()",
+      "source_file": "apps/web/src/app/dashboard/admin/page.tsx",
+      "source_location": "L48"
     },
     {
-      "id": "apps_web_src_app_search_page_normalizespecialty",
-      "label": "normalizeSpecialty()",
+      "id": "apps_web_src_app_dashboard_consult_page_prescriptionsarchivepage",
+      "label": "PrescriptionsArchivePage()",
       "_callable": true,
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
+      "community_name": "react",
       "file_type": "code",
-      "norm_label": "normalizespecialty()",
-      "source_file": "apps/web/src/app/search/page.tsx",
-      "source_location": "L358"
+      "norm_label": "prescriptionsarchivepage()",
+      "source_file": "apps/web/src/app/dashboard/consult/page.tsx",
+      "source_location": "L22"
     },
     {
-      "id": "apps_web_src_app_search_page_searchdiscoverycontent",
-      "label": "SearchDiscoveryContent()",
+      "id": "apps_web_src_app_dashboard_page_dashboardoverviewpage",
+      "label": "DashboardOverviewPage()",
       "_callable": true,
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
+      "community_name": "react",
       "file_type": "code",
-      "norm_label": "searchdiscoverycontent()",
-      "source_file": "apps/web/src/app/search/page.tsx",
-      "source_location": "L395"
-    },
-    {
-      "id": "apps_web_src_app_search_page_searchdiscoverypage",
-      "label": "SearchDiscoveryPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 25,
-      "community_name": "search/page.tsx",
-      "file_type": "code",
-      "norm_label": "searchdiscoverypage()",
-      "source_file": "apps/web/src/app/search/page.tsx",
-      "source_location": "L1203"
-    },
-    {
-      "id": "apps_web_src_components_googleterrainmap_googleterrainmap",
-      "label": "GoogleTerrainMap()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 25,
-      "community_name": "search/page.tsx",
-      "file_type": "code",
-      "norm_label": "googleterrainmap()",
-      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
-      "source_location": "L59"
-    },
-    {
-      "id": "apps_web_src_components_googleterrainmap_googleterrainmap_initmap",
-      "label": "initMap()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 25,
-      "community_name": "search/page.tsx",
-      "file_type": "code",
-      "norm_label": "initmap()",
-      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
+      "norm_label": "dashboardoverviewpage()",
+      "source_file": "apps/web/src/app/dashboard/page.tsx",
       "source_location": "L79"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_page_playtokencallchime",
+      "label": "playTokenCallChime()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "playtokencallchime()",
+      "source_file": "apps/web/src/app/dashboard/page.tsx",
+      "source_location": "L35"
+    },
+    {
+      "id": "apps_web_src_app_error_globalerrorpage",
+      "label": "GlobalErrorPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "globalerrorpage()",
+      "source_file": "apps/web/src/app/error.tsx",
+      "source_location": "L7"
+    },
+    {
+      "id": "apps_web_src_components_interactiveclinicmap_interactiveclinicmap",
+      "label": "InteractiveClinicMap()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "interactiveclinicmap()",
+      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
+      "source_location": "L41"
+    },
+    {
+      "id": "apps_web_src_components_interactiveplayground_interactiveplayground",
+      "label": "InteractivePlayground()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "interactiveplayground()",
+      "source_file": "apps/web/src/components/InteractivePlayground.tsx",
+      "source_location": "L21"
+    },
+    {
+      "id": "apps_web_src_components_voiceclinicrecorder_voiceclinicrecorder",
+      "label": "VoiceClinicRecorder()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "voiceclinicrecorder()",
+      "source_file": "apps/web/src/components/VoiceClinicRecorder.tsx",
+      "source_location": "L23"
+    },
+    {
+      "id": "apps_web_src_components_voicedictation_voicedictation",
+      "label": "VoiceDictation()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "voicedictation()",
+      "source_file": "apps/web/src/components/VoiceDictation.tsx",
+      "source_location": "L56"
     },
     {
       "id": "apps_web_src_app_dashboard_layout_dashboardlayout",
@@ -3834,18 +3990,6 @@
       "source_location": "L207"
     },
     {
-      "id": "apps_web_src_app_dashboard_today_patient_vault_panel_patientvaultpanel",
-      "label": "PatientVaultPanel()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "dashboard/layout.tsx",
-      "file_type": "code",
-      "norm_label": "patientvaultpanel()",
-      "source_file": "apps/web/src/app/dashboard/today/patient-vault-panel.tsx",
-      "source_location": "L7"
-    },
-    {
       "id": "apps_web_src_components_design_system_badge",
       "label": "Badge()",
       "_callable": true,
@@ -3856,18 +4000,6 @@
       "norm_label": "badge()",
       "source_file": "apps/web/src/components/design-system.tsx",
       "source_location": "L248"
-    },
-    {
-      "id": "apps_web_src_components_design_system_card",
-      "label": "Card()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "dashboard/layout.tsx",
-      "file_type": "code",
-      "norm_label": "card()",
-      "source_file": "apps/web/src/components/design-system.tsx",
-      "source_location": "L143"
     },
     {
       "id": "apps_web_src_lib_lis_parser_parseastm",
@@ -4494,18 +4626,6 @@
       "source_location": "L102"
     },
     {
-      "id": "apps_web_src_app_dashboard_beds_page_dashboardbedspage",
-      "label": "DashboardBedsPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "dashboardbedspage()",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L199"
-    },
-    {
       "id": "apps_web_src_app_dashboard_chambers_page_dashboardchamberspage",
       "label": "DashboardChambersPage()",
       "_callable": true,
@@ -4516,18 +4636,6 @@
       "norm_label": "dashboardchamberspage()",
       "source_file": "apps/web/src/app/dashboard/chambers/page.tsx",
       "source_location": "L131"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_pharmacy_page_dashboardpharmacypage",
-      "label": "DashboardPharmacyPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "dashboardpharmacypage()",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L160"
     },
     {
       "id": "apps_web_src_lib_api_getapiurl",
@@ -4626,160 +4734,40 @@
       "source_location": "L8"
     },
     {
-      "id": "apps_web_src_app_patient_portal_page_patientportalpage",
-      "label": "PatientPortalPage()",
+      "id": "apps_web_src_app_doctors_slug_page_doctorprofilepage",
+      "label": "DoctorProfilePage()",
       "_callable": true,
       "_origin": "ast",
       "community": 35,
-      "community_name": "portal/page.tsx",
+      "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
-      "norm_label": "patientportalpage()",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L1111"
-    },
-    {
-      "id": "apps_web_src_app_patient_portal_page_patientportalview",
-      "label": "PatientPortalView()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "patientportalview()",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L126"
-    },
-    {
-      "id": "apps_web_src_app_patient_portal_page_playtokencallchime",
-      "label": "playTokenCallChime()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "playtokencallchime()",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
-      "source_location": "L42"
-    },
-    {
-      "id": "apps_web_src_app_specialties_page_specialtiespage",
-      "label": "SpecialtiesPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "specialtiespage()",
-      "source_file": "apps/web/src/app/specialties/page.tsx",
-      "source_location": "L7"
-    },
-    {
-      "id": "apps_web_src_components_browsespecialtiessection_browsespecialtiessection",
-      "label": "BrowseSpecialtiesSection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "browsespecialtiessection()",
-      "source_file": "apps/web/src/components/BrowseSpecialtiesSection.tsx",
-      "source_location": "L610"
-    },
-    {
-      "id": "apps_web_src_components_patientdocumentsmanager_patientdocumentsmanager",
-      "label": "PatientDocumentsManager()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "patientdocumentsmanager()",
-      "source_file": "apps/web/src/components/PatientDocumentsManager.tsx",
-      "source_location": "L38"
-    },
-    {
-      "id": "apps_web_src_components_siteheader_siteheader",
-      "label": "SiteHeader()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "siteheader()",
-      "source_file": "apps/web/src/components/SiteHeader.tsx",
-      "source_location": "L26"
-    },
-    {
-      "id": "apps_web_src_components_siteheader_siteheader_handleclickoutside",
-      "label": "handleClickOutside()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "handleclickoutside()",
-      "source_file": "apps/web/src/components/SiteHeader.tsx",
+      "norm_label": "doctorprofilepage()",
+      "source_file": "apps/web/src/app/doctors/[slug]/page.tsx",
       "source_location": "L34"
     },
     {
-      "id": "apps_web_src_lib_patientsession_clearpatientsession",
-      "label": "clearPatientSession()",
+      "id": "apps_web_src_components_aireceptionistwidget_aireceptionistwidget",
+      "label": "AIReceptionistWidget()",
       "_callable": true,
       "_origin": "ast",
       "community": 35,
-      "community_name": "portal/page.tsx",
+      "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
-      "norm_label": "clearpatientsession()",
-      "source_file": "apps/web/src/lib/patientSession.ts",
-      "source_location": "L101"
+      "norm_label": "aireceptionistwidget()",
+      "source_file": "apps/web/src/components/AIReceptionistWidget.tsx",
+      "source_location": "L39"
     },
     {
-      "id": "apps_web_src_lib_patientsession_getactivepatientsession",
-      "label": "getActivePatientSession()",
+      "id": "apps_web_src_components_doctorreviewssection_doctorreviewssection",
+      "label": "DoctorReviewsSection()",
       "_callable": true,
       "_origin": "ast",
       "community": 35,
-      "community_name": "portal/page.tsx",
+      "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
-      "norm_label": "getactivepatientsession()",
-      "source_file": "apps/web/src/lib/patientSession.ts",
-      "source_location": "L38"
-    },
-    {
-      "id": "apps_web_src_lib_patientsession_setactivepatientsession",
-      "label": "setActivePatientSession()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "setactivepatientsession()",
-      "source_file": "apps/web/src/lib/patientSession.ts",
-      "source_location": "L67"
-    },
-    {
-      "id": "apps_web_src_lib_patientsession_updateactivebooking",
-      "label": "updateActiveBooking()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "updateactivebooking()",
-      "source_file": "apps/web/src/lib/patientSession.ts",
-      "source_location": "L81"
-    },
-    {
-      "id": "apps_web_src_lib_patientsession_usepatientsession",
-      "label": "usePatientSession()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "usepatientsession()",
-      "source_file": "apps/web/src/lib/patientSession.ts",
-      "source_location": "L114"
+      "norm_label": "doctorreviewssection()",
+      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
+      "source_location": "L31"
     },
     {
       "id": "apps_web_src_app_api_clinic_walk_in_route_cleanphone",
@@ -4806,24 +4794,12 @@
       "source_location": "L19"
     },
     {
-      "id": "apps_web_src_app_doctors_slug_page_doctorprofilepage",
-      "label": "DoctorProfilePage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
-      "file_type": "code",
-      "norm_label": "doctorprofilepage()",
-      "source_file": "apps/web/src/app/doctors/[slug]/page.tsx",
-      "source_location": "L34"
-    },
-    {
       "id": "apps_web_src_app_login_page_destinationfor",
       "label": "destinationFor()",
       "_callable": true,
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "destinationfor()",
       "source_file": "apps/web/src/app/login/page.tsx",
@@ -4835,7 +4811,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "loginform()",
       "source_file": "apps/web/src/app/login/page.tsx",
@@ -4847,11 +4823,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "loginpage()",
       "source_file": "apps/web/src/app/login/page.tsx",
       "source_location": "L325"
+    },
+    {
+      "id": "apps_web_src_app_onboarding_page_onboardingpage",
+      "label": "OnboardingPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "BackButton",
+      "file_type": "code",
+      "norm_label": "onboardingpage()",
+      "source_file": "apps/web/src/app/onboarding/page.tsx",
+      "source_location": "L31"
     },
     {
       "id": "apps_web_src_app_p_id_page_patientprescriptionlockerpage",
@@ -4859,23 +4847,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "patientprescriptionlockerpage()",
       "source_file": "apps/web/src/app/p/[id]/page.tsx",
       "source_location": "L98"
-    },
-    {
-      "id": "apps_web_src_components_aireceptionistwidget_aireceptionistwidget",
-      "label": "AIReceptionistWidget()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
-      "file_type": "code",
-      "norm_label": "aireceptionistwidget()",
-      "source_file": "apps/web/src/components/AIReceptionistWidget.tsx",
-      "source_location": "L39"
     },
     {
       "id": "apps_web_src_components_backbutton_backbutton",
@@ -4883,23 +4859,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "backbutton()",
       "source_file": "apps/web/src/components/BackButton.tsx",
       "source_location": "L13"
-    },
-    {
-      "id": "apps_web_src_components_doctorreviewssection_doctorreviewssection",
-      "label": "DoctorReviewsSection()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
-      "file_type": "code",
-      "norm_label": "doctorreviewssection()",
-      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
-      "source_location": "L31"
     },
     {
       "id": "apps_web_src_app_page_homepage",
@@ -5343,6 +5307,18 @@
       "file_type": "code",
       "norm_label": "receptioncommandcenter()",
       "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
+      "source_location": "L1146"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_reception_page_receptioninner",
+      "label": "ReceptionInner()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 42,
+      "community_name": "reception/page.tsx",
+      "file_type": "code",
+      "norm_label": "receptioninner()",
+      "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
       "source_location": "L701"
     },
     {
@@ -5416,6 +5392,18 @@
       "norm_label": "modal()",
       "source_file": "apps/web/src/components/design-system.tsx",
       "source_location": "L277"
+    },
+    {
+      "id": "apps_web_src_lib_clinic_sync_clinicsyncprovider",
+      "label": "ClinicSyncProvider()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 42,
+      "community_name": "reception/page.tsx",
+      "file_type": "code",
+      "norm_label": "clinicsyncprovider()",
+      "source_file": "apps/web/src/lib/clinic-sync.tsx",
+      "source_location": "L61"
     },
     {
       "id": "apps_web_src_app_api_appointments_route_get",
@@ -5898,42 +5886,6 @@
       "source_location": "L3"
     },
     {
-      "id": "apps_web_src_app_dashboard_admin_page_superadminconsolepage",
-      "label": "SuperAdminConsolePage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "superadminconsolepage()",
-      "source_file": "apps/web/src/app/dashboard/admin/page.tsx",
-      "source_location": "L48"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_page_dashboardoverviewpage",
-      "label": "DashboardOverviewPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "dashboardoverviewpage()",
-      "source_file": "apps/web/src/app/dashboard/page.tsx",
-      "source_location": "L79"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_page_playtokencallchime",
-      "label": "playTokenCallChime()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "playtokencallchime()",
-      "source_file": "apps/web/src/app/dashboard/page.tsx",
-      "source_location": "L35"
-    },
-    {
       "id": "apps_web_src_app_doctors_page_doctorspage",
       "label": "DoctorsPage()",
       "_callable": true,
@@ -5958,16 +5910,52 @@
       "source_location": "L3"
     },
     {
-      "id": "apps_web_src_components_interactiveclinicmap_interactiveclinicmap",
-      "label": "InteractiveClinicMap()",
+      "id": "apps_web_src_app_specialties_page_specialtiespage",
+      "label": "SpecialtiesPage()",
       "_callable": true,
       "_origin": "ast",
       "community": 47,
       "community_name": "next",
       "file_type": "code",
-      "norm_label": "interactiveclinicmap()",
-      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
-      "source_location": "L41"
+      "norm_label": "specialtiespage()",
+      "source_file": "apps/web/src/app/specialties/page.tsx",
+      "source_location": "L7"
+    },
+    {
+      "id": "apps_web_src_components_browsespecialtiessection_browsespecialtiessection",
+      "label": "BrowseSpecialtiesSection()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "next",
+      "file_type": "code",
+      "norm_label": "browsespecialtiessection()",
+      "source_file": "apps/web/src/components/BrowseSpecialtiesSection.tsx",
+      "source_location": "L610"
+    },
+    {
+      "id": "apps_web_src_components_siteheader_siteheader",
+      "label": "SiteHeader()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "next",
+      "file_type": "code",
+      "norm_label": "siteheader()",
+      "source_file": "apps/web/src/components/SiteHeader.tsx",
+      "source_location": "L26"
+    },
+    {
+      "id": "apps_web_src_components_siteheader_siteheader_handleclickoutside",
+      "label": "handleClickOutside()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "next",
+      "file_type": "code",
+      "norm_label": "handleclickoutside()",
+      "source_file": "apps/web/src/components/SiteHeader.tsx",
+      "source_location": "L34"
     },
     {
       "id": "apps_web_src_components_medicineschedule_medicineschedule",
@@ -6015,7 +6003,7 @@
       "file_type": "code",
       "norm_label": "bmicategory()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L154"
+      "source_location": "L206"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_bpstage",
@@ -6027,7 +6015,7 @@
       "file_type": "code",
       "norm_label": "bpstage()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L147"
+      "source_location": "L199"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_consultationpane",
@@ -6039,7 +6027,7 @@
       "file_type": "code",
       "norm_label": "consultationpane()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L359"
+      "source_location": "L292"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_dashboardtodaypage",
@@ -6051,7 +6039,7 @@
       "file_type": "code",
       "norm_label": "dashboardtodaypage()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L161"
+      "source_location": "L439"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_schedulepane",
@@ -6063,7 +6051,7 @@
       "file_type": "code",
       "norm_label": "schedulepane()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L325"
+      "source_location": "L213"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_statuschip",
@@ -6075,7 +6063,7 @@
       "file_type": "code",
       "norm_label": "statuschip()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L91"
+      "source_location": "L143"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_vitalsalert",
@@ -6087,7 +6075,7 @@
       "file_type": "code",
       "norm_label": "vitalsalert()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L116"
+      "source_location": "L168"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_vitalsfield",
@@ -6099,10 +6087,10 @@
       "file_type": "code",
       "norm_label": "vitalsfield()",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L104"
+      "source_location": "L156"
     },
     {
-      "id": "apps_web_src_components_patientvaultpanel_patientvaultpanel",
+      "id": "apps_web_src_app_dashboard_today_patient_vault_panel_patientvaultpanel",
       "label": "PatientVaultPanel()",
       "_callable": true,
       "_origin": "ast",
@@ -6110,32 +6098,32 @@
       "community_name": "today/page.tsx",
       "file_type": "code",
       "norm_label": "patientvaultpanel()",
+      "source_file": "apps/web/src/app/dashboard/today/patient-vault-panel.tsx",
+      "source_location": "L7"
+    },
+    {
+      "id": "apps_web_src_components_design_system_card",
+      "label": "Card()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "today/page.tsx",
+      "file_type": "code",
+      "norm_label": "card()",
+      "source_file": "apps/web/src/components/design-system.tsx",
+      "source_location": "L143"
+    },
+    {
+      "id": "apps_web_src_components_patientvaultpanel_patientvaultpanel",
+      "label": "PatientVaultPanel()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 50,
+      "community_name": "PatientVaultPanel.tsx",
+      "file_type": "code",
+      "norm_label": "patientvaultpanel()",
       "source_file": "apps/web/src/components/PatientVaultPanel.tsx",
       "source_location": "L59"
-    },
-    {
-      "id": "apps_web_src_components_voicedictation_voicedictation",
-      "label": "VoiceDictation()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "today/page.tsx",
-      "file_type": "code",
-      "norm_label": "voicedictation()",
-      "source_file": "apps/web/src/components/VoiceDictation.tsx",
-      "source_location": "L56"
-    },
-    {
-      "id": "apps_web_src_lib_clinic_sync_clinicsyncprovider",
-      "label": "ClinicSyncProvider()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "today/page.tsx",
-      "file_type": "code",
-      "norm_label": "clinicsyncprovider()",
-      "source_file": "apps/web/src/lib/clinic-sync.tsx",
-      "source_location": "L61"
     },
     {
       "id": "apps_web_src_app_layout_rootlayout",
@@ -6148,6 +6136,30 @@
       "norm_label": "rootlayout()",
       "source_file": "apps/web/src/app/layout.tsx",
       "source_location": "L10"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page_dashboardbedspage",
+      "label": "DashboardBedsPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "dashboardbedspage()",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L199"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page_dashboardpharmacypage",
+      "label": "DashboardPharmacyPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "dashboardpharmacypage()",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L160"
     },
     {
       "id": "apps_web_src_app_api_beds_discharge_order_route_post",
@@ -7097,21 +7109,10 @@
       "label": "expenses/page.tsx",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "expenses/page.tsx",
       "source_file": "apps/web/src/app/clinic/expenses/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_consult_page",
-      "label": "dashboard/consult/page.tsx",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "dashboard/consult/page.tsx",
-      "source_file": "apps/web/src/app/dashboard/consult/page.tsx",
       "source_location": "L1"
     },
     {
@@ -7119,7 +7120,7 @@
       "label": "doctor/consult/page.tsx",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "doctor/consult/page.tsx",
       "source_file": "apps/web/src/app/doctor/consult/page.tsx",
@@ -7130,21 +7131,10 @@
       "label": "queue/page.tsx",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "queue/page.tsx",
       "source_file": "apps/web/src/app/doctor/queue/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_app_error",
-      "label": "error.tsx",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "error.tsx",
-      "source_file": "apps/web/src/app/error.tsx",
       "source_location": "L1"
     },
     {
@@ -7152,21 +7142,10 @@
       "label": "for-doctors/page.tsx",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "for-doctors/page.tsx",
       "source_file": "apps/web/src/app/for-doctors/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_app_onboarding_page",
-      "label": "onboarding/page.tsx",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "onboarding/page.tsx",
-      "source_file": "apps/web/src/app/onboarding/page.tsx",
       "source_location": "L1"
     },
     {
@@ -7174,7 +7153,7 @@
       "label": "console/page.tsx",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "console/page.tsx",
       "source_file": "apps/web/src/app/pharmacy/console/page.tsx",
@@ -7185,43 +7164,10 @@
       "label": "superadmin/page.tsx",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "superadmin/page.tsx",
       "source_file": "apps/web/src/app/superadmin/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_components_heroillustrationshowcase",
-      "label": "HeroIllustrationShowcase.tsx",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "heroillustrationshowcase.tsx",
-      "source_file": "apps/web/src/components/HeroIllustrationShowcase.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_components_interactiveherosearch",
-      "label": "InteractiveHeroSearch.tsx",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "interactiveherosearch.tsx",
-      "source_file": "apps/web/src/components/InteractiveHeroSearch.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_components_interactiveplayground",
-      "label": "InteractivePlayground.tsx",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "code",
-      "norm_label": "interactiveplayground.tsx",
-      "source_file": "apps/web/src/components/InteractivePlayground.tsx",
       "source_location": "L1"
     },
     {
@@ -7229,44 +7175,22 @@
       "label": "ThemeToggle.tsx",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
       "norm_label": "themetoggle.tsx",
       "source_file": "apps/web/src/components/ThemeToggle.tsx",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_src_components_voiceclinicrecorder",
-      "label": "VoiceClinicRecorder.tsx",
+      "id": "apps_web_src_lib_api_api_base_url",
+      "label": "API_BASE_URL",
       "_origin": "ast",
       "community": 11,
-      "community_name": "react",
+      "community_name": "ThemeToggle",
       "file_type": "code",
-      "norm_label": "voiceclinicrecorder.tsx",
-      "source_file": "apps/web/src/components/VoiceClinicRecorder.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "ref_lucide_react",
-      "label": "lucide-react",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "concept",
-      "norm_label": "lucide-react",
-      "source_file": "apps/web/package.json",
-      "source_location": "L20"
-    },
-    {
-      "id": "ref_react",
-      "label": "react",
-      "_origin": "ast",
-      "community": 11,
-      "community_name": "react",
-      "file_type": "concept",
-      "norm_label": "react",
-      "source_file": "apps/web/package.json",
-      "source_location": "L24"
+      "norm_label": "api_base_url",
+      "source_file": "apps/web/src/lib/api.ts",
+      "source_location": "L13"
     },
     {
       "id": "readme",
@@ -7521,6 +7445,17 @@
       "source_location": "L2"
     },
     {
+      "id": "leaflet",
+      "label": "leaflet",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "confidence": "EXTRACTED",
+      "file_type": "code",
+      "norm_label": "leaflet",
+      "source_file": "leaflet"
+    },
+    {
       "id": "apps_web_src_app_api_patients_route",
       "label": "patients/route.ts",
       "_origin": "ast",
@@ -7551,6 +7486,50 @@
       "file_type": "code",
       "norm_label": "patients/page.tsx",
       "source_file": "apps/web/src/app/dashboard/patients/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_app_patient_portal_page",
+      "label": "portal/page.tsx",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "portal/page.tsx",
+      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_app_search_page",
+      "label": "search/page.tsx",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "search/page.tsx",
+      "source_file": "apps/web/src/app/search/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_app_search_page_all_search_doctors",
+      "label": "ALL_SEARCH_DOCTORS",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "all_search_doctors",
+      "source_file": "apps/web/src/app/search/page.tsx",
+      "source_location": "L38"
+    },
+    {
+      "id": "apps_web_src_components_googleterrainmap",
+      "label": "GoogleTerrainMap.tsx",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "googleterrainmap.tsx",
+      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
       "source_location": "L1"
     },
     {
@@ -7596,6 +7575,28 @@
       "norm_label": "verified_senior_doctors",
       "source_file": "apps/web/src/data/emrGovernance.ts",
       "source_location": "L157"
+    },
+    {
+      "id": "apps_web_src_lib_patientsession",
+      "label": "patientSession.ts",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "code",
+      "norm_label": "patientsession.ts",
+      "source_file": "apps/web/src/lib/patientSession.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "ref_leaflet",
+      "label": "leaflet",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "patients/route.ts",
+      "file_type": "concept",
+      "norm_label": "leaflet",
+      "source_file": "apps/web/package.json",
+      "source_location": "L19"
     },
     {
       "id": "apps_web_src_app_api_notifications_whatsapp_route",
@@ -9589,59 +9590,158 @@
       "source_location": "L116"
     },
     {
-      "id": "leaflet",
-      "label": "leaflet",
+      "id": "apps_web_src_app_dashboard_admin_page",
+      "label": "admin/page.tsx",
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
-      "confidence": "EXTRACTED",
+      "community_name": "react",
       "file_type": "code",
-      "norm_label": "leaflet",
-      "source_file": "leaflet"
-    },
-    {
-      "id": "apps_web_src_app_search_page",
-      "label": "search/page.tsx",
-      "_origin": "ast",
-      "community": 25,
-      "community_name": "search/page.tsx",
-      "file_type": "code",
-      "norm_label": "search/page.tsx",
-      "source_file": "apps/web/src/app/search/page.tsx",
+      "norm_label": "admin/page.tsx",
+      "source_file": "apps/web/src/app/dashboard/admin/page.tsx",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_src_app_search_page_all_search_doctors",
-      "label": "ALL_SEARCH_DOCTORS",
+      "id": "apps_web_src_app_dashboard_consult_page",
+      "label": "dashboard/consult/page.tsx",
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
+      "community_name": "react",
       "file_type": "code",
-      "norm_label": "all_search_doctors",
-      "source_file": "apps/web/src/app/search/page.tsx",
-      "source_location": "L38"
-    },
-    {
-      "id": "apps_web_src_components_googleterrainmap",
-      "label": "GoogleTerrainMap.tsx",
-      "_origin": "ast",
-      "community": 25,
-      "community_name": "search/page.tsx",
-      "file_type": "code",
-      "norm_label": "googleterrainmap.tsx",
-      "source_file": "apps/web/src/components/GoogleTerrainMap.tsx",
+      "norm_label": "dashboard/consult/page.tsx",
+      "source_file": "apps/web/src/app/dashboard/consult/page.tsx",
       "source_location": "L1"
     },
     {
-      "id": "ref_leaflet",
-      "label": "leaflet",
+      "id": "apps_web_src_app_dashboard_page",
+      "label": "dashboard/page.tsx",
       "_origin": "ast",
       "community": 25,
-      "community_name": "search/page.tsx",
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "dashboard/page.tsx",
+      "source_file": "apps/web/src/app/dashboard/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_page_common_speed_rx_molecules",
+      "label": "COMMON_SPEED_RX_MOLECULES",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "common_speed_rx_molecules",
+      "source_file": "apps/web/src/app/dashboard/page.tsx",
+      "source_location": "L69"
+    },
+    {
+      "id": "apps_web_src_app_error",
+      "label": "error.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "error.tsx",
+      "source_file": "apps/web/src/app/error.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_heroillustrationshowcase",
+      "label": "HeroIllustrationShowcase.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "heroillustrationshowcase.tsx",
+      "source_file": "apps/web/src/components/HeroIllustrationShowcase.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_interactiveclinicmap",
+      "label": "InteractiveClinicMap.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "interactiveclinicmap.tsx",
+      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_interactiveherosearch",
+      "label": "InteractiveHeroSearch.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "interactiveherosearch.tsx",
+      "source_file": "apps/web/src/components/InteractiveHeroSearch.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_interactiveplayground",
+      "label": "InteractivePlayground.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "interactiveplayground.tsx",
+      "source_file": "apps/web/src/components/InteractivePlayground.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_voiceclinicrecorder",
+      "label": "VoiceClinicRecorder.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "voiceclinicrecorder.tsx",
+      "source_file": "apps/web/src/components/VoiceClinicRecorder.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_voicedictation",
+      "label": "VoiceDictation.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "voicedictation.tsx",
+      "source_file": "apps/web/src/components/VoiceDictation.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_voicedictation_simple_translations",
+      "label": "SIMPLE_TRANSLATIONS",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "code",
+      "norm_label": "simple_translations",
+      "source_file": "apps/web/src/components/VoiceDictation.tsx",
+      "source_location": "L35"
+    },
+    {
+      "id": "ref_lucide_react",
+      "label": "lucide-react",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
       "file_type": "concept",
-      "norm_label": "leaflet",
+      "norm_label": "lucide-react",
       "source_file": "apps/web/package.json",
-      "source_location": "L19"
+      "source_location": "L20"
+    },
+    {
+      "id": "ref_react",
+      "label": "react",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "react",
+      "file_type": "concept",
+      "norm_label": "react",
+      "source_file": "apps/web/package.json",
+      "source_location": "L24"
     },
     {
       "id": "apps_web_src_app_dashboard_layout",
@@ -9719,17 +9819,6 @@
       "norm_label": "solo_nav",
       "source_file": "apps/web/src/app/dashboard/layout.tsx",
       "source_location": "L41"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_today_patient_vault_panel",
-      "label": "patient-vault-panel.tsx",
-      "_origin": "ast",
-      "community": 26,
-      "community_name": "dashboard/layout.tsx",
-      "file_type": "code",
-      "norm_label": "patient-vault-panel.tsx",
-      "source_file": "apps/web/src/app/dashboard/today/patient-vault-panel.tsx",
-      "source_location": "L1"
     },
     {
       "id": "apps_web_src_components_design_system_design_tokens",
@@ -10733,17 +10822,6 @@
       "source_location": "L59"
     },
     {
-      "id": "apps_web_src_app_dashboard_beds_page",
-      "label": "beds/page.tsx",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "beds/page.tsx",
-      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "apps_web_src_app_dashboard_chambers_page",
       "label": "chambers/page.tsx",
       "_origin": "ast",
@@ -10766,28 +10844,6 @@
       "source_location": "L64"
     },
     {
-      "id": "apps_web_src_app_dashboard_pharmacy_page",
-      "label": "pharmacy/page.tsx",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "pharmacy/page.tsx",
-      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_components_doctorreviewssection",
-      "label": "DoctorReviewsSection.tsx",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "doctorreviewssection.tsx",
-      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "apps_web_src_components_patientdocumentsmanager",
       "label": "PatientDocumentsManager.tsx",
       "_origin": "ast",
@@ -10808,17 +10864,6 @@
       "norm_label": "api.ts",
       "source_file": "apps/web/src/lib/api.ts",
       "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_lib_api_api_base_url",
-      "label": "API_BASE_URL",
-      "_origin": "ast",
-      "community": 33,
-      "community_name": "api.ts",
-      "file_type": "code",
-      "norm_label": "api_base_url",
-      "source_file": "apps/web/src/lib/api.ts",
-      "source_location": "L13"
     },
     {
       "id": "apps_web_src_lib_api_issupabaseready",
@@ -10909,47 +10954,36 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_src_app_patient_portal_page",
-      "label": "portal/page.tsx",
+      "id": "apps_web_src_app_doctors_slug_page",
+      "label": "doctors/[slug]/page.tsx",
       "_origin": "ast",
       "community": 35,
-      "community_name": "portal/page.tsx",
+      "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
-      "norm_label": "portal/page.tsx",
-      "source_file": "apps/web/src/app/patient/portal/page.tsx",
+      "norm_label": "doctors/[slug]/page.tsx",
+      "source_file": "apps/web/src/app/doctors/[slug]/page.tsx",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_src_app_specialties_page",
-      "label": "specialties/page.tsx",
+      "id": "apps_web_src_components_aireceptionistwidget",
+      "label": "AIReceptionistWidget.tsx",
       "_origin": "ast",
       "community": 35,
-      "community_name": "portal/page.tsx",
+      "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
-      "norm_label": "specialties/page.tsx",
-      "source_file": "apps/web/src/app/specialties/page.tsx",
+      "norm_label": "aireceptionistwidget.tsx",
+      "source_file": "apps/web/src/components/AIReceptionistWidget.tsx",
       "source_location": "L1"
     },
     {
-      "id": "apps_web_src_components_siteheader",
-      "label": "SiteHeader.tsx",
+      "id": "apps_web_src_components_doctorreviewssection",
+      "label": "DoctorReviewsSection.tsx",
       "_origin": "ast",
       "community": 35,
-      "community_name": "portal/page.tsx",
+      "community_name": "doctors/[slug]/page.tsx",
       "file_type": "code",
-      "norm_label": "siteheader.tsx",
-      "source_file": "apps/web/src/components/SiteHeader.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_lib_patientsession",
-      "label": "patientSession.ts",
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "portal/page.tsx",
-      "file_type": "code",
-      "norm_label": "patientsession.ts",
-      "source_file": "apps/web/src/lib/patientSession.ts",
+      "norm_label": "doctorreviewssection.tsx",
+      "source_file": "apps/web/src/components/DoctorReviewsSection.tsx",
       "source_location": "L1"
     },
     {
@@ -11195,25 +11229,25 @@
       "source_location": "L35"
     },
     {
-      "id": "apps_web_src_app_doctors_slug_page",
-      "label": "doctors/[slug]/page.tsx",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
-      "file_type": "code",
-      "norm_label": "doctors/[slug]/page.tsx",
-      "source_file": "apps/web/src/app/doctors/[slug]/page.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "apps_web_src_app_login_page",
       "label": "login/page.tsx",
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "login/page.tsx",
       "source_file": "apps/web/src/app/login/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_app_onboarding_page",
+      "label": "onboarding/page.tsx",
+      "_origin": "ast",
+      "community": 39,
+      "community_name": "BackButton",
+      "file_type": "code",
+      "norm_label": "onboarding/page.tsx",
+      "source_file": "apps/web/src/app/onboarding/page.tsx",
       "source_location": "L1"
     },
     {
@@ -11221,7 +11255,7 @@
       "label": "p/[id]/page.tsx",
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "p/[id]/page.tsx",
       "source_file": "apps/web/src/app/p/[id]/page.tsx",
@@ -11232,29 +11266,18 @@
       "label": "SEED_PRESCRIPTIONS",
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "seed_prescriptions",
       "source_file": "apps/web/src/app/p/[id]/page.tsx",
       "source_location": "L41"
     },
     {
-      "id": "apps_web_src_components_aireceptionistwidget",
-      "label": "AIReceptionistWidget.tsx",
-      "_origin": "ast",
-      "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
-      "file_type": "code",
-      "norm_label": "aireceptionistwidget.tsx",
-      "source_file": "apps/web/src/components/AIReceptionistWidget.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "apps_web_src_components_backbutton",
       "label": "BackButton.tsx",
       "_origin": "ast",
       "community": 39,
-      "community_name": "doctors/[slug]/page.tsx",
+      "community_name": "BackButton",
       "file_type": "code",
       "norm_label": "backbutton.tsx",
       "source_file": "apps/web/src/components/BackButton.tsx",
@@ -11921,39 +11944,6 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_src_app_dashboard_admin_page",
-      "label": "admin/page.tsx",
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "admin/page.tsx",
-      "source_file": "apps/web/src/app/dashboard/admin/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_page",
-      "label": "dashboard/page.tsx",
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "dashboard/page.tsx",
-      "source_file": "apps/web/src/app/dashboard/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_app_dashboard_page_common_speed_rx_molecules",
-      "label": "COMMON_SPEED_RX_MOLECULES",
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "next",
-      "file_type": "code",
-      "norm_label": "common_speed_rx_molecules",
-      "source_file": "apps/web/src/app/dashboard/page.tsx",
-      "source_location": "L69"
-    },
-    {
       "id": "apps_web_src_app_doctors_page",
       "label": "doctors/page.tsx",
       "_origin": "ast",
@@ -11976,14 +11966,25 @@
       "source_location": "L1"
     },
     {
-      "id": "apps_web_src_components_interactiveclinicmap",
-      "label": "InteractiveClinicMap.tsx",
+      "id": "apps_web_src_app_specialties_page",
+      "label": "specialties/page.tsx",
       "_origin": "ast",
       "community": 47,
       "community_name": "next",
       "file_type": "code",
-      "norm_label": "interactiveclinicmap.tsx",
-      "source_file": "apps/web/src/components/InteractiveClinicMap.tsx",
+      "norm_label": "specialties/page.tsx",
+      "source_file": "apps/web/src/app/specialties/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_components_siteheader",
+      "label": "SiteHeader.tsx",
+      "_origin": "ast",
+      "community": 47,
+      "community_name": "next",
+      "file_type": "code",
+      "norm_label": "siteheader.tsx",
+      "source_file": "apps/web/src/components/SiteHeader.tsx",
       "source_location": "L1"
     },
     {
@@ -12072,7 +12073,18 @@
       "file_type": "code",
       "norm_label": "api",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L69"
+      "source_location": "L118"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_today_page_mock_appointments",
+      "label": "MOCK_APPOINTMENTS",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "today/page.tsx",
+      "file_type": "code",
+      "norm_label": "mock_appointments",
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L72"
     },
     {
       "id": "apps_web_src_app_dashboard_today_page_speed_rx_molecules",
@@ -12083,29 +12095,18 @@
       "file_type": "code",
       "norm_label": "speed_rx_molecules",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L59"
+      "source_location": "L62"
     },
     {
-      "id": "apps_web_src_components_voicedictation",
-      "label": "VoiceDictation.tsx",
+      "id": "apps_web_src_app_dashboard_today_patient_vault_panel",
+      "label": "patient-vault-panel.tsx",
       "_origin": "ast",
       "community": 5,
       "community_name": "today/page.tsx",
       "file_type": "code",
-      "norm_label": "voicedictation.tsx",
-      "source_file": "apps/web/src/components/VoiceDictation.tsx",
+      "norm_label": "patient-vault-panel.tsx",
+      "source_file": "apps/web/src/app/dashboard/today/patient-vault-panel.tsx",
       "source_location": "L1"
-    },
-    {
-      "id": "apps_web_src_components_voicedictation_simple_translations",
-      "label": "SIMPLE_TRANSLATIONS",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "today/page.tsx",
-      "file_type": "code",
-      "norm_label": "simple_translations",
-      "source_file": "apps/web/src/components/VoiceDictation.tsx",
-      "source_location": "L35"
     },
     {
       "id": "apps_web_src_components_patientvaultpanel",
@@ -12227,6 +12228,28 @@
       "norm_label": "config",
       "source_file": "apps/web/postcss.config.mjs",
       "source_location": "L2"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_beds_page",
+      "label": "beds/page.tsx",
+      "_origin": "ast",
+      "community": 54,
+      "community_name": "beds/page.tsx",
+      "file_type": "code",
+      "norm_label": "beds/page.tsx",
+      "source_file": "apps/web/src/app/dashboard/beds/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "apps_web_src_app_dashboard_pharmacy_page",
+      "label": "pharmacy/page.tsx",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "pharmacy/page.tsx",
+      "file_type": "code",
+      "norm_label": "pharmacy/page.tsx",
+      "source_file": "apps/web/src/app/dashboard/pharmacy/page.tsx",
+      "source_location": "L1"
     },
     {
       "id": "agents_rules_graphify",
@@ -18849,6 +18872,30 @@
     },
     {
       "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "target": "apps_web_src_lib_clinic_sync_clinicsyncprovider",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
+      "source_location": "L1148",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "target": "apps_web_src_app_dashboard_reception_page_receptioninner",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
+      "source_location": "L1149",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_app_dashboard_reception_page_doctorcard",
       "relation": "calls",
       "_origin": "ast",
@@ -18856,11 +18903,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
-      "source_location": "L1035",
+      "source_location": "L1034",
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_components_design_system_card",
       "relation": "calls",
       "_origin": "ast",
@@ -18868,11 +18915,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
-      "source_location": "L1050",
+      "source_location": "L1049",
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_app_dashboard_reception_page_patientrow",
       "relation": "calls",
       "_origin": "ast",
@@ -18880,11 +18927,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
-      "source_location": "L1111",
+      "source_location": "L1110",
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_app_dashboard_reception_page_walkinmodal",
       "relation": "calls",
       "_origin": "ast",
@@ -18892,11 +18939,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
-      "source_location": "L1130",
+      "source_location": "L1129",
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_lib_clinic_sync_useclinicsync",
       "relation": "calls",
       "_origin": "ast",
@@ -18908,7 +18955,7 @@
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_app_dashboard_reception_page_playchime",
       "relation": "calls",
       "_origin": "ast",
@@ -18920,7 +18967,7 @@
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_app_dashboard_reception_page_playcheckinchime",
       "relation": "calls",
       "_origin": "ast",
@@ -18932,19 +18979,7 @@
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
-      "target": "apps_web_src_lib_clinic_sync_clinicsyncprovider",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
-      "source_location": "L976",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_app_dashboard_reception_page_shiftpanel",
       "relation": "calls",
       "_origin": "ast",
@@ -18952,11 +18987,11 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
-      "source_location": "L998",
+      "source_location": "L997",
       "weight": 1.0
     },
     {
-      "source": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "source": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "target": "apps_web_src_components_design_system_button",
       "relation": "calls",
       "_origin": "ast",
@@ -18964,7 +18999,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
-      "source_location": "L999",
+      "source_location": "L998",
       "weight": 1.0
     },
     {
@@ -19048,7 +19083,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L362",
+      "source_location": "L295",
       "weight": 1.0
     },
     {
@@ -19060,7 +19095,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L371",
+      "source_location": "L341",
       "weight": 1.0
     },
     {
@@ -19072,7 +19107,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L373",
+      "source_location": "L355",
       "weight": 1.0
     },
     {
@@ -19084,7 +19119,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L400",
+      "source_location": "L419",
       "weight": 1.0
     },
     {
@@ -19096,7 +19131,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L401",
+      "source_location": "L424",
       "weight": 1.0
     },
     {
@@ -19108,7 +19143,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L267",
+      "source_location": "L579",
       "weight": 1.0
     },
     {
@@ -19120,7 +19155,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L301",
+      "source_location": "L623",
       "weight": 1.0
     },
     {
@@ -19132,7 +19167,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L301",
+      "source_location": "L623",
       "weight": 1.0
     },
     {
@@ -19144,7 +19179,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L305",
+      "source_location": "L628",
       "weight": 1.0
     },
     {
@@ -19156,19 +19191,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L306",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page_dashboardtodaypage",
-      "target": "apps_web_src_components_patientvaultpanel_patientvaultpanel",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L307",
+      "source_location": "L631",
       "weight": 1.0
     },
     {
@@ -19180,7 +19203,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L329",
+      "source_location": "L219",
       "weight": 1.0
     },
     {
@@ -19192,7 +19215,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L346",
+      "source_location": "L282",
       "weight": 1.0
     },
     {
@@ -19204,7 +19227,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L118",
+      "source_location": "L170",
       "weight": 1.0
     },
     {
@@ -19216,7 +19239,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L125",
+      "source_location": "L177",
       "weight": 1.0
     },
     {
@@ -27464,7 +27487,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L21",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -27476,31 +27499,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L21",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_components_voicedictation_voicedictation",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L22",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_components_patientvaultpanel_patientvaultpanel",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L23",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -27512,7 +27511,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L24",
+      "source_location": "L26",
       "weight": 1.0
     },
     {
@@ -27524,7 +27523,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -27536,7 +27535,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -27548,7 +27547,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -27560,7 +27559,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -34004,31 +34003,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L21",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_components_voicedictation",
-      "relation": "imports_from",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L22",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_components_patientvaultpanel",
-      "relation": "imports_from",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L23",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -34040,7 +34015,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L24",
+      "source_location": "L26",
       "weight": 1.0
     },
     {
@@ -34052,7 +34027,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L25",
+      "source_location": "L27",
       "weight": 1.0
     },
     {
@@ -40232,6 +40207,17 @@
     },
     {
       "source": "apps_web_src_app_dashboard_reception_page",
+      "target": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/reception/page.tsx",
+      "source_location": "L1146",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_reception_page",
       "target": "apps_web_src_app_dashboard_reception_page_shiftstate",
       "relation": "contains",
       "_origin": "ast",
@@ -40375,7 +40361,7 @@
     },
     {
       "source": "apps_web_src_app_dashboard_reception_page",
-      "target": "apps_web_src_app_dashboard_reception_page_receptioncommandcenter",
+      "target": "apps_web_src_app_dashboard_reception_page_receptioninner",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -40496,134 +40482,13 @@
     },
     {
       "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_vitalsfield",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L104",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_vitalsalert",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L116",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_bpstage",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L147",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_bmicategory",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L154",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_dashboardtodaypage",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L161",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_appointment",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L27",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_schedulepane",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L325",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_consultationpane",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L359",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_doctor",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L41",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_usercontext",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L49",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
-      "target": "apps_web_src_app_dashboard_today_page_speed_rx_molecules",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L59",
-      "weight": 1.0
-    },
-    {
-      "source": "apps_web_src_app_dashboard_today_page",
       "target": "apps_web_src_app_dashboard_today_page_api",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L69",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -40634,7 +40499,139 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "apps/web/src/app/dashboard/today/page.tsx",
-      "source_location": "L91",
+      "source_location": "L143",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_vitalsfield",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L156",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_vitalsalert",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L168",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_bpstage",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L199",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_bmicategory",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L206",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_schedulepane",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L213",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_appointment",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_consultationpane",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L292",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_dashboardtodaypage",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L439",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_doctor",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_usercontext",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_speed_rx_molecules",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L62",
+      "weight": 1.0
+    },
+    {
+      "source": "apps_web_src_app_dashboard_today_page",
+      "target": "apps_web_src_app_dashboard_today_page_mock_appointments",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "apps/web/src/app/dashboard/today/page.tsx",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -46363,5 +46360,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "41a6563bdd3ad71be85387ed71feb4161b883156"
+  "built_at_commit": "06fee3e8246c9776099994d23bcbfd1d37612214"
 }

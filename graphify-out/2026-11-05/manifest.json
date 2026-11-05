@@ -570,9 +570,9 @@
     "semantic_hash": "a26385cb476bf006384d96daad448a36"
   },
   "apps/web/src/app/dashboard/layout.tsx": {
-    "mtime": 1793782862.03015,
-    "seen": 1793787679.9236412,
-    "ast_hash": "e5379f8edc3ad33607134acb31a79c73",
+    "mtime": 1793789629.3896255,
+    "seen": 1793845346.97321,
+    "ast_hash": "027c79214cdad6d082afcf2aff2a7fe6",
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/page.tsx": {
@@ -1464,9 +1464,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/today/page.tsx": {
-    "mtime": 1793775833.559644,
-    "seen": 1793776684.785855,
-    "ast_hash": "7fe8a721c1877c6ee02370c633dad4be",
+    "mtime": 1793815479.6698258,
+    "seen": 1793845346.9738517,
+    "ast_hash": "8839cb1aa7cd9db6d46653ce5ab3013a",
     "semantic_hash": ""
   },
   "apps/web/src/components/MedicineSchedule.tsx": {
@@ -1524,9 +1524,21 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/reception/page.tsx": {
-    "mtime": 1793782476.9003308,
-    "seen": 1793787679.9246545,
-    "ast_hash": "1cee243d4e9d9da9fd5fbf060654a3d5",
+    "mtime": 1793789202.2944236,
+    "seen": 1793845346.9735959,
+    "ast_hash": "ad6cf6728575ae0c971cfe14cb2a320b",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/dashboard/today/patient-vault-panel.tsx": {
+    "mtime": 1793815487.6977222,
+    "seen": 1793845346.9738543,
+    "ast_hash": "2c3dfb74c95f0b10f433f74218409c62",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/design-system.tsx": {
+    "mtime": 1793788908.2853808,
+    "seen": 1793845346.9787102,
+    "ast_hash": "dcbae19563928ca427db0598dc0d236c",
     "semantic_hash": ""
   }
 }

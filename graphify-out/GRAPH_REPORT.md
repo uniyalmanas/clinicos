@@ -1,17 +1,17 @@
 # Graph Report - medic-sept-2026  (2026-11-05)
 
 ## Corpus Check
-- 202 files · ~356,499 words
+- 202 files · ~357,058 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: .example 2, (none) 2, .css 1)
 
 ## Summary
-- 1121 nodes · 2841 edges · 57 communities (50 shown, 7 thin omitted)
+- 1123 nodes · 2839 edges · 59 communities (52 shown, 7 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 43 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `41a6563b`
+- Built from commit: `06fee3e8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -27,7 +27,7 @@
 - inventory/route.ts
 - clinic-data.ts
 - display/waiting-room/page.tsx
-- react
+- ThemeToggle
 - DocSphere / ClinicOS 🩺
 - patients/route.ts
 - request-otp/route.ts
@@ -41,7 +41,7 @@
 - ref_crypto
 - ClinicOS — Remediation Plan & Feature Roadmap
 - finance/page.tsx
-- search/page.tsx
+- react
 - dashboard/layout.tsx
 - lis-parser.ts
 - middleware.ts
@@ -51,11 +51,11 @@
 - live-queue/route.ts
 - api.ts
 - call-token/route.ts
-- portal/page.tsx
+- doctors/[slug]/page.tsx
 - scripts
 - walk-in/route.ts
 - tailwind.config.ts
-- doctors/[slug]/page.tsx
+- BackButton
 - check-interactions/route.ts
 - generate/route.ts
 - reception/page.tsx
@@ -70,6 +70,8 @@
 - app/layout.tsx
 - next.config.mjs
 - postcss.config.mjs
+- beds/page.tsx
+- pharmacy/page.tsx
 - rules/graphify.md
 - workflows/graphify.md
 
@@ -100,7 +102,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (57 total, 7 thin omitted)
+## Communities (59 total, 7 thin omitted)
 
 ### Community 0 - "auth.ts"
 Cohesion: 0.07
@@ -123,8 +125,8 @@ Cohesion: 0.08
 Nodes (18): HomePage(), PediatricsIcon(), BrowseSpecialtiesSectionProps, DentistIcon(), DermatologyIcon(), DiabetologyIcon(), EntIcon(), GeneralPhysicianIcon() (+10 more)
 
 ### Community 5 - "today/page.tsx"
-Cohesion: 0.15
-Nodes (18): API, Appointment, bmiCategory(), bpStage(), ConsultationPane(), DashboardTodayPage(), Doctor, SchedulePane() (+10 more)
+Cohesion: 0.18
+Nodes (16): API, Appointment, bmiCategory(), bpStage(), ConsultationPane(), DashboardTodayPage(), Doctor, MOCK_APPOINTMENTS (+8 more)
 
 ### Community 6 - "ClinicOS / DocSphere — Project Report & Functional Test Results"
 Cohesion: 0.07
@@ -146,17 +148,17 @@ Nodes (24): ClinicProfilePage(), generateStaticParams(), Props, ClinicSessionTra
 Cohesion: 0.10
 Nodes (22): ClinicStandeeRoute(), DashboardDeskPage(), playTokenCallChime(), DashboardSettingsPage(), Doctor, ShiftGuardrail, TabType, TariffVersion (+14 more)
 
-### Community 11 - "react"
-Cohesion: 0.12
-Nodes (16): ClinicExpensesPage(), DoctorConsultIndexPage(), playTokenCallChime(), DoctorQueuePage(), ForDoctorsPage(), OnboardingPage(), PharmacyConsolePage(), PharmacyOrder (+8 more)
+### Community 11 - "ThemeToggle"
+Cohesion: 0.17
+Nodes (13): ClinicExpensesPage(), DoctorConsultIndexPage(), playTokenCallChime(), DoctorQueuePage(), ForDoctorsPage(), PharmacyConsolePage(), PharmacyOrder, ClinicFleetRecord (+5 more)
 
 ### Community 12 - "DocSphere / ClinicOS 🩺"
 Cohesion: 0.10
 Nodes (20): 1. ⚡ Doctor Consultation Studio, 2. 🛏️ Inpatient Wards & Acute Bed Management, 🏗️ 2-Tier Serverless Architecture, 3. 🔬 Diagnostic Pathology & LIS Studio, 4. 🏃 Physiotherapy & Rehabilitation Studio, 5. 🛡️ TPA & Cashless Insurance Desk, 6. 🇮🇳 Ayushman Bharat Digital Mission (ABDM), 7. 💵 Day-Closing EOD Cockpit & Doctor Splits (+12 more)
 
 ### Community 13 - "patients/route.ts"
-Cohesion: 0.19
-Nodes (18): dynamic, GET(), POST(), DashboardPatientsPage(), AllergyContraindicationCheck, checkAllergyConflict(), CLINICAL_OVERRIDE_REASON_CODES, EMRAllergy (+10 more)
+Cohesion: 0.07
+Nodes (44): dynamic, GET(), POST(), DashboardPatientsPage(), Allergy, AuthState, MePatient, PatientPortalPage() (+36 more)
 
 ### Community 14 - "request-otp/route.ts"
 Cohesion: 0.09
@@ -202,13 +204,13 @@ Nodes (32): 0. Executive plan, 10. Risk register, 11. Decisions I need from you,
 Cohesion: 0.28
 Nodes (11): DashboardFinancePage(), calculateDenominationTotal(), DenominationBreakdown, DoctorPayout, EXPENSE_APPROVAL_THRESHOLD_INR, ExpenseVoucher, PETTY_CASH_MIN_THRESHOLD_INR, PettyCashFloat (+3 more)
 
-### Community 25 - "search/page.tsx"
-Cohesion: 0.24
-Nodes (10): ALL_SEARCH_DOCTORS, DoctorPortrait(), normalizeSpecialty(), SearchDiscoveryContent(), SearchDiscoveryPage(), DoctorMapItem, GoogleTerrainMap(), initMap() (+2 more)
+### Community 25 - "react"
+Cohesion: 0.10
+Nodes (11): AdminTab, COMMON_SPEED_RX_MOLECULES, DashboardOverviewPage(), playTokenCallChime(), MapDoctor, Props, VoiceClinicRecorderProps, SIMPLE_TRANSLATIONS (+3 more)
 
 ### Community 26 - "dashboard/layout.tsx"
-Cohesion: 0.16
-Nodes (16): CLINIC_BOTTOM_NAV, CLINIC_CORE_NAV, CLINIC_MGMT_NAV, DashboardLayout(), FUTURE_MODULES, NavItem(), NavItemProps, ROLE_ALLOWLIST (+8 more)
+Cohesion: 0.17
+Nodes (14): CLINIC_BOTTOM_NAV, CLINIC_CORE_NAV, CLINIC_MGMT_NAV, DashboardLayout(), FUTURE_MODULES, NavItem(), NavItemProps, ROLE_ALLOWLIST (+6 more)
 
 ### Community 27 - "lis-parser.ts"
 Cohesion: 0.43
@@ -235,16 +237,16 @@ Cohesion: 0.67
 Nodes (3): dynamic, GET(), maskName()
 
 ### Community 33 - "api.ts"
-Cohesion: 0.06
-Nodes (27): DENOMINATION_VALUES, PettyExpense, SettlementItem, ShiftSettlementPage(), BedInfo, BedStatus, BillingLedgerEntry, BillingOverrideRecord (+19 more)
+Cohesion: 0.11
+Nodes (10): DENOMINATION_VALUES, PettyExpense, SettlementItem, ShiftSettlementPage(), AppointmentItem, DEFAULT_POLYCLINIC_DOCTORS, DoctorChamber, DocumentItem (+2 more)
 
 ### Community 34 - "call-token/route.ts"
 Cohesion: 0.18
 Nodes (8): dynamic, POST(), dynamic, POST(), dynamic, GET(), Listener, sseBroker
 
-### Community 35 - "portal/page.tsx"
-Cohesion: 0.15
-Nodes (20): Allergy, AuthState, MePatient, PatientPortalPage(), PatientPortalView(), PatientRecord, playTokenCallChime(), Visit (+12 more)
+### Community 35 - "doctors/[slug]/page.tsx"
+Cohesion: 0.25
+Nodes (8): DoctorProfilePage(), Props, AIReceptionistProps, AIReceptionistWidget(), ChatMessage, DoctorReviewsSection(), ReviewItem, ReviewsData
 
 ### Community 36 - "scripts"
 Cohesion: 0.12
@@ -254,9 +256,9 @@ Nodes (16): devDependencies, typescript, typescript, name, private, scripts, bui
 Cohesion: 0.67
 Nodes (3): cleanPhone(), dynamic, POST()
 
-### Community 39 - "doctors/[slug]/page.tsx"
-Cohesion: 0.18
-Nodes (13): DoctorProfilePage(), Props, destinationFor(), LoginForm(), LoginPage(), PatientPrescriptionLockerPage(), SEED_PRESCRIPTIONS, AIReceptionistProps (+5 more)
+### Community 39 - "BackButton"
+Cohesion: 0.29
+Nodes (8): destinationFor(), LoginForm(), LoginPage(), OnboardingPage(), PatientPrescriptionLockerPage(), SEED_PRESCRIPTIONS, BackButton(), BackButtonProps
 
 ### Community 40 - "check-interactions/route.ts"
 Cohesion: 0.40
@@ -267,8 +269,8 @@ Cohesion: 0.67
 Nodes (3): cleanPhone(), dynamic, POST()
 
 ### Community 42 - "reception/page.tsx"
-Cohesion: 0.17
-Nodes (19): API, DoctorCard(), DoctorCardProps, DoctorChamberState, PatientRow(), PatientRowProps, playCheckInChime(), playChime() (+11 more)
+Cohesion: 0.16
+Nodes (21): API, DoctorCard(), DoctorCardProps, DoctorChamberState, PatientRow(), PatientRowProps, playCheckInChime(), playChime() (+13 more)
 
 ### Community 43 - "scripts"
 Cohesion: 0.40
@@ -287,8 +289,8 @@ Cohesion: 0.11
 Nodes (25): ALLOWED_PLANS, dynamic, GET(), POST(), superAdmin(), clinicBedIds(), dynamic, GET() (+17 more)
 
 ### Community 47 - "next"
-Cohesion: 0.08
-Nodes (9): dynamic, GET(), AdminTab, COMMON_SPEED_RX_MOLECULES, DashboardOverviewPage(), playTokenCallChime(), MapDoctor, Props (+1 more)
+Cohesion: 0.11
+Nodes (7): dynamic, GET(), SpecialtiesPage(), BrowseSpecialtiesSection(), SiteHeader(), SiteHeaderProps, next
 
 ### Community 48 - "MedicineSchedule.tsx"
 Cohesion: 0.33
@@ -299,25 +301,33 @@ Cohesion: 0.29
 Nodes (6): ChamberStatus, DoctorChamberState, QueueEvent, SyncContext, SyncContextType, useClinicSync()
 
 ### Community 50 - "PatientVaultPanel.tsx"
-Cohesion: 0.40
+Cohesion: 0.33
 Nodes (4): DOC_TYPE_ICONS, DOC_TYPE_LABELS, Document, PatientVaultPanelProps
 
+### Community 54 - "beds/page.tsx"
+Cohesion: 0.20
+Nodes (8): BedInfo, BedStatus, BillingLedgerEntry, BillingOverrideRecord, CareTask, DischargeInvoice, ShiftHandoverRecord, WardInfo
+
+### Community 55 - "pharmacy/page.tsx"
+Cohesion: 0.25
+Nodes (6): PharmacyBatchItem, PharmacyBill, PharmacyBillItem, ReturnChallan, ScheduleH1Log, StockTransfer
+
 ## Knowledge Gaps
-- **451 isolated node(s):** `nextConfig`, `name`, `version`, `private`, `dev` (+446 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 515 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **452 isolated node(s):** `nextConfig`, `name`, `version`, `private`, `dev` (+447 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 518 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `next` to `logAudit`, `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `db.ts`, `inventory/route.ts`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `react`, `patients/route.ts`, `request-otp/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `ref_crypto`, `finance/page.tsx`, `search/page.tsx`, `dashboard/layout.tsx`, `middleware.ts`, `apiError`, `live-queue/route.ts`, `api.ts`, `call-token/route.ts`, `portal/page.tsx`, `walk-in/route.ts`, `doctors/[slug]/page.tsx`, `check-interactions/route.ts`, `generate/route.ts`, `reception/page.tsx`, `guard`, `sql`, `app/layout.tsx`?**
-  _High betweenness centrality (0.441) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `finance/page.tsx`, `search/page.tsx`, `dashboard/layout.tsx`, `api.ts`, `portal/page.tsx`, `doctors/[slug]/page.tsx`, `reception/page.tsx`, `design-system.tsx`, `next`, `MedicineSchedule.tsx`, `clinic-sync.tsx`, `PatientVaultPanel.tsx`?**
-  _High betweenness centrality (0.076) - this node is a cross-community bridge._
-- **Why does `sql` connect `sql` to `live-queue/route.ts`, `logAudit`, `call-token/route.ts`, `walk-in/route.ts`, `db.ts`, `inventory/route.ts`, `generate/route.ts`, `clinic-data.ts`, `guard`, `patients/route.ts`, `request-otp/route.ts`, `claims/[id]/route.ts`, `book/page.tsx`, `ref_crypto`, `apiError`?**
-  _High betweenness centrality (0.075) - this node is a cross-community bridge._
+- **Why does `next` connect `next` to `logAudit`, `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `db.ts`, `inventory/route.ts`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `request-otp/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `ref_crypto`, `finance/page.tsx`, `react`, `dashboard/layout.tsx`, `middleware.ts`, `apiError`, `live-queue/route.ts`, `api.ts`, `call-token/route.ts`, `doctors/[slug]/page.tsx`, `walk-in/route.ts`, `BackButton`, `check-interactions/route.ts`, `generate/route.ts`, `reception/page.tsx`, `guard`, `sql`, `app/layout.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`?**
+  _High betweenness centrality (0.450) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `api.ts`, `doctors/[slug]/page.tsx`, `BackButton`, `reception/page.tsx`, `design-system.tsx`, `next`, `MedicineSchedule.tsx`, `clinic-sync.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`?**
+  _High betweenness centrality (0.079) - this node is a cross-community bridge._
+- **Why does `lucide-react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `api.ts`, `doctors/[slug]/page.tsx`, `BackButton`, `reception/page.tsx`, `design-system.tsx`, `next`, `MedicineSchedule.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`?**
+  _High betweenness centrality (0.073) - this node is a cross-community bridge._
 - **What connects `nextConfig`, `name`, `version` to the rest of the system?**
-  _451 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _452 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `auth.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.06507936507936508 - nodes in this community are weakly interconnected._
 - **Should `logAudit` be split into smaller, more focused modules?**

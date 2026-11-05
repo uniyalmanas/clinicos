@@ -695,10 +695,10 @@ function ShiftPanel({ shift, onOpenShift, onCloseShift }: ShiftPanelProps) {
 }
 
 // ─────────────────────────────────────────────────────────
-// Main Reception Command Center
+// Inner reception content — consumes ClinicSync context
 // ─────────────────────────────────────────────────────────
 
-export default function ReceptionCommandCenter() {
+function ReceptionInner() {
   const [doctors, setDoctors] = useState<DoctorChamberState[]>([
     {
       doctorSlug: "dr-rahul-sharma",
@@ -973,170 +973,180 @@ export default function ReceptionCommandCenter() {
   );
 
   return (
-    <ClinicSyncProvider>
-      <div className="h-full flex flex-col bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7]">
-        {/* ── TOP HEADER ── */}
-        <header className="h-14 shrink-0 flex items-center justify-between border-b border-black/[0.06] bg-white/90 dark:border-white/[0.08] dark:bg-black/90 sticky top-0 z-20 backdrop-blur px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="rounded-lg p-2 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition">
-              <ChevronLeft className="h-4 w-4 text-[#86868B] dark:text-[#636366]" />
-            </Link>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-black text-[#1D1D1F] dark:text-white tracking-tight">Reception Command Center</span>
-                  <span className="text-[10px] text-[#86868B] dark:text-[#636366]">Front Desk · {TODAY_STR}</span>
-                </div>
+    <div className="h-full flex flex-col bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7]">
+      {/* ── TOP HEADER ── */}
+      <header className="h-14 shrink-0 flex items-center justify-between border-b border-black/[0.06] bg-white/90 dark:border-white/[0.08] dark:bg-black/90 sticky top-0 z-20 backdrop-blur px-6 py-4">
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="rounded-lg p-2 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition">
+            <ChevronLeft className="h-4 w-4 text-[#86868B] dark:text-[#636366]" />
+          </Link>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+                <Users className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-black text-[#1D1D1F] dark:text-white tracking-tight">Reception Command Center</span>
+                <span className="text-[10px] text-[#86868B] dark:text-[#636366]">Front Desk · {TODAY_STR}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <ShiftPanel shift={shift} onOpenShift={handleOpenShift} onCloseShift={handleCloseShift} />
-            <Button variant="primary" onClick={() => setWalkinOpen(true)} fullWidth>
-              <UserPlus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Walk-in</span>
-            </Button>
-            <span className="w-px h-4 bg-black/[0.1] dark:bg-white/[0.1]" />
-            <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${
-              connected
-                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
-                : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 animate-pulse"
-            }`}>
-              {connected ? "Live Sync" : "Reconnecting…"}
-            </span>
-          </div>
-        </header>
+        <div className="flex items-center gap-2">
+          <ShiftPanel shift={shift} onOpenShift={handleOpenShift} onCloseShift={handleCloseShift} />
+          <Button variant="primary" onClick={() => setWalkinOpen(true)} fullWidth>
+            <UserPlus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Walk-in</span>
+          </Button>
+          <span className="w-px h-4 bg-black/[0.1] dark:bg-white/[0.1]" />
+          <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${
+            connected
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+              : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 animate-pulse"
+          }`}>
+            {connected ? "Live Sync" : "Reconnecting…"}
+          </span>
+        </div>
+      </header>
 
-        {/* Toast */}
-        {toast && (
-          <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-[#1D1D1F] px-4 py-3 text-xs font-bold text-white shadow-2xl border border-white/10 animate-in fade-in">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-            <span>{toast}</span>
-            <button onClick={() => setToast(null)} className="ml-2 text-white/60 hover:text-white">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-[#1D1D1F] px-4 py-3 text-xs font-bold text-white shadow-2xl border border-white/10 animate-in fade-in">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span>{toast}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-white/60 hover:text-white">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {/* ── ROW 1: DOCTOR AVAILABILITY BOARD ── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {displayDoctors.map((doc) => {
-              const docQueue = queue.filter((q) => q.doctor_slug === doc.doctorSlug);
-              const waiting = docQueue.filter(
-                (q) => q.status === "arrived" || q.status === "booked" || q.status === "confirmed"
-              ).length;
-              const inConsult = docQueue.find((q) => q.status === "in_consultation");
-              return (
-                <DoctorCard
-                  key={doc.doctorSlug}
-                  doctor={doc}
-                  queue={queue}
-                  onCallNext={handleCallNext}
-                  onSetAway={handleSetAway}
-                  onSetIdle={handleSetIdle}
-                  onTransfer={handleTransfer}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        {/* ── ROW 1: DOCTOR AVAILABILITY BOARD ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {displayDoctors.map((doc) => {
+            const docQueue = queue.filter((q) => q.doctor_slug === doc.doctorSlug);
+            const waiting = docQueue.filter(
+              (q) => q.status === "arrived" || q.status === "booked" || q.status === "confirmed"
+            ).length;
+            const inConsult = docQueue.find((q) => q.status === "in_consultation");
+            return (
+              <DoctorCard
+                key={doc.doctorSlug}
+                doctor={doc}
+                queue={queue}
+                onCallNext={handleCallNext}
+                onSetAway={handleSetAway}
+                onSetIdle={handleSetIdle}
+                onTransfer={handleTransfer}
+              />
+            );
+          })}
+        </div>
+
+        {/* ── ROW 2: METRICS ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <Card variant="elevated" className="p-4">
+            <div className="text-[10px] font-bold uppercase text-[#6E6E73] dark:text-[#A1A1A6] mb-2">Total Queue</div>
+            <div className="text-2xl font-black font-mono text-[#1D1D1F] dark:text-white">{queue.length}</div>
+          </Card>
+          <Card variant="elevated" className="p-4 border-amber-500/30">
+            <div className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400 mb-2">Waiting</div>
+            <div className="text-2xl font-black font-mono text-amber-700 dark:text-amber-400">{waitingCount}</div>
+          </Card>
+          <Card variant="elevated" className="p-4 border-emerald-500/30">
+            <div className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 mb-2">In Chamber</div>
+            <div className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-400">{inConsultCount}</div>
+          </Card>
+          <Card variant="elevated" className="p-4 border-blue-500/30">
+            <div className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-400 mb-2">Collected</div>
+            <div className="text-2xl font-black font-mono text-blue-700 dark:text-blue-400">₹{totalCollected.toLocaleString("en-IN")}</div>
+          </Card>
+        </div>
+
+        {/* ── ROW 3: UNIFIED PATIENT QUEUE ── */}
+        <div className="rounded-2xl border border-black/[0.06] bg-white p-0 dark:border-white/[0.08] dark:bg-[#1C1C1E] shadow-2xs overflow-hidden">
+          <div className="flex items-center justify-between border-b border-black/[0.06] pb-4 mb-4 px-5 dark:border-white/[0.08]">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
+              <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                Unified Patient Queue ({filteredQueue.length})
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={filterDoctor || ""}
+                onChange={(e) => setFilterDoctor(e.target.value || null)}
+                className="rounded-lg border border-black/[0.08] bg-[#F5F6F9] px-2 py-1 text-[10px] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-[#0071E3]/20"
+              >
+                <option value="">All Doctors</option>
+                {displayDoctors.map((d) => (
+                  <option key={d.doctorSlug} value={d.doctorSlug}>{d.doctorName}</option>
+                ))}
+              </select>
+              <div className="relative">
+                <Activity className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search patient, token, phone…"
+                  className="w-48 rounded-lg border border-black/[0.08] bg-[#F5F6F9] pl-8 pr-2 py-1.5 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-[#0071E3]/20"
                 />
-              );
-            })}
-          </div>
-
-          {/* ── ROW 2: METRICS ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <Card variant="elevated" className="p-4">
-              <div className="text-[10px] font-bold uppercase text-[#6E6E73] dark:text-[#A1A1A6] mb-2">Total Queue</div>
-              <div className="text-2xl font-black font-mono text-[#1D1D1F] dark:text-white">{queue.length}</div>
-            </Card>
-            <Card variant="elevated" className="p-4 border-amber-500/30">
-              <div className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400 mb-2">Waiting</div>
-              <div className="text-2xl font-black font-mono text-amber-700 dark:text-amber-400">{waitingCount}</div>
-            </Card>
-            <Card variant="elevated" className="p-4 border-emerald-500/30">
-              <div className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 mb-2">In Chamber</div>
-              <div className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-400">{inConsultCount}</div>
-            </Card>
-            <Card variant="elevated" className="p-4 border-blue-500/30">
-              <div className="text-[10px] font-bold uppercase text-blue-700 dark:text-blue-400 mb-2">Collected</div>
-              <div className="text-2xl font-black font-mono text-blue-700 dark:text-blue-400">₹{totalCollected.toLocaleString("en-IN")}</div>
-            </Card>
-          </div>
-
-          {/* ── ROW 3: UNIFIED PATIENT QUEUE ── */}
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-0 dark:border-white/[0.08] dark:bg-[#1C1C1E] shadow-2xs overflow-hidden">
-            <div className="flex items-center justify-between border-b border-black/[0.06] pb-4 mb-4 px-5 dark:border-white/[0.08]">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-                <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
-                  Unified Patient Queue ({filteredQueue.length})
-                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={filterDoctor || ""}
-                  onChange={(e) => setFilterDoctor(e.target.value || null)}
-                  className="rounded-lg border border-black/[0.08] bg-[#F5F6F9] px-2 py-1 text-[10px] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-[#0071E3]/20"
-                >
-                  <option value="">All Doctors</option>
-                  {displayDoctors.map((d) => (
-                    <option key={d.doctorSlug} value={d.doctorSlug}>{d.doctorName}</option>
-                  ))}
-                </select>
-                <div className="relative">
-                  <Activity className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search patient, token, phone…"
-                    className="w-48 rounded-lg border border-black/[0.08] bg-[#F5F6F9] pl-8 pr-2 py-1.5 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-[#0071E3]/20"
+            </div>
+          </div>
+
+          <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
+            {filteredQueue.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-black/[0.06] p-12 text-center text-xs text-[#86868B] dark:border-white/[0.06]">
+                <Activity className="h-8 w-8 mx-auto mb-2 text-[#86868B] dark:text-[#636366]" />
+                <p>No patients in queue.</p>
+              </div>
+            ) : (
+              filteredQueue.map((patient) => {
+                const doc = doctorMap.get(patient.doctor_slug);
+                return (
+                  <PatientRow
+                    key={patient.id}
+                    patient={patient}
+                    doctorName={doc?.doctorName || "Unknown Doctor"}
+                    onCall={handleCallNext}
+                    onComplete={handleComplete}
+                    onTogglePayment={handleTogglePayment}
+                    onNoShow={handleNoShow}
+                    onTransfer={handleTransfer}
+                    doctors={displayDoctors}
                   />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-1 max-h-[60vh] overflow-y-auto pr-1">
-              {filteredQueue.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-black/[0.06] p-12 text-center text-xs text-[#86868B] dark:border-white/[0.06]">
-                  <Activity className="h-8 w-8 mx-auto mb-2 text-[#86868B] dark:text-[#636366]" />
-                  <p>No patients in queue.</p>
-                </div>
-              ) : (
-                filteredQueue.map((patient) => {
-                  const doc = doctorMap.get(patient.doctor_slug);
-                  return (
-                    <PatientRow
-                      key={patient.id}
-                      patient={patient}
-                      doctorName={doc?.doctorName || "Unknown Doctor"}
-                      onCall={handleCallNext}
-                      onComplete={handleComplete}
-                      onTogglePayment={handleTogglePayment}
-                      onNoShow={handleNoShow}
-                      onTransfer={handleTransfer}
-                      doctors={displayDoctors}
-                    />
-                  );
-                })
-              )}
-            </div>
+                );
+              })
+            )}
           </div>
+        </div>
 
-          {/* Walk-in Modal */}
-          {walkinOpen && (
-            <WalkinModal
-              open={walkinOpen}
-              onClose={() => setWalkinOpen(false)}
-              onSubmit={handleWalkinSubmit}
-              doctors={displayDoctors}
-              loading={walkinLoading}
-            />
-          )}
-        </main>
-      </div>
+        {/* Walk-in Modal */}
+        {walkinOpen && (
+          <WalkinModal
+            open={walkinOpen}
+            onClose={() => setWalkinOpen(false)}
+            onSubmit={handleWalkinSubmit}
+            doctors={displayDoctors}
+            loading={walkinLoading}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+// Main Reception Command Center — wraps inner content in ClinicSyncProvider
+// ─────────────────────────────────────────────────────────
+
+export default function ReceptionCommandCenter() {
+  return (
+    <ClinicSyncProvider>
+      <ReceptionInner />
     </ClinicSyncProvider>
   );
 }

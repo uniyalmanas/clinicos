@@ -155,7 +155,7 @@ export function Card({
 
   const VARIANT_STYLES: Record<string, string> = {
     default: `${DESIGN_TOKENS.colors.surfaceCard} ${DESIGN_TOKENS.colors.border}`,
-    elevated: `${DESIGN_TOKENS.colors.surfaceElevated} ${DESIGN_TOKENS.shadow.lg}`,
+    elevated: `${DESIGN_TOKENS.colors.surfaceElevated} ${DESIGN_TOKENS.shadow.lg} border border-black/[0.04] dark:border-white/[0.08]`,
     outlined: `${DESIGN_TOKENS.colors.border} bg-transparent`,
   };
 
