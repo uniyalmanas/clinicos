@@ -1,17 +1,17 @@
 # Graph Report - medic-sept-2026  (2026-11-05)
 
 ## Corpus Check
-- 202 files · ~357,058 words
+- 202 files · ~357,105 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: .example 2, (none) 2, .css 1)
 
 ## Summary
-- 1123 nodes · 2839 edges · 59 communities (52 shown, 7 thin omitted)
+- 1123 nodes · 2838 edges · 67 communities (60 shown, 7 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 43 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `06fee3e8`
+- Built from commit: `9e21c286`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,7 +36,7 @@
 - web/package.json
 - schedule/page.tsx
 - check-in/page.tsx
-- book/page.tsx
+- ClinicOS: Architecture & Engineering Reality Audit
 - dependencies
 - ref_crypto
 - ClinicOS — Remediation Plan & Feature Roadmap
@@ -49,12 +49,12 @@
 - devDependencies
 - manifest.json
 - live-queue/route.ts
-- api.ts
+- settlement/page.tsx
 - call-token/route.ts
-- doctors/[slug]/page.tsx
+- book/page.tsx
 - scripts
 - walk-in/route.ts
-- tailwind.config.ts
+- download_full_library.mjs
 - BackButton
 - check-interactions/route.ts
 - generate/route.ts
@@ -67,13 +67,21 @@
 - MedicineSchedule.tsx
 - clinic-sync.tsx
 - PatientVaultPanel.tsx
-- app/layout.tsx
+- test_live_suite.mjs
 - next.config.mjs
 - postcss.config.mjs
 - beds/page.tsx
 - pharmacy/page.tsx
 - rules/graphify.md
 - workflows/graphify.md
+- fix_superadmin.mjs
+- 5. Functional test results (executed)
+- SiteHeader.tsx
+- chambers/page.tsx
+- getJwtSecret
+- 11. Prioritized roadmap
+- 7. Security findings (prioritized)
+- api/auth/me/route.ts
 
 ## God Nodes (most connected - your core abstractions)
 1. `sql` - 189 edges
@@ -96,17 +104,17 @@
   REMEDIATION_AND_ROADMAP_PLAN.md → apps/web/src/lib/api-auth.ts
 - `6. What I fixed during this pass` --references--> `authorizeSuperAdmin()`  [INFERRED]
   CLINICOS_ANALYSIS_REPORT.md → apps/web/src/lib/auth.ts
-- `Key Protections` --references--> `getJwtSecret()`  [INFERRED]
+- `1. Authentication vs. Authorization (RBAC)` --references--> `authorizeClinicUser()`  [INFERRED]
   PROJECT_REALITY_AUDIT.md → apps/web/src/lib/auth.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (59 total, 7 thin omitted)
+## Communities (67 total, 7 thin omitted)
 
 ### Community 0 - "auth.ts"
-Cohesion: 0.07
-Nodes (34): GuardAuth, AUTH_COOKIE_OPTIONS, AuthClinic, AuthContext, AuthDoctor, AuthMembership, authorizeClinicUser(), AuthorizeResult (+26 more)
+Cohesion: 0.14
+Nodes (17): GuardAuth, AUTH_COOKIE_OPTIONS, AuthClinic, AuthContext, AuthDoctor, AuthMembership, authorizeClinicUser(), AuthorizeResult (+9 more)
 
 ### Community 1 - "logAudit"
 Cohesion: 0.07
@@ -117,8 +125,8 @@ Cohesion: 0.07
 Nodes (35): DynamicConsultationStudioPage(), PrescribedMedicine, DiagnosticOrder, ParameterResult, QualityControlRun, StandaloneConsultationPage(), CLINICAL_DIAGNOSIS_PROTOCOLS, DiagnosisProtocol (+27 more)
 
 ### Community 3 - "migrate.mjs"
-Cohesion: 0.06
-Nodes (33): bcryptjs, postgres, allHumaaans, clinicalDir, clinicalPhotos, doctorsDir, downloadFile(), illustrationsDir (+25 more)
+Cohesion: 0.19
+Nodes (12): args, connectionString, __dirname, dryRun, fileArgIndex, listMigrations(), main(), migrationsDir (+4 more)
 
 ### Community 4 - "BrowseSpecialtiesSection.tsx"
 Cohesion: 0.08
@@ -129,8 +137,8 @@ Cohesion: 0.18
 Nodes (16): API, Appointment, bmiCategory(), bpStage(), ConsultationPane(), DashboardTodayPage(), Doctor, MOCK_APPOINTMENTS (+8 more)
 
 ### Community 6 - "ClinicOS / DocSphere — Project Report & Functional Test Results"
-Cohesion: 0.07
-Nodes (28): 10. Product assessment against the "lightweight but powerful" goal, 11. Prioritized roadmap, 12. How to run and reproduce these results, 13. Bottom line, 1. Executive summary, 2. What this product actually is, 3. Architecture (as verified, not as documented), 4. Feature inventory & runtime status (+20 more)
+Cohesion: 0.17
+Nodes (11): 10. Product assessment against the "lightweight but powerful" goal, 12. How to run and reproduce these results, 13. Bottom line, 1. Executive summary, 2. What this product actually is, 3. Architecture (as verified, not as documented), 4. Feature inventory & runtime status, 8. Data & schema governance (+3 more)
 
 ### Community 7 - "db.ts"
 Cohesion: 0.13
@@ -149,8 +157,8 @@ Cohesion: 0.10
 Nodes (22): ClinicStandeeRoute(), DashboardDeskPage(), playTokenCallChime(), DashboardSettingsPage(), Doctor, ShiftGuardrail, TabType, TariffVersion (+14 more)
 
 ### Community 11 - "ThemeToggle"
-Cohesion: 0.17
-Nodes (13): ClinicExpensesPage(), DoctorConsultIndexPage(), playTokenCallChime(), DoctorQueuePage(), ForDoctorsPage(), PharmacyConsolePage(), PharmacyOrder, ClinicFleetRecord (+5 more)
+Cohesion: 0.12
+Nodes (16): ClinicExpensesPage(), DoctorConsultIndexPage(), playTokenCallChime(), DoctorQueuePage(), ForDoctorsPage(), PharmacyConsolePage(), PharmacyOrder, ClinicFleetRecord (+8 more)
 
 ### Community 12 - "DocSphere / ClinicOS 🩺"
 Cohesion: 0.10
@@ -173,8 +181,8 @@ Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
 ### Community 17 - "web/package.json"
-Cohesion: 0.12
-Nodes (15): typescript, name, private, version, clsx, postcss, react-dom, tailwind-merge (+7 more)
+Cohesion: 0.11
+Nodes (17): typescript, name, private, version, config, clsx, postcss, react-dom (+9 more)
 
 ### Community 18 - "schedule/page.tsx"
 Cohesion: 0.18
@@ -184,9 +192,9 @@ Nodes (16): API, BlockDate(), BlockDateProps, BlockedSlot, DAYS_OF_WEEK, Doctor,
 Cohesion: 0.25
 Nodes (10): API, CheckInKioskPage(), Doctor, KioskButton(), playCheckInChime(), QrCodeDisplay(), Step, STEP_LABELS (+2 more)
 
-### Community 20 - "book/page.tsx"
-Cohesion: 0.36
-Nodes (7): BookingExperience(), fetchApiDoctors(), BookPage(), DoctorAvatar(), normalizeSpecialty(), generateStaticParams(), getDoctors()
+### Community 20 - "ClinicOS: Architecture & Engineering Reality Audit"
+Cohesion: 0.15
+Nodes (12): 2. Eradication of Hardcoded Bypass PINs, 3. Concurrency & Queue Token Integrity, 4. Medical Document Security (Vault), 5. Doctor Authority & Prescription Integrity, 6. Payment Integrity (Razorpay HMAC), 7. Canonical Database Baseline, 8. SaaS Business Model & Pricing Alignment, 9. Verification & Operational Status (+4 more)
 
 ### Community 21 - "dependencies"
 Cohesion: 0.12
@@ -209,7 +217,7 @@ Cohesion: 0.10
 Nodes (11): AdminTab, COMMON_SPEED_RX_MOLECULES, DashboardOverviewPage(), playTokenCallChime(), MapDoctor, Props, VoiceClinicRecorderProps, SIMPLE_TRANSLATIONS (+3 more)
 
 ### Community 26 - "dashboard/layout.tsx"
-Cohesion: 0.17
+Cohesion: 0.16
 Nodes (14): CLINIC_BOTTOM_NAV, CLINIC_CORE_NAV, CLINIC_MGMT_NAV, DashboardLayout(), FUTURE_MODULES, NavItem(), NavItemProps, ROLE_ALLOWLIST (+6 more)
 
 ### Community 27 - "lis-parser.ts"
@@ -236,17 +244,17 @@ Nodes (8): background_color, description, display, icons, name, short_name, star
 Cohesion: 0.67
 Nodes (3): dynamic, GET(), maskName()
 
-### Community 33 - "api.ts"
-Cohesion: 0.11
-Nodes (10): DENOMINATION_VALUES, PettyExpense, SettlementItem, ShiftSettlementPage(), AppointmentItem, DEFAULT_POLYCLINIC_DOCTORS, DoctorChamber, DocumentItem (+2 more)
+### Community 33 - "settlement/page.tsx"
+Cohesion: 0.33
+Nodes (4): DENOMINATION_VALUES, PettyExpense, SettlementItem, ShiftSettlementPage()
 
 ### Community 34 - "call-token/route.ts"
 Cohesion: 0.18
 Nodes (8): dynamic, POST(), dynamic, POST(), dynamic, GET(), Listener, sseBroker
 
-### Community 35 - "doctors/[slug]/page.tsx"
-Cohesion: 0.25
-Nodes (8): DoctorProfilePage(), Props, AIReceptionistProps, AIReceptionistWidget(), ChatMessage, DoctorReviewsSection(), ReviewItem, ReviewsData
+### Community 35 - "book/page.tsx"
+Cohesion: 0.15
+Nodes (15): BookingExperience(), fetchApiDoctors(), BookPage(), DoctorAvatar(), normalizeSpecialty(), DoctorProfilePage(), generateStaticParams(), Props (+7 more)
 
 ### Community 36 - "scripts"
 Cohesion: 0.12
@@ -255,6 +263,10 @@ Nodes (16): devDependencies, typescript, typescript, name, private, scripts, bui
 ### Community 37 - "walk-in/route.ts"
 Cohesion: 0.67
 Nodes (3): cleanPhone(), dynamic, POST()
+
+### Community 38 - "download_full_library.mjs"
+Cohesion: 0.20
+Nodes (8): allHumaaans, clinicalDir, clinicalPhotos, doctorsDir, downloadFile(), illustrationsDir, main(), root
 
 ### Community 39 - "BackButton"
 Cohesion: 0.29
@@ -288,10 +300,6 @@ Nodes (14): BADGE_STYLES, BadgeProps, ButtonProps, ButtonVariant, CardProps, Inp
 Cohesion: 0.11
 Nodes (25): ALLOWED_PLANS, dynamic, GET(), POST(), superAdmin(), clinicBedIds(), dynamic, GET() (+17 more)
 
-### Community 47 - "next"
-Cohesion: 0.11
-Nodes (7): dynamic, GET(), SpecialtiesPage(), BrowseSpecialtiesSection(), SiteHeader(), SiteHeaderProps, next
-
 ### Community 48 - "MedicineSchedule.tsx"
 Cohesion: 0.33
 Nodes (6): FREQUENCY_TO_TIMES, Medicine, MedicineSchedule(), MedicineScheduleProps, parseFrequency(), TIME_LABELS
@@ -304,6 +312,10 @@ Nodes (6): ChamberStatus, DoctorChamberState, QueueEvent, SyncContext, SyncConte
 Cohesion: 0.33
 Nodes (4): DOC_TYPE_ICONS, DOC_TYPE_LABELS, Document, PatientVaultPanelProps
 
+### Community 51 - "test_live_suite.mjs"
+Cohesion: 0.31
+Nodes (8): postgres, assert(), __dirname, main(), root, sql, testDatabaseSchema(), testHttpEndpoints()
+
 ### Community 54 - "beds/page.tsx"
 Cohesion: 0.20
 Nodes (8): BedInfo, BedStatus, BillingLedgerEntry, BillingOverrideRecord, CareTask, DischargeInvoice, ShiftHandoverRecord, WardInfo
@@ -311,6 +323,34 @@ Nodes (8): BedInfo, BedStatus, BillingLedgerEntry, BillingOverrideRecord, CareTa
 ### Community 55 - "pharmacy/page.tsx"
 Cohesion: 0.25
 Nodes (6): PharmacyBatchItem, PharmacyBill, PharmacyBillItem, ReturnChallan, ScheduleH1Log, StockTransfer
+
+### Community 58 - "fix_superadmin.mjs"
+Cohesion: 0.25
+Nodes (5): bcryptjs, __dirname, main(), root, sql
+
+### Community 59 - "5. Functional test results (executed)"
+Cohesion: 0.25
+Nodes (8): 5.1 Pages — 10/10 returned 200, 5.2 Public read APIs — 7/7 returned 200, 5.3 Authentication, 5.4 Patient-record masking (privacy), 5.5 Tenant & role isolation, 5.6 Write flows, 5.7 Database, 5. Functional test results (executed)
+
+### Community 60 - "SiteHeader.tsx"
+Cohesion: 0.43
+Nodes (4): SpecialtiesPage(), BrowseSpecialtiesSection(), SiteHeader(), SiteHeaderProps
+
+### Community 61 - "chambers/page.tsx"
+Cohesion: 0.40
+Nodes (3): AppointmentItem, DEFAULT_POLYCLINIC_DOCTORS, DoctorChamber
+
+### Community 62 - "getJwtSecret"
+Cohesion: 0.40
+Nodes (5): getJwtSecret(), verifyAccessToken(), 1. Authentication vs. Authorization (RBAC), Key Protections, Pipeline Execution Flow
+
+### Community 64 - "11. Prioritized roadmap"
+Cohesion: 0.40
+Nodes (5): 11. Prioritized roadmap, Sprint 0 — before any real clinic data (1–2 weeks), Sprint 1 — correctness & data (2–3 weeks), Sprint 2 — hardening (3–4 weeks), Sprint 3 — product focus
+
+### Community 65 - "7. Security findings (prioritized)"
+Cohesion: 0.50
+Nodes (4): 7. Security findings (prioritized), P0 — must fix before any real patient data, P1 — fix before onboarding a second clinic, P2 — hardening
 
 ## Knowledge Gaps
 - **452 isolated node(s):** `nextConfig`, `name`, `version`, `private`, `dev` (+447 more)
@@ -320,16 +360,16 @@ Nodes (6): PharmacyBatchItem, PharmacyBill, PharmacyBillItem, ReturnChallan, Sch
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `next` to `logAudit`, `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `db.ts`, `inventory/route.ts`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `request-otp/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `ref_crypto`, `finance/page.tsx`, `react`, `dashboard/layout.tsx`, `middleware.ts`, `apiError`, `live-queue/route.ts`, `api.ts`, `call-token/route.ts`, `doctors/[slug]/page.tsx`, `walk-in/route.ts`, `BackButton`, `check-interactions/route.ts`, `generate/route.ts`, `reception/page.tsx`, `guard`, `sql`, `app/layout.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`?**
+- **Why does `next` connect `next` to `logAudit`, `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `db.ts`, `inventory/route.ts`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `request-otp/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `ref_crypto`, `finance/page.tsx`, `react`, `dashboard/layout.tsx`, `middleware.ts`, `apiError`, `live-queue/route.ts`, `settlement/page.tsx`, `call-token/route.ts`, `book/page.tsx`, `walk-in/route.ts`, `BackButton`, `check-interactions/route.ts`, `generate/route.ts`, `reception/page.tsx`, `guard`, `sql`, `beds/page.tsx`, `pharmacy/page.tsx`, `SiteHeader.tsx`, `chambers/page.tsx`, `api/auth/me/route.ts`?**
   _High betweenness centrality (0.450) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `api.ts`, `doctors/[slug]/page.tsx`, `BackButton`, `reception/page.tsx`, `design-system.tsx`, `next`, `MedicineSchedule.tsx`, `clinic-sync.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`?**
+- **Why does `react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `settlement/page.tsx`, `book/page.tsx`, `BackButton`, `reception/page.tsx`, `design-system.tsx`, `next`, `MedicineSchedule.tsx`, `clinic-sync.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`, `SiteHeader.tsx`, `chambers/page.tsx`?**
   _High betweenness centrality (0.079) - this node is a cross-community bridge._
-- **Why does `lucide-react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `book/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `api.ts`, `doctors/[slug]/page.tsx`, `BackButton`, `reception/page.tsx`, `design-system.tsx`, `next`, `MedicineSchedule.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`?**
+- **Why does `lucide-react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `ThemeToggle`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `settlement/page.tsx`, `book/page.tsx`, `BackButton`, `reception/page.tsx`, `design-system.tsx`, `next`, `MedicineSchedule.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `pharmacy/page.tsx`, `SiteHeader.tsx`, `chambers/page.tsx`?**
   _High betweenness centrality (0.073) - this node is a cross-community bridge._
 - **What connects `nextConfig`, `name`, `version` to the rest of the system?**
   _452 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `auth.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.06507936507936508 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13725490196078433 - nodes in this community are weakly interconnected._
 - **Should `logAudit` be split into smaller, more focused modules?**
   _Cohesion score 0.06648936170212766 - nodes in this community are weakly interconnected._
 - **Should `dashboard/consult/[id]/page.tsx` be split into smaller, more focused modules?**

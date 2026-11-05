@@ -123,24 +123,24 @@ function NavItem({ item, isActive, isCollapsed, onClick }: NavItemProps) {
           onClick={onClick}
           className={`flex h-10 w-10 items-center justify-center rounded-[12px] transition-all relative ${
             isActive
-              ? "bg-[#0071E3] text-white shadow-sm"
-              : "text-[#86868B] hover:bg-white/[0.05] hover:text-[#1D1D1F] dark:text-[#A1A1A6] dark:hover:bg-white/[0.07] dark:hover:text-white"
+              ? "bg-[#0071E3] text-white shadow-sm shadow-[#0071E3]/25 font-bold"
+              : "text-[#6E6E73] hover:bg-[#F2F4F7] hover:text-[#0071E3] dark:text-[#A1A1A6] dark:hover:bg-white/[0.07] dark:hover:text-white"
           }`}
           title={item.label}
         >
           <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-white" : ""}`} />
           {item.badge && (
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#0071E3] ring-2 ring-[#ECEEF2] dark:ring-black" />
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#0071E3] ring-2 ring-white dark:ring-black" />
           )}
         </Link>
 
         {/* Floating Tooltip */}
         <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-          <Card variant="default" padding="sm">
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-semibold whitespace-nowrap">{item.label}</span>
+          <Card variant="default" padding="sm" className="bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.1] shadow-lg">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-[#1D1D1F] dark:text-white whitespace-nowrap">{item.label}</span>
               {item.badge && (
-                <Badge variant="default">{item.badge}</Badge>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#2997FF]/20 dark:text-[#2997FF]">{item.badge}</span>
               )}
             </div>
           </Card>
@@ -155,16 +155,24 @@ function NavItem({ item, isActive, isCollapsed, onClick }: NavItemProps) {
       onClick={onClick}
       className={`group flex items-center justify-between rounded-[12px] px-3 py-2.5 text-[12px] font-semibold transition-all ${
         isActive
-          ? `${DESIGN_TOKENS.colors.primaryLight} text-white shadow-sm`
-          : `text-[#444] hover:bg-white/[0.05] hover:text-[#1D1D1F] dark:text-[#A1A1A6] dark:hover:bg-white/[0.07] dark:hover:text-white`
+          ? "bg-[#0071E3] text-white shadow-sm shadow-[#0071E3]/25 font-bold"
+          : "text-[#3A3A3C] hover:bg-[#F2F4F7] hover:text-[#0071E3] dark:text-[#A1A1A6] dark:hover:bg-white/[0.07] dark:hover:text-white"
       }`}
     >
-      <div className="flex items-center gap-2.5">
-        <Icon className={`h-[15px] w-[15px] shrink-0 ${isActive ? "text-white" : "text-[#86868B] group-hover:text-[#0071E3] dark:text-[#636366] dark:group-hover:text-[#2997FF]"}`} />
+      <div className="flex items-center gap-2.5 min-w-0">
+        <Icon className={`h-[16px] w-[16px] shrink-0 ${isActive ? "text-white" : "text-[#86868B] group-hover:text-[#0071E3] dark:text-[#8E8E93] dark:group-hover:text-[#2997FF]"}`} />
         <span className="flex-1 truncate">{item.label}</span>
       </div>
       {item.badge && (
-        <Badge variant={item.optional ? "warning" : "default"}>{item.badge}</Badge>
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+          isActive
+            ? "bg-white/20 text-white"
+            : item.optional
+            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+            : "bg-[#EBF2FA] text-[#0071E3] dark:bg-white/[0.1] dark:text-[#2997FF]"
+        }`}>
+          {item.badge}
+        </span>
       )}
     </Link>
   );
@@ -176,11 +184,11 @@ function NavItem({ item, isActive, isCollapsed, onClick }: NavItemProps) {
 
 function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed?: boolean }) {
   if (isCollapsed) {
-    return <div className="my-1.5 mx-auto w-6 h-px bg-white/[0.06] dark:bg-white/[0.08]" />;
+    return <div className="my-2 mx-auto w-6 h-px bg-black/[0.08] dark:bg-white/[0.08]" />;
   }
   return (
-    <div className="px-3 pt-3 pb-1">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-[#86868B] dark:text-[#636366]">
+    <div className="px-3 pt-3.5 pb-1">
+      <span className="text-[10px] font-black uppercase tracking-wider text-[#86868B] dark:text-[#8E8E93]">
         {label}
       </span>
     </div>
@@ -233,7 +241,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* ── Brand Header ── */}
-      <div className={`border-b border-white/[0.06] dark:border-white/[0.07] ${isCollapsed ? "p-2.5 flex flex-col items-center gap-2" : "p-4"}`}>
+      <div className={`border-b border-black/[0.06] dark:border-white/[0.08] ${isCollapsed ? "p-2.5 flex flex-col items-center gap-2" : "p-4"}`}>
         {isCollapsed ? (
           <button
             onClick={onToggleCollapse}
@@ -251,12 +259,12 @@ function SidebarContent({
           <>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#0071E3] text-white shadow-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#0071E3] text-white shadow-md shadow-[#0071E3]/25">
                   <Stethoscope className="h-5 w-5" />
                 </div>
                 <div>
-                  <div className="text-[13px] font-black text-[#1D1D1F] dark:text-white tracking-tight">Clinicos</div>
-                  <div className="text-[10px] text-[#86868B] dark:text-[#636366] font-medium">
+                  <div className="text-[14px] font-black text-[#1D1D1F] dark:text-white tracking-tight">Clinicos</div>
+                  <div className="text-[10px] text-[#0071E3] dark:text-[#2997FF] font-bold">
                     {isSolo ? "Solo Practice" : "Clinic Plan"}
                   </div>
                 </div>
@@ -265,7 +273,7 @@ function SidebarContent({
               {onToggleCollapse && (
                 <button
                   onClick={onToggleCollapse}
-                  className="rounded-lg p-1.5 text-[#86868B] hover:bg-white/[0.05] hover:text-[#1D1D1F] dark:hover:bg-white/[0.08] dark:hover:text-white transition"
+                  className="rounded-lg p-1.5 text-[#86868B] hover:bg-black/[0.05] hover:text-[#1D1D1F] dark:hover:bg-white/[0.08] dark:hover:text-white transition"
                   title="Hide sidebar to icons"
                 >
                   <Menu className="h-4 w-4" />
@@ -274,17 +282,17 @@ function SidebarContent({
             </div>
 
             {/* Clinic card */}
-            <Card variant="elevated" className="mt-3 p-3 border border-white/[0.06]">
+            <div className="mt-3 p-3 rounded-xl bg-[#F8F9FA] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-[#1D1D1F] dark:text-white truncate max-w-[140px]">
                   {currentUser?.clinic_name || "Your Clinic"}
                 </span>
                 <span className="flex h-2 w-2 rounded-full bg-[#30D158] animate-pulse shrink-0" />
               </div>
-              <p className="text-[10px] text-[#86868B] dark:text-[#636366] mt-0.5 truncate">
+              <p className="text-[10px] text-[#6E6E73] dark:text-[#8E8E93] mt-0.5 truncate">
                 {currentUser?.full_name || "Clinic Staff"} · {currentUser?.role || "Staff"}
               </p>
-            </Card>
+            </div>
           </>
         )}
       </div>
@@ -375,7 +383,7 @@ function SidebarContent({
       </nav>
 
       {/* ── Footer ── */}
-      <div className={`border-t border-white/[0.06] dark:border-white/[0.07] ${isCollapsed ? "p-2 flex flex-col items-center gap-2" : "p-3 space-y-2"}`}>
+      <div className={`border-t border-black/[0.06] dark:border-white/[0.08] ${isCollapsed ? "p-2 flex flex-col items-center gap-2" : "p-3 space-y-2"}`}>
         {isCollapsed ? (
           <>
             <div className="relative group flex justify-center py-1">
@@ -457,7 +465,7 @@ function SidebarContent({
             <Link
               href={isPrivileged ? "/dashboard/settings" : "/dashboard/reception"}
               onClick={onClose}
-              className="flex items-center justify-between rounded-[12px] bg-white dark:bg-[#1C1C1E] border border-white/[0.06] dark:border-white/[0.07] p-2.5 shadow-sm hover:border-[#0071E3]/40 dark:hover:border-[#2997FF]/40 transition group"
+              className="flex items-center justify-between rounded-[12px] bg-[#F8F9FA] dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-2.5 shadow-xs hover:border-[#0071E3]/40 dark:hover:border-[#2997FF]/40 transition group"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0071E3]/10 text-[#0071E3] text-[11px] font-bold dark:text-[#2997FF] group-hover:bg-[#0071E3] group-hover:text-white transition">
@@ -677,7 +685,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen overflow-hidden bg-[#ECEEF2] text-[#1D1D1F] dark:bg-black dark:text-[#F5F5F7]">
 
       {/* ── DESKTOP SIDEBAR ── */}
-      <aside className={`hidden lg:flex flex-col border-r border-white/[0.06] bg-[#ECEEF2] dark:border-white/[0.07] dark:bg-black transition-all duration-300 ease-in-out shrink-0 ${isCollapsed ? "w-[68px]" : "w-60"}`}>
+      <aside className={`hidden lg:flex flex-col border-r border-black/[0.08] bg-white dark:border-white/[0.08] dark:bg-[#111113] transition-all duration-300 ease-in-out shrink-0 ${isCollapsed ? "w-[68px]" : "w-60"} shadow-[2px_0_12px_rgba(0,0,0,0.02)]`}>
         <SidebarContent {...sharedSidebarProps} />
       </aside>
 
@@ -685,10 +693,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="relative flex w-64 flex-col bg-[#ECEEF2] dark:bg-[#111111] shadow-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] dark:border-white/[0.07]">
+          <div className="relative flex w-64 flex-col bg-white dark:bg-[#111113] shadow-2xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.06] dark:border-white/[0.08]">
               <span className="text-sm font-black text-[#1D1D1F] dark:text-white">Clinicos</span>
-              <button onClick={() => setSidebarOpen(false)} className="rounded-full p-1 hover:bg-white/[0.05] dark:hover:bg-white/[0.08]">
+              <button onClick={() => setSidebarOpen(false)} className="rounded-full p-1 hover:bg-black/[0.05] dark:hover:bg-white/[0.08]">
                 <X className="h-5 w-5 text-[#86868B]" />
               </button>
             </div>
@@ -703,7 +711,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1 flex-col overflow-hidden">
 
         {/* TOP HEADER */}
-        <header className="h-14 shrink-0 flex items-center justify-between border-b border-white/[0.06] bg-[#ECEEF2]/80 dark:border-white/[0.07] dark:bg-black/80 backdrop-blur-2xl px-4 sm:px-6">
+        <header className="h-14 shrink-0 flex items-center justify-between border-b border-black/[0.06] bg-white/80 dark:border-white/[0.07] dark:bg-black/80 backdrop-blur-2xl px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
             {/* Mobile Drawer Trigger */}
             <button
