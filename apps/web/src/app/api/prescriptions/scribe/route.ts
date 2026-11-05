@@ -285,7 +285,7 @@ LANGUAGE RULE (important):
             { role: "user", content: `Doctor's voice dictation: "${dictation}"` },
           ],
           temperature: 0.1,
-          max_tokens: 1800,
+          max_tokens: 4096,
           response_format: { type: "json_object" },
         }),
       });

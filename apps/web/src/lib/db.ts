@@ -10,7 +10,7 @@ const getDatabaseUrl = (): string => {
   // Strip all internal whitespace, newlines, tabs, carriage returns, and quotes
   raw = raw.replace(/[\r\n\s\t]+/g, "").replace(/^["']|["']$/g, "");
 
-  if (!raw) {
+  if (!raw || raw.includes("[SENSITIVE]") || (!raw.startsWith("postgres://") && !raw.startsWith("postgresql://"))) {
     // Return dummy fallback during build / static analysis to prevent build-time crashes
     return "postgresql://postgres:postgres@127.0.0.1:5432/postgres";
   }

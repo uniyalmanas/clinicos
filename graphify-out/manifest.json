@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/patients/[phone]/route.ts": {
-    "mtime": 1793602174.5071733,
-    "seen": 1793602385.47638,
-    "ast_hash": "0210994a13d5fc712c17f1cc4314e104",
+    "mtime": 1793854887.8919137,
+    "seen": 1793862260.7069166,
+    "ast_hash": "8e88f2b82f0943ac5579692c4980e35f",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/patients/route.ts": {
@@ -468,9 +468,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/prescriptions/scribe/route.ts": {
-    "mtime": 1793622771.7129543,
-    "seen": 1793624514.307248,
-    "ast_hash": "f444a56ffd30bb7129d1724c73c736d3",
+    "mtime": 1793861037.8498688,
+    "seen": 1793862260.711939,
+    "ast_hash": "bcca8b4513a9becf5fd257745a380036",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/reviews/route.ts": {
@@ -684,9 +684,9 @@
     "semantic_hash": "1193ecd3f3e3ff0ec2b3e1eb8f02a39b"
   },
   "apps/web/src/app/patient/portal/page.tsx": {
-    "mtime": 1793624293.1731732,
-    "seen": 1793624514.3131218,
-    "ast_hash": "e959be3ff39f1117d2daa9681a4274de",
+    "mtime": 1793854696.9967775,
+    "seen": 1793862260.7215044,
+    "ast_hash": "600ad9c907231037d3d3a25f8de14a3d",
     "semantic_hash": ""
   },
   "apps/web/src/app/pharmacy/console/page.tsx": {
@@ -882,10 +882,10 @@
     "semantic_hash": "e443cd21d3e3f185dd3b935f50a3e941"
   },
   "apps/web/src/lib/db.ts": {
-    "mtime": 1790345657.7810812,
-    "seen": 1790444249.7950325,
-    "ast_hash": "0db7ed13220b28dc00ad76bf027b8d34",
-    "semantic_hash": "0db7ed13220b28dc00ad76bf027b8d34"
+    "mtime": 1793861979.0011203,
+    "seen": 1793862260.7291093,
+    "ast_hash": "1299b056596ab7ccfaa5731458bd8696",
+    "semantic_hash": ""
   },
   "apps/web/src/lib/lis-parser.ts": {
     "mtime": 1790154785.3231847,
@@ -1002,8 +1002,8 @@
     "semantic_hash": ""
   },
   "scripts/migrate.mjs": {
-    "mtime": 1793504471.3192873,
-    "seen": 1793598395.068654,
+    "mtime": 1793862175.4561703,
+    "seen": 1793862260.7323897,
     "ast_hash": "28df6046c7bcb77cc607c047df5bfb6d",
     "semantic_hash": ""
   },
@@ -1464,9 +1464,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/today/page.tsx": {
-    "mtime": 1793848962.9515138,
-    "seen": 1793849104.457035,
-    "ast_hash": "e15e73426f6a0a84d01f7b0f91e9f3cf",
+    "mtime": 1793855027.6455529,
+    "seen": 1793862260.7175438,
+    "ast_hash": "e0683fe6202f313b35abf90e36572b00",
     "semantic_hash": ""
   },
   "apps/web/src/components/MedicineSchedule.tsx": {
@@ -1476,9 +1476,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/PatientVaultPanel.tsx": {
-    "mtime": 1793776110.529136,
-    "seen": 1793776684.793799,
-    "ast_hash": "c845be0a5ed116461408b2dd238325bd",
+    "mtime": 1793855034.585269,
+    "seen": 1793862260.7245545,
+    "ast_hash": "10d749cd0fc6f75105230769f1b64c55",
     "semantic_hash": ""
   },
   "apps/web/src/components/VoiceDictation.tsx": {
@@ -1536,9 +1536,33 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/design-system.tsx": {
-    "mtime": 1793848320.5531714,
-    "seen": 1793849104.466057,
-    "ast_hash": "24824356dfd46fdb7f571a399a56199d",
+    "mtime": 1793852116.6383796,
+    "seen": 1793862260.7254863,
+    "ast_hash": "1db7e16166ad5186df91ff693d80e359",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/consultations/reports/route.ts": {
+    "mtime": 1793861683.700031,
+    "seen": 1793862260.7023363,
+    "ast_hash": "6e3e7499c88fc76bb8297337e3cb3f69",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/consultations/transcribe/route.ts": {
+    "mtime": 1793851946.8399496,
+    "seen": 1793862260.702341,
+    "ast_hash": "c65a22bcb8680ef36053028ee10a027f",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/ConsultationRecorder.tsx": {
+    "mtime": 1793855140.6148765,
+    "seen": 1793862260.7228289,
+    "ast_hash": "a3d70e2b1c35f4cffa51e5fcbb18e881",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/consultation-types.ts": {
+    "mtime": 1793851937.6408665,
+    "seen": 1793862260.7291036,
+    "ast_hash": "d0d8770c7adea5189f9e5596c8c4b70a",
     "semantic_hash": ""
   }
 }
