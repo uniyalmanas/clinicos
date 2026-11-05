@@ -685,25 +685,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* ── MAIN CONTENT ── */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
 
         {/* TOP HEADER (Standardised 64px) */}
-        <header className="h-16 shrink-0 flex items-center justify-between border-b border-slate-200/80 bg-white/90 dark:border-white/[0.08] dark:bg-[#0C0D0E]/90 backdrop-blur-md px-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
+        <header className="h-16 shrink-0 flex items-center justify-between border-b border-slate-200/80 bg-white/90 dark:border-white/[0.08] dark:bg-[#0C0D0E]/90 backdrop-blur-md px-3.5 sm:px-6 gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             {/* Mobile Drawer Trigger */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden rounded-md p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+              className="lg:hidden rounded-lg p-1.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/[0.08] shrink-0"
               title="Open Navigation"
+              aria-label="Open Navigation Drawer"
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-500">{currentUser?.clinic_name || "ClinicOS"}</span>
-              <ChevronRight className="h-3 w-3 text-slate-400" />
-              <strong className="text-slate-900 dark:text-white capitalize font-semibold">{pageName}</strong>
-              <span className="ml-1 hidden sm:inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200/60 px-2 py-0.5 text-[10px] font-medium text-[#0071E3] dark:bg-blue-950/40 dark:border-blue-900/40 dark:text-[#2997FF]">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0">
+              <span className="text-slate-500 truncate max-w-[110px] sm:max-w-[160px]">{currentUser?.clinic_name || "ClinicOS"}</span>
+              <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
+              <strong className="text-slate-900 dark:text-white capitalize font-semibold truncate">{pageName}</strong>
+              <span className="ml-1 hidden md:inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200/60 px-2 py-0.5 text-[10px] font-medium text-[#0071E3] dark:bg-blue-950/40 dark:border-blue-900/40 dark:text-[#2997FF] shrink-0">
                 {practiceMode === "solo" ? (
                   <>
                     <Stethoscope className="h-3 w-3" />
@@ -719,11 +720,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={playChime}
               title="Test Chime"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 sm:px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200"
             >
               <Volume2 className={`h-3.5 w-3.5 text-[#0071E3] dark:text-[#2997FF] ${chimePlaying ? "animate-bounce" : ""}`} />
               <span className="hidden sm:inline">Chime</span>
@@ -731,7 +732,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <Link
               href="/dashboard/reception"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0077ED] transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0077ED] transition"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Walk-in</span>
@@ -740,16 +741,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link
               href="/patient/portal"
               target="_blank"
-              className="hidden md:inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200"
+              className="hidden lg:inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200"
             >
-              <span>Patient Portal</span>
+              <span>Portal</span>
               <ExternalLink className="h-3 w-3 text-slate-400" />
             </Link>
           </div>
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 bg-[#F8F9FA] dark:bg-[#0C0D0E]">
+        <main className="flex-1 overflow-y-auto min-w-0 p-3.5 sm:p-5 lg:p-6 bg-[#F8F9FA] dark:bg-[#0C0D0E]">
           {children}
         </main>
       </div>

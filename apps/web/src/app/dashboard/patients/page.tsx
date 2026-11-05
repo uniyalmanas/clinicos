@@ -12,6 +12,7 @@ import {
   Stethoscope, 
   CheckCircle2, 
   ArrowRight, 
+  ArrowLeft,
   Activity,
   Plus,
   Pill,
@@ -555,18 +556,18 @@ export default function DashboardPatientsPage() {
       )}
 
       {/* 1. TOP HIGH-DENSITY HEADER & ACTIONS */}
-      <div className="flex flex-col gap-4 border-b border-black/[0.04] dark:border-white/[0.06] pb-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-3.5 border-b border-slate-200/80 dark:border-white/[0.08] pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-black tracking-wider uppercase">
+              <span className="px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-bold tracking-wider uppercase">
                 EMR PATIENT VAULT
               </span>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Patient Master Directory &amp; Health Vault
               </h1>
             </div>
-            <p className="text-xs text-[#86868B] mt-1 flex items-center gap-2 flex-wrap">
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
               <span>Consent-governed longitudinal electronic medical records</span>
               <span>•</span>
               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">DPDP Act Compliant</span>
@@ -580,7 +581,7 @@ export default function DashboardPatientsPage() {
             <button
               type="button"
               onClick={handleExportDirectoryCsv}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3.5 py-2 text-xs font-bold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 dark:border-white/10 dark:bg-[#151618] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs transition cursor-pointer"
               title="Download full patient phonebook & directory to Microsoft Excel"
             >
               <Download className="h-3.5 w-3.5 text-[#0071E3]" />
@@ -590,7 +591,7 @@ export default function DashboardPatientsPage() {
             <button
               type="button"
               onClick={() => setPrescribeModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 shadow-sm transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/40 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 shadow-xs transition cursor-pointer"
               title="Test prescribing drug against patient allergy contraindications"
             >
               <ShieldAlert className="h-3.5 w-3.5" />
@@ -600,7 +601,7 @@ export default function DashboardPatientsPage() {
             <button
               type="button"
               onClick={() => setLabModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:bg-blue-500/20 shadow-sm transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 dark:border-blue-900/40 dark:bg-blue-950/40 px-3 py-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] shadow-xs transition cursor-pointer"
               title="Ingest structured lab report via HL7 / FHIR parser"
             >
               <Microscope className="h-3.5 w-3.5" />
@@ -610,7 +611,7 @@ export default function DashboardPatientsPage() {
             <button
               onClick={fetchPatients}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 dark:border-white/10 dark:bg-[#151618] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs transition cursor-pointer"
             >
               <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-[#0071E3]" : ""}`} />
               <span>Sync</span>
@@ -620,7 +621,7 @@ export default function DashboardPatientsPage() {
 
         {/* 4-KPI Metric Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-          <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+          <div className="h-full flex flex-col justify-between rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span className="font-medium text-[11px]">Total Registered</span>
               <Users className="h-3.5 w-3.5 text-[#0071E3]" />
@@ -631,7 +632,7 @@ export default function DashboardPatientsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+          <div className="h-full flex flex-col justify-between rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span className="font-medium text-[11px]">Encounters</span>
               <Stethoscope className="h-3.5 w-3.5 text-emerald-500" />
@@ -642,7 +643,7 @@ export default function DashboardPatientsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+          <div className="h-full flex flex-col justify-between rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span className="font-medium text-[11px]">Diagnostic Labs</span>
               <Microscope className="h-3.5 w-3.5 text-indigo-500" />
@@ -653,7 +654,7 @@ export default function DashboardPatientsPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-rose-200/70 bg-rose-50/40 p-3 shadow-xs dark:border-rose-900/30 dark:bg-rose-950/20">
+          <div className="h-full flex flex-col justify-between rounded-xl border border-rose-200/70 bg-rose-50/40 p-3 shadow-xs dark:border-rose-900/30 dark:bg-rose-950/20">
             <div className="flex items-center justify-between text-xs text-rose-700 dark:text-rose-400">
               <span className="font-medium text-[11px]">Allergy Hard-Stop</span>
               <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
@@ -667,9 +668,9 @@ export default function DashboardPatientsPage() {
       </div>
 
       {/* 2. MAIN CLINICAL EMR WORKSPACE */}
-      <div className="grid gap-5 lg:grid-cols-12">
+      <div className="grid gap-5 lg:grid-cols-12 min-w-0">
         {/* LEFT COLUMN: REGISTERED PATIENT DIRECTORY */}
-        <div className={selectedPatient ? "lg:col-span-4 space-y-2.5" : "lg:col-span-12 space-y-2.5"}>
+        <div className={selectedPatient ? "hidden lg:block lg:col-span-4 min-w-0 space-y-2.5" : "col-span-12 min-w-0 space-y-2.5"}>
           {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
@@ -925,18 +926,31 @@ export default function DashboardPatientsPage() {
 
         {/* RIGHT COLUMN: DETAILED CLINICAL EMR PROFILE & ACTIVE SAFETY ENGINE */}
         {selectedPatient && (
-          <div className="lg:col-span-8 space-y-4">
-            <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-white/[0.08] dark:bg-[#151618] space-y-4">
+          <div className="col-span-12 lg:col-span-8 min-w-0 space-y-4">
+            {/* Mobile / Tablet Quick Back Button */}
+            <div className="lg:hidden flex items-center justify-between pb-1">
+              <button
+                type="button"
+                onClick={() => setSelectedPatient(null)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:underline"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Patient Directory</span>
+              </button>
+              <span className="font-mono text-xs text-slate-500 font-semibold">{selectedPatient.uhid}</span>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs dark:border-white/[0.08] dark:bg-[#151618] space-y-4">
               {/* DUPLICATE WARNING BANNER (FIX 4) */}
               {selectedPatient.is_duplicate_flagged && selectedPatient.duplicate_tickets && selectedPatient.duplicate_tickets.length > 0 && selectedPatient.duplicate_tickets[0] && (
-                <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-4 text-xs text-purple-900 dark:text-purple-200 shadow-sm animate-in fade-in space-y-2">
+                <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-3.5 text-xs text-purple-900 dark:text-purple-200 shadow-sm animate-in fade-in space-y-2">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-2.5">
-                      <Users className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <Users className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
                       <div>
-                        <div className="font-bold text-[12px] flex items-center gap-1.5">
-                          <span>🚨 Duplicate Identity Flagged: {selectedPatient.duplicate_tickets[0]?.similarity_score}% Match</span>
-                          <span className="rounded bg-purple-500/20 px-1.5 py-0.2 text-[10px]">
+                        <div className="font-bold text-[12px] flex items-center gap-1.5 flex-wrap">
+                          <span>Duplicate Identity Flagged: {selectedPatient.duplicate_tickets[0]?.similarity_score}% Match</span>
+                          <span className="rounded bg-purple-500/20 px-1.5 py-0.2 text-[10px] font-mono">
                             {selectedPatient.duplicate_tickets[0]?.status}
                           </span>
                         </div>
@@ -953,7 +967,7 @@ export default function DashboardPatientsPage() {
                           setSelectedMergeTicket(selectedPatient.duplicate_tickets![0]);
                           setMergeModalOpen(true);
                         }}
-                        className="inline-flex items-center gap-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 text-xs font-bold shadow-sm transition active:scale-95 shrink-0 cursor-pointer"
+                        className="inline-flex items-center gap-1 rounded-lg bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer shrink-0"
                       >
                         <UserCheck className="h-3.5 w-3.5" />
                         <span>Dual-Admin Merge</span>
@@ -963,94 +977,46 @@ export default function DashboardPatientsPage() {
                 </div>
               )}
 
-              {/* Patient Profile Card Header */}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-black/[0.04] pb-5 dark:border-white/[0.06]">
-                <div className="flex items-start gap-3.5">
-                  <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#0071E3] to-blue-700 text-white font-extrabold text-lg flex items-center justify-center shadow-md shrink-0">
+              {/* Patient Profile Card Header: Identity + Actions */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 border-b border-slate-200/80 pb-4 dark:border-white/[0.08]">
+                {/* Left: Avatar + Identity */}
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-gradient-to-br from-[#0071E3] to-blue-700 text-white font-extrabold text-base sm:text-lg flex items-center justify-center shadow-xs shrink-0">
                     {getInitials(selectedPatient.full_name)}
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
+                      <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white truncate">
                         {selectedPatient.full_name}
                       </h2>
-                      <span className="font-mono text-xs font-bold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 px-2.5 py-0.5 rounded-full">
+                      <span className="font-mono text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 px-2 py-0.5 rounded-md shrink-0">
                         {selectedPatient.uhid}
                       </span>
-                      <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 shrink-0">
                         {selectedPatient.blood_group}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-[#86868B] flex items-center gap-2 flex-wrap">
+                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
                       <span>{selectedPatient.gender} • {selectedPatient.age} Y (DOB: {selectedPatient.dob || "Recorded"})</span>
-                      <span>•</span>
-                      <span className="font-mono">Phone: {selectedPatient.phone}</span>
-                    </p>
-
-                    {/* Privacy & Consent-Governed Emergency Contact */}
-                    <div className="mt-3 rounded-2xl border border-black/[0.06] bg-[#ECEEF2]/40 p-3 dark:border-white/[0.06] dark:bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                      <div className="flex items-start gap-2.5">
-                        <div className="rounded-xl bg-[#0071E3]/10 p-2 text-[#0071E3] dark:text-[#2997FF] shrink-0">
-                          <Phone className="h-3.5 w-3.5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-[#1D1D1F] dark:text-white text-xs">
-                              Emergency: {selectedPatient.emergency_contact || "Sunita Sharma"}
-                            </span>
-                            <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.2 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                              {selectedPatient.emergency_contact_relationship || "Mother (Legal Guardian - Minor)"}
-                            </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                              <ShieldCheck className="h-3 w-3" />
-                              <span>{selectedPatient.emergency_contact_consent_status || "DPDP Form-3 Consent Active"}</span>
-                            </span>
-                          </div>
-
-                          <div className="mt-1 flex items-center gap-2 sm:gap-3 text-[11px] text-[#86868B] font-mono flex-wrap">
-                            <span>
-                              Phone: <strong className="text-[#1D1D1F] dark:text-white font-bold">{unmaskedContactPhone || maskEmergencyPhone(selectedPatient.emergency_contact_phone)}</strong>
-                            </span>
-                            <span>•</span>
-                            <span>
-                              Encrypted at Rest: <code className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">{selectedPatient.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C"}</code>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setEmergencyModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-[#1D1D1F] dark:text-white px-3 py-1.5 text-xs font-bold transition active:scale-95 shrink-0 cursor-pointer"
-                      >
-                        <Shield className="h-3.5 w-3.5 text-[#0071E3]" />
-                        <span>🚨 Emergency Access</span>
-                      </button>
+                      <span className="hidden sm:inline">•</span>
+                      <span className="font-mono flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-slate-400" />
+                        {selectedPatient.phone}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Right Action buttons */}
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                {/* Right: Action Buttons Toolbar */}
+                <div className="flex items-center gap-2 flex-wrap shrink-0">
                   <Link
                     href={`/dashboard/consult/${selectedPatient.visits?.[0]?.visit_number || selectedPatient.uhid}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition"
                     title="Open Consultation Studio for this patient"
                   >
-                    <Stethoscope className="h-4 w-4" />
+                    <Stethoscope className="h-3.5 w-3.5" />
                     <span>Start Consult</span>
                   </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => setExportModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#0071E3]/20 bg-[#0071E3]/10 hover:bg-[#0071E3]/20 px-3 py-2 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] shadow-sm transition active:scale-95 cursor-pointer"
-                    title="Generate watermarked time-bound PDF export"
-                  >
-                    <ShieldCheck className="h-4 w-4" />
-                    <span>Export Dossier</span>
-                  </button>
 
                   <button
                     type="button"
@@ -1058,32 +1024,84 @@ export default function DashboardPatientsPage() {
                       setTestDrugInput("Syrup Amoxyclav 228.5mg");
                       setPrescribeModalOpen(true);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5" />
                     <span>Prescribe ℞</span>
                   </button>
 
                   <button
                     type="button"
+                    onClick={() => setExportModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs transition cursor-pointer"
+                    title="Generate watermarked time-bound PDF export"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 text-[#0071E3]" />
+                    <span>Export</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setSelectedPatient(null)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
                     title="Close Dossier"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3.5 w-3.5" />
                     <span>Close</span>
                   </button>
                 </div>
               </div>
 
-              {/* ACTIVE ALLERGY CONTRAINDICATION ENGINE BANNER (FIX 1) */}
-              <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 space-y-2 dark:border-rose-500/30">
+              {/* Privacy & Consent-Governed Emergency Contact Banner */}
+              <div className="rounded-lg border border-slate-200/80 bg-slate-50/60 p-3 dark:border-white/[0.06] dark:bg-white/[0.02] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="rounded-lg bg-[#0071E3]/10 p-2 text-[#0071E3] dark:text-[#2997FF] shrink-0 mt-0.5">
+                    <Phone className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-slate-900 dark:text-white text-xs">
+                        Emergency: {selectedPatient.emergency_contact || "Sunita Sharma"}
+                      </span>
+                      <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#0071E3] dark:bg-blue-950/40 dark:text-[#2997FF] border border-blue-200/60 dark:border-blue-900/40">
+                        {selectedPatient.emergency_contact_relationship || "Mother (Legal Guardian)"}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60">
+                        <ShieldCheck className="h-3 w-3" />
+                        <span>{selectedPatient.emergency_contact_consent_status || "DPDP Consent Active"}</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:gap-3 text-[11px] text-slate-500 font-mono flex-wrap">
+                      <span>
+                        Phone: <strong className="text-slate-900 dark:text-white font-semibold">{unmaskedContactPhone || maskEmergencyPhone(selectedPatient.emergency_contact_phone)}</strong>
+                      </span>
+                      <span>•</span>
+                      <span>
+                        Encrypted: <code className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">{selectedPatient.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C"}</code>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setEmergencyModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 dark:border-amber-900/40 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 px-3 py-1.5 text-xs font-semibold transition shrink-0 cursor-pointer"
+                >
+                  <Shield className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Emergency Access</span>
+                </button>
+              </div>
+
+              {/* ACTIVE ALLERGY CONTRAINDICATION ENGINE BANNER */}
+              <div className="rounded-lg border border-rose-200 bg-rose-50/60 dark:border-rose-900/50 dark:bg-rose-950/20 p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs">
                     <ShieldAlert className="h-4 w-4" />
                     <span>Active Allergy Contraindication Engine (ATC Coded)</span>
                   </div>
-                  <span className="rounded-full bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5">
+                  <span className="rounded-md bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5">
                     Hard-Stop Active
                   </span>
                 </div>
@@ -1091,88 +1109,99 @@ export default function DashboardPatientsPage() {
                 {selectedPatient.allergies && selectedPatient.allergies.length > 0 ? (
                   <div className="space-y-1.5">
                     {selectedPatient.allergies.map(al => (
-                      <div key={al.id} className="text-xs text-rose-900 dark:text-rose-200 bg-white/60 dark:bg-black/40 p-2.5 rounded-xl border border-rose-500/20">
-                        <div className="flex items-center justify-between">
+                      <div key={al.id} className="text-xs text-rose-900 dark:text-rose-200 bg-white dark:bg-[#151618] p-2.5 rounded-lg border border-rose-200/80 dark:border-rose-900/40 shadow-2xs">
+                        <div className="flex items-center justify-between flex-wrap gap-1">
                           <strong className="text-rose-700 dark:text-rose-300">
                             {al.allergen_name} [ATC: {al.atc_code}]
                           </strong>
-                          <span className="text-[10px] font-mono font-bold text-rose-600">
+                          <span className="text-[10px] font-mono font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.2 rounded border border-rose-200 dark:border-rose-900/40">
                             {al.reaction_severity}
                           </span>
                         </div>
-                        <p className="text-[11px] mt-0.5 text-[#1D1D1F] dark:text-white/80">
+                        <p className="text-[11px] mt-0.5 text-slate-700 dark:text-slate-300">
                           {al.reaction_description}
                         </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-                    ✓ No active drug allergies recorded in system.
+                  <div className="text-xs text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>No active drug allergies recorded in system (NKDA).</span>
                   </div>
                 )}
               </div>
 
               {/* Workspace Sub-Tabs */}
-              <div className="flex items-center gap-1 rounded-[14px] bg-[#ECEEF2] p-1 dark:bg-white/[0.06] overflow-x-auto">
+              <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] overflow-x-auto min-w-0 scrollbar-none" role="tablist">
                 <button
+                  role="tab"
+                  aria-selected={activeTab === "visits"}
                   onClick={() => setActiveTab("visits")}
-                  className={`flex items-center gap-1.5 rounded-[10px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition whitespace-nowrap cursor-pointer ${
                     activeTab === "visits"
-                      ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-                      : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-semibold dark:bg-[#1C1C1E] dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white font-medium"
                   }`}
                 >
                   <Layers className="h-3.5 w-3.5" />
-                  <span>Immutable Visits ({selectedPatient.visits?.length || 0})</span>
+                  <span>Visits ({selectedPatient.visits?.length || 0})</span>
                 </button>
 
                 <button
+                  role="tab"
+                  aria-selected={activeTab === "lab_vault"}
                   onClick={() => setActiveTab("lab_vault")}
-                  className={`flex items-center gap-1.5 rounded-[10px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition whitespace-nowrap cursor-pointer ${
                     activeTab === "lab_vault"
-                      ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-                      : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-semibold dark:bg-[#1C1C1E] dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white font-medium"
                   }`}
                 >
                   <Microscope className="h-3.5 w-3.5" />
-                  <span>Lab Vault &amp; Trending ({selectedPatient.lab_results?.length || 0})</span>
+                  <span>Labs ({selectedPatient.lab_results?.length || 0})</span>
                 </button>
 
                 <button
+                  role="tab"
+                  aria-selected={activeTab === "secure_exports"}
                   onClick={() => setActiveTab("secure_exports")}
-                  className={`flex items-center gap-1.5 rounded-[10px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition whitespace-nowrap cursor-pointer ${
                     activeTab === "secure_exports"
-                      ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-                      : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-semibold dark:bg-[#1C1C1E] dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white font-medium"
                   }`}
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>Secure Exports ({selectedPatient.secure_exports?.length || 0})</span>
+                  <span>Exports ({selectedPatient.secure_exports?.length || 0})</span>
                 </button>
 
                 <button
+                  role="tab"
+                  aria-selected={activeTab === "audit_trail"}
                   onClick={() => setActiveTab("audit_trail")}
-                  className={`flex items-center gap-1.5 rounded-[10px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition whitespace-nowrap cursor-pointer ${
                     activeTab === "audit_trail"
-                      ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-                      : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-semibold dark:bg-[#1C1C1E] dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white font-medium"
                   }`}
                 >
                   <History className="h-3.5 w-3.5" />
-                  <span>DPDP Audit Trail ({selectedPatient.audit_trail?.length || 0})</span>
+                  <span>Audit Trail ({selectedPatient.audit_trail?.length || 0})</span>
                 </button>
 
                 <button
+                  role="tab"
+                  aria-selected={activeTab === "documents"}
                   onClick={() => setActiveTab("documents")}
-                  className={`flex items-center gap-1.5 rounded-[10px] px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition whitespace-nowrap cursor-pointer ${
                     activeTab === "documents"
-                      ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-                      : "text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
+                      ? "bg-white text-slate-900 shadow-xs font-semibold dark:bg-[#1C1C1E] dark:text-white"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white font-medium"
                   }`}
                 >
                   <FileText className="h-3.5 w-3.5" />
-                  <span>Uploaded Documents</span>
+                  <span>Documents</span>
                 </button>
               </div>
 
@@ -1185,26 +1214,26 @@ export default function DashboardPatientsPage() {
                     selectedPatient.visits.map(vis => (
                       <div
                         key={vis.id}
-                        className="rounded-lg border border-black/[0.06] bg-[#ECEEF2]/30 p-4 dark:border-white/[0.06] dark:bg-white/[0.02] space-y-3"
+                        className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-3.5 sm:p-4 dark:border-white/[0.08] dark:bg-white/[0.02] space-y-3"
                       >
                         <div className="flex items-start justify-between flex-wrap gap-2">
-                          <div>
-                            <div className="font-bold text-xs text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                          <div className="min-w-0">
+                            <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                               <span>{vis.provisional_diagnosis}</span>
-                              <span className="rounded-full bg-[#0071E3]/15 text-[#0071E3] dark:text-[#2997FF] px-2 py-0.2 text-[10px] font-mono font-bold">
+                              <span className="rounded-md bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF] px-2 py-0.5 text-[10px] font-mono font-semibold">
                                 v{vis.version}.0 {vis.version > 1 ? "Signed Addendum" : "Original"}
                               </span>
-                              <span className="text-[10px] text-[#86868B] font-mono">
+                              <span className="text-[10px] text-slate-400 font-mono">
                                 {vis.visit_date}
                               </span>
                             </div>
-                            <div className="text-[11px] text-[#86868B] mt-0.5">
-                              Attended by: <strong>{vis.doctor_name}</strong> ({vis.doctor_specialization})
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              Attended by: <strong className="text-slate-700 dark:text-slate-300">{vis.doctor_name}</strong> ({vis.doctor_specialization})
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[9px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
+                          <div className="flex items-center gap-2 flex-wrap shrink-0">
+                            <span className="font-mono text-[9px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-900/60 font-semibold">
                               {vis.tamper_seal_hash}
                             </span>
 
@@ -1215,7 +1244,7 @@ export default function DashboardPatientsPage() {
                                   setSelectedVisitForAmend(vis);
                                   setAmendmentModalOpen(true);
                                 }}
-                                className="rounded-lg bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-[#1D1D1F] dark:text-white px-2.5 py-1 text-[10px] font-bold transition cursor-pointer"
+                                className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer shadow-2xs"
                               >
                                 + Addendum v{vis.version + 1}.0
                               </button>
@@ -1232,29 +1261,29 @@ export default function DashboardPatientsPage() {
                           if (!vitalsObj || typeof vitalsObj !== "object") vitalsObj = {};
 
                           return (
-                            <div className="flex flex-wrap gap-2 text-[10px] font-mono text-[#86868B]">
+                            <div className="flex flex-wrap gap-2 text-[10px] font-mono text-slate-600 dark:text-slate-300">
                               {vitalsObj.bp && (
-                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                <span className="rounded-md bg-white px-2 py-0.5 border border-slate-200/80 dark:bg-[#151618] dark:border-white/[0.08] shadow-2xs">
                                   BP: {vitalsObj.bp}
                                 </span>
                               )}
                               {vitalsObj.pulse && (
-                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                <span className="rounded-md bg-white px-2 py-0.5 border border-slate-200/80 dark:bg-[#151618] dark:border-white/[0.08] shadow-2xs">
                                   Pulse: {vitalsObj.pulse} bpm
                                 </span>
                               )}
                               {vitalsObj.spo2 && (
-                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                <span className="rounded-md bg-white px-2 py-0.5 border border-slate-200/80 dark:bg-[#151618] dark:border-white/[0.08] shadow-2xs">
                                   SpO2: {vitalsObj.spo2}%
                                 </span>
                               )}
                               {vitalsObj.weight && (
-                                <span className="rounded-[6px] bg-white px-2 py-0.5 border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.06]">
+                                <span className="rounded-md bg-white px-2 py-0.5 border border-slate-200/80 dark:bg-[#151618] dark:border-white/[0.08] shadow-2xs">
                                   Weight: {vitalsObj.weight} kg
                                 </span>
                               )}
                               {vitalsObj.head_circ_cm && (
-                                <span className="rounded-[6px] bg-purple-500/10 text-purple-700 dark:text-purple-300 px-2 py-0.5 border border-purple-500/20 font-bold">
+                                <span className="rounded-md bg-purple-50 text-purple-700 dark:text-purple-300 px-2 py-0.5 border border-purple-200 dark:border-purple-900/60 font-semibold">
                                   Head Circ: {vitalsObj.head_circ_cm} cm (Pediatric)
                                 </span>
                               )}
@@ -1263,17 +1292,17 @@ export default function DashboardPatientsPage() {
                         })()}
 
                         {/* Subjective & Objective SOAP */}
-                        <div className="text-xs space-y-1 text-[#1D1D1F] dark:text-white/90">
+                        <div className="text-xs space-y-1 text-slate-800 dark:text-slate-200">
                           <div>
-                            <strong className="text-[#86868B] text-[11px] uppercase">Subjective: </strong>
+                            <strong className="text-slate-400 text-[11px] uppercase tracking-wider">Subjective: </strong>
                             <span>{vis.subjective_notes}</span>
                           </div>
                           <div>
-                            <strong className="text-[#86868B] text-[11px] uppercase">Objective: </strong>
+                            <strong className="text-slate-400 text-[11px] uppercase tracking-wider">Objective: </strong>
                             <span>{vis.objective_findings}</span>
                           </div>
                           <div>
-                            <strong className="text-[#86868B] text-[11px] uppercase">Plan: </strong>
+                            <strong className="text-slate-400 text-[11px] uppercase tracking-wider">Plan: </strong>
                             <span className="whitespace-pre-line">{vis.assessment_plan}</span>
                           </div>
                         </div>
@@ -1293,14 +1322,14 @@ export default function DashboardPatientsPage() {
                           if (!medsArr || medsArr.length === 0) return null;
 
                           return (
-                            <div className="rounded-[14px] bg-white p-3 border border-black/[0.04] dark:bg-[#1C1C1E] dark:border-white/[0.04] text-xs">
-                              <div className="text-[11px] font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1 mb-1">
-                                <Pill className="h-3 w-3 text-[#0071E3]" /> Prescribed Medications:
+                            <div className="rounded-lg bg-white p-3 border border-slate-200/80 dark:bg-[#151618] dark:border-white/[0.08] text-xs shadow-2xs">
+                              <div className="text-[11px] font-bold text-slate-900 dark:text-white flex items-center gap-1.5 mb-1">
+                                <Pill className="h-3.5 w-3.5 text-[#0071E3]" /> Prescribed Medications:
                               </div>
-                              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-[#86868B]">
+                              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-600 dark:text-slate-400">
                                 {medsArr.map((m: any, idx: number) => (
                                   <li key={idx}>
-                                    <strong className="text-[#1D1D1F] dark:text-white font-medium">{m.medicine}</strong> ({m.dose})
+                                    <strong className="text-slate-900 dark:text-white font-semibold">{m.medicine}</strong> ({m.dose})
                                   </li>
                                 ))}
                               </ul>
@@ -1310,7 +1339,7 @@ export default function DashboardPatientsPage() {
 
                         {/* Amendment Addendum Details */}
                         {vis.amendment_reason && (
-                          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px] text-amber-900 dark:text-amber-200">
+                          <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-[11px] text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
                             <strong>Amendment Addendum: </strong>
                             <span>{vis.amendment_reason}</span>
                             <div className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">
@@ -1346,7 +1375,7 @@ export default function DashboardPatientsPage() {
                     <button
                       type="button"
                       onClick={() => setLabModalOpen(true)}
-                      className="inline-flex items-center gap-1 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       <span>Ingest Lab Result</span>
@@ -1364,32 +1393,32 @@ export default function DashboardPatientsPage() {
                     return (
                       <div
                         key={paramName}
-                        className="rounded-lg border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-3"
+                        className="rounded-lg border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs dark:border-white/[0.08] dark:bg-[#151618] space-y-3"
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-sm text-[#1D1D1F] dark:text-white">
+                        <div className="flex items-start justify-between flex-wrap gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-bold text-sm text-slate-900 dark:text-white">
                                 {paramName}
                               </h4>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
                                 latest.flag === "NORMAL"
-                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60"
+                                  : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60"
                               }`}>
                                 {latest.flag}
                               </span>
                             </div>
-                            <span className="text-[11px] text-[#86868B]">
+                            <span className="text-[11px] text-slate-500">
                               Ref Range: {latest.reference_min} - {latest.reference_max} {latest.unit} • Source: {latest.lab_source}
                             </span>
                           </div>
 
-                          <div className="text-right">
-                            <div className="text-xl font-black font-mono text-[#1D1D1F] dark:text-white">
+                          <div className="text-right shrink-0">
+                            <div className="text-xl font-bold font-mono text-slate-900 dark:text-white">
                               {latest.parameter_value} {latest.unit}
                             </div>
-                            <span className="text-[10px] text-[#86868B] font-mono">
+                            <span className="text-[10px] text-slate-400 font-mono">
                               {latest.report_date}
                             </span>
                           </div>
@@ -1397,20 +1426,20 @@ export default function DashboardPatientsPage() {
 
                         {/* Historical Trend Graph Progression */}
                         {results.length > 1 && (
-                          <div className="rounded-xl bg-[#ECEEF2]/40 dark:bg-white/[0.02] p-3 space-y-2">
-                            <span className="text-[10px] uppercase font-bold text-[#86868B] flex items-center gap-1">
+                          <div className="rounded-lg bg-slate-50/70 dark:bg-white/[0.02] p-3 space-y-2 border border-slate-200/60 dark:border-white/[0.06]">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
                               <TrendingDown className="h-3.5 w-3.5 text-emerald-500" /> Longitudinal Trend Progression ({results.length} Measurements)
                             </span>
 
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                               {results.map((r, idx) => (
-                                <div key={r.id} className="rounded-lg bg-white dark:bg-[#1C1C1E] p-2 border border-black/[0.04] dark:border-white/[0.04] text-center">
-                                  <div className="text-[10px] font-mono text-[#86868B]">{r.report_date}</div>
-                                  <div className="text-sm font-bold font-mono text-[#1D1D1F] dark:text-white mt-0.5">
+                                <div key={r.id} className="rounded-md bg-white dark:bg-[#151618] p-2 border border-slate-200/70 dark:border-white/[0.06] text-center shadow-2xs">
+                                  <div className="text-[10px] font-mono text-slate-400">{r.report_date}</div>
+                                  <div className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-0.5">
                                     {r.parameter_value} {r.unit}
                                   </div>
-                                  <span className={`text-[9px] font-bold uppercase ${
-                                    r.flag === "NORMAL" ? "text-emerald-600" : "text-rose-600"
+                                  <span className={`text-[9px] font-semibold uppercase ${
+                                    r.flag === "NORMAL" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                                   }`}>
                                     {r.flag}
                                   </span>
@@ -1430,12 +1459,12 @@ export default function DashboardPatientsPage() {
               {/* ============================================================= */}
               {activeTab === "secure_exports" && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                         Watermarked &amp; Time-Bound EMR Export Vault
                       </h3>
-                      <p className="text-[11px] text-[#86868B]">
+                      <p className="text-[11px] text-slate-500">
                         Cryptographically sealed, patient OTP authorized PDFs for Specialist Referrals &amp; Right to Access
                       </p>
                     </div>
@@ -1443,7 +1472,7 @@ export default function DashboardPatientsPage() {
                     <button
                       type="button"
                       onClick={() => setExportModalOpen(true)}
-                      className="inline-flex items-center gap-1 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white px-3 py-1.5 text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer shrink-0"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       <span>Create Secure Export</span>
@@ -1455,27 +1484,29 @@ export default function DashboardPatientsPage() {
                       {selectedPatient.secure_exports.map(exp => (
                         <div
                           key={exp.id}
-                          className="rounded-lg border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-3"
+                          className="rounded-lg border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs dark:border-white/[0.08] dark:bg-[#151618] space-y-3"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                            <div>
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="rounded-full bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF] px-2 py-0.5 text-[10px] font-mono font-bold">
+                                <span className="rounded-md bg-blue-50 text-[#0071E3] border border-blue-200/60 dark:bg-blue-950/40 dark:text-[#2997FF] dark:border-blue-900/40 px-2 py-0.5 text-[10px] font-mono font-semibold">
                                   {exp.export_type}
                                 </span>
-                                <span className="font-bold text-xs text-[#1D1D1F] dark:text-white">
+                                <span className="font-semibold text-xs text-slate-900 dark:text-white">
                                   Recipient: {exp.recipient_name}
                                 </span>
-                                <span className="font-mono text-[10px] text-[#86868B]">
+                                <span className="font-mono text-[10px] text-slate-400">
                                   ({exp.recipient_id})
                                 </span>
                               </div>
 
-                              <div className="mt-1 flex items-center gap-2 text-[11px] text-[#86868B]">
-                                <Clock className="h-3 w-3 text-amber-500" />
-                                <span>Access Window: <strong>{exp.expiry_hours} Hours</strong> (Valid until {formatAuditDate(exp.expires_at)})</span>
-                                <span>•</span>
-                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                              <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 flex-wrap">
+                                <span className="inline-flex items-center gap-1">
+                                  <Clock className="h-3 w-3 text-amber-500" />
+                                  <span>Window: <strong>{exp.expiry_hours} Hours</strong> (Valid until {formatAuditDate(exp.expires_at)})</span>
+                                </span>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
                                   <ShieldCheck className="h-3 w-3" />
                                   <span>Patient OTP Verified ({exp.otp_session_id})</span>
                                 </span>
@@ -1485,7 +1516,7 @@ export default function DashboardPatientsPage() {
                             <button
                               type="button"
                               onClick={() => setPreviewExportModal(exp)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-[#ECEEF2]/60 hover:bg-[#ECEEF2] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] px-3 py-1.5 text-xs font-bold text-[#1D1D1F] dark:text-white transition cursor-pointer shrink-0"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer shrink-0 shadow-2xs"
                             >
                               <Eye className="h-3.5 w-3.5 text-[#0071E3]" />
                               <span>View Watermarked EMR</span>
@@ -1493,26 +1524,26 @@ export default function DashboardPatientsPage() {
                           </div>
 
                           {/* Watermark Banner Display */}
-                          <div className="rounded-xl border border-dashed border-[#0071E3]/40 bg-[#0071E3]/[0.03] p-2.5 text-center font-mono text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] tracking-wider select-none">
+                          <div className="rounded-lg border border-dashed border-[#0071E3]/40 bg-[#0071E3]/[0.03] p-2.5 text-center font-mono text-[10px] font-semibold text-[#0071E3] dark:text-[#2997FF] tracking-wider select-none">
                             {exp.watermark_text}
                           </div>
 
-                          <div className="flex items-center justify-between text-[10px] text-[#86868B] font-mono border-t border-black/[0.04] pt-2 dark:border-white/[0.04]">
-                            <span>Tamper Seal: <strong className="text-emerald-600">{exp.tamper_seal_hash}</strong></span>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono border-t border-slate-100 pt-2 dark:border-white/[0.04] flex-wrap gap-1">
+                            <span>Tamper Seal: <strong className="text-emerald-600 font-semibold">{exp.tamper_seal_hash}</strong></span>
                             <span>Created: {formatAuditDate(exp.created_at)}</span>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-lg border border-dashed border-black/[0.1] dark:border-white/[0.1] p-8 text-center space-y-2">
-                      <p className="text-xs text-[#86868B]">
+                    <div className="rounded-lg border border-dashed border-slate-200 dark:border-white/[0.1] p-8 text-center space-y-2">
+                      <p className="text-xs text-slate-400">
                         No active watermarked exports generated for this patient yet.
                       </p>
                       <button
                         type="button"
                         onClick={() => setExportModalOpen(true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#0071E3] text-white px-3 py-1.5 text-xs font-bold shadow-sm"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] text-white px-3 py-1.5 text-xs font-semibold shadow-xs"
                       >
                         <ShieldCheck className="h-3.5 w-3.5" />
                         <span>Generate First Watermarked Export</span>
@@ -1527,12 +1558,12 @@ export default function DashboardPatientsPage() {
               {/* ============================================================= */}
               {activeTab === "audit_trail" && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                         DPDP Act (2023) Section 12 Access Audit Trail
                       </h3>
-                      <p className="text-[11px] text-[#86868B]">
+                      <p className="text-[11px] text-slate-500">
                         Immutable cryptographic log tracking every view, print, edit, and export action
                       </p>
                     </div>
@@ -1540,39 +1571,39 @@ export default function DashboardPatientsPage() {
                     <button
                       type="button"
                       onClick={handleExportAuditCsv}
-                      className="inline-flex items-center gap-1 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] px-3 py-1.5 text-xs font-bold text-[#1D1D1F] dark:text-white transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs transition cursor-pointer shrink-0"
                     >
-                      <Download className="h-3.5 w-3.5" />
+                      <Download className="h-3.5 w-3.5 text-[#0071E3]" />
                       <span>Export CSV</span>
                     </button>
                   </div>
 
-                  <div className="overflow-x-auto rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                  <div className="overflow-x-auto rounded-lg border border-slate-200/80 dark:border-white/[0.08]">
                     <table className="w-full text-left text-xs">
-                      <thead className="border-b border-black/[0.06] bg-[#ECEEF2]/40 text-[#86868B] dark:border-white/[0.06] dark:bg-white/[0.02]">
+                      <thead className="border-b border-slate-200/80 bg-slate-50/75 text-slate-500 dark:border-white/[0.06] dark:bg-white/[0.02]">
                         <tr>
-                          <th className="px-4 py-3 font-bold">Timestamp</th>
-                          <th className="px-3 py-3 font-bold">Action</th>
-                          <th className="px-4 py-3 font-bold">User &amp; Role</th>
-                          <th className="px-5 py-3 font-bold">Details</th>
+                          <th className="px-4 py-2.5 font-semibold">Timestamp</th>
+                          <th className="px-3 py-2.5 font-semibold">Action</th>
+                          <th className="px-4 py-2.5 font-semibold">User &amp; Role</th>
+                          <th className="px-4 py-2.5 font-semibold">Details</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+                      <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
                         {selectedPatient.audit_trail?.map(a => (
-                          <tr key={a.id} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition">
-                            <td className="px-4 py-3 font-mono text-[10px] text-[#86868B]">
+                          <tr key={a.id} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition">
+                            <td className="px-4 py-2.5 font-mono text-[10px] text-slate-400">
                               {formatAuditDate(a.created_at)}
                             </td>
-                            <td className="px-3 py-3">
-                              <span className="rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[9px] font-bold font-mono">
+                            <td className="px-3 py-2.5">
+                              <span className="rounded-md bg-slate-100 dark:bg-white/[0.06] px-2 py-0.5 text-[9px] font-semibold font-mono text-slate-700 dark:text-slate-300">
                                 {a.action_type}
                               </span>
                             </td>
-                            <td className="px-4 py-3">
-                              <strong className="text-[#1D1D1F] dark:text-white font-medium">{a.user_name}</strong>
-                              <div className="text-[10px] text-[#86868B]">{a.user_role}</div>
+                            <td className="px-4 py-2.5">
+                              <strong className="text-slate-900 dark:text-white font-medium">{a.user_name}</strong>
+                              <div className="text-[10px] text-slate-400">{a.user_role}</div>
                             </td>
-                            <td className="px-5 py-3 text-[11px] text-[#86868B]">
+                            <td className="px-4 py-2.5 text-[11px] text-slate-600 dark:text-slate-300">
                               {a.details}
                             </td>
                           </tr>
@@ -1604,8 +1635,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 1: HARD-STOP ALLERGY CONTRAINDICATION ENGINE (FIX 1) */}
       {/* ========================================================================= */}
       {prescribeModalOpen && selectedPatient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-rose-600" />
@@ -1613,7 +1644,7 @@ export default function DashboardPatientsPage() {
                   Active Drug Contraindication Guard
                 </h3>
               </div>
-              <button onClick={() => setPrescribeModalOpen(false)} className="p-1 text-[#86868B]">
+              <button onClick={() => setPrescribeModalOpen(false)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -1698,8 +1729,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 2: CLINICAL OVERRIDE FOR ALLERGY HARD-STOP (FIX 1) */}
       {/* ========================================================================= */}
       {overrideModalOpen && hardStopAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-rose-600" />
@@ -1707,7 +1738,7 @@ export default function DashboardPatientsPage() {
                   Clinical Override Authorization
                 </h3>
               </div>
-              <button onClick={() => setOverrideModalOpen(false)} className="p-1 text-[#86868B]">
+              <button onClick={() => setOverrideModalOpen(false)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -1805,8 +1836,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 3: INGEST STRUCTURED LAB DATA (FIX 2) */}
       {/* ========================================================================= */}
       {labModalOpen && selectedPatient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Microscope className="h-5 w-5 text-[#0071E3]" />
@@ -1814,12 +1845,12 @@ export default function DashboardPatientsPage() {
                   Ingest Structured Lab Report (HL7 / FHIR)
                 </h3>
               </div>
-              <button onClick={() => setLabModalOpen(false)} className="p-1 text-[#86868B]">
+              <button onClick={() => setLabModalOpen(false)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
                 <label className="font-bold text-[#1D1D1F] dark:text-white">Parameter Name</label>
                 <input
@@ -1898,8 +1929,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 4: SIGN VISIT AMENDMENT ADDENDUM (FIX 3) */}
       {/* ========================================================================= */}
       {amendmentModalOpen && selectedVisitForAmend && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-emerald-600" />
@@ -1907,7 +1938,7 @@ export default function DashboardPatientsPage() {
                   Sign Addendum v{selectedVisitForAmend.version + 1}.0
                 </h3>
               </div>
-              <button onClick={() => setAmendmentModalOpen(false)} className="p-1 text-[#86868B]">
+              <button onClick={() => setAmendmentModalOpen(false)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -1975,8 +2006,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 5: DUAL-ADMIN MERGE DUPLICATE IDENTITY (FIX 4) */}
       {/* ========================================================================= */}
       {mergeModalOpen && selectedMergeTicket && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-purple-600" />
@@ -1984,7 +2015,7 @@ export default function DashboardPatientsPage() {
                   Dual-Admin Record Merge Approval
                 </h3>
               </div>
-              <button onClick={() => setMergeModalOpen(false)} className="p-1 text-[#86868B]">
+              <button onClick={() => setMergeModalOpen(false)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -2035,8 +2066,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 6: EMERGENCY CONTACT ACCESS & CLINICAL DISPATCH (FIX 1) */}
       {/* ========================================================================= */}
       {emergencyModalOpen && selectedPatient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-[#0071E3]" />
@@ -2044,7 +2075,7 @@ export default function DashboardPatientsPage() {
                   Emergency Contact Privacy &amp; Clinical Dispatch
                 </h3>
               </div>
-              <button onClick={() => setEmergencyModalOpen(false)} className="p-1 text-[#86868B]">
+              <button onClick={() => setEmergencyModalOpen(false)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -2076,7 +2107,7 @@ export default function DashboardPatientsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
                 <label className="font-bold text-[#1D1D1F] dark:text-white">Staff Member Name</label>
                 <input
@@ -2150,8 +2181,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 7: SECURE WATERMARKED TIME-BOUND EXPORT (FIX 3) */}
       {/* ========================================================================= */}
       {exportModalOpen && selectedPatient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-[#0071E3]" />
@@ -2159,7 +2190,7 @@ export default function DashboardPatientsPage() {
                   Generate Secure Watermarked EMR Export
                 </h3>
               </div>
-              <button onClick={() => setExportModalOpen(false)} className="p-1 text-[#86868B]">
+              <button onClick={() => setExportModalOpen(false)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -2168,7 +2199,7 @@ export default function DashboardPatientsPage() {
               Per DPDP Act 2023 Section 12 (Right to Access) &amp; NABH clinical guidelines, all clinical records exported to external specialists require patient OTP authorization and are embedded with a cryptographic, time-bound watermark.
             </p>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
                 <label className="font-bold text-[#1D1D1F] dark:text-white">Export Protocol</label>
                 <select
@@ -2280,8 +2311,8 @@ export default function DashboardPatientsPage() {
       {/* MODAL 8: ON-SCREEN WATERMARKED EMR PREVIEW & PRINT (FIX 3) */}
       {/* ========================================================================= */}
       {previewExportModal && selectedPatient && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-4 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <FileCheck className="h-5 w-5 text-emerald-600" />
@@ -2289,7 +2320,7 @@ export default function DashboardPatientsPage() {
                   Watermarked Clinical Summary Preview
                 </h3>
               </div>
-              <button onClick={() => setPreviewExportModal(null)} className="p-1 text-[#86868B]">
+              <button onClick={() => setPreviewExportModal(null)} className="p-1 text-[#86868B] hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="h-4 w-4" />
               </button>
             </div>

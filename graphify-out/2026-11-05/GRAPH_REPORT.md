@@ -1,17 +1,17 @@
 # Graph Report - medic-sept-2026  (2026-11-05)
 
 ## Corpus Check
-- 207 files · ~365,248 words
+- 207 files · ~365,358 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: .example 2, (none) 2, .css 1)
 
 ## Summary
-- 1162 nodes · 2956 edges · 66 communities (60 shown, 6 thin omitted)
+- 1162 nodes · 2955 edges · 67 communities (61 shown, 6 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 44 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c219aa1d`
+- Built from commit: `35cc6c30`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -81,6 +81,7 @@
 - tailwind.config.ts
 - 11. Prioritized roadmap
 - 7. Security findings (prioritized)
+- MedicineSchedule.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `sql` - 193 edges
@@ -109,7 +110,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (66 total, 6 thin omitted)
+## Communities (67 total, 6 thin omitted)
 
 ### Community 0 - "3.1 Build one guard module"
 Cohesion: 0.25
@@ -132,8 +133,8 @@ Cohesion: 0.08
 Nodes (18): HomePage(), PediatricsIcon(), BrowseSpecialtiesSectionProps, DentistIcon(), DermatologyIcon(), DiabetologyIcon(), EntIcon(), GeneralPhysicianIcon() (+10 more)
 
 ### Community 5 - "today/page.tsx"
-Cohesion: 0.13
-Nodes (21): API, Appointment, bmiCategory(), bpStage(), ConsultationPane(), DashboardTodayPage(), Doctor, MOCK_APPOINTMENTS (+13 more)
+Cohesion: 0.17
+Nodes (17): API, Appointment, bmiCategory(), bpStage(), ConsultationPane(), DashboardTodayPage(), Doctor, MOCK_APPOINTMENTS (+9 more)
 
 ### Community 6 - "ClinicOS / DocSphere — Project Report & Functional Test Results"
 Cohesion: 0.17
@@ -216,8 +217,8 @@ Cohesion: 0.10
 Nodes (7): AdminTab, MapDoctor, Props, VoiceClinicRecorderProps, SIMPLE_TRANSLATIONS, VoiceDictationProps, react
 
 ### Community 26 - "dashboard/layout.tsx"
-Cohesion: 0.15
-Nodes (16): CLINIC_BOTTOM_NAV, CLINIC_CORE_NAV, CLINIC_MGMT_NAV, DashboardLayout(), FUTURE_MODULES, NavItem(), NavItemProps, ROLE_ALLOWLIST (+8 more)
+Cohesion: 0.16
+Nodes (14): CLINIC_BOTTOM_NAV, CLINIC_CORE_NAV, CLINIC_MGMT_NAV, DashboardLayout(), FUTURE_MODULES, NavItem(), NavItemProps, ROLE_ALLOWLIST (+6 more)
 
 ### Community 27 - "machine-import/route.ts"
 Cohesion: 0.31
@@ -351,6 +352,10 @@ Nodes (5): 11. Prioritized roadmap, Sprint 0 — before any real clinic data (1�
 Cohesion: 0.50
 Nodes (4): 7. Security findings (prioritized), P0 — must fix before any real patient data, P1 — fix before onboarding a second clinic, P2 — hardening
 
+### Community 66 - "MedicineSchedule.tsx"
+Cohesion: 0.33
+Nodes (6): FREQUENCY_TO_TIMES, Medicine, MedicineSchedule(), MedicineScheduleProps, parseFrequency(), TIME_LABELS
+
 ## Knowledge Gaps
 - **462 isolated node(s):** `nextConfig`, `name`, `version`, `private`, `dev` (+457 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 527 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
@@ -360,11 +365,11 @@ Nodes (4): 7. Security findings (prioritized), P0 — must fix before any real p
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `next` connect `next` to `logAudit`, `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `db.ts`, `inventory/route.ts`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `lucide-react`, `patients/route.ts`, `request-otp/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `rateLimit`, `finance/page.tsx`, `react`, `dashboard/layout.tsx`, `machine-import/route.ts`, `middleware.ts`, `guard`, `sql`, `settlement/page.tsx`, `doctors/[slug]/page.tsx`, `audit.ts`, `reports/route.ts`, `book/page.tsx`, `CLINIC_ROLES`, `dashboard/standee/page.tsx`, `reception/page.tsx`, `api-auth.ts`, `apiError`, `ledger/route.ts`, `beds/page.tsx`, `api.ts`, `tasks/route.ts`, `doctor-payouts/route.ts`, `toggle-payment/route.ts`?**
-  _High betweenness centrality (0.444) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `lucide-react`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `settlement/page.tsx`, `ConsultationRecorder.tsx`, `doctors/[slug]/page.tsx`, `book/page.tsx`, `dashboard/standee/page.tsx`, `reception/page.tsx`, `design-system.tsx`, `next`, `clinic-sync.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `api.ts`?**
-  _High betweenness centrality (0.096) - this node is a cross-community bridge._
-- **Why does `lucide-react` connect `lucide-react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `finance/page.tsx`, `react`, `dashboard/layout.tsx`, `settlement/page.tsx`, `ConsultationRecorder.tsx`, `doctors/[slug]/page.tsx`, `book/page.tsx`, `dashboard/standee/page.tsx`, `reception/page.tsx`, `design-system.tsx`, `next`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `api.ts`?**
-  _High betweenness centrality (0.086) - this node is a cross-community bridge._
+  _High betweenness centrality (0.452) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `lucide-react`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `finance/page.tsx`, `dashboard/layout.tsx`, `settlement/page.tsx`, `ConsultationRecorder.tsx`, `doctors/[slug]/page.tsx`, `book/page.tsx`, `dashboard/standee/page.tsx`, `reception/page.tsx`, `design-system.tsx`, `next`, `clinic-sync.tsx`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `api.ts`, `MedicineSchedule.tsx`?**
+  _High betweenness centrality (0.094) - this node is a cross-community bridge._
+- **Why does `lucide-react` connect `lucide-react` to `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `clinic-data.ts`, `display/waiting-room/page.tsx`, `patients/route.ts`, `claims/[id]/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `finance/page.tsx`, `react`, `dashboard/layout.tsx`, `settlement/page.tsx`, `ConsultationRecorder.tsx`, `doctors/[slug]/page.tsx`, `book/page.tsx`, `dashboard/standee/page.tsx`, `reception/page.tsx`, `design-system.tsx`, `next`, `PatientVaultPanel.tsx`, `beds/page.tsx`, `api.ts`, `MedicineSchedule.tsx`?**
+  _High betweenness centrality (0.085) - this node is a cross-community bridge._
 - **What connects `nextConfig`, `name`, `version` to the rest of the system?**
   _462 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `logAudit` be split into smaller, more focused modules?**
