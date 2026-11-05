@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Calendar,
   Stethoscope,
+  Sparkles,
   FileText,
   Printer,
   Send,
@@ -25,6 +26,7 @@ import {
 import { ClinicSyncProvider, useClinicSync } from "@/lib/clinic-sync";
 import { MedicineSchedule } from "@/components/MedicineSchedule";
 import { ConsultationRecorder, type ConsultationExtraction } from "@/components/ConsultationRecorder";
+import { AIClinicalCompanion } from "@/components/AIClinicalCompanion";
 import { PatientVaultPanel } from "@/components/PatientVaultPanel";
 import { Button, Card, Badge, DESIGN_TOKENS } from "@/components/design-system";
 
@@ -292,6 +294,8 @@ function SchedulePane({ appointments, loadingAppointments, activeAptId, setActiv
 }
 
 function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, speedRx, setSpeedRx, addMolecule, removeMolecule, bmi, sys, dia, hr, spo2, temp, weight, height, handleCompleteVisit, setShowHistory, showToast, doctorSlug, doctorName, onConsultationExtracted, onReportApproved }: { currentPatient: Appointment | null; vitals: any; setVitals: (v: any) => void; soap: any; setSoap: (v: any) => void; speedRx: any[]; setSpeedRx: (v: any) => void; addMolecule: (mol: any) => void; removeMolecule: (idx: number) => void; bmi: number; sys: number; dia: number; hr: number; spo2: number; temp: number; weight: number; height: number; handleCompleteVisit: () => void; setShowHistory: (v: boolean) => void; showToast: (msg: string) => void; doctorSlug?: string | null; doctorName?: string | null; onConsultationExtracted: (data: ConsultationExtraction) => void; onReportApproved: (report: any) => void }) {
+  const [consultMode, setConsultMode] = useState<"ai_companion" | "speed_pad">("ai_companion");
+
   if (!currentPatient) {
     return (
       <Card variant="default" className="flex flex-col items-center justify-center py-10 text-center">
@@ -351,17 +355,85 @@ function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, sp
         </div>
       </div>
 
-      {/* AI Consultation Scribe — record the conversation once */}
-      <ConsultationRecorder
-        appointmentNumber={currentPatient.appointment_number}
-        patientName={currentPatient.patient_name}
-        patientPhone={currentPatient.patient_phone}
-        doctorSlug={doctorSlug}
-        doctorName={doctorName}
-        onExtracted={onConsultationExtracted}
-        onApproved={onReportApproved}
-        showToast={showToast}
-      />
+      {/* Consultation Studio Mode Toggle */}
+      <div className="flex items-center justify-between bg-white dark:bg-[#121316] p-1.5 rounded-xl border border-slate-200/80 dark:border-white/[0.08]">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setConsultMode("ai_companion")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+              consultMode === "ai_companion"
+                ? "bg-[#0071E3] text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>AI Clinical Companion</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setConsultMode("speed_pad")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+              consultMode === "speed_pad"
+                ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Stethoscope className="h-3.5 w-3.5" />
+            <span>Manual SOAP &amp; Speed Rx</span>
+          </button>
+        </div>
+        <span className="text-[11px] text-slate-400 hidden sm:inline pr-2">
+          {consultMode === "ai_companion" ? "Real-time AI listening & dual reports active" : "Classic chamber pad"}
+        </span>
+      </div>
+
+      {/* AI Clinical Companion View */}
+      {consultMode === "ai_companion" ? (
+        <AIClinicalCompanion
+          patient={{
+            name: currentPatient.patient_name,
+            phone: currentPatient.patient_phone,
+            appointment_number: currentPatient.appointment_number,
+            token_number: currentPatient.token_number,
+            symptoms_description: currentPatient.symptoms_description,
+          }}
+          doctorName={doctorName || "Dr. Rahul Sharma"}
+          doctorSlug={doctorSlug || "dr-rahul-sharma"}
+          onConsultationCompleted={(report) => {
+            onReportApproved(report);
+            if (report.provisional_diagnosis) {
+              setSoap((prev: any) => ({ ...prev, assessment: report.provisional_diagnosis }));
+            }
+            if (report.chief_complaints) {
+              setSoap((prev: any) => ({ ...prev, subjective: report.chief_complaints }));
+            }
+            if (report.vitals) {
+              setVitals((prev: any) => ({
+                ...prev,
+                systolic: String((report.vitals as any).bp_systolic || prev.systolic || ""),
+                diastolic: String((report.vitals as any).bp_diastolic || prev.diastolic || ""),
+                heartRate: String((report.vitals as any).heart_rate || prev.heartRate || ""),
+                temperature: String((report.vitals as any).temperature || prev.temperature || ""),
+                spo2: String((report.vitals as any).spo2 || prev.spo2 || ""),
+              }));
+            }
+          }}
+          showToast={showToast}
+        />
+      ) : (
+        <>
+          {/* Classic Consultation Recorder */}
+          <ConsultationRecorder
+            appointmentNumber={currentPatient.appointment_number}
+            patientName={currentPatient.patient_name}
+            patientPhone={currentPatient.patient_phone}
+            doctorSlug={doctorSlug}
+            doctorName={doctorName}
+            onExtracted={onConsultationExtracted}
+            onApproved={onReportApproved}
+            showToast={showToast}
+          />
 
       {/* Vitals */}
       <Card variant="elevated">
@@ -467,6 +539,8 @@ function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, sp
           <CheckCircle2 className="h-4 w-4" /><span className="ml-2">Complete Visit & Call Next →</span>
         </Button>
       </div>
+        </>
+      )}
     </div>
   );
 }
