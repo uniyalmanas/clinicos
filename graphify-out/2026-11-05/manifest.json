@@ -540,9 +540,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/consult/[id]/page.tsx": {
-    "mtime": 1793624208.2748358,
-    "seen": 1793624514.3092406,
-    "ast_hash": "4a170dce71c2840d1bcfe876714233bc",
+    "mtime": 1793882788.1908925,
+    "seen": 1793882900.9904637,
+    "ast_hash": "dd56393e02c428e25cf911a593d3add4",
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/desk/page.tsx": {
@@ -1464,9 +1464,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/today/page.tsx": {
-    "mtime": 1793864446.8180552,
-    "seen": 1793871302.6624508,
-    "ast_hash": "0a928a3595491930e32ffc7d2ebac3a3",
+    "mtime": 1793882725.5607147,
+    "seen": 1793882900.9932206,
+    "ast_hash": "ce703b3b5f5ac25a2c4fb7e6cb0e0129",
     "semantic_hash": ""
   },
   "apps/web/src/components/MedicineSchedule.tsx": {
@@ -1563,6 +1563,30 @@
     "mtime": 1793851937.6408665,
     "seen": 1793862260.7291036,
     "ast_hash": "d0d8770c7adea5189f9e5596c8c4b70a",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/consultations/companion/route.ts": {
+    "mtime": 1793880054.4071524,
+    "seen": 1793882900.9792345,
+    "ast_hash": "23f7b8e11db8bc4a965de2833de99efd",
+    "semantic_hash": ""
+  },
+  "apps/web/src/components/AIClinicalCompanion.tsx": {
+    "mtime": 1793880581.3946843,
+    "seen": 1793882900.9966424,
+    "ast_hash": "a5897205eb7ebcbea30757266b159b7d",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/clinical-companion-service.ts": {
+    "mtime": 1793878364.4149392,
+    "seen": 1793882901.0023174,
+    "ast_hash": "3db4ea8a6ef11cf6671fa2689885ab1c",
+    "semantic_hash": ""
+  },
+  "apps/web/src/lib/clinical-companion-types.ts": {
+    "mtime": 1793878148.5871725,
+    "seen": 1793882901.00232,
+    "ast_hash": "046007fa0a7389cffe99c17055e90e13",
     "semantic_hash": ""
   }
 }

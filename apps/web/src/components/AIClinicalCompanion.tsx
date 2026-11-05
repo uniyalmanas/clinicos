@@ -125,6 +125,7 @@ export function AIClinicalCompanion({
   const [consentObtained, setConsentObtained] = useState(true);
   const [companionMode, setCompanionMode] = useState<CompanionInteractionMode>("assistant");
   const [speechSynthesisEnabled, setSpeechSynthesisEnabled] = useState(true);
+  const [micPermissionError, setMicPermissionError] = useState<string | null>(null);
 
   // ── 2. Speech & Transcript State ──
   const [transcript, setTranscript] = useState("");
@@ -214,8 +215,15 @@ export function AIClinicalCompanion({
   );
 
   // Audio level visualizer
-  const startAudioMeter = useCallback(async () => {
+  const startAudioMeter = useCallback(async (): Promise<boolean> => {
     try {
+      setMicPermissionError(null);
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        setMicPermissionError(
+          "Your browser or device does not support audio capture. Please use Google Chrome, Edge, or Firefox."
+        );
+        return false;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -241,8 +249,23 @@ export function AIClinicalCompanion({
         rafRef.current = requestAnimationFrame(tick);
       };
       rafRef.current = requestAnimationFrame(tick);
-    } catch (e) {
+      return true;
+    } catch (e: any) {
       console.warn("Microphone meter initialization notice:", e);
+      const errStr = String(e?.message || e?.name || e);
+      if (
+        e?.name === "NotAllowedError" ||
+        errStr.includes("denied") ||
+        errStr.includes("Permission") ||
+        errStr.includes("policy")
+      ) {
+        setMicPermissionError(
+          "Microphone permission is blocked in your browser. Tap the site settings / lock/tune icon 🔒 in your address bar, set Microphone to 'Allow', and click the microphone button again."
+        );
+      } else {
+        setMicPermissionError(`Microphone access notice: ${e?.message || "Could not access audio device"}`);
+      }
+      return false;
     }
   }, []);
 
@@ -313,7 +336,10 @@ export function AIClinicalCompanion({
 
       rec.onerror = (event: any) => {
         console.warn("Speech recognition event:", event.error);
-        if (event.error === "not-allowed") {
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          setMicPermissionError(
+            "Microphone permission is blocked in your browser. Tap the site settings / lock/tune icon 🔒 in your address bar → select 'Allow' → then click the microphone button again."
+          );
           showToast("Microphone permission was denied.");
           setIsRecording(false);
           stopAudioMeter();
@@ -350,10 +376,16 @@ export function AIClinicalCompanion({
       showToast("Please confirm patient recording consent.");
       return;
     }
+
+    const audioReady = await startAudioMeter();
+    if (!audioReady) {
+      setIsRecording(false);
+      return;
+    }
+
     setSessionActive(true);
     setIsRecording(true);
     setIsPaused(false);
-    await startAudioMeter();
     startSpeechRecognition();
 
     setChatMessages((prev) => [
@@ -723,6 +755,31 @@ export function AIClinicalCompanion({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* LEFT COLUMN (lg:col-span-7): Primary Audio Control & Live Memory Panel */}
         <div className="lg:col-span-7 space-y-4 min-w-0">
+          {/* Microphone Permission Notice Banner */}
+          {micPermissionError && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-950 shadow-xs dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 flex items-start justify-between gap-3 animate-in fade-in">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-bold text-amber-900 dark:text-amber-200">
+                    Microphone Access Required
+                  </span>
+                  <p className="leading-relaxed text-[12px] text-amber-800 dark:text-amber-300/90">
+                    {micPermissionError}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMicPermissionError(null)}
+                className="text-amber-700 hover:text-amber-950 dark:text-amber-400 dark:hover:text-amber-100 p-1 shrink-0 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                title="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
           {/* Audio Capture Card */}
           <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-white/[0.08] dark:bg-[#121316]">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

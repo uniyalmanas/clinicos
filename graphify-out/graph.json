@@ -21070,7 +21070,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/components/AIClinicalCompanion.tsx",
-      "source_location": "L136",
+      "source_location": "L137",
       "weight": 1.0
     },
     {
@@ -21082,7 +21082,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/components/AIClinicalCompanion.tsx",
-      "source_location": "L298",
+      "source_location": "L321",
       "weight": 1.0
     },
     {
@@ -21094,7 +21094,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/components/AIClinicalCompanion.tsx",
-      "source_location": "L436",
+      "source_location": "L468",
       "weight": 1.0
     },
     {
@@ -21106,7 +21106,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/components/AIClinicalCompanion.tsx",
-      "source_location": "L465",
+      "source_location": "L497",
       "weight": 1.0
     },
     {
@@ -21118,7 +21118,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/components/AIClinicalCompanion.tsx",
-      "source_location": "L505",
+      "source_location": "L537",
       "weight": 1.0
     },
     {
@@ -21130,7 +21130,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/components/AIClinicalCompanion.tsx",
-      "source_location": "L506",
+      "source_location": "L538",
       "weight": 1.0
     },
     {
@@ -21142,7 +21142,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "apps/web/src/components/AIClinicalCompanion.tsx",
-      "source_location": "L785",
+      "source_location": "L842",
       "weight": 1.0
     },
     {
@@ -49913,5 +49913,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "96e9c8ef0c015f5f2e76a64cc32b8f4865436f1d"
+  "built_at_commit": "686df83247a2e55b1f2aeda7c0fac709bc084f6a"
 }

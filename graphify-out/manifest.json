@@ -6,9 +6,9 @@
     "semantic_hash": "c68600c0eb0d34c34bfc0f4b2547e31f"
   },
   "apps/web/next.config.mjs": {
-    "mtime": 1793624437.3385594,
-    "seen": 1793624514.2935698,
-    "ast_hash": "0170bc0b15212f073ec95aa467f2ee43",
+    "mtime": 1793885495.852349,
+    "seen": 1793893915.6430295,
+    "ast_hash": "d3e1e8d88e6e084e24d0a221d357e3fe",
     "semantic_hash": ""
   },
   "apps/web/package.json": {
@@ -1572,9 +1572,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/AIClinicalCompanion.tsx": {
-    "mtime": 1793880581.3946843,
-    "seen": 1793882900.9966424,
-    "ast_hash": "a5897205eb7ebcbea30757266b159b7d",
+    "mtime": 1793893789.678121,
+    "seen": 1793893915.661709,
+    "ast_hash": "ec94d326241cf48ba36a83ffddad6748",
     "semantic_hash": ""
   },
   "apps/web/src/lib/clinical-companion-service.ts": {
