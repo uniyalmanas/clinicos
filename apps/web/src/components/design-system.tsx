@@ -4,46 +4,46 @@ import React, {
   PropsWithChildren,
   useCallback,
   useEffect,
-  useRef,
   useState,
 } from "react";
-import { X, CheckCircle2, AlertCircle, Loader2, Plus, Bell } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────
-// Design Tokens (Clinic OS)
-// Single source of truth for colors, spacing, radius, shadows.
-// Every page should use these classes so the UI feels unified.
+// Design Tokens (ClinicOS — Linear / Apple Health Inspired)
+// Precision, information density, restrained shadows & borders
 // ─────────────────────────────────────────────────────────
 
 export const DESIGN_TOKENS = {
   colors: {
     primary: "#0071E3",
     primaryHover: "#0077ED",
-    primaryLight: "bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#2997FF]/20 dark:text-[#2997FF]",
-    secondary: "#6E6E73",
-    success: "#30D158",
-    warning: "#FF9F0A",
-    danger: "#FF453A",
-    surface: "bg-[#ECEEF2] dark:bg-black",
-    surfaceCard: "bg-white dark:bg-[#1C1C1E]",
-    surfaceElevated: "bg-white dark:bg-[#2C2C2E]",
-    textPrimary: "text-[#1D1D1F] dark:text-[#F5F5F7]",
-    textSecondary: "text-[#6E6E73] dark:text-[#A1A1A6]",
-    textMuted: "text-[#86868B] dark:text-[#636366]",
-    border: "border-black/[0.06] dark:border-white/[0.08]",
-    borderFocus: "focus:ring-4 focus:ring-[#0071E3]/20 dark:focus:ring-[#2997FF]/20",
+    primaryLight: "bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#2997FF]/15 dark:text-[#2997FF]",
+    secondary: "#64748B",
+    success: "#10B981",
+    warning: "#F59E0B",
+    danger: "#EF4444",
+    surface: "bg-[#F8F9FA] dark:bg-[#0C0D0E]",
+    surfaceCard: "bg-white dark:bg-[#151618]",
+    surfaceElevated: "bg-white dark:bg-[#1A1B1E]",
+    textPrimary: "text-slate-900 dark:text-slate-100",
+    textSecondary: "text-slate-600 dark:text-slate-400",
+    textMuted: "text-slate-500 dark:text-slate-500",
+    border: "border-slate-200 dark:border-white/[0.08]",
+    borderFocus: "focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] dark:focus:ring-[#2997FF]/20 dark:focus:border-[#2997FF]",
   },
   radius: {
-    sm: "rounded-lg",
-    md: "rounded-xl",
-    lg: "rounded-2xl",
-    xl: "rounded-3xl",
+    xs: "rounded",
+    sm: "rounded-md",
+    md: "rounded-lg",
+    lg: "rounded-xl",
+    xl: "rounded-2xl",
     full: "rounded-full",
   },
   shadow: {
+    xs: "shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
     sm: "shadow-sm",
-    md: "shadow-apple-sm",
-    lg: "shadow-apple-card",
+    md: "shadow-[0_2px_6px_rgba(0,0,0,0.05)]",
+    lg: "shadow-[0_4px_16px_rgba(0,0,0,0.08)]",
   },
 } as const;
 
@@ -70,23 +70,23 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
   primary:
-    "bg-[#0071E3] text-white shadow-[#0071E3]/30 hover:bg-[#0077ED] active:scale-95",
+    "bg-[#0071E3] text-white hover:bg-[#0077ED] shadow-sm font-semibold active:scale-[0.99]",
   secondary:
-    "bg-[#F5F6F9] text-[#1D1D1F] hover:bg-[#ECEEF2] dark:bg-[#2C2C2E] dark:text-white dark:hover:bg-[#1C1C1E] active:scale-95",
+    "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200/80 dark:bg-white/[0.06] dark:text-slate-200 dark:border-white/[0.08] dark:hover:bg-white/[0.1] active:scale-[0.99]",
   outline:
-    "border border-black/[0.08] bg-white text-[#1D1D1F] hover:bg-[#ECEEF2] dark:border-white/[0.08] dark:bg-[#2C2C2E] dark:text-white dark:hover:bg-[#1C1C1E] active:scale-95",
+    "border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200 dark:hover:bg-[#1E2024] active:scale-[0.99]",
   ghost:
-    "bg-transparent text-[#6E6E73] hover:bg-[#ECEEF2] dark:text-[#A1A1A6] dark:hover:bg-[#1C1C1E] active:scale-95",
+    "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white active:scale-[0.99]",
   danger:
-    "bg-[#FF453A] text-white hover:bg-[#FF574D] shadow-[#FF453A]/30 active:scale-95",
+    "bg-rose-600 text-white hover:bg-rose-700 shadow-sm font-semibold active:scale-[0.99]",
   success:
-    "bg-[#30D158] text-white hover:bg-[#34E061] shadow-[#30D158]/30 active:scale-95",
+    "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm font-semibold active:scale-[0.99]",
 };
 
 const SIZE_STYLES: Record<"sm" | "md" | "lg", string> = {
-  sm: "px-3 py-1.5 text-xs",
-  md: "px-4 py-2 text-sm",
-  lg: "px-6 py-3 text-base",
+  sm: "px-2.5 py-1.5 text-xs gap-1.5",
+  md: "px-3.5 py-2 text-xs font-medium gap-2",
+  lg: "px-4 py-2.5 text-sm font-medium gap-2.5",
 };
 
 export function Button({
@@ -104,11 +104,10 @@ export function Button({
     <button
       disabled={disabled || isLoading}
       className={`
-        inline-flex items-center justify-center gap-2
+        inline-flex items-center justify-center
         ${DESIGN_TOKENS.radius.md}
-        ${DESIGN_TOKENS.shadow.md}
-        font-bold transition-all duration-200
-        disabled:opacity-50 disabled:pointer-events-none
+        transition-colors duration-150
+        disabled:opacity-50 disabled:pointer-events-none cursor-pointer
         ${VARIANT_STYLES[variant]}
         ${SIZE_STYLES[size]}
         ${fullWidth ? "w-full" : ""}
@@ -116,16 +115,10 @@ export function Button({
       `}
       {...props}
     >
-      {isLoading && (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      )}
-      {leftIcon && !isLoading && (
-        <span className="flex-shrink-0">{leftIcon}</span>
-      )}
+      {isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+      {leftIcon && !isLoading && <span className="flex-shrink-0">{leftIcon}</span>}
       {!isLoading && props.children}
-      {rightIcon && !isLoading && (
-        <span className="flex-shrink-0">{rightIcon}</span>
-      )}
+      {rightIcon && !isLoading && <span className="flex-shrink-0">{rightIcon}</span>}
     </button>
   );
 }
@@ -150,13 +143,13 @@ export function Card({
     none: "",
     sm: "p-3",
     md: "p-4",
-    lg: "p-6",
+    lg: "p-5 sm:p-6",
   };
 
   const VARIANT_STYLES: Record<string, string> = {
-    default: `${DESIGN_TOKENS.colors.surfaceCard} ${DESIGN_TOKENS.colors.border}`,
-    elevated: `${DESIGN_TOKENS.colors.surfaceElevated} ${DESIGN_TOKENS.shadow.lg} border border-black/[0.04] dark:border-white/[0.08]`,
-    outlined: `${DESIGN_TOKENS.colors.border} bg-transparent`,
+    default: `${DESIGN_TOKENS.colors.surfaceCard} border ${DESIGN_TOKENS.colors.border} ${DESIGN_TOKENS.shadow.sm}`,
+    elevated: `${DESIGN_TOKENS.colors.surfaceElevated} border border-slate-200/90 dark:border-white/[0.08] ${DESIGN_TOKENS.shadow.md}`,
+    outlined: `bg-transparent border ${DESIGN_TOKENS.colors.border}`,
   };
 
   return (
@@ -165,7 +158,7 @@ export function Card({
         ${DESIGN_TOKENS.radius.lg}
         ${VARIANT_STYLES[variant]}
         ${PADDING_STYLES[padding]}
-        transition-all duration-200 hover:shadow-lg
+        transition-colors duration-150
         ${className}
       `}
     >
@@ -194,24 +187,26 @@ export function Input({
   ...props
 }: InputProps) {
   return (
-    <div className="space-y-1 w-full">
+    <div className="space-y-1.5 w-full">
       {label && (
-        <label className="block text-xs font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+        <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
           {label}
         </label>
       )}
       <div className="relative">
         {leftIcon && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#86868B] dark:text-[#636366]">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none">
             {leftIcon}
           </span>
         )}
         <input
           className={`
-            w-full rounded-xl border bg-white px-3 py-2.5 pl-9 text-[#1D1D1F] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white
+            w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-900 dark:border-white/[0.1] dark:bg-[#151618] dark:text-white
+            placeholder:text-slate-400 dark:placeholder:text-slate-500
             focus:outline-none ${DESIGN_TOKENS.colors.borderFocus}
-            disabled:bg-[#F5F6F9] dark:disabled:bg-[#2C2C2E]
-            ${error ? "border-[#FF453A] focus:ring-[#FF453A]/20" : ""}
+            disabled:bg-slate-50 disabled:text-slate-400 dark:disabled:bg-[#1A1B1E]
+            transition-colors duration-150
+            ${error ? "border-rose-500 focus:ring-rose-500/20" : ""}
             ${leftIcon ? "pl-9" : "pl-3"}
             ${className}
           `}
@@ -219,10 +214,10 @@ export function Input({
         />
       </div>
       {error && (
-        <p className="text-xs text-[#FF453A] dark:text-[#FF6B6B]">{error}</p>
+        <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">{error}</p>
       )}
       {helper && !error && (
-        <p className="text-xs text-[#86868B] dark:text-[#636366]">{helper}</p>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">{helper}</p>
       )}
     </div>
   );
@@ -233,22 +228,24 @@ export function Input({
 // ─────────────────────────────────────────────────────────
 
 interface BadgeProps {
-  variant?: "default" | "success" | "warning" | "danger" | "info";
+  variant?: "default" | "success" | "warning" | "danger" | "info" | "neutral";
   children: React.ReactNode;
+  className?: string;
 }
 
 const BADGE_STYLES: Record<string, string> = {
-  default: "bg-[#ECEEF2] text-[#6E6E73] dark:bg-[#2C2C2E] dark:text-[#A1A1A6]",
-  success: "bg-[#30D158]/10 text-[#30D158] dark:bg-[#30D158]/20 dark:text-[#34E061]",
-  warning: "bg-[#FF9F0A]/10 text-[#FF9F0A] dark:bg-[#FF9F0A]/20 dark:text-[#FFB34D]",
-  danger: "bg-[#FF453A]/10 text-[#FF453A] dark:bg-[#FF453A]/20 dark:text-[#FF6B6B]",
-  info: "bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#2997FF]/20 dark:text-[#2997FF]",
+  default: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-white/[0.06] dark:text-slate-300 dark:border-white/[0.08]",
+  neutral: "bg-slate-100 text-slate-600 border-slate-200/80 dark:bg-white/[0.05] dark:text-slate-400 dark:border-white/[0.08]",
+  success: "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/40",
+  warning: "bg-amber-50 text-amber-800 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40",
+  danger: "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/40",
+  info: "bg-blue-50 text-[#0071E3] border-blue-200/80 dark:bg-blue-950/40 dark:text-[#2997FF] dark:border-blue-800/40",
 };
 
-export function Badge({ variant = "default", children }: BadgeProps) {
+export function Badge({ variant = "default", children, className = "" }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${BADGE_STYLES[variant]}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${BADGE_STYLES[variant]} ${className}`}
     >
       {children}
     </span>
@@ -271,7 +268,7 @@ const MODAL_SIZES: Record<string, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
-  xl: "max-w-xl",
+  xl: "max-w-2xl",
 };
 
 export function Modal({ open, onClose, title, children, size = "md" }: ModalProps) {
@@ -279,28 +276,28 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className={`relative z-10 w-full ${MODAL_SIZES[size]} bg-white rounded-3xl border border-white/[0.08] dark:bg-[#1C1C1E] dark:border-white/[0.08] shadow-2xl animate-in fade-in duration-200`}
+        className={`relative z-10 w-full ${MODAL_SIZES[size]} bg-white rounded-xl border border-slate-200 dark:bg-[#151618] dark:border-white/[0.1] shadow-2xl overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] px-6 py-4">
-            <h3 className="font-bold text-[#1D1D1F] dark:text-white">{title}</h3>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.08] px-5 py-3.5">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-[#86868B] hover:bg-[#ECEEF2] dark:text-[#A1A1A6] dark:hover:bg-[#1C1C1E] transition"
+              className="rounded-md p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-white/[0.06] transition"
               aria-label="Close"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         )}
-        <div className="px-6 py-4">{children}</div>
+        <div className="p-5">{children}</div>
       </div>
     </div>
   );
@@ -317,10 +314,10 @@ interface Toast {
 }
 
 const TOAST_STYLES: Record<string, string> = {
-  success: "bg-[#1D1D1F] text-white border border-white/10 shadow-2xl",
-  error: "bg-[#FF453A]/10 border border-[#FF453A]/20 text-[#FF453A] shadow-2xl",
-  warning: "bg-[#FF9F0A]/10 border border-[#FF9F0A]/20 text-[#FF9F0A] shadow-2xl",
-  info: "bg-[#0071E3]/10 border border-[#0071E3]/20 text-[#0071E3] shadow-2xl",
+  success: "bg-slate-900 text-white border-slate-800 shadow-lg dark:bg-[#1E2024] dark:border-white/10",
+  error: "bg-rose-950 text-white border-rose-800 shadow-lg",
+  warning: "bg-amber-950 text-white border-amber-800 shadow-lg",
+  info: "bg-slate-900 text-white border-slate-800 shadow-lg dark:bg-[#1E2024] dark:border-white/10",
 };
 
 export function ToastContainer() {
@@ -337,34 +334,27 @@ export function ToastContainer() {
     []
   );
 
-  // Expose toast globally for components that need it
   useEffect(() => {
     (window as any).__clinicosToast = toast;
   }, [toast]);
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`pointer-events-auto flex items-center gap-2.5 rounded-2xl px-4 py-3 text-xs font-bold shadow-2xl border animate-in fade-in duration-200 ${
+          className={`pointer-events-auto flex items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-xs font-medium border animate-in slide-in-from-bottom-2 duration-150 ${
             TOAST_STYLES[t.type]
           }`}
         >
-          {t.type === "success" && (
-            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-          )}
-          {t.type === "error" && (
-            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
-          )}
-          <span>{t.message}</span>
+          {t.type === "success" && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
+          {t.type === "error" && <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />}
+          <span className="leading-snug">{t.message}</span>
           <button
-            onClick={() =>
-              setToasts((prev) => prev.filter((x) => x.id !== t.id))
-            }
-            className="ml-2 opacity-60 hover:opacity-100"
+            onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+            className="ml-2 text-slate-400 hover:text-white"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3 w-3" />
           </button>
         </div>
       ))}
@@ -382,7 +372,7 @@ export function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`animate-pulse rounded-lg bg-[#ECEEF2] dark:bg-[#2C2C2E] ${className}`}
+      className={`animate-pulse rounded-md bg-slate-200/70 dark:bg-white/[0.06] ${className}`}
       {...props}
     />
   );
@@ -401,16 +391,16 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, subtitle, icon, action }: SectionHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          {icon && <span>{icon}</span>}
-          <h2 className="text-xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-slate-500">{icon}</span>}
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
             {title}
           </h2>
         </div>
         {subtitle && (
-          <p className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">{subtitle}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
         )}
       </div>
       {action && <div>{action}</div>}

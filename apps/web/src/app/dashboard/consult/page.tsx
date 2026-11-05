@@ -178,22 +178,22 @@ export default function PrescriptionsArchivePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-black tracking-wider uppercase">
+            <span className="px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-bold tracking-wider uppercase">
               RX ARCHIVE
             </span>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Clinic Prescription Register
             </h1>
           </div>
-          <p className="text-xs text-[#86868B] mt-0.5">
-            Digital NMC-compliant prescription vault • Direct WhatsApp re-dispatch • Jan Aushadhi generic tracking
+          <p className="text-xs text-slate-500 mt-0.5">
+            Digital NMC-compliant prescription vault • Direct WhatsApp re-dispatch • Generic Jan Aushadhi tracking
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-4 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#151618] px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs transition"
             title="Export all prescription records to .CSV for Excel"
           >
             <Download className="h-3.5 w-3.5 text-[#0071E3]" />
@@ -202,7 +202,7 @@ export default function PrescriptionsArchivePage() {
 
           <Link
             href="/doctor/consult"
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] px-4 py-2 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition"
           >
             <Plus className="h-4 w-4" />
             <span>New Consultation</span>
@@ -215,40 +215,40 @@ export default function PrescriptionsArchivePage() {
         <div className="flex items-center gap-1.5 flex-wrap text-xs">
           <button
             onClick={() => setSelectedFilter("all")}
-            className={`rounded-full px-3 py-1 font-semibold transition ${
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
               selectedFilter === "all"
-                ? "bg-[#0071E3] text-white"
-                : "bg-black/[0.04] text-[#86868B] hover:text-[#1D1D1F] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                ? "bg-[#0071E3] text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
             }`}
           >
             All Prescriptions ({prescriptions.length})
           </button>
           <button
             onClick={() => setSelectedFilter("today")}
-            className={`rounded-full px-3 py-1 font-semibold transition ${
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
               selectedFilter === "today"
-                ? "bg-[#0071E3] text-white"
-                : "bg-black/[0.04] text-[#86868B] hover:text-[#1D1D1F] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                ? "bg-[#0071E3] text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
             }`}
           >
             Today ({prescriptions.filter(p => p.date === "02 Nov 2026").length})
           </button>
           <button
             onClick={() => setSelectedFilter("dr-rahul")}
-            className={`rounded-full px-3 py-1 font-semibold transition ${
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
               selectedFilter === "dr-rahul"
-                ? "bg-[#0071E3] text-white"
-                : "bg-black/[0.04] text-[#86868B] hover:text-[#1D1D1F] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                ? "bg-[#0071E3] text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
             }`}
           >
             Dr. Rahul Sharma
           </button>
           <button
             onClick={() => setSelectedFilter("dr-aditi")}
-            className={`rounded-full px-3 py-1 font-semibold transition ${
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
               selectedFilter === "dr-aditi"
-                ? "bg-[#0071E3] text-white"
-                : "bg-black/[0.04] text-[#86868B] hover:text-[#1D1D1F] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                ? "bg-[#0071E3] text-white shadow-xs"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
             }`}
           >
             Dr. Aditi Joshi
@@ -256,59 +256,59 @@ export default function PrescriptionsArchivePage() {
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           <input
             type="text"
             placeholder="Search patient, diagnosis, medicine..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] py-1.5 pl-8 pr-3 text-xs text-[#1D1D1F] dark:text-white placeholder-[#86868B] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/30"
+            className="w-full rounded-lg border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#151618] py-1.5 pl-8 pr-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 shadow-xs focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3]"
           />
         </div>
       </div>
 
       {/* Prescription Register Table */}
-      <div className="rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] shadow-apple-card overflow-hidden">
+      <div className="rounded-xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#151618] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F5F5F7] dark:bg-black/30 border-b border-black/[0.04] dark:border-white/[0.06] text-[10px] uppercase font-bold text-[#86868B]">
+            <thead className="bg-slate-50/75 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/[0.08] text-[11px] uppercase font-semibold text-slate-500">
               <tr>
-                <th className="py-3 px-4">Rx ID & Date</th>
-                <th className="py-3 px-4">Patient Details</th>
-                <th className="py-3 px-4">Doctor</th>
-                <th className="py-3 px-4">Diagnosis</th>
-                <th className="py-3 px-4">Prescribed Medicines</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-2.5 px-4">Rx ID & Date</th>
+                <th className="py-2.5 px-4">Patient Details</th>
+                <th className="py-2.5 px-4">Doctor</th>
+                <th className="py-2.5 px-4">Diagnosis</th>
+                <th className="py-2.5 px-4">Prescribed Medicines</th>
+                <th className="py-2.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06]">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
               {filteredRx.map(rx => (
-                <tr key={rx.rx_id} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.02] transition">
+                <tr key={rx.rx_id} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition">
                   <td className="py-3 px-4">
-                    <span className="font-mono font-bold text-[#0071E3] dark:text-[#2997FF]">
+                    <span className="font-mono font-semibold text-[#0071E3] dark:text-[#2997FF]">
                       {rx.rx_id}
                     </span>
-                    <div className="text-[11px] text-[#86868B]">{rx.date}</div>
+                    <div className="text-[11px] text-slate-400">{rx.date}</div>
                   </td>
 
                   <td className="py-3 px-4">
-                    <div className="font-bold text-[#1D1D1F] dark:text-white">
+                    <div className="font-semibold text-slate-900 dark:text-white">
                       {rx.patient_name}
                     </div>
-                    <div className="text-[11px] text-[#86868B]">
+                    <div className="text-[11px] text-slate-400">
                       {rx.age}Y • {rx.gender} • <span className="font-mono">{rx.patient_phone}</span>
                     </div>
                   </td>
 
                   <td className="py-3 px-4">
-                    <div className="font-semibold text-[#1D1D1F] dark:text-white">
+                    <div className="font-semibold text-slate-900 dark:text-white">
                       {rx.doctor_name}
                     </div>
-                    <div className="text-[10px] text-[#86868B]">{rx.specialization}</div>
+                    <div className="text-[10px] text-slate-400">{rx.specialization}</div>
                   </td>
 
                   <td className="py-3 px-4">
-                    <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60">
                       {rx.provisional_diagnosis}
                     </span>
                   </td>
@@ -316,7 +316,7 @@ export default function PrescriptionsArchivePage() {
                   <td className="py-3 px-4 max-w-xs">
                     <div className="space-y-0.5">
                       {rx.medications.map((m: string, idx: number) => (
-                        <div key={idx} className="text-[11px] text-[#515154] dark:text-[#A1A1A6] truncate">
+                        <div key={idx} className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
                           • {m}
                         </div>
                       ))}
@@ -328,7 +328,7 @@ export default function PrescriptionsArchivePage() {
                       <Link
                         href={`/p/${rx.rx_id}`}
                         target="_blank"
-                        className="inline-flex items-center gap-1 rounded-lg border border-black/[0.08] dark:border-white/[0.1] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] transition"
+                        className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-white/[0.1] px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 shadow-xs transition"
                         title="View Public Digital Rx PDF"
                       >
                         <ExternalLink className="h-3 w-3 text-[#0071E3]" />
@@ -341,7 +341,7 @@ export default function PrescriptionsArchivePage() {
                         )}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition"
+                        className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 hover:bg-emerald-100 transition shadow-xs"
                         title="Re-send prescription via WhatsApp"
                       >
                         <Share2 className="h-3 w-3" />

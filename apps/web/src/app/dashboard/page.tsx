@@ -570,9 +570,10 @@ export default function DashboardOverviewPage() {
                 playTokenCallChime();
                 showToast("Acoustic calling bell test chime played");
               }}
-              className="text-[#0071E3] font-bold hover:underline"
+              className="text-[#0071E3] font-bold hover:underline inline-flex items-center gap-1"
             >
-              Test Chime 🔔
+              <Volume2 className="h-3 w-3" />
+              <span>Test Chime</span>
             </button>
           </div>
         </section>
@@ -601,11 +602,12 @@ export default function DashboardOverviewPage() {
                 </div>
 
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="font-mono text-[10px] bg-white/70 dark:bg-black/40 px-2 py-1 rounded-full text-[#6E6E73] dark:text-[#A1A1A6]">
+                  <span className="font-mono text-[10px] bg-white/70 dark:bg-black/40 px-2 py-1 rounded-md text-[#6E6E73] dark:text-[#A1A1A6]">
                     {currentPatient.inRoomMins}m in room
                   </span>
-                  <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full text-[11px]">
-                    ₹{currentPatient.fee} {currentPatient.paymentMode} ✓
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md text-[11px] inline-flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>₹{currentPatient.fee} {currentPatient.paymentMode} Paid</span>
                   </span>
                 </div>
               </div>
@@ -616,7 +618,7 @@ export default function DashboardOverviewPage() {
                 className="rounded-lg bg-amber-500/10 p-2 text-xs text-amber-900 dark:text-amber-200 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition"
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-amber-600">⚠️</span>
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                   <span className="font-bold">
                     Visit #{currentPatient.visitNumber} · Prior Rx: {currentPatient.lastRx}
                   </span>
@@ -854,13 +856,13 @@ export default function DashboardOverviewPage() {
                           <button
                             type="button"
                             onClick={() => handleTogglePayment(r.token)}
-                            className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition ${
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition ${
                               r.paymentStatus === "paid"
                                 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                                 : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
                             }`}
                           >
-                            {r.paymentMode} {r.paymentStatus === "paid" ? "✓" : "Due"}
+                            {r.paymentMode} {r.paymentStatus === "paid" ? "Paid" : "Due"}
                           </button>
                         </td>
                       </tr>
@@ -885,9 +887,10 @@ export default function DashboardOverviewPage() {
             <button
               type="button"
               onClick={() => setShowCashDrawerModal(true)}
-              className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] px-3 py-1.5 shadow-2xs transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs px-3 py-1.5 shadow-2xs transition"
             >
-              Lock 9 PM Drawer 🔒
+              <Lock className="h-3.5 w-3.5" />
+              <span>Lock 9 PM Drawer</span>
             </button>
           </div>
         </section>
@@ -1138,7 +1141,7 @@ export default function DashboardOverviewPage() {
                 <span>Discrepancy:</span>
                 <span>
                   {countedCash === cashTotal
-                    ? "₹0.00 (100% Balanced ✓)"
+                    ? "₹0.00 (100% Balanced)"
                     : `₹${(countedCash - cashTotal).toLocaleString("en-IN")} (Audit Flag)`}
                 </span>
               </div>

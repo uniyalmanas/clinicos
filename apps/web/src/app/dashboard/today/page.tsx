@@ -231,15 +231,15 @@ function SchedulePane({ appointments, loadingAppointments, activeAptId, setActiv
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <Card variant="elevated" className="p-3 border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 dark:border-emerald-900/30">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">In Chamber</div>
-          <div className="text-lg font-black font-mono text-emerald-800 dark:text-emerald-200">{inChamber?.patient_name || "—"}</div>
-        </Card>
-        <Card variant="elevated" className="p-3 border-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-900/30">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">Waiting</div>
-          <div className="text-lg font-black font-mono text-blue-800 dark:text-blue-200">{waitingCount}</div>
-        </Card>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5 dark:border-white/[0.08] dark:bg-white/[0.02]">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">In Chamber</div>
+          <div className="text-base font-bold font-mono text-emerald-700 dark:text-emerald-400 truncate">{inChamber?.patient_name || "—"}</div>
+        </div>
+        <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5 dark:border-white/[0.08] dark:bg-white/[0.02]">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Waiting</div>
+          <div className="text-base font-bold font-mono text-blue-700 dark:text-blue-400">{waitingCount}</div>
+        </div>
       </div>
 
       {/* Patient List */}
@@ -294,39 +294,60 @@ function SchedulePane({ appointments, loadingAppointments, activeAptId, setActiv
 function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, speedRx, setSpeedRx, addMolecule, removeMolecule, bmi, sys, dia, hr, spo2, temp, weight, height, handleCompleteVisit, setShowHistory, showToast, doctorSlug, doctorName, onConsultationExtracted, onReportApproved }: { currentPatient: Appointment | null; vitals: any; setVitals: (v: any) => void; soap: any; setSoap: (v: any) => void; speedRx: any[]; setSpeedRx: (v: any) => void; addMolecule: (mol: any) => void; removeMolecule: (idx: number) => void; bmi: number; sys: number; dia: number; hr: number; spo2: number; temp: number; weight: number; height: number; handleCompleteVisit: () => void; setShowHistory: (v: boolean) => void; showToast: (msg: string) => void; doctorSlug?: string | null; doctorName?: string | null; onConsultationExtracted: (data: ConsultationExtraction) => void; onReportApproved: (report: any) => void }) {
   if (!currentPatient) {
     return (
-      <Card variant="elevated" className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-16 h-16 rounded-full bg-white/[0.05] dark:bg-white/[0.08] flex items-center justify-center mb-4">
-          <Stethoscope className="h-8 w-8 text-[#86868B] dark:text-[#636366]" />
+      <Card variant="default" className="flex flex-col items-center justify-center py-10 text-center">
+        <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center mb-3 text-[#0071E3] dark:text-[#2997FF]">
+          <Stethoscope className="h-6 w-6" />
         </div>
-        <h3 className="font-bold text-[#1D1D1F] dark:text-white mb-2">No patient selected</h3>
-        <p className="text-xs text-[#86868B] dark:text-[#636366] max-w-xs mx-auto">Tap a patient from today's schedule on the left to begin consultation.</p>
+        <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">Select a Patient to Consult</h3>
+        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          Choose a patient from the queue on the left to begin examination, dictation, vitals entry, or Speed Rx.
+        </p>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3.5">
       {/* Patient Header */}
-      <div className="rounded-2xl border border-emerald-500/25 bg-emerald-50/40 p-5 dark:bg-emerald-950/20 dark:border-emerald-900/30">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <span className="rounded-md bg-emerald-600 px-2.5 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">IN CONSULTATION</span>
-            <span className="font-mono text-xl font-black text-emerald-600 dark:text-emerald-400">#{currentPatient.token_number}</span>
-            <span className="text-xl font-bold text-[#1D1D1F] dark:text-white">{currentPatient.patient_name}</span>
-            <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">{currentPatient.patient_phone ? `+91 ${currentPatient.patient_phone.slice(0, 5)} ${currentPatient.patient_phone.slice(5)}` : "—"}</span>
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/40 p-3.5 dark:bg-emerald-950/20 dark:border-emerald-900/30">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+              IN CHAMBER
+            </span>
+            <span className="font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
+              #{currentPatient.token_number}
+            </span>
+            <span className="text-base font-bold text-slate-900 dark:text-white">
+              {currentPatient.patient_name}
+            </span>
+            <span className="text-xs text-slate-500">
+              {currentPatient.patient_phone ? `+91 ${currentPatient.patient_phone}` : "—"}
+            </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">₹{currentPatient.fee_amount}</span>
-            <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">{currentPatient.payment_mode}</span>
-            <span className="text-emerald-600">✓</span>
+            <span className="font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
+              ₹{currentPatient.fee_amount}
+            </span>
+            <span className="font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
+              {currentPatient.payment_mode.toUpperCase()}
+            </span>
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           </div>
         </div>
-        <div onClick={() => setShowHistory(true)} className="rounded-lg bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition group">
+        <div
+          onClick={() => setShowHistory(true)}
+          className="rounded-lg bg-amber-500/10 p-2 text-xs text-amber-900 dark:text-amber-200 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition group"
+        >
           <div className="flex items-center gap-1.5 truncate">
-            <span className="text-amber-600">⚠</span>
-            <span className="font-bold">Visit #{currentPatient.token_number} · {currentPatient.symptoms_description || "Routine follow-up"}</span>
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+            <span className="font-medium truncate">
+              Visit #{currentPatient.token_number} · {currentPatient.symptoms_description || "Routine follow-up"}
+            </span>
           </div>
-          <span className="font-bold text-[10px] text-amber-700 dark:text-amber-300 underline shrink-0 group-hover:opacity-80">History →</span>
+          <span className="font-semibold text-[11px] text-amber-700 dark:text-amber-300 underline shrink-0 group-hover:opacity-80 ml-2">
+            History →
+          </span>
         </div>
       </div>
 

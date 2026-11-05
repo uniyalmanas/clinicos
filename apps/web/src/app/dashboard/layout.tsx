@@ -32,6 +32,7 @@ import {
   Lock,
   ChevronDown,
   Banknote,
+  Building2,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────
@@ -117,33 +118,33 @@ function NavItem({ item, isActive, isCollapsed, onClick }: NavItemProps) {
 
   if (isCollapsed) {
     return (
-      <div className="relative group flex justify-center py-1">
+      <div className="relative group flex justify-center py-0.5">
         <Link
           href={item.href}
           onClick={onClick}
-          className={`flex h-10 w-10 items-center justify-center rounded-[12px] transition-all relative ${
+          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors relative ${
             isActive
-              ? "bg-[#0071E3] text-white shadow-sm shadow-[#0071E3]/25 font-bold"
-              : "text-[#6E6E73] hover:bg-[#F2F4F7] hover:text-[#0071E3] dark:text-[#A1A1A6] dark:hover:bg-white/[0.07] dark:hover:text-white"
+              ? "bg-[#0071E3] text-white shadow-xs font-semibold"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
           }`}
           title={item.label}
         >
-          <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-white" : ""}`} />
+          <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : ""}`} />
           {item.badge && (
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#0071E3] ring-2 ring-white dark:ring-black" />
+            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#0071E3] ring-2 ring-white dark:ring-black" />
           )}
         </Link>
 
         {/* Floating Tooltip */}
-        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-          <Card variant="default" padding="sm" className="bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.1] shadow-lg">
+        <div className="absolute left-full ml-2.5 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center z-50 pointer-events-none animate-in fade-in duration-100">
+          <div className="bg-slate-900 text-white dark:bg-[#1C1C1E] border border-slate-800 dark:border-white/[0.1] rounded-md px-2 py-1 shadow-md">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-[#1D1D1F] dark:text-white whitespace-nowrap">{item.label}</span>
+              <span className="text-[11px] font-medium whitespace-nowrap">{item.label}</span>
               {item.badge && (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#2997FF]/20 dark:text-[#2997FF]">{item.badge}</span>
+                <span className="px-1 py-0.2 rounded text-[9px] font-semibold bg-white/20 text-white">{item.badge}</span>
               )}
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     );
@@ -153,23 +154,23 @@ function NavItem({ item, isActive, isCollapsed, onClick }: NavItemProps) {
     <Link
       href={item.href}
       onClick={onClick}
-      className={`group flex items-center justify-between rounded-[12px] px-3 py-2.5 text-[12px] font-semibold transition-all ${
+      className={`group flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-colors ${
         isActive
-          ? "bg-[#0071E3] text-white shadow-sm shadow-[#0071E3]/25 font-bold"
-          : "text-[#3A3A3C] hover:bg-[#F2F4F7] hover:text-[#0071E3] dark:text-[#A1A1A6] dark:hover:bg-white/[0.07] dark:hover:text-white"
+          ? "bg-[#0071E3] text-white shadow-xs font-semibold"
+          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
       }`}
     >
       <div className="flex items-center gap-2.5 min-w-0">
-        <Icon className={`h-[16px] w-[16px] shrink-0 ${isActive ? "text-white" : "text-[#86868B] group-hover:text-[#0071E3] dark:text-[#8E8E93] dark:group-hover:text-[#2997FF]"}`} />
+        <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-200"}`} />
         <span className="flex-1 truncate">{item.label}</span>
       </div>
       {item.badge && (
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${
           isActive
             ? "bg-white/20 text-white"
             : item.optional
-            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-            : "bg-[#EBF2FA] text-[#0071E3] dark:bg-white/[0.1] dark:text-[#2997FF]"
+            ? "bg-amber-50 text-amber-700 border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/40"
+            : "bg-blue-50 text-[#0071E3] border border-blue-200/60 dark:bg-blue-950/40 dark:text-[#2997FF] dark:border-blue-900/40"
         }`}>
           {item.badge}
         </span>
@@ -184,11 +185,11 @@ function NavItem({ item, isActive, isCollapsed, onClick }: NavItemProps) {
 
 function SectionLabel({ label, isCollapsed }: { label: string; isCollapsed?: boolean }) {
   if (isCollapsed) {
-    return <div className="my-2 mx-auto w-6 h-px bg-black/[0.08] dark:bg-white/[0.08]" />;
+    return <div className="my-1.5 mx-auto w-5 h-px bg-slate-200 dark:bg-white/[0.08]" />;
   }
   return (
-    <div className="px-3 pt-3.5 pb-1">
-      <span className="text-[10px] font-black uppercase tracking-wider text-[#86868B] dark:text-[#8E8E93]">
+    <div className="px-2.5 pt-3 pb-1">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
         {label}
       </span>
     </div>
@@ -241,31 +242,31 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* ── Brand Header ── */}
-      <div className={`border-b border-black/[0.06] dark:border-white/[0.08] ${isCollapsed ? "p-2.5 flex flex-col items-center gap-2" : "p-4"}`}>
+      <div className={`border-b border-slate-200/80 dark:border-white/[0.08] ${isCollapsed ? "p-2 flex flex-col items-center gap-2" : "p-3.5"}`}>
         {isCollapsed ? (
           <button
             onClick={onToggleCollapse}
-            className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#0071E3] text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition group relative"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0071E3] text-white shadow-xs hover:bg-[#0077ED] transition group relative"
             title="Expand Sidebar"
           >
-            <Menu className="h-5 w-5" />
-            <div className="absolute left-full ml-3 hidden group-hover:flex items-center z-50 pointer-events-none">
-              <Card variant="default" padding="sm">
-                <span className="text-[10px] font-semibold whitespace-nowrap">Expand Sidebar</span>
-              </Card>
+            <Menu className="h-4 w-4" />
+            <div className="absolute left-full ml-2.5 hidden group-hover:flex items-center z-50 pointer-events-none">
+              <div className="bg-slate-900 text-white rounded-md px-2 py-1 text-[10px] font-medium whitespace-nowrap shadow-md">
+                Expand Sidebar
+              </div>
             </div>
           </button>
         ) : (
           <>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-[12px] bg-[#0071E3] text-white shadow-md shadow-[#0071E3]/25">
-                  <Stethoscope className="h-5 w-5" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0071E3] text-white shadow-xs">
+                  <Stethoscope className="h-4 w-4" />
                 </div>
                 <div>
-                  <div className="text-[14px] font-black text-[#1D1D1F] dark:text-white tracking-tight">Clinicos</div>
-                  <div className="text-[10px] text-[#0071E3] dark:text-[#2997FF] font-bold">
-                    {isSolo ? "Solo Practice" : "Clinic Plan"}
+                  <div className="text-[13px] font-bold text-slate-900 dark:text-white tracking-tight leading-none">ClinicOS</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                    {isSolo ? "Solo Practice" : "Polyclinic Edition"}
                   </div>
                 </div>
               </div>
@@ -273,24 +274,24 @@ function SidebarContent({
               {onToggleCollapse && (
                 <button
                   onClick={onToggleCollapse}
-                  className="rounded-lg p-1.5 text-[#86868B] hover:bg-black/[0.05] hover:text-[#1D1D1F] dark:hover:bg-white/[0.08] dark:hover:text-white transition"
-                  title="Hide sidebar to icons"
+                  className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/[0.06] dark:hover:text-slate-200 transition"
+                  title="Collapse sidebar"
                 >
                   <Menu className="h-4 w-4" />
                 </button>
               )}
             </div>
 
-            {/* Clinic card */}
-            <div className="mt-3 p-3 rounded-xl bg-[#F8F9FA] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08]">
+            {/* Clinic Card */}
+            <div className="mt-2.5 p-2 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/[0.06]">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-[#1D1D1F] dark:text-white truncate max-w-[140px]">
+                <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[150px]">
                   {currentUser?.clinic_name || "Your Clinic"}
                 </span>
-                <span className="flex h-2 w-2 rounded-full bg-[#30D158] animate-pulse shrink-0" />
+                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
               </div>
-              <p className="text-[10px] text-[#6E6E73] dark:text-[#8E8E93] mt-0.5 truncate">
-                {currentUser?.full_name || "Clinic Staff"} · {currentUser?.role || "Staff"}
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                {currentUser?.full_name || "Staff"} · {currentUser?.role || "Staff"}
               </p>
             </div>
           </>
@@ -432,32 +433,8 @@ function SidebarContent({
           </>
         ) : (
           <>
-            {/* Upgrade callout — solo only */}
-            {isSolo && isPrivileged && (
-              <Card variant="elevated" className="p-3 border border-[#0071E3]/20 bg-[#0071E3]/10 dark:border-[#2997FF]/20">
-                <div className="flex items-center gap-1 text-[11px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                  <Sparkles className="h-3 w-3" />
-                  Upgrade to Clinic Plan
-                </div>
-                <p className="text-[10px] text-[#86868B] dark:text-[#636366] mt-1 leading-snug">
-                  Unlock multi-doctor rosters, chambers, settlements & more.
-                </p>
-                <Button
-                  type="button"
-                  onClick={onUpgrade}
-                  disabled={isUpgrading}
-                  className="mt-2 w-full flex items-center justify-center gap-1 rounded-[9px] py-1.5 text-[10px] font-bold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition disabled:opacity-50"
-                >
-                  {isUpgrading ? "Upgrading..." : "Upgrade · ₹1,299/mo"}
-                </Button>
-                {upgradeNote && (
-                  <p className="mt-1.5 text-center text-[10px] text-[#30D158] font-semibold">{upgradeNote}</p>
-                )}
-              </Card>
-            )}
-
             <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] text-[#86868B] dark:text-[#636366]">Appearance</span>
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Appearance</span>
               <ThemeToggle />
             </div>
 
@@ -685,19 +662,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen overflow-hidden bg-[#ECEEF2] text-[#1D1D1F] dark:bg-black dark:text-[#F5F5F7]">
 
       {/* ── DESKTOP SIDEBAR ── */}
-      <aside className={`hidden lg:flex flex-col border-r border-black/[0.08] bg-white dark:border-white/[0.08] dark:bg-[#111113] transition-all duration-300 ease-in-out shrink-0 ${isCollapsed ? "w-[68px]" : "w-60"} shadow-[2px_0_12px_rgba(0,0,0,0.02)]`}>
+      <aside className={`hidden lg:flex flex-col border-r border-slate-200/80 bg-white dark:border-white/[0.08] dark:bg-[#111113] transition-all duration-200 ease-in-out shrink-0 ${isCollapsed ? "w-[64px]" : "w-[250px]"} shadow-xs`}>
         <SidebarContent {...sharedSidebarProps} />
       </aside>
 
       {/* ── MOBILE DRAWER ── */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <div className="relative flex w-64 flex-col bg-white dark:bg-[#111113] shadow-2xl">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <span className="text-sm font-black text-[#1D1D1F] dark:text-white">Clinicos</span>
-              <button onClick={() => setSidebarOpen(false)} className="rounded-full p-1 hover:bg-black/[0.05] dark:hover:bg-white/[0.08]">
-                <X className="h-5 w-5 text-[#86868B]" />
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setSidebarOpen(false)} />
+          <div className="relative flex w-[250px] flex-col bg-white dark:bg-[#111113] shadow-2xl">
+            <div className="flex items-center justify-between px-3.5 py-3 border-b border-slate-200/80 dark:border-white/[0.08]">
+              <span className="text-sm font-bold text-slate-900 dark:text-white">ClinicOS</span>
+              <button onClick={() => setSidebarOpen(false)} className="rounded-md p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-white/[0.08]">
+                <X className="h-4 w-4" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -710,24 +687,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* ── MAIN CONTENT ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
 
-        {/* TOP HEADER */}
-        <header className="h-14 shrink-0 flex items-center justify-between border-b border-black/[0.06] bg-white/80 dark:border-white/[0.07] dark:bg-black/80 backdrop-blur-2xl px-4 sm:px-6">
+        {/* TOP HEADER (Standardised 64px) */}
+        <header className="h-16 shrink-0 flex items-center justify-between border-b border-slate-200/80 bg-white/90 dark:border-white/[0.08] dark:bg-[#0C0D0E]/90 backdrop-blur-md px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
             {/* Mobile Drawer Trigger */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden rounded-full p-1.5 hover:bg-white/[0.05] dark:hover:bg-white/[0.08]"
+              className="lg:hidden rounded-md p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/[0.08]"
               title="Open Navigation"
             >
-              <Menu className="h-5 w-5 text-[#86868B]" />
+              <Menu className="h-5 w-5" />
             </button>
 
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-[#86868B] dark:text-[#636366]">{currentUser?.clinic_name || "Clinicos"}</span>
-              <ChevronRight className="h-3 w-3 text-[#86868B]" />
-              <strong className="text-[#1D1D1F] dark:text-white capitalize">{pageName}</strong>
-              <span className="ml-1 hidden sm:inline-flex items-center rounded-full bg-[#0071E3]/10 border border-[#0071E3]/20 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                {practiceMode === "solo" ? "👨‍⚕️ Solo" : "🏥 Clinic"}
+              <span className="text-slate-500">{currentUser?.clinic_name || "ClinicOS"}</span>
+              <ChevronRight className="h-3 w-3 text-slate-400" />
+              <strong className="text-slate-900 dark:text-white capitalize font-semibold">{pageName}</strong>
+              <span className="ml-1 hidden sm:inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200/60 px-2 py-0.5 text-[10px] font-medium text-[#0071E3] dark:bg-blue-950/40 dark:border-blue-900/40 dark:text-[#2997FF]">
+                {practiceMode === "solo" ? (
+                  <>
+                    <Stethoscope className="h-3 w-3" />
+                    <span>Solo Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Building2 className="h-3 w-3" />
+                    <span>Clinic Mode</span>
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -736,7 +723,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button
               onClick={playChime}
               title="Test Chime"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white px-3 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-sm hover:bg-white/[0.02] active:scale-95 dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200"
             >
               <Volume2 className={`h-3.5 w-3.5 text-[#0071E3] dark:text-[#2997FF] ${chimePlaying ? "animate-bounce" : ""}`} />
               <span className="hidden sm:inline">Chime</span>
@@ -744,7 +731,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <Link
               href="/dashboard/reception"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0077ED] transition"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>Walk-in</span>
@@ -753,16 +740,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link
               href="/patient/portal"
               target="_blank"
-              className="hidden md:inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white px-3 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-sm hover:bg-white/[0.02] active:scale-95 dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white"
+              className="hidden md:inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200"
             >
               <span>Patient Portal</span>
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3 w-3 text-slate-400" />
             </Link>
           </div>
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#ECEEF2] dark:bg-black">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 bg-[#F8F9FA] dark:bg-[#0C0D0E]">
           {children}
         </main>
       </div>

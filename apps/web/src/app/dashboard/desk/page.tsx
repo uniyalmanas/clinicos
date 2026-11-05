@@ -504,49 +504,49 @@ export default function DashboardDeskPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. TOP HEADER & MODAL TRIGGERS */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4">
+      {/* 1. TOP HEADER & TOOLBAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-black tracking-wider uppercase">
+            <span className="px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold tracking-wider uppercase">
               DESK CONSOLE
             </span>
-            <h1 className="text-lg sm:text-xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
-              CONSOLE: Pooja | DR. RAHUL
+            <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+              Pooja | Dr. Rahul Sharma
             </h1>
           </div>
-          <p className="text-xs text-[#86868B] mt-0.5">
-            Real-time OPD throughput console • Direct soundbox reconciliation &amp; 1-tap token calling
+          <p className="text-xs text-slate-500 mt-0.5">
+            Real-time OPD throughput console • Direct soundbox reconciliation & 1-tap token calling
           </p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:bg-blue-500/20 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200 transition"
             title="Switch to Doctor OPD Cockpit"
           >
-            <Stethoscope className="h-4 w-4" />
+            <Stethoscope className="h-3.5 w-3.5 text-[#0071E3]" />
             <span>Doctor Cockpit</span>
           </Link>
 
           <Link
             href="/display/waiting-room"
             target="_blank"
-            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200 transition"
             title="Launch Smart TV Waiting Room Wall Display"
           >
-            <Tv className="h-4 w-4" />
-            <span>Waiting Room TV</span>
+            <Tv className="h-3.5 w-3.5 text-indigo-500" />
+            <span>TV Display</span>
           </Link>
 
           <Link
             href="/clinic/settlement"
-            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200 transition"
             title="Shift Day-Closing Cash Settlement"
           >
-            <Receipt className="h-4 w-4" />
+            <Receipt className="h-3.5 w-3.5 text-emerald-600" />
             <span>Settle Shift</span>
           </Link>
 
@@ -555,303 +555,288 @@ export default function DashboardDeskPage() {
               fetchAutomations();
               setShowAutomationsModal(true);
             }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition"
-            title="View scheduled WhatsApp follow-ups & Google review boosters"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200 transition cursor-pointer"
+            title="View scheduled WhatsApp follow-ups"
           >
-            <Sparkles className="h-4 w-4" />
-            <span>WhatsApp Follow-ups</span>
-            <span className="rounded-full bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.2">
+            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+            <span>Follow-ups</span>
+            <span className="rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-semibold px-1.5 py-0.2">
               {automationsList.filter(a => a.status === "scheduled").length}
             </span>
           </button>
 
-          <Link
-            href="/dashboard/standee"
-            className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:bg-blue-500/20 active:scale-95 transition"
-            title="Design & Print Front Desk Acrylic Tent Cards & Posters"
-          >
-            <QrCode className="h-4 w-4" />
-            <span>Standee Studio</span>
-          </Link>
-
           <button
             onClick={() => setShowQrModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-4 py-2 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#151618] dark:text-slate-200 transition cursor-pointer"
           >
-            <QrCode className="h-4 w-4 text-apple-blue" />
-            <span>Counter QR</span>
+            <QrCode className="h-3.5 w-3.5 text-slate-500" />
+            <span>QR</span>
           </button>
 
           <button
             onClick={() => setShowWalkInModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue hover:bg-[#0077ED] px-4 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
-            <span>Admit Walk-In (10s)</span>
+            <Plus className="h-3.5 w-3.5" />
+            <span>Admit Walk-In</span>
           </button>
         </div>
       </div>
 
       {/* TOAST ALERT */}
       {calledTokenMsg && (
-        <div className="rounded-full bg-[#1D1D1F] text-white px-5 py-3 text-xs font-medium shadow-apple-card flex items-center justify-between animate-in fade-in">
+        <div className="rounded-lg bg-slate-900 text-white px-4 py-2.5 text-xs font-medium shadow-md flex items-center justify-between animate-in fade-in">
           <div className="flex items-center gap-2">
-            <Volume2 className="h-4 w-4 text-apple-teal animate-pulse" />
+            <Volume2 className="h-4 w-4 text-emerald-400 animate-pulse" />
             <span>{calledTokenMsg}</span>
           </div>
-          <span className="text-[#86868B] font-normal text-[11px]">Audio Chime Broadcasted</span>
+          <span className="text-slate-400 font-normal text-[11px]">Audio Chime Broadcasted</span>
         </div>
       )}
 
-      {/* ⚡ HERO CALL CONSOLE — THE ONE-HANDED RECEPTIONIST TEST */}
-      <div className="rounded-[28px] border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-white to-white dark:from-emerald-950/30 dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-6 shadow-apple-card space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                LIVE QUEUE:
-              </span>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-baseline gap-2 text-base sm:text-lg font-bold text-[#1D1D1F] dark:text-white flex-wrap">
-                <span className="text-emerald-600 dark:text-emerald-400 font-black font-mono">
-                  #{activeInConsultation?.token_number || 12}
+      {/* 2. LIVE THROUGHPUT CALL BAR */}
+      <div className="rounded-xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#151618] p-4 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            {/* In Chamber Status */}
+            <div className="flex items-center gap-2.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  In Chamber
                 </span>
-                <span>{activeInConsultation?.patient_name || "Priya Singh"}</span>
-                <span className="text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
-                  • Est. Wait: 24m •
-                </span>
-                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
-                  {activeInConsultation?.payment_status === "paid" ? "PAID ✅" : "PENDING ⏳"}
-                </span>
-              </div>
-              {nextWaiting && (
-                <div className="flex items-baseline gap-2 text-sm sm:text-base font-semibold text-[#1D1D1F] dark:text-white flex-wrap">
-                  <span className="text-amber-600 dark:text-amber-400 font-black font-mono">
-                    #{nextWaiting.token_number}
+                <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                    #{activeInConsultation?.token_number || 12}
                   </span>
-                  <span>{nextWaiting.patient_name}</span>
-                  <span className="text-xs font-medium text-[#86868B] dark:text-[#8E8E93]">
-                    • Est. Wait: 15m •
-                  </span>
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400">
-                    {nextWaiting.payment_status === "paid" ? "PAID ✅" : "PENDING ⏳"}
-                  </span>
+                  <span>{activeInConsultation?.patient_name || "Priya Singh"}</span>
+                  <span className="text-[11px] font-normal text-slate-400">· 24m</span>
                 </div>
-              )}
+              </div>
             </div>
+
+            <div className="hidden sm:block h-8 w-px bg-slate-200 dark:bg-white/[0.08]" />
+
+            {/* Next in Line */}
+            {nextWaiting ? (
+              <div className="flex items-center gap-2.5">
+                <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    Next in Line
+                  </span>
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span className="font-mono text-amber-600 dark:text-amber-400">
+                      #{nextWaiting.token_number}
+                    </span>
+                    <span>{nextWaiting.patient_name}</span>
+                    <span className="text-[11px] font-normal text-slate-400">· Est. 15m</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <span>All scheduled tokens called</span>
+              </div>
+            )}
           </div>
 
-          {/* GIANT PRIMARY ONE-HANDED ACTION BUTTONS */}
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Action Trigger */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => nextWaiting && handleCallToken(nextWaiting.token_number, nextWaiting.patient_name)}
               disabled={!nextWaiting}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm tracking-wide shadow-lg shadow-emerald-600/30 transition active:scale-95 cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition disabled:opacity-50 cursor-pointer"
             >
-              <Volume2 className="h-5 w-5 animate-pulse" />
-              <span>{nextWaiting ? `[ 📞 CALL NEXT TOKEN ]` : "ALL CALLED"}</span>
+              <Volume2 className="h-4 w-4" />
+              <span>{nextWaiting ? `Call Token #${nextWaiting.token_number}` : "Queue Cleared"}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowWalkInModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-sm transition active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 dark:border-white/[0.1] dark:bg-[#1E2024] dark:text-slate-200 text-xs font-medium shadow-xs transition cursor-pointer"
             >
-              <Plus className="h-5 w-5" />
-              <span>[ ➕ ADD WALK-IN ]</span>
+              <Plus className="h-4 w-4 text-slate-500" />
+              <span>Add Walk-In</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. RECONCILIATION & COUNTER METRICS */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card">
-          <div className="text-[11px] font-semibold text-apple-teal dark:text-[#30D1BE] uppercase tracking-wider flex items-center gap-1.5">
-            <Stethoscope className="h-4 w-4" /> Active in Chamber
+      {/* 3. COMPACT OPERATIONAL METRICS */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <Stethoscope className="h-3.5 w-3.5 text-[#0071E3]" /> Active Chamber
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
+          <div className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono truncate">
             {activeInConsultation ? `#${activeInConsultation.token_number} ${activeInConsultation.patient_name}` : "Chamber Idle"}
           </div>
-          <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-            {activeInConsultation?.payment_status === "paid" ? "PAID via Soundbox UPI ✅" : "Payment: PENDING ⚠️"}
+          <p className="mt-0.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+            <Check className="h-3 w-3" />
+            <span>Soundbox UPI Verified</span>
           </p>
         </div>
 
-        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card">
-          <div className="text-[11px] font-semibold text-apple-amber dark:text-[#FF9F0A] uppercase tracking-wider flex items-center gap-1.5">
-            <Clock className="h-4 w-4" /> Waiting in Lounge
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-amber-500" /> Waiting in Lounge
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
+          <div className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
             {waitingPatients.length} Patients
           </div>
-          <p className="mt-1 text-xs text-[#86868B]">
+          <p className="mt-0.5 text-[11px] text-slate-500">
             Est. wait: {waitingPatients.length * 12} mins
           </p>
         </div>
 
-        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card flex flex-col justify-between">
-          <div>
-            <div className="text-[11px] font-black text-apple-teal dark:text-[#30D1BE] uppercase tracking-wider flex items-center gap-1.5">
-              <CreditCard className="h-4 w-4" /> SETTLEMENT:
-            </div>
-            <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
-              ₹{upiCollected.toLocaleString("en-IN")}
-            </div>
-            <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Direct Bank Transfer: ✅ Synced
-            </p>
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <CreditCard className="h-3.5 w-3.5 text-indigo-500" /> UPI Settlement
           </div>
-          <p className="mt-2 text-xs font-bold text-[#1D1D1F] dark:text-white pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
-            Total Gross: ₹ 1,200
+          <div className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
+            ₹{upiCollected.toLocaleString("en-IN")}
+          </div>
+          <p className="mt-0.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>Direct Bank Transfer Synced</span>
           </p>
         </div>
 
-        <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-card flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wider flex items-center gap-1.5">
-                <IndianRupee className="h-4 w-4" /> Cash in Drawer
-              </div>
-              <Link
-                href="/clinic/settlement"
-                className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline"
-              >
-                Settle ➔
-              </Link>
+        <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <IndianRupee className="h-3.5 w-3.5 text-slate-600" /> Cash in Drawer
             </div>
-            <div className="mt-2 text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
-              ₹{cashCollected.toLocaleString("en-IN")}
-            </div>
+            <Link
+              href="/clinic/settlement"
+              className="text-[10px] font-semibold text-[#0071E3] hover:underline"
+            >
+              Settle →
+            </Link>
           </div>
-          <p className="mt-2 text-xs font-bold text-[#1D1D1F] dark:text-white pt-2 border-t border-black/[0.04] dark:border-white/[0.06]">
+          <div className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
+            ₹{cashCollected.toLocaleString("en-IN")}
+          </div>
+          <p className="mt-0.5 text-[11px] text-slate-500">
             Total Gross: ₹{totalCollectedToday.toLocaleString("en-IN")}
           </p>
         </div>
       </div>
 
-      {/* 3. COUNTER QUEUE TABLE */}
-      <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] shadow-apple-card overflow-hidden">
-        <div className="p-5 border-b border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+      {/* 4. PROMINENT QUEUE TABLE */}
+      <div className="rounded-xl border border-slate-200/80 bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#151618] overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-200/70 dark:border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-            <h2 className="text-sm font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
-              LIVE QUEUE ({queue.length} Total • {waitingPatients.length} Waiting)
+            <span className="h-2 w-2 rounded-full bg-[#0071E3]" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Live Queue ({queue.length} Total · {waitingPatients.length} Waiting)
             </h2>
           </div>
-          <span className="text-xs text-[#86868B]">
+          <span className="text-[11px] text-slate-500">
             1-Click Call Bell plays dual-harmonic speaker tone
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/60 border-b border-black/[0.04] dark:border-white/[0.06] text-[#86868B] font-medium">
+            <thead className="bg-slate-50 dark:bg-white/[0.02] border-b border-slate-200/70 dark:border-white/[0.06] text-slate-500 font-medium">
               <tr>
-                <th className="px-5 py-3.5">Token</th>
-                <th className="px-5 py-3.5">Patient</th>
-                <th className="px-5 py-3.5">Phone</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Payment Status</th>
-                <th className="px-5 py-3.5 text-right">Counter Actions</th>
+                <th className="px-4 py-2.5">Token</th>
+                <th className="px-4 py-2.5">Patient Name</th>
+                <th className="px-4 py-2.5">Contact</th>
+                <th className="px-4 py-2.5">Queue Status</th>
+                <th className="px-4 py-2.5">Payment</th>
+                <th className="px-4 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.06]">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
               {queue.map(item => (
-                <tr key={item.token_number} className="hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition">
-                  <td className="px-5 py-4">
-                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-mono font-black text-sm">
+                <tr key={item.token_number} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition">
+                  <td className="px-4 py-2.5">
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-mono font-bold text-xs">
                       #{item.token_number}
-                    </div>
+                    </span>
                   </td>
-                  <td className="px-5 py-4">
-                    <div className="font-bold text-sm text-[#1D1D1F] dark:text-white flex items-center gap-2">
-                      <span>#{item.token_number} {item.patient_name}</span>
+                  <td className="px-4 py-2.5">
+                    <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>{item.patient_name}</span>
                       {item.is_walk_in && (
-                        <span className="rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 px-2 py-0.5 text-[10px] font-bold">
+                        <span className="rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 px-1.5 py-0.2 text-[10px] font-medium border border-blue-200/60 dark:border-blue-900/40">
                           Walk-In
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-[#86868B] mt-0.5">{item.time_slot}</div>
+                    <div className="text-[10px] text-slate-400">{item.time_slot}</div>
                   </td>
-                  <td className="px-5 py-4 text-[#86868B] font-mono text-xs">
+                  <td className="px-4 py-2.5 text-slate-500 font-mono text-xs">
                     {item.patient_phone}
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-2.5">
                     {item.status === "in_consultation" ? (
-                      <div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-3 py-1 text-xs font-bold">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-                          In Chamber
-                        </span>
-                        <div className="text-[11px] text-[#86868B] mt-0.5 font-medium">Est. Wait: 24m</div>
-                      </div>
+                      <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-2 py-0.5 text-[11px] font-medium dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/40">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        In Chamber
+                      </span>
                     ) : item.status === "waiting" ? (
-                      <div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-1 text-xs font-bold">
-                          <Clock className="h-3.5 w-3.5" />
-                          Waiting in Lounge
-                        </span>
-                        <div className="text-[11px] text-[#86868B] mt-0.5 font-medium">Est. Wait: 15m</div>
-                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 text-amber-800 border border-amber-200/60 px-2 py-0.5 text-[11px] font-medium dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/40">
+                        <Clock className="h-3 w-3 text-amber-500" />
+                        Waiting (15m)
+                      </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-3 py-1 text-xs font-medium text-[#86868B]">
-                        <Check className="h-3.5 w-3.5" />
+                      <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200/60 px-2 py-0.5 text-[11px] font-medium dark:bg-white/[0.05] dark:text-slate-400 dark:border-white/[0.08]">
+                        <Check className="h-3 w-3 text-slate-400" />
                         Completed
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-2.5">
                     <button
                       type="button"
                       onClick={() => handleTogglePayment(item.token_number)}
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs ${
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium border transition cursor-pointer ${
                         item.payment_status === "paid"
-                          ? "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-500/20"
-                          : "bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 dark:text-rose-300 border border-rose-500/20 animate-pulse"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40"
+                          : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40"
                       }`}
                       title="Tap to toggle payment status"
                     >
                       {item.payment_status === "paid" ? (
                         <>
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                          <span>PAID ✅ (₹{item.fee_amount} {item.payment_mode.toUpperCase()})</span>
+                          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                          <span>Paid · ₹{item.fee_amount} ({item.payment_mode.toUpperCase()})</span>
                         </>
                       ) : (
                         <>
-                          <Clock className="h-3.5 w-3.5 text-rose-600" />
-                          <span>PENDING ⏳ (Collect ₹{item.fee_amount})</span>
+                          <Clock className="h-3 w-3 text-rose-600" />
+                          <span>Pending · Collect ₹{item.fee_amount}</span>
                         </>
                       )}
                     </button>
                   </td>
-                  <td className="px-5 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
                       {item.status === "waiting" ? (
                         <button
                           type="button"
                           onClick={() => handleCallToken(item.token_number, item.patient_name)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs active:scale-95 transition cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded-md bg-emerald-600 hover:bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
                         >
-                          <Volume2 className="h-3.5 w-3.5" />
-                          Call Token
+                          <Volume2 className="h-3 w-3" />
+                          <span>Call</span>
                         </button>
                       ) : item.status === "in_consultation" ? (
                         <Link
                           href="/dashboard/consult/APT-DERMA-102"
-                          className="inline-flex items-center gap-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-95 transition"
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#1E2024] dark:text-slate-300 transition"
                         >
-                          <span>Open ℞ Pad</span>
-                          <ExternalLink className="h-3 w-3" />
+                          <span>Open Rx</span>
+                          <ExternalLink className="h-3 w-3 text-slate-400" />
                         </Link>
-                      ) : (
-                        <span className="text-[11px] text-[#86868B] font-medium">Done</span>
-                      )}
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -863,8 +848,8 @@ export default function DashboardDeskPage() {
 
       {/* WALK-IN MODAL */}
       {showWalkInModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-7 shadow-apple-modal">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#151618] p-6 shadow-2xl">
             <h3 className="text-lg font-bold tracking-tight text-[#1D1D1F] dark:text-white flex items-center gap-2">
               <UserPlus className="h-5 w-5 text-apple-blue" />
               10-Second Walk-In Admission
@@ -980,7 +965,7 @@ export default function DashboardDeskPage() {
       {/* QR STAND MODAL */}
       {showQrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="w-full max-w-sm rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-7 text-center shadow-apple-modal space-y-4">
+          <div className="w-full max-w-sm rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-7 text-center shadow-apple-modal space-y-4">
             <div>
               <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
                 Reception Counter QR Stand
@@ -1029,7 +1014,7 @@ export default function DashboardDeskPage() {
       {/* ⚡ OPTION B: AUTOMATED WHATSAPP FOLLOW-UP & GOOGLE REVIEW MODAL */}
       {showAutomationsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="w-full max-w-3xl rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 sm:p-7 shadow-apple-modal max-h-[85vh] flex flex-col justify-between space-y-4">
+          <div className="w-full max-w-3xl rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 sm:p-7 shadow-apple-modal max-h-[85vh] flex flex-col justify-between space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">

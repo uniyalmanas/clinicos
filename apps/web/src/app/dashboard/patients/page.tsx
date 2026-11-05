@@ -619,71 +619,71 @@ export default function DashboardPatientsPage() {
         </div>
 
         {/* 4-KPI Metric Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-3 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
-            <div className="flex items-center justify-between text-xs text-[#86868B]">
-              <span className="font-medium">Total Registered</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+          <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium text-[11px]">Total Registered</span>
               <Users className="h-3.5 w-3.5 text-[#0071E3]" />
             </div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-xl font-bold text-[#1D1D1F] dark:text-white">{directoryStats.total}</span>
-              <span className="text-[10px] text-[#86868B] font-medium">Patients</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-lg font-bold font-mono text-slate-900 dark:text-white">{directoryStats.total}</span>
+              <span className="text-[10px] text-slate-400 font-medium">Patients</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-3 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
-            <div className="flex items-center justify-between text-xs text-[#86868B]">
-              <span className="font-medium">Clinical Encounters</span>
+          <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium text-[11px]">Encounters</span>
               <Stethoscope className="h-3.5 w-3.5 text-emerald-500" />
             </div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-xl font-bold text-[#1D1D1F] dark:text-white">{directoryStats.totalVisits}</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-lg font-bold font-mono text-slate-900 dark:text-white">{directoryStats.totalVisits}</span>
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Recorded</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-3 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
-            <div className="flex items-center justify-between text-xs text-[#86868B]">
-              <span className="font-medium">Diagnostic Labs</span>
+          <div className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium text-[11px]">Diagnostic Labs</span>
               <Microscope className="h-3.5 w-3.5 text-indigo-500" />
             </div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-xl font-bold text-[#1D1D1F] dark:text-white">{directoryStats.totalLabs}</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-lg font-bold font-mono text-slate-900 dark:text-white">{directoryStats.totalLabs}</span>
               <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">Reports</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.04] p-3 shadow-apple-sm dark:border-rose-500/20 dark:bg-rose-500/[0.04]">
-            <div className="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400">
-              <span className="font-medium">Allergy Hard-Stop</span>
+          <div className="rounded-xl border border-rose-200/70 bg-rose-50/40 p-3 shadow-xs dark:border-rose-900/30 dark:bg-rose-950/20">
+            <div className="flex items-center justify-between text-xs text-rose-700 dark:text-rose-400">
+              <span className="font-medium text-[11px]">Allergy Hard-Stop</span>
               <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
             </div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-xl font-bold text-rose-600 dark:text-rose-400">{directoryStats.withAllergies}</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-lg font-bold font-mono text-rose-700 dark:text-rose-400">{directoryStats.withAllergies}</span>
               <span className="text-[10px] text-rose-500 font-medium">Guarded</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. MAIN 2-COLUMN CLINICAL EMR WORKSPACE */}
-      <div className="grid gap-6 lg:grid-cols-12">
+      {/* 2. MAIN CLINICAL EMR WORKSPACE */}
+      <div className="grid gap-5 lg:grid-cols-12">
         {/* LEFT COLUMN: REGISTERED PATIENT DIRECTORY */}
-        <div className="lg:col-span-4 space-y-3">
+        <div className={selectedPatient ? "lg:col-span-4 space-y-2.5" : "lg:col-span-12 space-y-2.5"}>
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search UHID, name, allergy, phone..."
+              placeholder="Search by UHID, patient name, allergy, phone..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full rounded-2xl border border-black/[0.08] bg-white py-2 pl-9 pr-8 text-xs text-[#1D1D1F] placeholder-[#86868B] shadow-sm focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 focus:outline-none dark:border-white/[0.08] dark:bg-[#1C1C1E] dark:text-white"
+              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-8 text-xs text-slate-900 placeholder-slate-400 shadow-xs focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3] focus:outline-none dark:border-white/[0.08] dark:bg-[#151618] dark:text-white"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white p-0.5"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -691,141 +691,245 @@ export default function DashboardPatientsPage() {
           </div>
 
           {/* Directory Category Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
             <button
               onClick={() => setDirectoryFilter("all")}
-              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition shrink-0 cursor-pointer ${
                 directoryFilter === "all"
-                  ? "bg-[#0071E3] text-white shadow-sm"
-                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                  ? "bg-[#0071E3] text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
               }`}
             >
               All ({patients.length})
             </button>
             <button
               onClick={() => setDirectoryFilter("allergies")}
-              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 inline-flex items-center gap-1 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition shrink-0 inline-flex items-center gap-1 cursor-pointer ${
                 directoryFilter === "allergies"
-                  ? "bg-rose-500 text-white shadow-sm"
-                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                  ? "bg-rose-600 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
               }`}
             >
-              <span>⚠️ Allergies</span>
-              <span>({directoryStats.withAllergies})</span>
+              <AlertTriangle className="h-3 w-3" />
+              <span>Allergies ({directoryStats.withAllergies})</span>
             </button>
             <button
               onClick={() => setDirectoryFilter("visits")}
-              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition shrink-0 cursor-pointer ${
                 directoryFilter === "visits"
-                  ? "bg-[#0071E3] text-white shadow-sm"
-                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                  ? "bg-[#0071E3] text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
               }`}
             >
               Visits
             </button>
             <button
               onClick={() => setDirectoryFilter("pediatric")}
-              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md font-medium transition shrink-0 cursor-pointer ${
                 directoryFilter === "pediatric"
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+                  ? "bg-purple-600 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
               }`}
             >
               Pediatric
             </button>
           </div>
 
-          <div className="space-y-2 max-h-[820px] overflow-y-auto pr-1">
-            {filteredPatients.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-black/[0.08] dark:border-white/[0.08] p-8 text-center text-xs text-[#86868B]">
-                No patients match the current filter.
-              </div>
-            ) : (
-              filteredPatients.map(pt => {
-                const isSelected = selectedPatient?.uhid === pt.uhid;
-                const hasSevereAllergy = pt.allergies?.some(a => a.reaction_severity === "SEVERE_ANAPHYLAXIS");
-                const hasDuplicateFlag = pt.is_duplicate_flagged;
+          {/* If NO patient is selected, display prominent, searchable master directory table */}
+          {!selectedPatient ? (
+            <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs dark:border-white/[0.08] dark:bg-[#151618]">
+              {filteredPatients.length === 0 ? (
+                <div className="p-12 text-center text-xs text-slate-500">
+                  <Users className="mx-auto h-8 w-8 text-slate-400 mb-2" />
+                  <p className="font-semibold text-slate-700 dark:text-slate-200">No patients match the search criteria</p>
+                  <p className="text-[11px] text-slate-400 mt-1">Try resetting the search query or active filter.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200/80 bg-slate-50/75 dark:border-white/[0.08] dark:bg-white/[0.02] text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        <th className="px-4 py-2.5">Patient Details</th>
+                        <th className="px-4 py-2.5">UHID</th>
+                        <th className="px-4 py-2.5">Demographics</th>
+                        <th className="px-4 py-2.5">Contact</th>
+                        <th className="px-4 py-2.5">Blood Group</th>
+                        <th className="px-4 py-2.5">Clinical Alerts</th>
+                        <th className="px-4 py-2.5">Visits</th>
+                        <th className="px-4 py-2.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                      {filteredPatients.map(pt => {
+                        const hasSevereAllergy = pt.allergies?.some(a => a.reaction_severity === "SEVERE_ANAPHYLAXIS");
+                        const hasDuplicateFlag = pt.is_duplicate_flagged;
+                        return (
+                          <tr
+                            key={pt.uhid}
+                            className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                            onClick={() => setSelectedPatient(pt)}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="h-8 w-8 rounded-lg bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF] font-bold text-xs flex items-center justify-center shrink-0">
+                                  {getInitials(pt.full_name)}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-slate-900 dark:text-white group-hover:text-[#0071E3] transition-colors">
+                                    {pt.full_name}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400">
+                                    {pt.gender} • {pt.age} yrs
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="font-mono text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 px-2 py-0.5 rounded-md">
+                                {pt.uhid}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                              <span>DOB: {pt.dob || "Recorded"}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="font-mono text-[11px] text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                                <Phone className="h-3 w-3 text-slate-400" />
+                                {pt.phone}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:bg-white/[0.06] dark:text-slate-300">
+                                {pt.blood_group}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {pt.allergies && pt.allergies.length > 0 ? (
+                                  <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold border ${
+                                    hasSevereAllergy 
+                                      ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60"
+                                      : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60"
+                                  }`}>
+                                    <AlertTriangle className="h-3 w-3" />
+                                    <span>{pt.allergies.length} Allergies</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400">NKDA (Nil Known)</span>
+                                )}
+                                {hasDuplicateFlag && (
+                                  <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60">
+                                    <Users className="h-3 w-3" />
+                                    <span>Duplicate Flag</span>
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                                {pt.visits?.length || 1} visit{pt.visits?.length !== 1 ? "s" : ""}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPatient(pt)}
+                                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 shadow-xs dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200 transition"
+                                >
+                                  Open Dossier
+                                </button>
+                                <Link
+                                  href={`/dashboard/consult/${pt.visits?.[0]?.visit_number || pt.uhid}`}
+                                  className="inline-flex items-center gap-1 rounded-md bg-[#0071E3] hover:bg-[#0077ED] px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition"
+                                >
+                                  Consult
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* If patient IS selected, display compact searchable list */
+            <div className="space-y-1.5 max-h-[820px] overflow-y-auto pr-1">
+              {filteredPatients.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 dark:border-white/[0.08] p-6 text-center text-xs text-slate-400">
+                  No patients match the current filter.
+                </div>
+              ) : (
+                filteredPatients.map(pt => {
+                  const isSelected = selectedPatient?.uhid === pt.uhid;
+                  const hasSevereAllergy = pt.allergies?.some(a => a.reaction_severity === "SEVERE_ANAPHYLAXIS");
+                  const hasDuplicateFlag = pt.is_duplicate_flagged;
 
-                return (
-                  <div
-                    key={pt.uhid}
-                    onClick={() => setSelectedPatient(pt)}
-                    className={`cursor-pointer rounded-2xl border p-3.5 transition-all ${
-                      isSelected
-                        ? "border-[#0071E3] bg-[#0071E3]/[0.03] shadow-apple-sm ring-1 ring-[#0071E3]/30 border-l-4 border-l-[#0071E3] dark:bg-[#0071E3]/10"
-                        : "border-black/[0.06] bg-white hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#1C1C1E]/70 dark:hover:border-white/[0.15]"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      {/* Avatar Initials Circle */}
-                      <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#0071E3] to-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
-                        {getInitials(pt.full_name)}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h3 className="font-bold text-xs sm:text-sm text-[#1D1D1F] dark:text-white truncate">
-                            {pt.full_name}
-                          </h3>
-                          <span className="rounded-full bg-black/[0.04] px-1.5 py-0.5 text-[10px] font-semibold text-[#86868B] dark:bg-white/[0.08] dark:text-[#8E8E93] shrink-0">
-                            {pt.age}Y • {pt.gender[0]} • {pt.blood_group}
-                          </span>
+                  return (
+                    <div
+                      key={pt.uhid}
+                      onClick={() => setSelectedPatient(pt)}
+                      className={`cursor-pointer rounded-lg border p-3 transition-all ${
+                        isSelected
+                          ? "border-[#0071E3] bg-[#0071E3]/[0.05] shadow-xs border-l-4 border-l-[#0071E3] dark:bg-[#0071E3]/10"
+                          : "border-slate-200/80 bg-white hover:border-slate-300 dark:border-white/[0.08] dark:bg-[#151618] dark:hover:border-white/[0.15]"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="h-8 w-8 rounded-lg bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF] font-bold text-xs flex items-center justify-center shrink-0">
+                          {getInitials(pt.full_name)}
                         </div>
-
-                        <div className="mt-1 flex items-center gap-2 text-[11px] text-[#86868B] flex-wrap">
-                          <span className="font-mono text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                            {pt.uhid}
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1 font-mono text-[10px]">
-                            <Phone className="h-3 w-3 text-[#86868B]" />
-                            <span>{pt.phone}</span>
-                          </span>
-                        </div>
-
-                        {/* Badges row */}
-                        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                          <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                            {pt.visits?.length || 1} Visits
-                          </span>
-
-                          {pt.lab_results && pt.lab_results.length > 0 && (
-                            <span className="rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] text-[#86868B] dark:bg-white/[0.06]">
-                              {pt.lab_results.length} Labs
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h3 className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                              {pt.full_name}
+                            </h3>
+                            <span className="text-[10px] text-slate-400 shrink-0 font-medium">
+                              {pt.age}Y • {pt.gender[0]}
                             </span>
-                          )}
-
-                          {pt.allergies && pt.allergies.length > 0 && (
-                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
-                              <AlertTriangle className="h-2.5 w-2.5" />
-                              <span>{pt.allergies.length} Allergies</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Duplicate Flag Alert */}
-                        {hasDuplicateFlag && (
-                          <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
-                            <Users className="h-3 w-3" />
-                            <span>Potential Duplicate Match</span>
                           </div>
-                        )}
+                          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-slate-500 font-mono">
+                            <span className="font-semibold text-[#0071E3] dark:text-[#2997FF]">{pt.uhid}</span>
+                            <span>•</span>
+                            <span>{pt.phone}</span>
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-1 flex-wrap">
+                            <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-medium text-slate-600 dark:bg-white/[0.06] dark:text-slate-400">
+                              {pt.blood_group}
+                            </span>
+                            {pt.allergies && pt.allergies.length > 0 && (
+                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[10px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                {pt.allergies.length}
+                              </span>
+                            )}
+                            {hasDuplicateFlag && (
+                              <span className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 text-[10px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300">
+                                <Users className="h-2.5 w-2.5" />
+                                Dup
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: DETAILED CLINICAL EMR PROFILE & ACTIVE SAFETY ENGINE */}
-        <div className="lg:col-span-8 space-y-6">
-          {selectedPatient ? (
-            <div className="rounded-[28px] border border-black/[0.06] bg-white p-6 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-5">
+        {selectedPatient && (
+          <div className="lg:col-span-8 space-y-4">
+            <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-white/[0.08] dark:bg-[#151618] space-y-4">
               {/* DUPLICATE WARNING BANNER (FIX 4) */}
               {selectedPatient.is_duplicate_flagged && selectedPatient.duplicate_tickets && selectedPatient.duplicate_tickets.length > 0 && selectedPatient.duplicate_tickets[0] && (
-                <div className="rounded-[20px] border border-purple-500/30 bg-purple-500/10 p-4 text-xs text-purple-900 dark:text-purple-200 shadow-sm animate-in fade-in space-y-2">
+                <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-4 text-xs text-purple-900 dark:text-purple-200 shadow-sm animate-in fade-in space-y-2">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-start gap-2.5">
                       <Users className="h-5 w-5 text-purple-600 dark:text-purple-400 shrink-0" />
@@ -954,16 +1058,26 @@ export default function DashboardPatientsPage() {
                       setTestDrugInput("Syrup Amoxyclav 228.5mg");
                       setPrescribeModalOpen(true);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Prescribe ℞</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPatient(null)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer"
+                    title="Close Dossier"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Close</span>
                   </button>
                 </div>
               </div>
 
               {/* ACTIVE ALLERGY CONTRAINDICATION ENGINE BANNER (FIX 1) */}
-              <div className="rounded-[20px] border border-rose-500/30 bg-rose-500/10 p-4 space-y-2 dark:border-rose-500/30">
+              <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-4 space-y-2 dark:border-rose-500/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs">
                     <ShieldAlert className="h-4 w-4" />
@@ -1071,7 +1185,7 @@ export default function DashboardPatientsPage() {
                     selectedPatient.visits.map(vis => (
                       <div
                         key={vis.id}
-                        className="rounded-[20px] border border-black/[0.06] bg-[#ECEEF2]/30 p-4 dark:border-white/[0.06] dark:bg-white/[0.02] space-y-3"
+                        className="rounded-lg border border-black/[0.06] bg-[#ECEEF2]/30 p-4 dark:border-white/[0.06] dark:bg-white/[0.02] space-y-3"
                       >
                         <div className="flex items-start justify-between flex-wrap gap-2">
                           <div>
@@ -1250,7 +1364,7 @@ export default function DashboardPatientsPage() {
                     return (
                       <div
                         key={paramName}
-                        className="rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-3"
+                        className="rounded-lg border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-3"
                       >
                         <div className="flex items-start justify-between">
                           <div>
@@ -1341,7 +1455,7 @@ export default function DashboardPatientsPage() {
                       {selectedPatient.secure_exports.map(exp => (
                         <div
                           key={exp.id}
-                          className="rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-3"
+                          className="rounded-lg border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-3"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                             <div>
@@ -1391,7 +1505,7 @@ export default function DashboardPatientsPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-[20px] border border-dashed border-black/[0.1] dark:border-white/[0.1] p-8 text-center space-y-2">
+                    <div className="rounded-lg border border-dashed border-black/[0.1] dark:border-white/[0.1] p-8 text-center space-y-2">
                       <p className="text-xs text-[#86868B]">
                         No active watermarked exports generated for this patient yet.
                       </p>
@@ -1482,16 +1596,8 @@ export default function DashboardPatientsPage() {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="rounded-[28px] border border-dashed border-black/[0.08] dark:border-white/[0.08] p-16 text-center text-xs text-[#86868B] bg-white dark:bg-[#1C1C1E] flex flex-col items-center justify-center space-y-2.5">
-              <div className="h-12 w-12 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] flex items-center justify-center text-[#86868B]">
-                <Users className="h-6 w-6" />
-              </div>
-              <p className="font-bold text-sm text-[#1D1D1F] dark:text-white">No Patient Selected</p>
-              <p className="max-w-xs text-xs">Select a patient from the directory on the left to inspect their clinical dossier, visits, and active safety alerts.</p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ========================================================================= */}
@@ -1499,7 +1605,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {prescribeModalOpen && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-rose-600" />
@@ -1593,7 +1699,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {overrideModalOpen && hardStopAlert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-rose-600" />
@@ -1700,7 +1806,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {labModalOpen && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Microscope className="h-5 w-5 text-[#0071E3]" />
@@ -1793,7 +1899,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {amendmentModalOpen && selectedVisitForAmend && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-emerald-600" />
@@ -1870,7 +1976,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {mergeModalOpen && selectedMergeTicket && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-purple-600" />
@@ -1930,7 +2036,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {emergencyModalOpen && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-[#0071E3]" />
@@ -2045,7 +2151,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {exportModalOpen && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-[#0071E3]" />
@@ -2175,7 +2281,7 @@ export default function DashboardPatientsPage() {
       {/* ========================================================================= */}
       {previewExportModal && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in overflow-y-auto">
-          <div className="w-full max-w-2xl rounded-[28px] bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-8">
+          <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <FileCheck className="h-5 w-5 text-emerald-600" />

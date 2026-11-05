@@ -757,39 +757,30 @@ export default function DashboardChambersPage() {
   const displayedDoctors = practiceType === "solo" ? doctors.slice(0, 1) : doctors;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 1. TOP HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-              {practiceType === "solo" ? "👨‍⚕️ Solo Practice Chamber (₹599/mo Architecture)" : "🏥 Live Polyclinic Chambers (₹1,299/mo Architecture)"}
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              {practiceType === "solo" ? "Solo Practice Chamber" : "Multi-Doctor Chamber Console"}
             </span>
           </div>
-          <h1 className="mt-1 text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-            {practiceType === "solo" ? "Doctor Consultation & Rx Chamber" : "Simultaneous Multi-Doctor Chambers"}
+          <h1 className="mt-0.5 text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+            {practiceType === "solo" ? "Doctor Consultation & Chamber Dispatch" : "Simultaneous Chamber Management"}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {practiceType === "solo"
-              ? "Focused single doctor OPD queue dispatch • Live digital prescription writing • Instant Soundbox billing"
+              ? "Focused single doctor OPD queue dispatch • Live digital prescription writing • Soundbox billing"
               : "Real-time OPD queue dispatch across active consultation rooms & procedure chairs • Independent token series"}
           </p>
-          <div className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-3.5 py-1.5 text-xs font-mono font-bold shadow-xs flex-wrap">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-slate-400 dark:text-slate-500">LIVE OPD STATUS:</span>
-            <span className="text-emerald-400 dark:text-emerald-600 font-black">
-              {practiceType === "solo" 
-                ? "DERM #12 in room · 3 waiting | 1 Doctor Seat Active"
-                : "DERM #12 in room · 3 waiting | DENTAL #5 procedure · 2 waiting"}
-            </span>
-          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {chimeMsg && (
-            <div className="flex items-center gap-2 rounded-xl bg-slate-900 dark:bg-slate-800 px-4 py-2 text-xs font-bold text-white shadow-xl animate-in fade-in">
-              <Volume2 className="h-4 w-4 text-emerald-400 animate-bounce" />
+            <div className="flex items-center gap-2 rounded-lg bg-slate-900 dark:bg-slate-800 px-3.5 py-1.5 text-xs font-medium text-white shadow-md animate-in fade-in">
+              <Volume2 className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
               <span>{chimeMsg}</span>
             </div>
           )}
@@ -798,42 +789,42 @@ export default function DashboardChambersPage() {
           <button
             type="button"
             onClick={() => setShowCallAnyModal(true)}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-black shadow-md shadow-emerald-600/25 transition active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs transition cursor-pointer"
           >
-            <Volume2 className="h-4 w-4 animate-pulse" />
-            <span>[ 📞 CALL NEXT PATIENT ]</span>
+            <Volume2 className="h-3.5 w-3.5" />
+            <span>Call Next Patient</span>
           </button>
 
           <Link
             href="/waiting-room"
             target="_blank"
-            className="flex items-center gap-1.5 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30 px-3.5 py-2 text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/50 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-white/[0.1] dark:bg-[#151618] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 shadow-xs transition cursor-pointer"
             title="Launch Smart TV Waiting Room (Display-Only TV Screen for Waiting Area)"
           >
-            <Tv className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Smart TV (Display-Only)</span>
+            <Tv className="h-3.5 w-3.5 text-indigo-500" />
+            <span>TV Display</span>
           </Link>
 
           <button
             onClick={() => fetchData()}
             disabled={isRefreshing}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-xs hover:bg-slate-50 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white dark:border-white/[0.1] dark:bg-[#151618] px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 shadow-xs hover:bg-slate-50 transition cursor-pointer"
           >
-            <RotateCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-apple-blue" : ""}`} />
-            <span>Sync Queues</span>
+            <RotateCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin text-[#0071E3]" : ""}`} />
+            <span>Sync</span>
           </button>
         </div>
       </div>
 
       {/* 2. REAL-TIME CHAMBERS TELEMETRY STRIP */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-apple-card space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5 text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+      <div className="rounded-xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#151618] p-3.5 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
-            <span>Real-Time Chamber Roster Telemetry</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Active Chamber Telemetry</span>
           </div>
-          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-            {practiceType === "solo" ? "1 Active Chamber • Solo Practice Pro" : "4 Active Chambers • Zero Queue Collision"}
+          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+            {practiceType === "solo" ? "1 Active Chamber · Solo Practice" : "4 Active Chambers · Synchronized Roster"}
           </span>
         </div>
 
