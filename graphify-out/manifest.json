@@ -1572,9 +1572,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/AIClinicalCompanion.tsx": {
-    "mtime": 1793896461.3306658,
-    "seen": 1793896579.9045153,
-    "ast_hash": "5b13753e3ae004cd924f36b9b54b9aa1",
+    "mtime": 1793910209.8449888,
+    "seen": 1793910389.6179564,
+    "ast_hash": "caa1d3d6fd5467c3f2342da90168c043",
     "semantic_hash": ""
   },
   "apps/web/src/lib/clinical-companion-service.ts": {
