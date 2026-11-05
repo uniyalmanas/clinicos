@@ -1,72 +1,120 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { sql } from "@/lib/db";
+import { guard, CLINICAL_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
+import { findClinicLabOrder } from "@/lib/lab-scope";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+/**
+ * Record sample collection.
+ *
+ * The collector is the authenticated user — there is no "default phlebotomist".
+ * TAT/SLA is whatever the caller supplies; an unconfigured SLA stays null.
+ * Tube type is derived from the ordered test only when not supplied.
+ */
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { 
-      order_id, 
-      collector_name, 
-      sample_barcode, 
-      vacutainer_tube,
-      tat_sla_minutes 
-    } = body;
+    const auth = await guard(req, { roles: CLINICAL_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicId = auth.auth.clinic!.id;
+    const body = await req.json();
+    const { order_id, collector_name, sample_barcode, vacutainer_tube, tat_sla_minutes } =
+      body;
 
     if (!order_id) {
-      return NextResponse.json({ error: "order_id is required" }, { status: 400 });
+      return apiError(400, "order_id is required.", "invalid_input");
     }
 
-    const orderQuery = await db`SELECT * FROM diagnostic_lab_orders WHERE id = ${order_id} LIMIT 1;`;
-    if (orderQuery.length === 0) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    const order = await findClinicLabOrder(clinicId, order_id);
+    if (!order) {
+      return apiError(404, "Lab order not found in your clinic.", "order_not_found");
     }
-    const order = orderQuery[0];
 
-    // Determine vacutainer tube based on test type if not specified
-    let tube = vacutainer_tube;
+    if (order.sample_rejected) {
+      return apiError(
+        409,
+        `This specimen was rejected (${order.sample_rejection_reason || "reason not recorded"}). Confirm the redraw before collecting again.`,
+        "specimen_rejected"
+      );
+    }
+
+    const collector = String(collector_name || auth.auth.user.full_name || "").trim();
+    if (!collector) {
+      return apiError(400, "collector_name is required.", "collector_required");
+    }
+
+    // Derive the tube from the test name only when the caller did not specify.
+    let tube = vacutainer_tube ? String(vacutainer_tube) : null;
     if (!tube) {
-      const lower = order.test_name.toLowerCase();
-      if (lower.includes("cbc") || lower.includes("blood count") || lower.includes("hba1c")) {
+      const test = String(order.test_name || "").toLowerCase();
+      if (test.includes("cbc") || test.includes("blood count") || test.includes("hba1c")) {
         tube = "Lavender (K2-EDTA)";
-      } else if (lower.includes("glucose") || lower.includes("sugar")) {
+      } else if (test.includes("glucose") || test.includes("sugar")) {
         tube = "Grey (Sodium Fluoride)";
-      } else if (lower.includes("pt") || lower.includes("inr") || lower.includes("coagulation")) {
+      } else if (test.includes("pt") || test.includes("inr") || test.includes("coagulation")) {
         tube = "Light Blue (Sodium Citrate)";
       } else {
         tube = "Gold (SST Gel Clot Activator)";
       }
     }
 
-    // Generate unique sample barcode
-    const tubeSuffix = tube.includes("EDTA") ? "EDTA" : tube.includes("Fluoride") ? "GLU" : "SST";
-    const barcode = sample_barcode || `BC-${Date.now().toString().slice(-6)}-${tubeSuffix}`;
-    const sla = Number(tat_sla_minutes || (order.category === "Hematology" ? 90 : 180));
+    const tubeSuffix = tube.includes("EDTA")
+      ? "EDTA"
+      : tube.includes("Fluoride")
+        ? "GLU"
+        : tube.includes("Citrate")
+          ? "CIT"
+          : "SST";
+    const barcode =
+      sample_barcode ||
+      order.sample_barcode ||
+      `BC-${Date.now().toString().slice(-6)}-${tubeSuffix}`;
 
-    const updated = await db`
+    let sla: number | null = null;
+    if (tat_sla_minutes !== undefined && tat_sla_minutes !== null && tat_sla_minutes !== "") {
+      const parsed = Number(tat_sla_minutes);
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        return apiError(400, "tat_sla_minutes must be a positive number.", "invalid_sla");
+      }
+      sla = Math.round(parsed);
+    }
+
+    const updated = await sql`
       UPDATE diagnostic_lab_orders
-      SET 
+      SET
         status = 'sample_collected',
         sample_collected_at = NOW(),
-        sample_collector_name = ${collector_name || "Sister Rekha (Phlebotomist)"},
+        sample_collector_name = ${collector},
         sample_barcode = ${barcode},
         vacutainer_tube = ${tube},
         tat_sla_minutes = ${sla},
         sample_rejected = false,
         sample_rejection_reason = NULL,
         updated_at = NOW()
-      WHERE id = ${order_id}
+      WHERE id = ${String(order.id)}
       RETURNING *;
     `;
 
-    return NextResponse.json({ 
-      success: true, 
-      message: `Sample collected for ${order.patient_name}. Barcode ${barcode} generated for ${tube} tube.`,
-      order: updated[0] 
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId,
+      action: "lab.sample.collect",
+      entity: "diagnostic_lab_order",
+      entityId: String(order.id),
+      after: { barcode, tube, collector, tat_sla_minutes: sla },
+      request: req,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Sample collected for ${order.patient_name}. Barcode ${barcode} on ${tube} tube.`,
+      order: updated[0],
     });
   } catch (error: any) {
-    console.error("Sample collection error:", error);
-    return NextResponse.json({ error: error.message || "Failed to update sample collection" }, { status: 500 });
+    console.error("POST /api/lab/sample-collect error:", error);
+    return apiError(500, "Failed to record sample collection.", "internal_error");
   }
 }

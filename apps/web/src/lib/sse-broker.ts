@@ -1,18 +1,29 @@
-// Simple in-memory event broadcaster for Next.js serverless/edge instances
+// Simple in-memory event broadcaster for Next.js serverless/edge instances.
+// Events are scoped per clinic so one tenant never receives another's updates.
 type Listener = (data: { event: string; data: any }) => void;
 
 class SSEBroker {
-  private listeners: Set<Listener> = new Set();
+  private listeners: Map<string, Set<Listener>> = new Map();
 
-  public subscribe(listener: Listener): () => void {
-    this.listeners.add(listener);
+  public subscribe(clinicId: string, listener: Listener): () => void {
+    const key = String(clinicId || "platform");
+    const bucket = this.listeners.get(key) || new Set<Listener>();
+    bucket.add(listener);
+    this.listeners.set(key, bucket);
     return () => {
-      this.listeners.delete(listener);
+      bucket.delete(listener);
+      if (bucket.size === 0) this.listeners.delete(key);
     };
   }
 
-  public broadcast(event: string, data: any) {
-    for (const listener of this.listeners) {
+  public broadcast(event: string, data: any, clinicId?: string | null) {
+    if (!clinicId) {
+      console.warn("[sse] dropped broadcast without a clinic scope:", event);
+      return;
+    }
+    const bucket = this.listeners.get(String(clinicId));
+    if (!bucket) return;
+    for (const listener of bucket) {
       try {
         listener({ event, data });
       } catch (err) {

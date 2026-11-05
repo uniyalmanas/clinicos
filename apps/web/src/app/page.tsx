@@ -2,9 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
 import InteractiveHeroSearch from "@/components/InteractiveHeroSearch";
-// DocSphereAIAgent removed from homepage — patient AI consultant is V2
+import HeroIllustrationShowcase from "@/components/HeroIllustrationShowcase";
+import DocSphereAIAgent from "@/components/DocSphereAIAgent";
 import {
   GeneralPhysicianIcon,
   DermatologyIcon,
@@ -263,6 +265,9 @@ export default function HomePage() {
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Verified Council Credentials</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Digital Rx on WhatsApp</span>
           </div>
+
+          {/* Interactive Hero Illustration Showcase */}
+          <HeroIllustrationShowcase />
         </div>
       </section>
 
@@ -283,10 +288,20 @@ export default function HomePage() {
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Step 1 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold font-mono text-sm">
-                  01
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold font-mono text-sm">
+                    01
+                  </div>
+                  <div className="relative h-14 w-14">
+                    <Image
+                      src="/images/illustrations/doctor-standing.svg"
+                      alt="Choose Doctor"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <h3 className="mt-4 text-base font-bold text-[#1D1D1F] dark:text-white">
                   Search Verified Doctors
@@ -301,10 +316,20 @@ export default function HomePage() {
             </div>
 
             {/* Step 2 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold font-mono text-sm">
-                  02
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold font-mono text-sm">
+                    02
+                  </div>
+                  <div className="relative h-14 w-14">
+                    <Image
+                      src="/images/illustrations/booking-confirmed.svg"
+                      alt="Reserve Token"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <h3 className="mt-4 text-base font-bold text-[#1D1D1F] dark:text-white">
                   Reserve Live Token
@@ -319,10 +344,20 @@ export default function HomePage() {
             </div>
 
             {/* Step 3 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold font-mono text-sm">
-                  03
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold font-mono text-sm">
+                    03
+                  </div>
+                  <div className="relative h-14 w-14">
+                    <Image
+                      src="/images/illustrations/patient-waiting.svg"
+                      alt="Track OPD"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <h3 className="mt-4 text-base font-bold text-[#1D1D1F] dark:text-white">
                   Track Live OPD on Phone
@@ -337,10 +372,20 @@ export default function HomePage() {
             </div>
 
             {/* Step 4 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold font-mono text-sm">
-                  04
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold font-mono text-sm">
+                    04
+                  </div>
+                  <div className="relative h-14 w-14">
+                    <Image
+                      src="/images/illustrations/digital-records.svg"
+                      alt="Direct Care"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
                 <h3 className="mt-4 text-base font-bold text-[#1D1D1F] dark:text-white">
                   Direct Care &amp; WhatsApp Rx
@@ -438,22 +483,32 @@ export default function HomePage() {
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             {/* Doctor 1 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
               <div>
                 <div className="flex items-start justify-between">
-                  <div>
-                    <span className="rounded-full bg-teal-50 dark:bg-teal-950/60 px-2.5 py-1 text-[11px] font-bold text-teal-700 dark:text-teal-300">
-                      Dermatology &amp; Laser
-                    </span>
-                    <h3 className="mt-3 text-lg font-bold text-[#1D1D1F] dark:text-white">
-                      Dr. Rahul Sharma
-                    </h3>
-                    <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                      MD (Dermatology) • NMC Reg. UKMC-8942-2012
-                    </p>
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-sm">
+                      <Image
+                        src="/images/doctors/dr-rahul-sharma.jpg"
+                        alt="Dr. Rahul Sharma"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="rounded-full bg-teal-50 dark:bg-teal-950/60 px-2.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
+                        Dermatology &amp; Laser
+                      </span>
+                      <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                        Dr. Rahul Sharma
+                      </h3>
+                      <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+                        MD (Dermatology) • UKMC-8942-2012
+                      </p>
+                    </div>
                   </div>
-                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    ⭐ 4.9 (142 reviews)
+                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                    ⭐ 4.9 (142)
                   </div>
                 </div>
 
@@ -497,22 +552,32 @@ export default function HomePage() {
             </div>
 
             {/* Doctor 2 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
               <div>
                 <div className="flex items-start justify-between">
-                  <div>
-                    <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 text-[11px] font-bold text-blue-700 dark:text-blue-300">
-                      Dental &amp; Oral Surgery
-                    </span>
-                    <h3 className="mt-3 text-lg font-bold text-[#1D1D1F] dark:text-white">
-                      Dr. Aditi Joshi
-                    </h3>
-                    <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                      MDS (Endodontics) • UDC-4120-2016
-                    </p>
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-sm">
+                      <Image
+                        src="/images/doctors/dr-aditi-joshi.jpg"
+                        alt="Dr. Aditi Joshi"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
+                        Dental &amp; Oral Surgery
+                      </span>
+                      <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                        Dr. Aditi Joshi
+                      </h3>
+                      <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+                        MDS (Endodontics) • UDC-4120-2016
+                      </p>
+                    </div>
                   </div>
-                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    ⭐ 4.8 (98 reviews)
+                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                    ⭐ 4.8 (98)
                   </div>
                 </div>
 
@@ -556,29 +621,39 @@ export default function HomePage() {
             </div>
 
             {/* Doctor 3 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
+            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
               <div>
                 <div className="flex items-start justify-between">
-                  <div>
-                    <span className="rounded-full bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 text-[11px] font-bold text-purple-700 dark:text-purple-300">
-                      Pediatrics &amp; Child OPD
-                    </span>
-                    <h3 className="mt-3 text-lg font-bold text-[#1D1D1F] dark:text-white">
-                      Dr. Vikram Sethi
-                    </h3>
-                    <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                      DNB (Pediatrics) • UKMC Reg. 7312
-                    </p>
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-sm">
+                      <Image
+                        src="/images/doctors/dr-sameer-saxena.jpg"
+                        alt="Dr. Sameer Saxena"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="rounded-full bg-rose-50 dark:bg-rose-950/60 px-2.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
+                        Cardiology &amp; Heart Care
+                      </span>
+                      <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                        Dr. Sameer Saxena
+                      </h3>
+                      <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+                        DM (Cardiology) • UKMC Reg. 8681
+                      </p>
+                    </div>
                   </div>
-                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    ⭐ 4.95 (165 reviews)
+                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                    ⭐ 4.95 (165)
                   </div>
                 </div>
 
                 <div className="mt-4 space-y-1.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
                   <div className="flex items-center gap-1.5">
                     <Building2 className="h-3.5 w-3.5 shrink-0 text-[#1D1D1F] dark:text-white" />
-                    <span>Dron Child &amp; Newborn Clinic</span>
+                    <span>Heart Care Clinic 868</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
@@ -600,17 +675,90 @@ export default function HomePage() {
 
               <div className="mt-6 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
                 <Link
-                  href="/doctors/dr-vikram-sethi"
+                  href="/doctors/dr-sameer-saxena"
                   className="flex-1 rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white"
                 >
                   View Profile
                 </Link>
                 <Link
-                  href="/book?doctor=dr-vikram-sethi"
+                  href="/book?doctor=dr-sameer-saxena"
                   className="flex-1 rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
                 >
                   Book Token
                 </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Clinical Facilities Gallery */}
+          <div className="mt-16 rounded-[32px] border border-black/[0.06] bg-white p-6 sm:p-8 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-apple-teal dark:text-[#30D1BE]">
+                  In-Person Excellence
+                </span>
+                <h3 className="mt-1 text-xl sm:text-2xl font-bold text-[#1D1D1F] dark:text-white">
+                  State-of-the-Art Clinical Environments
+                </h3>
+                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">
+                  Modern facilities equipped with hygienic waiting lounges, private chambers, and automated digital counters.
+                </p>
+              </div>
+              <Link
+                href="/clinics/derma-care-dehradun"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] hover:underline"
+              >
+                Tour Derma Care Centre <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="group relative h-44 overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <Image
+                  src="/images/clinical/clinic-reception.jpg"
+                  alt="Modern Clinic Reception"
+                  fill
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3">
+                  <span className="text-xs font-semibold text-white">OPD Reception &amp; Token Desk</span>
+                </div>
+              </div>
+
+              <div className="group relative h-44 overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <Image
+                  src="/images/clinical/consultation-room.jpg"
+                  alt="Doctor Consultation Chamber"
+                  fill
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3">
+                  <span className="text-xs font-semibold text-white">Private Doctor Chambers</span>
+                </div>
+              </div>
+
+              <div className="group relative h-44 overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <Image
+                  src="/images/clinical/pharmacy-counter.jpg"
+                  alt="In-House Clinic Pharmacy"
+                  fill
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3">
+                  <span className="text-xs font-semibold text-white">Direct Pharmacy Dispensary</span>
+                </div>
+              </div>
+
+              <div className="group relative h-44 overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
+                <Image
+                  src="/images/clinical/lab-diagnostics.jpg"
+                  alt="NABL Pathology Diagnostics"
+                  fill
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3">
+                  <span className="text-xs font-semibold text-white">Digital Diagnostic Vault</span>
+                </div>
               </div>
             </div>
           </div>
@@ -911,6 +1059,11 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+      {/* GROQ-POWERED PATIENT AI CONSULTANT */}
+      <DocSphereAIAgent
+        isOpenExternal={isAiAgentOpen}
+        onCloseExternal={() => setIsAiAgentOpen(false)}
+      />
     </div>
   );
 }

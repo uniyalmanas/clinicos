@@ -523,6 +523,15 @@ export default function DashboardDeskPage() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:bg-blue-500/20 active:scale-95 transition"
+            title="Switch to Doctor OPD Cockpit"
+          >
+            <Stethoscope className="h-4 w-4" />
+            <span>Doctor Cockpit</span>
+          </Link>
+
+          <Link
             href="/display/waiting-room"
             target="_blank"
             className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 active:scale-95 transition"

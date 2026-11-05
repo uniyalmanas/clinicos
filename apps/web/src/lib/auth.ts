@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sql } from "@/lib/db";
 
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET_KEY || process.env.JWT_SECRET;
@@ -47,9 +46,18 @@ export interface AuthClinic {
   practice_type?: "solo" | "clinic";
   plan_type?: string;
   max_doctors?: number;
-  address_line?: string;
-  city?: string;
-  state?: string;
+  address_line?: string | null;
+  city?: string | null;
+  state?: string | null;
+  phone?: string | null;
+  postal_code?: string | null;
+  upi_vpa?: string | null;
+  tagline?: string | null;
+  reg_number?: string | null;
+  doctor_split_percentage?: number | null;
+  subscription_status?: string | null;
+  subscription_plan?: string | null;
+  subscription_expires_at?: string | null;
 }
 
 export interface AuthMembership {
@@ -149,8 +157,27 @@ export function extractAuthToken(req: Request): string | null {
 }
 
 /**
- * Robust Server-Side Authorization Pipeline
- * REQUEST -> VERIFY JWT -> GET USER -> GET MEMBERSHIP -> GET CLINIC -> CHECK ROLE -> ALLOW / DENY
+ * Super-admin authorization for platform-level endpoints.
+ * Verifies the JWT *and* re-checks the live account role so that a demoted or
+ * suspended super-admin loses access immediately instead of when the token expires.
+ */
+export async function authorizeSuperAdmin(req: Request): Promise<TokenPayload> {
+  const { guard } = await import("@/lib/api-auth");
+  const result = await guard(req as any, {
+    roles: ["super_admin"],
+    requireClinic: false,
+    allowPlatformScope: true,
+  });
+  if (!result.ok) {
+    throw createAuthError("Super admin access required.", result.response.status);
+  }
+  return result.auth.token;
+}
+
+/**
+ * Compatibility wrapper over the central guard.
+ * Existing routes keep working while every authorization decision flows
+ * through one place (tenant from the database, live role checks).
  */
 export async function authorizeClinicUser(
   req: Request,
@@ -159,165 +186,103 @@ export async function authorizeClinicUser(
     requiredClinicId?: string | null;
   }
 ): Promise<AuthorizeResult> {
-  const token = extractAuthToken(req);
-  if (!token) {
-    throw createAuthError("Authentication required. Please log in.", 401);
-  }
+  const { guard } = await import("@/lib/api-auth");
+  const result = await guard(req as any, {
+    roles: options?.requiredRoles as any,
+    clinic: options?.requiredClinicId ? { id: options.requiredClinicId } : undefined,
+    requireClinic: true,
+  });
 
-  const payload = verifyAccessToken(token);
-  if (!payload || !payload.sub) {
-    throw createAuthError("Invalid or expired session token.", 401);
-  }
-
-  try {
-    // 1. Fetch user account
-    const users = await sql`
-      SELECT id, phone, email, full_name, role, is_active 
-      FROM user_accounts 
-      WHERE id = ${payload.sub}::uuid 
-      LIMIT 1;
-    `;
-
-    if (users.length === 0 || !users[0].is_active) {
-      throw createAuthError("User account not found or suspended.", 401);
+  if (!result.ok) {
+    const status = result.response.status;
+    let message = "Forbidden.";
+    try {
+      const body = await result.response.clone().json();
+      message = body?.error || message;
+    } catch {
+      /* ignore */
     }
+    throw createAuthError(message, status);
+  }
 
-    const user = users[0];
-
-    // Super Admin bypass
-    if (user.role === "super_admin" || user.role === "superadmin") {
-      const authUser: AuthUser = { id: user.id, phone: user.phone, email: user.email, full_name: user.full_name, role: "superadmin" };
-      const authMembership: AuthMembership = { clinic_id: options?.requiredClinicId || "derma-care-dehradun", role: "superadmin" };
-      const authClinic: AuthClinic = { id: options?.requiredClinicId || "derma-care-dehradun", name: "ClinicOS Master Practice", slug: "derma-care-dehradun" };
-      return {
-        authorized: true,
-        user: authUser,
-        membership: authMembership,
-        clinic: authClinic,
-        doctor: null,
-        context: { user: authUser, membership: authMembership, clinic: authClinic, doctor: null },
+  const { auth } = result;
+  const membership = auth.membership ?? {
+    clinic_id: auth.clinic?.id || "",
+    role: auth.role,
+  };
+  const clinic: AuthClinic = auth.clinic
+    ? {
+        id: auth.clinic.id,
+        name: auth.clinic.name,
+        slug: auth.clinic.slug,
+        city: auth.clinic.city ?? null,
+        state: auth.clinic.state ?? null,
+        phone: auth.clinic.phone ?? null,
+        address_line: auth.clinic.address_line ?? null,
+        postal_code: auth.clinic.postal_code ?? null,
+        upi_vpa: auth.clinic.upi_vpa ?? null,
+        tagline: auth.clinic.tagline ?? null,
+        reg_number: auth.clinic.reg_number ?? null,
+        organization_id: auth.clinic.organization_id ?? null,
+        doctor_split_percentage: auth.clinic.doctor_split_percentage ?? null,
+        subscription_status: auth.clinic.subscription_status ?? null,
+        subscription_plan: auth.clinic.subscription_plan ?? null,
+        subscription_expires_at: auth.clinic.subscription_expires_at ?? null,
+        practice_type:
+          auth.clinic.practice_type === "clinic" || auth.clinic.practice_type === "solo"
+            ? auth.clinic.practice_type
+            : undefined,
+      }
+    : {
+        id: membership.clinic_id,
+        name: "ClinicOS Practice",
+        slug: "",
+        practice_type: "solo" as const,
+        plan_type: "solo_practice",
+        max_doctors: 1,
       };
-    }
 
-    // 2. Fetch clinic membership (Tenant Isolation)
-    const targetClinicId = options?.requiredClinicId || payload.clinic_id;
-    let membershipQuery;
-
-    if (targetClinicId) {
-      membershipQuery = await sql`
-        SELECT cm.clinic_id, cm.role, c.*, c.id as c_id, c.name as clinic_name, c.slug as clinic_slug
-        FROM clinic_memberships cm
-        JOIN clinics c ON c.id = cm.clinic_id
-        WHERE cm.user_id = ${user.id} AND cm.clinic_id = ${targetClinicId}::uuid AND cm.is_active = true
-        LIMIT 1;
-      `;
-    } else {
-      membershipQuery = await sql`
-        SELECT cm.clinic_id, cm.role, c.*, c.id as c_id, c.name as clinic_name, c.slug as clinic_slug
-        FROM clinic_memberships cm
-        JOIN clinics c ON c.id = cm.clinic_id
-        WHERE cm.user_id = ${user.id} AND cm.is_active = true
-        LIMIT 1;
-      `;
-    }
-
-    if (membershipQuery.length === 0 && options?.requiredRoles && !options.requiredRoles.includes("patient")) {
-      throw createAuthError("Forbidden: You are not an active member of this clinic tenant.", 403);
-    }
-
-    const membership = membershipQuery[0] || null;
-    const activeRole = membership?.role || user.role;
-
-    // 3. Role-Based Access Control check
-    if (options?.requiredRoles && options.requiredRoles.length > 0) {
-      const allowed = options.requiredRoles.includes(activeRole) || options.requiredRoles.includes(user.role);
-      if (!allowed) {
-        throw createAuthError(
-          `Forbidden: Role '${activeRole}' is not authorized. Required: ${options.requiredRoles.join(", ")}`,
-          403
-        );
-      }
-    }
-
-    // 4. Resolve verified doctor profile if applicable
-    let doctorProfile: any = null;
-    if (activeRole === "doctor" || activeRole === "owner") {
-      const docs = await sql`
-        SELECT id, slug, full_name, medical_council_reg_number, specialization 
-        FROM doctors 
-        WHERE (user_id = ${user.id} OR phone = ${user.phone})
-        LIMIT 1;
-      `;
-      if (docs.length > 0) {
-        doctorProfile = docs[0];
-      }
-    }
-
-    const authUser: AuthUser = {
-      id: user.id,
-      phone: user.phone,
-      email: user.email,
-      full_name: user.full_name,
-      role: activeRole,
-    };
-
-    const authMembership: AuthMembership = membership
-      ? { clinic_id: membership.clinic_id, role: membership.role }
-      : { clinic_id: targetClinicId || "derma-care-dehradun", role: activeRole };
-
-    const authClinic: AuthClinic = membership
+  return {
+    authorized: true,
+    user: {
+      id: auth.user.id,
+      phone: auth.user.phone,
+      email: auth.user.email ?? undefined,
+      full_name: auth.user.full_name,
+      role: auth.role,
+    },
+    membership,
+    clinic,
+    doctor: auth.doctor
       ? {
-          id: membership.c_id || membership.clinic_id,
-          name: membership.clinic_name || "ClinicOS Practice",
-          slug: membership.clinic_slug || "derma-care-dehradun",
-          organization_id: membership.organization_id || null,
-          practice_type: (membership.practice_type === "clinic" ? "clinic" : "solo") as "solo" | "clinic",
-          plan_type: membership.practice_type === "clinic" ? "multi_clinic" : "solo_practice",
-          max_doctors: membership.practice_type === "clinic" ? 10 : 1,
-          address_line: membership.address_line,
-          city: membership.city,
-          state: membership.state,
+          id: auth.doctor.id,
+          slug: auth.doctor.slug,
+          full_name: auth.doctor.full_name,
+          medical_council_reg_number: auth.doctor.medical_council_reg_number || "",
+          specialization: auth.doctor.specialization,
+          reg_number: auth.doctor.medical_council_reg_number || "",
         }
-      : {
-          id: targetClinicId || "derma-care-dehradun",
-          name: "ClinicOS Practice",
-          slug: "derma-care-dehradun",
-          practice_type: "solo",
-          plan_type: "solo_practice",
-          max_doctors: 1,
-        };
-
-    const authDoctor: AuthDoctor | null = doctorProfile
-      ? {
-          id: doctorProfile.id,
-          slug: doctorProfile.slug,
-          full_name: doctorProfile.full_name,
-          medical_council_reg_number: doctorProfile.medical_council_reg_number,
-          reg_number: doctorProfile.medical_council_reg_number,
-          specialization: doctorProfile.specialization,
-        }
-      : null;
-
-    const context: AuthContext = {
-      user: authUser,
-      membership: authMembership,
-      clinic: authClinic,
-      doctor: authDoctor,
-    };
-
-    return {
-      authorized: true,
-      user: authUser,
-      membership: authMembership,
-      clinic: authClinic,
-      doctor: authDoctor,
-      context,
-    };
-  } catch (err: any) {
-    if (err.status) {
-      throw err;
-    }
-    console.error("Authorization check error:", err);
-    throw createAuthError("Internal authorization failure.", 500);
-  }
+      : null,
+    context: {
+      user: {
+        id: auth.user.id,
+        phone: auth.user.phone,
+        email: auth.user.email ?? undefined,
+        full_name: auth.user.full_name,
+        role: auth.role,
+      },
+      membership,
+      clinic,
+      doctor: auth.doctor
+        ? {
+            id: auth.doctor.id,
+            slug: auth.doctor.slug,
+            full_name: auth.doctor.full_name,
+            medical_council_reg_number: auth.doctor.medical_council_reg_number || "",
+            specialization: auth.doctor.specialization,
+            reg_number: auth.doctor.medical_council_reg_number || "",
+          }
+        : null,
+    },
+  };
 }

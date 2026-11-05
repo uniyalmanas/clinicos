@@ -116,9 +116,52 @@ export function usePatientSession() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Initial hydration
-    setSession(getActivePatientSession());
+    // Initial hydration from localStorage for instantaneous UI paint
+    const initial = getActivePatientSession();
+    setSession(initial);
     setIsLoaded(true);
+
+    let cancelled = false;
+
+    // Verify session with server-side cookie
+    fetch("/api/patient/auth/me")
+      .then((res) => {
+        if (!res.ok) throw new Error("Unauthenticated");
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (data.ok && data.patient) {
+          const pt = data.patient;
+          const current = getActivePatientSession();
+          const synced: PatientSession = {
+            id: pt.uhid || current?.id || `pat-${Date.now().toString(36)}`,
+            full_name: pt.full_name || current?.full_name || "Patient",
+            phone: pt.phone || current?.phone || "",
+            age: pt.age ?? current?.age,
+            gender: pt.gender ?? current?.gender,
+            active_booking: current?.active_booking,
+            created_at: current?.created_at || new Date().toISOString(),
+            last_active: new Date().toISOString(),
+          };
+          setActivePatientSession(synced);
+        }
+      })
+      .catch(() => {
+        // If server says no session, don't show logged in
+        if (cancelled) return;
+        const current = getActivePatientSession();
+        if (current && current.phone) {
+          if (current.active_booking) {
+            setActivePatientSession({
+              ...current,
+              phone: "",
+            });
+          } else {
+            clearPatientSession();
+          }
+        }
+      });
 
     const handleSessionChange = (e: Event) => {
       const customEvent = e as CustomEvent<PatientSession | null>;
@@ -135,6 +178,7 @@ export function usePatientSession() {
     window.addEventListener("storage", handleStorageChange);
 
     return () => {
+      cancelled = true;
       window.removeEventListener(SESSION_EVENT_KEY, handleSessionChange);
       window.removeEventListener("storage", handleStorageChange);
     };
@@ -144,7 +188,12 @@ export function usePatientSession() {
     setActivePatientSession(newSession);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/patient/auth/logout", { method: "POST" });
+    } catch {
+      // Best-effort
+    }
     clearPatientSession();
   }, []);
 

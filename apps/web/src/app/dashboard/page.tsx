@@ -1,52 +1,37 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { 
-  Stethoscope, 
-  UserCheck, 
-  Clock, 
-  TrendingUp, 
-  ArrowRight, 
-  IndianRupee, 
-  Volume2, 
-  RotateCw, 
-  UserX, 
-  Zap, 
-  ShieldCheck, 
-  RefreshCw, 
-  ExternalLink, 
-  AlertTriangle, 
-  Lock, 
-  Plus, 
-  Check, 
-  FileText, 
-  Send, 
-  DollarSign, 
-  X, 
-  Printer, 
-  Pause, 
-  Play, 
-  History, 
-  MessageSquare,
+import {
+  Stethoscope,
+  Volume2,
+  Plus,
+  Check,
+  Printer,
+  Pause,
+  Play,
+  History,
   AlertCircle,
-  FileSpreadsheet,
   CheckCircle2,
-  Calendar,
+  Search,
+  Download,
+  IndianRupee,
+  ShieldCheck,
+  Send,
+  Lock,
+  X,
+  FileText,
+  AlertTriangle,
+  UserX,
+  Smartphone,
+  ExternalLink,
+  ChevronRight,
+  Sparkles,
   Users,
-  Sparkles
+  Tv,
 } from "lucide-react";
 
-// Professional Dental Tooth SVG Vector Icon
-function DentalToothIcon({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M7 3C4.24 3 2 5.24 2 8c0 3.25 1.5 6.5 2.5 10 0.5 1.75 1.5 3 2.5 3 1.25 0 2-1.5 2.5-3.5 0.5-2 1-3.5 2.5-3.5s2 1.5 2.5 3.5c0.5 2 1.25 3.5 2.5 3.5 1 0 2-1.25 2.5-3 1-3.5 2.5-6.75 2.5-10 0-2.76-2.24-5-5-5-1.5 0-3 0.75-4.5 2-1.5-1.25-3-2-4.5-2z" />
-    </svg>
-  );
-}
-
-// Clean Web Audio API dual-tone chime generator for acoustic counter alert
+// Web Audio API dual-tone chime generator for acoustic counter alert
 function playTokenCallChime() {
   try {
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -58,1324 +43,981 @@ function playTokenCallChime() {
     osc1.type = "sine";
     osc1.frequency.setValueAtTime(587.33, now);
     gain1.gain.setValueAtTime(0.28, now);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
     osc1.connect(gain1);
     gain1.connect(audioCtx.destination);
     osc1.start(now);
-    osc1.stop(now + 0.5);
+    osc1.stop(now + 0.45);
 
     // Tone 2: 880.00 Hz (A5)
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
     osc2.type = "sine";
-    osc2.frequency.setValueAtTime(880.00, now + 0.18);
-    gain2.gain.setValueAtTime(0.28, now + 0.18);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+    osc2.frequency.setValueAtTime(880.0, now + 0.16);
+    gain2.gain.setValueAtTime(0.28, now + 0.16);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
     osc2.connect(gain2);
     gain2.connect(audioCtx.destination);
-    osc2.start(now + 0.18);
-    osc2.stop(now + 0.75);
+    osc2.start(now + 0.16);
+    osc2.stop(now + 0.7);
   } catch (err) {
     console.error("Audio chime error:", err);
   }
 }
 
+// Preset Indian generic molecules for 1-tap Speed Rx
+const COMMON_SPEED_RX_MOLECULES = [
+  { brand: "Dolo 650", generic: "PARACETAMOL 650MG", form: "Tab", defaultDose: "1-0-1", defaultDays: "3 Days" },
+  { brand: "Cetcip 10", generic: "CETIRIZINE 10MG", form: "Tab", defaultDose: "0-0-1", defaultDays: "5 Days" },
+  { brand: "Augmentin 625", generic: "AMOXICILLIN 500MG + CLAVULANIC ACID 125MG", form: "Tab", defaultDose: "1-0-1", defaultDays: "5 Days" },
+  { brand: "Pan 40", generic: "PANTOPRAZOLE 40MG", form: "Tab", defaultDose: "1-0-0 (Empty Stomach)", defaultDays: "7 Days" },
+  { brand: "Azithral 500", generic: "AZITHROMYCIN 500MG", form: "Tab", defaultDose: "1-0-0", defaultDays: "3 Days" },
+  { brand: "Allegra 120", generic: "FEXOFENADINE 120MG", form: "Tab", defaultDose: "1-0-0", defaultDays: "7 Days" },
+  { brand: "Itracol 200", generic: "ITRACONAZOLE 200MG", form: "Cap", defaultDose: "1-0-1", defaultDays: "14 Days" },
+];
+
 export default function DashboardOverviewPage() {
   // Practice Plan state (Solo 1-Dr vs Clinic Multi-Dr)
   const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
-  const [isUpgradingPlan, setIsUpgradingPlan] = useState(false);
-
-  // Toast & Sync state
+  const [opdPaused, setOpdPaused] = useState(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [secondsSinceSync, setSecondsSinceSync] = useState(3);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "waiting" | "completed">("all");
 
-  // Financial & Metric state (Obsessive money tracking)
-  const [totalCollected, setTotalCollected] = useState(8450);
-  const [upiCollected, setUpiCollected] = useState(6650);
-  const [cashCollected, setCashCollected] = useState(1800);
-  const [openTokensCount, setOpenTokensCount] = useState(3);
-
-  useEffect(() => {
-    try {
-      const userStr = localStorage.getItem("clinicos_user");
-      if (userStr) {
-        const u = JSON.parse(userStr);
-        if (u?.practice_type === "clinic" || u?.practice_type === "solo") {
-          setPracticeType(u.practice_type);
-        }
-      }
-    } catch (e) {}
-  }, []);
-
-  const handleUpgradePlan = async () => {
-    try {
-      setIsUpgradingPlan(true);
-      const token = localStorage.getItem("clinicos_token");
-      const res = await fetch("/api/clinic/admin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ action: "upgrade_plan", target_plan: "multi_clinic" })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Upgrade request failed.");
-
-      setPracticeType("clinic");
-      const userStr = localStorage.getItem("clinicos_user");
-      if (userStr) {
-        const u = JSON.parse(userStr);
-        u.practice_type = "clinic";
-        u.subscription_plan = "multi_clinic";
-        localStorage.setItem("clinicos_user", JSON.stringify(u));
-      }
-      showNotification("Upgraded to Polyclinic Plan (₹1,299/mo). Chamber 2 & Multi-Doctor Roster unlocked!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } catch (e: any) {
-      showNotification(e.message || "Plan upgrade failed.");
-    } finally {
-      setIsUpgradingPlan(false);
-    }
-  };
-
-  // Chamber 1 state (Dr. Rahul Sharma - Dermatology)
-  const [chamber1Paused, setChamber1Paused] = useState(false);
-  const [chamber1Current, setChamber1Current] = useState({
+  // In-Room Active Patient
+  const [currentPatient, setCurrentPatient] = useState({
     token: 12,
-    patientName: "Priya S.",
+    patientName: "Priya Singh",
     ageGender: "24F",
-    complaint: "Acne Follow-up",
+    phone: "+919876543211",
+    complaint: "Acne Vulgaris & Hyperpigmentation",
     visitNumber: 3,
-    lastRx: "Itraconazole 200mg (Completed)",
-    failedRx: "Fluconazole 150mg (Gastric Distress)",
-    paymentStatus: "paid",
+    lastRx: "Itraconazole 200mg (1-0-1) - Well Tolerated",
+    failedRx: "Fluconazole 150mg (Reported Gastric Distress)",
     fee: 600,
-    inRoomMins: 6
+    paymentMode: "UPI",
+    paymentStatus: "paid",
+    inRoomMins: 6,
   });
 
-  const [chamber1Queue, setChamber1Queue] = useState([
-    { token: 13, patientName: "Rohit V.", ageGender: "41M", complaint: "BP Check", waitMins: 12, status: "waiting", fee: 600, payment: "UPI Paid", isStuck: false },
-    { token: 14, patientName: "Anjali K.", ageGender: "29F", complaint: "Laser Consult", waitMins: 25, status: "waiting", fee: 1200, payment: "Cash Pending", isStuck: false },
-    { token: 15, patientName: "Vikram P.", ageGender: "50M", complaint: "Eczema", waitMins: 40, status: "waiting", fee: 600, payment: "Cash Pending", isStuck: true }
+  // Live Queue & Day Register Table (Excel Sheet Replacement Data)
+  const [dayRegister, setDayRegister] = useState([
+    { token: 11, time: "10:15 AM", patientName: "Amit Rawat", ageGender: "38M", phone: "+919123456780", complaint: "Follow-up BP Check", fee: 500, paymentMode: "UPI", paymentStatus: "paid", status: "completed" },
+    { token: 12, time: "10:30 AM", patientName: "Priya Singh", ageGender: "24F", phone: "+919876543211", complaint: "Acne Vulgaris Follow-up", fee: 600, paymentMode: "UPI", paymentStatus: "paid", status: "in_consultation" },
+    { token: 13, time: "10:45 AM", patientName: "Rohit Verma", ageGender: "41M", phone: "+919876543212", complaint: "Skin Rash & Itching", fee: 600, paymentMode: "UPI", paymentStatus: "paid", status: "waiting", waitMins: 14, isStuck: false },
+    { token: 14, time: "11:00 AM", patientName: "Anjali Kapoor", ageGender: "29F", phone: "+919876543213", complaint: "Facial Pigmentation", fee: 1200, paymentMode: "Cash", paymentStatus: "pending", status: "waiting", waitMins: 22, isStuck: false },
+    { token: 15, time: "11:15 AM", patientName: "Vikram Pant", ageGender: "52M", phone: "+919876543214", complaint: "Chronic Eczema Flare", fee: 600, paymentMode: "Cash", paymentStatus: "pending", status: "waiting", waitMins: 38, isStuck: true },
+    { token: 16, time: "11:30 AM", patientName: "Sunita Devi", ageGender: "61F", phone: "+919876543215", complaint: "Joint Pain & Psoriasis", fee: 600, paymentMode: "UPI", paymentStatus: "paid", status: "waiting", waitMins: 8, isStuck: false },
   ]);
 
-  // Chamber 2 state (Dr. Aditi Joshi - Dental)
-  const [chamber2Paused, setChamber2Paused] = useState(false);
-  const [chamber2Current, setChamber2Current] = useState({
-    token: 5,
-    patientName: "Amit R.",
-    ageGender: "32M",
-    complaint: "RCT Root Canal",
-    visitNumber: 1,
-    paymentStatus: "pending",
-    fee: 4000,
-    inRoomMins: 14
-  });
-
-  const [chamber2Queue, setChamber2Queue] = useState([
-    { token: 6, patientName: "Sneha M.", ageGender: "22F", complaint: "Scaling", waitMins: 5, status: "waiting", fee: 800, payment: "UPI Paid", isStuck: false },
-    { token: 7, patientName: "Karan D.", ageGender: "45M", complaint: "Crown Prep", waitMins: 15, status: "waiting", fee: 2500, payment: "Cash Pending", isStuck: false }
+  // Speed Rx Pad Active Prescriptions for Current In-Room Patient
+  const [activeSpeedRx, setActiveSpeedRx] = useState<Array<{ generic: string; form: string; dose: string; days: string }>>([
+    { generic: "ITRACONAZOLE 200MG", form: "Cap", dose: "1-0-1", days: "14 Days" },
+    { generic: "CETIRIZINE 10MG", form: "Tab", dose: "0-0-1", days: "5 Days" },
   ]);
 
-  // Modal Dialog States
-  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
-  const [showStuckModal, setShowStuckModal] = useState(false);
-  const [showPrintReportModal, setShowPrintReportModal] = useState(false);
-  const [showWhatsappModal, setShowWhatsappModal] = useState(false);
-  const [showPnlModal, setShowPnlModal] = useState(false);
-  const [showAddPatientModal, setShowAddPatientModal] = useState<"chamber-1" | "chamber-2" | null>(null);
-  const [showCollectionsBreakdown, setShowCollectionsBreakdown] = useState(false);
-  const [showDigestModal, setShowDigestModal] = useState(false);
+  // Modals
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showWalkinModal, setShowWalkinModal] = useState(false);
   const [showCashDrawerModal, setShowCashDrawerModal] = useState(false);
+  const [showPrintReportModal, setShowPrintReportModal] = useState(false);
+  const [showStuckModal, setShowStuckModal] = useState(false);
 
-  // New Walk-in form state
-  const [newPatient, setNewPatient] = useState({
+  // Walk-in form state
+  const [newWalkin, setNewWalkin] = useState({
     name: "",
     age: "",
     gender: "F",
-    complaint: "",
+    phone: "",
+    complaint: "General Consultation",
     fee: 600,
-    paymentMode: "UPI"
+    paymentMode: "UPI",
   });
 
-  // Timer loop for sync seconds counter
+  // Physical Cash Denomination Calculator
+  const [denominations, setDenominations] = useState({
+    d500: 3, // 1500
+    d200: 1, // 200
+    d100: 1, // 100
+    d50: 0,
+    d20: 0,
+    d10: 0,
+  });
+
+  // Read stored user
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSecondsSinceSync(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
+    try {
+      const u = localStorage.getItem("clinicos_user");
+      if (u) {
+        const parsed = JSON.parse(u);
+        if (parsed.practice_type === "clinic" || parsed.practice_type === "solo") {
+          setPracticeType(parsed.practice_type);
+        }
+      }
+    } catch {}
   }, []);
 
-  const showNotification = (msg: string) => {
+  const showToast = (msg: string) => {
     setActionToast(msg);
-    setTimeout(() => setActionToast(null), 4000);
+    setTimeout(() => setActionToast(null), 3500);
   };
 
-  // Chamber 1 Actions
-  const handleCallChamber1Next = () => {
-    if (chamber1Queue.length === 0) {
-      showNotification("Chamber 1 queue is cleared!");
+  // Financial aggregates calculated directly from the live register
+  const { totalRevenue, upiTotal, cashTotal, pendingTotal } = useMemo(() => {
+    let total = 0;
+    let upi = 0;
+    let cash = 0;
+    let pending = 0;
+
+    dayRegister.forEach((item) => {
+      if (item.paymentStatus === "paid") {
+        total += item.fee;
+        if (item.paymentMode === "UPI") upi += item.fee;
+        else cash += item.fee;
+      } else {
+        pending += item.fee;
+      }
+    });
+
+    return { totalRevenue: total, upiTotal: upi, cashTotal: cash, pendingTotal: pending };
+  }, [dayRegister]);
+
+  // Physical cash counted in drawer
+  const countedCash = useMemo(() => {
+    return (
+      denominations.d500 * 500 +
+      denominations.d200 * 200 +
+      denominations.d100 * 100 +
+      denominations.d50 * 50 +
+      denominations.d20 * 20 +
+      denominations.d10 * 10
+    );
+  }, [denominations]);
+
+  // Filtered queue items
+  const waitingPatients = useMemo(() => {
+    return dayRegister.filter((p) => p.status === "waiting");
+  }, [dayRegister]);
+
+  // Filtered register rows for the Excel View
+  const filteredRegister = useMemo(() => {
+    return dayRegister.filter((p) => {
+      const matchesSearch =
+        p.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(p.token).includes(searchQuery) ||
+        p.complaint.toLowerCase().includes(searchQuery.toLowerCase());
+
+      if (activeTab === "waiting") return matchesSearch && p.status === "waiting";
+      if (activeTab === "completed") return matchesSearch && p.status === "completed";
+      return matchesSearch;
+    });
+  }, [dayRegister, searchQuery, activeTab]);
+
+  // Call Next Token Action
+  const handleCallNext = () => {
+    if (waitingPatients.length === 0) {
+      showToast("All waiting patients have been consulted!");
       return;
     }
-    playTokenCallChime();
-    const nextPatient = chamber1Queue[0];
-    const remaining = chamber1Queue.slice(1);
 
-    setChamber1Current({
-      token: nextPatient.token,
-      patientName: nextPatient.patientName,
-      ageGender: nextPatient.ageGender,
-      complaint: nextPatient.complaint,
+    playTokenCallChime();
+    const nextPt = waitingPatients[0];
+
+    // Mark current patient as completed
+    setDayRegister((prev) =>
+      prev.map((p) => {
+        if (p.token === currentPatient.token) {
+          return { ...p, status: "completed" };
+        }
+        if (p.token === nextPt.token) {
+          return { ...p, status: "in_consultation" };
+        }
+        return p;
+      })
+    );
+
+    setCurrentPatient({
+      token: nextPt.token,
+      patientName: nextPt.patientName,
+      ageGender: nextPt.ageGender,
+      phone: nextPt.phone,
+      complaint: nextPt.complaint,
       visitNumber: 1,
-      lastRx: "No prior records (New Patient)",
+      lastRx: "First consultation (No prior adverse history)",
       failedRx: "None recorded",
-      paymentStatus: nextPatient.payment.includes("Paid") ? "paid" : "pending",
-      fee: nextPatient.fee,
-      inRoomMins: 1
+      fee: nextPt.fee,
+      paymentMode: nextPt.paymentMode,
+      paymentStatus: nextPt.paymentStatus,
+      inRoomMins: 1,
     });
 
-    setChamber1Queue(remaining);
-    showNotification(`Called Token #${nextPatient.token} (${nextPatient.patientName}) into Chamber 1`);
+    // Reset Speed Rx pad with starter combo
+    setActiveSpeedRx([
+      { generic: "PARACETAMOL 650MG", form: "Tab", dose: "1-0-1", days: "3 Days" },
+    ]);
+
+    showToast(`Token #${nextPt.token} (${nextPt.patientName}) called into Chamber`);
   };
 
-  // Chamber 2 Actions
-  const handleCallChamber2Next = () => {
-    if (chamber2Queue.length === 0) {
-      showNotification("Chamber 2 queue is cleared!");
+  // Add 1-tap Molecule to Rx pad
+  const handleAddMolecule = (mol: (typeof COMMON_SPEED_RX_MOLECULES)[0]) => {
+    if (activeSpeedRx.some((m) => m.generic === mol.generic)) {
+      showToast(`${mol.generic} is already in the prescription.`);
       return;
     }
-    playTokenCallChime();
-    const nextPatient = chamber2Queue[0];
-    const remaining = chamber2Queue.slice(1);
-
-    setChamber2Current({
-      token: nextPatient.token,
-      patientName: nextPatient.patientName,
-      ageGender: nextPatient.ageGender,
-      complaint: nextPatient.complaint,
-      visitNumber: 1,
-      paymentStatus: nextPatient.payment.includes("Paid") ? "paid" : "pending",
-      fee: nextPatient.fee,
-      inRoomMins: 1
-    });
-
-    setChamber2Queue(remaining);
-    showNotification(`Called Token #${nextPatient.token} (${nextPatient.patientName}) into Chamber 2`);
+    setActiveSpeedRx((prev) => [
+      ...prev,
+      { generic: mol.generic, form: mol.form, dose: mol.defaultDose, days: mol.defaultDays },
+    ]);
+    showToast(`Added ${mol.generic}`);
   };
 
-  // Toggle Chamber 2 Payment Status (Inline Money Control)
-  const handleToggleChamber2Payment = () => {
-    if (chamber2Current.paymentStatus === "pending") {
-      setChamber2Current(prev => ({ ...prev, paymentStatus: "paid" }));
-      setTotalCollected(prev => prev + chamber2Current.fee);
-      setUpiCollected(prev => prev + chamber2Current.fee);
-      setOpenTokensCount(prev => Math.max(0, prev - 1));
-      showNotification(`₹${chamber2Current.fee.toLocaleString("en-IN")} marked PAID via Soundbox UPI for Token #${chamber2Current.token}`);
-    } else {
-      setChamber2Current(prev => ({ ...prev, paymentStatus: "pending" }));
-      setTotalCollected(prev => Math.max(0, prev - chamber2Current.fee));
-      setUpiCollected(prev => Math.max(0, prev - chamber2Current.fee));
-      setOpenTokensCount(prev => prev + 1);
-      showNotification(`Token #${chamber2Current.token} payment flipped to PENDING`);
-    }
+  const handleRemoveMolecule = (index: number) => {
+    setActiveSpeedRx((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  // Resolve Stuck Token (Vikram P.)
-  const handleResolveStuck = (action: "call_now" | "whatsapp_delay" | "no_show") => {
-    setShowStuckModal(false);
-    playTokenCallChime();
-
-    if (action === "call_now") {
-      const stuckPatient = chamber1Queue.find(p => p.isStuck) || chamber1Queue[2];
-      if (!stuckPatient) return;
-      const remaining = chamber1Queue.filter(p => p.token !== stuckPatient.token);
-
-      setChamber1Current({
-        token: stuckPatient.token,
-        patientName: stuckPatient.patientName,
-        ageGender: stuckPatient.ageGender,
-        complaint: `${stuckPatient.complaint} (Priority Call)`,
-        visitNumber: 2,
-        lastRx: "Clobetasol 0.05% + Cetirizine 10mg",
-        failedRx: "Betamethasone dipropionate",
-        paymentStatus: stuckPatient.payment.includes("Paid") ? "paid" : "pending",
-        fee: stuckPatient.fee,
-        inRoomMins: 1
-      });
-      setChamber1Queue(remaining);
-      showNotification(`Priority Override: Token #${stuckPatient.token} (${stuckPatient.patientName}) called into Chamber 1`);
-    } else if (action === "whatsapp_delay") {
-      showNotification("WhatsApp delay push sent to Vikram P.: 'Dr. Rahul is in a procedure. Expected call: 11:20 AM.'");
-    } else if (action === "no_show") {
-      setChamber1Queue(prev => prev.filter(p => !p.isStuck));
-      showNotification("Token #15 (Vikram P.) marked No-Show / Stepped Out. Queue cleared.");
-    }
+  // Complete & Advance Queue
+  const handleCompleteAndNext = () => {
+    showToast(`Saved ℞ for Token #${currentPatient.token} (${currentPatient.patientName}) & dispatched WhatsApp PDF`);
+    handleCallNext();
   };
 
-  // Add Walk-in Patient to Selected Chamber
-  const handleAddPatientSubmit = (e: React.FormEvent) => {
+  // Toggle Payment Status
+  const handleTogglePayment = (tokenNum: number) => {
+    setDayRegister((prev) =>
+      prev.map((p) => {
+        if (p.token === tokenNum) {
+          const nextStatus = p.paymentStatus === "paid" ? "pending" : "paid";
+          showToast(`Token #${tokenNum} payment marked ${nextStatus.toUpperCase()}`);
+          return { ...p, paymentStatus: nextStatus };
+        }
+        return p;
+      })
+    );
+  };
+
+  // Add Walk-in Patient to Register
+  const handleAddWalkinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPatient.name.trim()) return;
+    if (!newWalkin.name.trim()) return;
 
-    if (showAddPatientModal === "chamber-1") {
-      const newToken = (chamber1Queue.length > 0 ? chamber1Queue[chamber1Queue.length - 1].token : chamber1Current.token) + 1;
-      setChamber1Queue(prev => [
-        ...prev,
-        {
-          token: newToken,
-          patientName: newPatient.name,
-          ageGender: `${newPatient.age}${newPatient.gender}`,
-          complaint: newPatient.complaint || "General Consultation",
-          waitMins: 10,
-          status: "waiting",
-          fee: Number(newPatient.fee) || 600,
-          payment: newPatient.paymentMode === "UPI" ? "UPI Paid" : "Cash Pending",
-          isStuck: false
-        }
-      ]);
-      if (newPatient.paymentMode === "UPI") {
-        setTotalCollected(prev => prev + (Number(newPatient.fee) || 600));
-        setUpiCollected(prev => prev + (Number(newPatient.fee) || 600));
-      } else {
-        setOpenTokensCount(prev => prev + 1);
-      }
-      showNotification(`Added Token #${newToken} (${newPatient.name}) to Chamber 1`);
-    } else {
-      const newToken = (chamber2Queue.length > 0 ? chamber2Queue[chamber2Queue.length - 1].token : chamber2Current.token) + 1;
-      setChamber2Queue(prev => [
-        ...prev,
-        {
-          token: newToken,
-          patientName: newPatient.name,
-          ageGender: `${newPatient.age}${newPatient.gender}`,
-          complaint: newPatient.complaint || "Dental Consult",
-          waitMins: 10,
-          status: "waiting",
-          fee: Number(newPatient.fee) || 800,
-          payment: newPatient.paymentMode === "UPI" ? "UPI Paid" : "Cash Pending",
-          isStuck: false
-        }
-      ]);
-      if (newPatient.paymentMode === "UPI") {
-        setTotalCollected(prev => prev + (Number(newPatient.fee) || 800));
-        setUpiCollected(prev => prev + (Number(newPatient.fee) || 800));
-      } else {
-        setOpenTokensCount(prev => prev + 1);
-      }
-      showNotification(`Added Token #${newToken} (${newPatient.name}) to Chamber 2`);
-    }
+    const maxToken = dayRegister.reduce((max, p) => Math.max(max, p.token), 10);
+    const newToken = maxToken + 1;
+    const nowStr = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
-    setNewPatient({ name: "", age: "", gender: "F", complaint: "", fee: 600, paymentMode: "UPI" });
-    setShowAddPatientModal(null);
+    const newEntry = {
+      token: newToken,
+      time: nowStr,
+      patientName: newWalkin.name,
+      ageGender: `${newWalkin.age || "30"}${newWalkin.gender}`,
+      phone: newWalkin.phone || "+919876543299",
+      complaint: newWalkin.complaint || "General Consultation",
+      fee: Number(newWalkin.fee) || 600,
+      paymentMode: newWalkin.paymentMode,
+      paymentStatus: newWalkin.paymentMode === "UPI" ? "paid" : "pending",
+      status: "waiting",
+      waitMins: 5,
+      isStuck: false,
+    };
+
+    setDayRegister((prev) => [...prev, newEntry]);
+    playTokenCallChime();
+    showToast(`Added Walk-in Token #${newToken} (${newWalkin.name})`);
+
+    setNewWalkin({
+      name: "",
+      age: "",
+      gender: "F",
+      phone: "",
+      complaint: "General Consultation",
+      fee: 600,
+      paymentMode: "UPI",
+    });
+    setShowWalkinModal(false);
+  };
+
+  // Export Daily Register to Real Excel / CSV File
+  const handleExportCSV = () => {
+    const headers = [
+      "Token Number",
+      "Check-In Time",
+      "Patient Name",
+      "Age / Gender",
+      "Phone",
+      "Chief Complaint",
+      "Fee (INR)",
+      "Payment Mode",
+      "Payment Status",
+      "Consultation Status",
+    ];
+
+    const rows = dayRegister.map((p) => [
+      p.token,
+      p.time,
+      `"${p.patientName}"`,
+      p.ageGender,
+      p.phone,
+      `"${p.complaint}"`,
+      p.fee,
+      p.paymentMode,
+      p.paymentStatus.toUpperCase(),
+      p.status.toUpperCase(),
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `DocSphere_ClinicOS_Daily_Register_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showToast("Downloaded official Daily Register (.CSV) for Microsoft Excel");
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12 font-sans">
-      {/* FLOATING ACTION NOTIFICATION TOAST */}
+    <div className="h-full flex flex-col space-y-3 font-sans pb-4">
+      {/* Toast Notification */}
       {actionToast && (
-        <div className="p-3.5 rounded-2xl bg-slate-900 text-white border border-slate-700 shadow-2xl flex items-center justify-between text-xs font-bold animate-in fade-in duration-200">
-          <div className="flex items-center gap-2">
-            <Volume2 className="h-4 w-4 text-emerald-400 shrink-0" />
-            <span>{actionToast}</span>
-          </div>
-          <button 
-            type="button"
-            onClick={() => setActionToast(null)} 
-            className="text-slate-400 hover:text-white text-xs underline cursor-pointer"
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-[#1D1D1F] px-4 py-3 text-xs font-bold text-white shadow-2xl border border-white/10 animate-in fade-in">
+          <Volume2 className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span>{actionToast}</span>
+          <button
+            onClick={() => setActionToast(null)}
+            className="ml-2 text-white/60 hover:text-white"
           >
-            Dismiss
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
-      {/* ┌─────────────────────────────────────────────────────────────────────────────┐ */}
-      {/* │ CLINIC COMMAND BOARD       │ TOTAL COLLECTED: ₹8,450   │ OPEN: 3           │ */}
-      {/* └─────────────────────────────────────────────────────────────────────────────┘ */}
-      <div className="rounded-3xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-4 sm:p-5 shadow-apple-card flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* Title & Live Heartbeat */}
+      {/* TOP HEADER COCKPIT BAR (COMPACT & NEAT) */}
+      <header className="rounded-2xl border border-black/[0.06] bg-white px-4 py-2.5 dark:border-white/[0.08] dark:bg-[#1C1C1E] shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-black text-sm tracking-wider">
-            CMD
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0071E3] text-white font-bold text-xs shadow-xs">
+            OPD
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base sm:text-lg font-black text-[#1D1D1F] dark:text-white tracking-tight uppercase">
-                {practiceType === "solo" ? "Solo Practice Command Board" : "Polyclinic Command Board"}
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-black text-[#1D1D1F] dark:text-white tracking-tight">
+                Chamber Cockpit · Dr. Rahul Sharma
               </h1>
-              <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Live Sync ({secondsSinceSync}s)</span>
+              <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Operational
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#0071E3]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] border border-[#0071E3]/20">
-                {practiceType === "solo" ? "👨‍⚕️ 1 Doctor Plan (₹599/mo)" : "🏥 Multi-Doctor Polyclinic (₹1,299/mo)"}
+              <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] border border-blue-500/20">
+                MD (Medicine) · NMC Verified
               </span>
             </div>
-            <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-              {practiceType === "solo"
-                ? "Solo Doctor Workspace • Focused Single OPD Chamber • Soundbox-Reconciled Billing"
-                : "Polyclinic Multi-Chamber Triage • Multi-Doctor Rosters • Soundbox-Reconciled Billing"}
+            <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93]">
+              Derma Care Skin &amp; Laser Centre • Rajpur Road, Dehradun
             </p>
           </div>
         </div>
 
-        {/* Action Counters (Money + Unresolved Tokens) */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Total Collected Pill (Clickable for CA/Soundbox audit breakdown) */}
-          <button
-            type="button"
-            onClick={() => setShowCollectionsBreakdown(true)}
-            className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 transition active:scale-95 cursor-pointer text-left"
-            title="Click to view Soundbox vs Cash audit breakdown"
+        {/* Quick Operational Links */}
+        <div className="flex items-center gap-2">
+          {/* Waiting Room TV Link */}
+          <Link
+            href="/waiting-room"
+            target="_blank"
+            className="inline-flex items-center gap-1 rounded-xl border border-black/[0.06] bg-gray-50 px-2.5 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-gray-100 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:hover:bg-white/[0.08] transition"
+            title="Open Waiting Lounge TV Board"
           >
-            <div className="p-1 rounded-lg bg-emerald-600 text-white">
-              <IndianRupee className="h-3.5 w-3.5" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-400">
-                Total Collected
-              </div>
-              <div className="text-sm font-black font-mono">
-                ₹{totalCollected.toLocaleString("en-IN")}
-              </div>
-            </div>
-          </button>
+            <Tv className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+            <span className="hidden sm:inline">Waiting TV</span>
+          </Link>
 
-          {/* Open/Pending Tokens Pill */}
-          <button
-            type="button"
-            onClick={() => setShowCollectionsBreakdown(true)}
-            className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-800 dark:text-amber-300 transition active:scale-95 cursor-pointer text-left"
-            title="Click to review pending payments"
-          >
-            <div className="p-1 rounded-lg bg-amber-600 text-white">
-              <AlertCircle className="h-3.5 w-3.5" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold tracking-wider text-amber-700 dark:text-amber-400">
-                Open / Pending
-              </div>
-              <div className="text-sm font-black font-mono">
-                {openTokensCount} Tokens
-              </div>
-            </div>
-          </button>
-
-          {/* 9 PM Daily Digest Nudge Button */}
-          <button
-            type="button"
-            onClick={() => setShowDigestModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#1D1D1F] dark:text-white text-xs font-bold transition active:scale-95 cursor-pointer"
-            title="Preview 9 PM Doctor WhatsApp Closing Digest"
-          >
-            <Send className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="hidden sm:inline">9 PM Digest</span>
-          </button>
-
-          {/* Direct link to Reception Full Desk */}
+          {/* Front Desk Token Counter */}
           <Link
             href="/dashboard/desk"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition active:scale-95"
+            className="inline-flex items-center gap-1 rounded-xl border border-black/[0.06] bg-gray-50 px-2.5 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-gray-100 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:hover:bg-white/[0.08] transition"
+            title="Open Receptionist Desk"
           >
-            <UserCheck className="h-3.5 w-3.5" />
-            <span>Desk Console</span>
+            <Users className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">Reception Desk</span>
           </Link>
+
+          {/* New Walk-in Button */}
+          <button
+            type="button"
+            onClick={() => setShowWalkinModal(true)}
+            className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 active:scale-95 transition"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Walk-in</span>
+          </button>
+
+          {/* Call Next Patient Primary Action */}
+          <button
+            type="button"
+            onClick={handleCallNext}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0071E3] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
+          >
+            <Volume2 className="h-3.5 w-3.5" />
+            <span>Call Next</span>
+          </button>
         </div>
-      </div>
+      </header>
 
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* TWO CHAMBER ACTION COMMAND CARDS                                          */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      <div className="grid gap-6 lg:grid-cols-2">
-
-        {/* 🟢 CHAMBER 1: Dr. Rahul (Dermatology) */}
-        <div className={`rounded-3xl border ${chamber1Paused ? "border-amber-400/40 bg-amber-50/10" : "border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E]"} p-5 sm:p-6 shadow-apple-card space-y-4`}>
-          {/* Chamber Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-            <div className="space-y-0.5">
+      {/* 3-COLUMN HIGH-DENSITY OPERATING GRID (100% SPACE UTILIZATION) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 items-stretch">
+        
+        {/* ───────────────────────────────────────────────────────────────────────────── */}
+        {/* PANE 1: COMPACT LIVE OPD QUEUE (lg:col-span-3)                                */}
+        {/* ───────────────────────────────────────────────────────────────────────────── */}
+        <section className="lg:col-span-3 rounded-2xl border border-black/[0.06] bg-white p-3.5 dark:border-white/[0.08] dark:bg-[#1C1C1E] shadow-2xs flex flex-col justify-between space-y-3">
+          <div>
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-2 mb-2.5">
               <div className="flex items-center gap-2">
-                <span className={`h-2.5 w-2.5 rounded-full ${chamber1Paused ? "bg-amber-500" : "bg-emerald-500 animate-pulse"}`}></span>
-                <h2 className="text-sm sm:text-base font-black text-[#1D1D1F] dark:text-white uppercase tracking-tight">
-                  Chamber 1: Dr. Rahul (Dermatology)
-                </h2>
-                {chamber1Paused && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-bold">
-                    PAUSED
-                  </span>
-                )}
-              </div>
-              <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                <span>NMC Reg. UKMC-8942-2012 · MD (Dermatology)</span>
-              </div>
-            </div>
-
-            <Link
-              href="/dashboard/consult/APT-DERMA-102"
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-            >
-              Open ℞ Pad <ExternalLink className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {/* NEXT / IN-ROOM PATIENT HERO BOX */}
-          <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <span className="px-2 py-0.5 rounded-md bg-emerald-600 text-white font-black text-[10px] tracking-wider uppercase">
-                  IN ROOM
-                </span>
-                <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                  #{chamber1Current.token}
-                </span>
-                <span className="text-sm sm:text-base font-bold text-[#1D1D1F] dark:text-white">
-                  {chamber1Current.patientName} ({chamber1Current.ageGender})
-                </span>
-                <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  • {chamber1Current.complaint}
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                  OPD Queue ({waitingPatients.length} Waiting)
                 </span>
               </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" />
-                  ₹{chamber1Current.fee} UPI Verified
-                </span>
-                <span className="text-[10px] font-mono text-[#86868B] px-2 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06]">
-                  {chamber1Current.inRoomMins}m in room
-                </span>
-              </div>
-            </div>
-
-            {/* ⚠️ RETENTION KILLER: THE "3rd Visit" CLINICAL MEMORY BANNER */}
-            <div 
-              onClick={() => setShowHistoryDrawer(true)}
-              className="group p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/25 transition cursor-pointer flex items-start justify-between gap-3 text-amber-900 dark:text-amber-200"
-              title="Click to view full clinical timeline and prior prescriptions"
-            >
-              <div className="space-y-0.5 text-xs">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <span className="text-amber-600 dark:text-amber-400">⚠️</span>
-                  <span className="underline decoration-amber-500/50 underline-offset-2">
-                    {chamber1Current.visitNumber}rd Visit • Last Rx: {chamber1Current.lastRx}
-                  </span>
-                </div>
-                <div className="text-[11px] text-amber-800 dark:text-amber-300/80 font-medium">
-                  Failed: {chamber1Current.failedRx} → Click to open prior 3-visit Rx timeline
-                </div>
-              </div>
-              <span className="shrink-0 text-[10px] font-bold px-2 py-1 rounded-lg bg-amber-500/20 group-hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 flex items-center gap-1">
-                <History className="h-3 w-3" />
-                History
-              </span>
-            </div>
-          </div>
-
-          {/* ACTION BUTTON BAR: [ 📞 Call Token ] [ ➕ Add Patient ] [ ⏸ Pause ] */}
-          <div className="grid grid-cols-3 gap-2.5 pt-1">
-            <button
-              type="button"
-              onClick={handleCallChamber1Next}
-              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
-            >
-              <Volume2 className="h-4 w-4" />
-              <span>Call Token</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowAddPatientModal("chamber-1")}
-              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-[#1D1D1F] dark:text-white font-bold text-xs transition active:scale-95 cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add Patient</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setChamber1Paused(prev => !prev)}
-              className={`inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs transition active:scale-95 cursor-pointer ${
-                chamber1Paused 
-                  ? "bg-amber-600 text-white hover:bg-amber-700" 
-                  : "bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-[#1D1D1F] dark:text-white"
-              }`}
-            >
-              {chamber1Paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-              <span>{chamber1Paused ? "Resume" : "Pause"}</span>
-            </button>
-          </div>
-
-          {/* LIVE QUEUE (NEXT 3 PATIENTS ONLY — NO INFINITE TABLE CLUTTER) */}
-          <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
-            <div className="flex items-center justify-between text-xs font-bold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider">
-              <span>Live Queue ({chamber1Queue.length} Waiting)</span>
-              <span>Wait Times</span>
-            </div>
-
-            <div className="space-y-2">
-              {chamber1Queue.slice(0, 3).map((pt) => (
-                <div 
-                  key={pt.token}
-                  className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition ${
-                    pt.isStuck
-                      ? "border-red-500/40 bg-red-50/20 dark:bg-red-950/20 text-red-900 dark:text-red-200"
-                      : "border-black/[0.05] dark:border-white/[0.06] bg-black/[0.01] dark:bg-white/[0.02] text-[#1D1D1F] dark:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
-                      #{pt.token}
-                    </span>
-                    <span className="font-semibold">{pt.patientName}</span>
-                    <span className="text-[#86868B] dark:text-[#8E8E93]">• {pt.ageGender} • {pt.complaint}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 font-mono">
-                    <span>Wait: {pt.waitMins}m</span>
-                    {pt.isStuck && (
-                      <span className="px-2 py-0.5 rounded-full bg-red-600 text-white font-sans text-[10px] font-black uppercase tracking-wider animate-pulse">
-                        ⚠️ STUCK
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {chamber1Queue.length === 0 && (
-                <div className="p-4 rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] text-center text-xs text-[#86868B]">
-                  Queue Cleared · No waiting patients for Chamber 1
-                </div>
-              )}
-            </div>
-
-            {/* [ 🚨 Resolve Stuck Token ] Action Button */}
-            {chamber1Queue.some(p => p.isStuck) && (
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowStuckModal(true)}
-                  className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>Resolve Stuck Token (#15 Vikram P. waiting 40m)</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 🟢 CHAMBER 2: Conditional for Solo (Upgrade Teaser) vs Clinic (Live Dr. Aditi Dental) */}
-        {practiceType === "solo" ? (
-          <div className="rounded-3xl border border-dashed border-[#0071E3]/40 bg-gradient-to-br from-[#0071E3]/5 to-[#5856D6]/5 p-5 sm:p-6 shadow-apple-card flex flex-col justify-between space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3]/10 px-3 py-1 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] border border-[#0071E3]/20">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Solo Practice Pro Active (₹599/mo)
-                </span>
-                <span className="rounded-full bg-black/[0.05] dark:bg-white/[0.08] px-2 py-0.5 text-[10px] font-bold text-[#86868B] dark:text-[#8E8E93]">
-                  Chamber 2 Reserved
-                </span>
-              </div>
-              <h2 className="text-base sm:text-lg font-black text-[#1D1D1F] dark:text-white">
-                Chamber 2 · Multi-Doctor Roster
-              </h2>
-              <p className="text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                Your practice is currently registered on the <strong>Solo Doctor Plan</strong> (1 Doctor Chamber). 
-                To onboard <strong>Dr. Aditi Joshi (Dental)</strong>, visiting consultants, operate multiple counters simultaneously, and automate doctor fee splits, upgrade to the <strong>Polyclinic Plan</strong>.
-              </p>
-              <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                <div className="rounded-xl bg-white/70 dark:bg-white/5 p-2.5 border border-black/[0.05] dark:border-white/[0.05]">
-                  <div className="font-bold text-[#1D1D1F] dark:text-white">👨‍⚕️ Solo (Active)</div>
-                  <div className="text-[#86868B] text-[10px] mt-0.5">1 Doctor • ₹599/mo • Unlimited Patients</div>
-                </div>
-                <div className="rounded-xl bg-[#0071E3]/10 dark:bg-[#0071E3]/20 p-2.5 border border-[#0071E3]/30">
-                  <div className="font-bold text-[#0071E3] dark:text-[#2997FF]">🏥 Polyclinic</div>
-                  <div className="text-[#86868B] text-[10px] mt-0.5">Up to 10 Doctors • ₹1,299/mo • Doctor Splits</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
               <button
                 type="button"
-                onClick={handleUpgradePlan}
-                disabled={isUpgradingPlan}
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-bold shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span>{isUpgradingPlan ? "Upgrading Practice Plan..." : "Upgrade to Multi-Doctor Polyclinic (₹1,299/mo)"}</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-        <div className={`rounded-3xl border ${chamber2Paused ? "border-amber-400/40 bg-amber-50/10" : "border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E]"} p-5 sm:p-6 shadow-apple-card space-y-4`}>
-          {/* Chamber Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className={`h-2.5 w-2.5 rounded-full ${chamber2Paused ? "bg-amber-500" : "bg-blue-500 animate-pulse"}`}></span>
-                <h2 className="text-sm sm:text-base font-black text-[#1D1D1F] dark:text-white uppercase tracking-tight">
-                  Chamber 2: Dr. Aditi (Dental)
-                </h2>
-                {chamber2Paused && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-bold">
-                    PAUSED
-                  </span>
-                )}
-              </div>
-              <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] flex items-center gap-1.5">
-                <DentalToothIcon className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                <span>Dental Council Reg. UDC-4120-2016 · MDS (Endodontics)</span>
-              </div>
-            </div>
-
-            <Link
-              href="/dashboard/chambers"
-              className="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
-            >
-              Dental Console <ExternalLink className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {/* NEXT / IN-ROOM PATIENT HERO BOX */}
-          <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white font-black text-[10px] tracking-wider uppercase">
-                  IN ROOM
-                </span>
-                <span className="text-xl sm:text-2xl font-black font-mono text-blue-600 dark:text-blue-400">
-                  #{chamber2Current.token}
-                </span>
-                <span className="text-sm sm:text-base font-bold text-[#1D1D1F] dark:text-white">
-                  {chamber2Current.patientName} ({chamber2Current.ageGender})
-                </span>
-                <span className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  • {chamber2Current.complaint}
-                </span>
-              </div>
-
-              <span className="text-[10px] font-mono text-[#86868B] px-2 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] self-start sm:self-center">
-                {chamber2Current.inRoomMins}m in room
-              </span>
-            </div>
-
-            {/* 💳 INLINE PAYMENT STATUS (THE MONEY TRIGGER) */}
-            <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition ${
-              chamber2Current.paymentStatus === "pending"
-                ? "bg-rose-500/10 border-rose-500/25 text-rose-900 dark:text-rose-200"
-                : "bg-emerald-500/10 border-emerald-500/25 text-emerald-900 dark:text-emerald-200"
-            }`}>
-              <div className="flex items-center gap-2 font-bold">
-                {chamber2Current.paymentStatus === "pending" ? (
-                  <>
-                    <span className="text-rose-600 dark:text-rose-400 text-sm">💳</span>
-                    <span>Payment: Pending (₹{chamber2Current.fee.toLocaleString("en-IN")})</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span>Payment: Paid via Soundbox UPI (₹{chamber2Current.fee.toLocaleString("en-IN")})</span>
-                  </>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleToggleChamber2Payment}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition active:scale-95 cursor-pointer shadow-xs ${
-                  chamber2Current.paymentStatus === "pending"
-                    ? "bg-rose-600 hover:bg-rose-700 text-white"
-                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={() => setOpdPaused(!opdPaused)}
+                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition ${
+                  opdPaused
+                    ? "bg-amber-500 text-white"
+                    : "bg-gray-100 dark:bg-white/10 text-[#6E6E73] dark:text-[#A1A1A6]"
                 }`}
               >
-                {chamber2Current.paymentStatus === "pending" ? "Mark Paid" : "Paid ✓"}
+                {opdPaused ? "Resume" : "Pause"}
               </button>
             </div>
-          </div>
 
-          {/* ACTION BUTTON BAR: [ 📞 Call Token ] [ ✅ Mark Paid ] [ ⏸ Pause ] */}
-          <div className="grid grid-cols-3 gap-2.5 pt-1">
-            <button
-              type="button"
-              onClick={handleCallChamber2Next}
-              className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
-            >
-              <Volume2 className="h-4 w-4" />
-              <span>Call Token</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleToggleChamber2Payment}
-              className={`inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs transition active:scale-95 cursor-pointer ${
-                chamber2Current.paymentStatus === "pending"
-                  ? "bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-              }`}
-            >
-              <Check className="h-4 w-4" />
-              <span>{chamber2Current.paymentStatus === "pending" ? "Mark Paid" : "Toggle Paid"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setChamber2Paused(prev => !prev)}
-              className={`inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl font-bold text-xs transition active:scale-95 cursor-pointer ${
-                chamber2Paused 
-                  ? "bg-amber-600 text-white hover:bg-amber-700" 
-                  : "bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-[#1D1D1F] dark:text-white"
-              }`}
-            >
-              {chamber2Paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-              <span>{chamber2Paused ? "Resume" : "Pause"}</span>
-            </button>
-          </div>
-
-          {/* LIVE QUEUE (NEXT 3 PATIENTS ONLY) */}
-          <div className="space-y-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
-            <div className="flex items-center justify-between text-xs font-bold text-[#86868B] dark:text-[#8E8E93] uppercase tracking-wider">
-              <span>Live Queue ({chamber2Queue.length} Waiting)</span>
-              <span>Wait Times</span>
-            </div>
-
-            <div className="space-y-2">
-              {chamber2Queue.slice(0, 3).map((pt) => (
-                <div 
+            {/* Waiting List Cards */}
+            <div className="space-y-2 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
+              {waitingPatients.map((pt) => (
+                <div
                   key={pt.token}
-                  className="p-3 rounded-xl border border-black/[0.05] dark:border-white/[0.06] bg-black/[0.01] dark:bg-white/[0.02] flex items-center justify-between gap-3 text-xs text-[#1D1D1F] dark:text-white"
+                  className={`rounded-xl border p-2.5 text-xs transition ${
+                    pt.isStuck
+                      ? "border-red-500/30 bg-red-50/30 dark:bg-red-950/20"
+                      : "border-black/[0.05] bg-[#F5F6F9] dark:border-white/[0.06] dark:bg-[#121316]"
+                  }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
-                      #{pt.token}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-black text-sm text-[#0071E3] dark:text-[#2997FF]">
+                        #{pt.token}
+                      </span>
+                      <span className="font-bold text-[#1D1D1F] dark:text-white">
+                        {pt.patientName}
+                      </span>
+                      <span className="text-[10px] text-[#86868B]">({pt.ageGender})</span>
+                    </div>
+
+                    <span className="font-mono text-[10px] text-[#86868B]">
+                      {pt.waitMins}m wait
                     </span>
-                    <span className="font-semibold">{pt.patientName}</span>
-                    <span className="text-[#86868B] dark:text-[#8E8E93]">• {pt.ageGender} • {pt.complaint}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 font-mono">
-                    <span>Wait: {pt.waitMins}m</span>
-                    <span className="text-[11px] text-[#86868B]">({pt.payment})</span>
+                  <div className="mt-1 flex items-center justify-between text-[11px]">
+                    <span className="text-[#6E6E73] dark:text-[#A1A1A6] truncate max-w-[150px]">
+                      {pt.complaint}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        pt.paymentStatus === "paid"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                      }`}
+                    >
+                      {pt.paymentMode} {pt.paymentStatus === "paid" ? "Paid" : "Due"}
+                    </span>
                   </div>
+
+                  {pt.isStuck && (
+                    <div className="mt-2 flex items-center justify-between border-t border-red-500/20 pt-1.5 text-[10px]">
+                      <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" /> Waiting &gt; 35m
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowStuckModal(true)}
+                        className="font-bold text-red-600 underline hover:text-red-700"
+                      >
+                        Priority Call
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
 
-              {chamber2Queue.length === 0 && (
-                <div className="p-4 rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] text-center text-xs text-[#86868B]">
-                  Queue Cleared · No waiting patients for Chamber 2
+              {waitingPatients.length === 0 && (
+                <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-xs text-[#86868B] dark:border-white/10">
+                  All waiting tokens cleared!
                 </div>
               )}
             </div>
-
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => setShowAddPatientModal("chamber-2")}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition cursor-pointer"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Add Walk-in to Chamber 2</span>
-              </button>
-            </div>
           </div>
-        </div>
-        )}
 
-      </div>
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* ⚡ QUICK ACTIONS                                                           */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      <div className="rounded-3xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 shadow-apple-card space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-500 font-bold">⚡</span>
-            <h3 className="text-xs sm:text-sm font-black text-[#1D1D1F] dark:text-white uppercase tracking-wider">
-              QUICK ACTIONS
-            </h3>
+          {/* Bottom Queue Helper */}
+          <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between text-[11px] text-[#86868B]">
+            <span>Soundbox bell connected</span>
+            <button
+              onClick={() => {
+                playTokenCallChime();
+                showToast("Acoustic calling bell test chime played");
+              }}
+              className="text-[#0071E3] font-bold hover:underline"
+            >
+              Test Chime 🔔
+            </button>
           </div>
-          <span className="text-[11px] text-[#86868B] font-mono">Clinical, CA Compliance &amp; Drawer Locks</span>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* [ 🔔 Send WhatsApp Reminders ] */}
-          <button
-            type="button"
-            onClick={() => setShowWhatsappModal(true)}
-            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
-          >
-            <Send className="h-4 w-4 text-emerald-600" />
-            <span>🔔 Send WhatsApp Reminders</span>
-          </button>
-
-          {/* [ 📄 Print Day Report ] */}
-          <button
-            type="button"
-            onClick={() => setShowPrintReportModal(true)}
-            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
-          >
-            <Printer className="h-4 w-4 text-blue-600" />
-            <span>📄 Print Day Report</span>
-          </button>
-
-          {/* [ 💳 Reconcile Cash Drawer ] */}
-          <button
-            type="button"
-            onClick={() => setShowCashDrawerModal(true)}
-            className="flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] text-xs font-bold text-[#1D1D1F] dark:text-white transition active:scale-95 cursor-pointer shadow-xs"
-          >
-            <Lock className="h-4 w-4 text-amber-600" />
-            <span>💳 Reconcile Cash Drawer</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 1: RETURNING PATIENT CLINICAL MEMORY DRAWER (THE #1 RETENTION MOAT)   */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showHistoryDrawer && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
-                  <History className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                    Priya Singh (24F) • Clinical Memory
-                  </h3>
-                  <p className="text-xs text-[#86868B]">UID: PT-DERMA-912 · Rajpur Road, Dehradun</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowHistoryDrawer(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Prescription &amp; Clinical Timeline (3 Visits)
-              </div>
-
-              {/* Visit 1 */}
-              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white">Visit 1 · 14 Aug 2026</span>
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 text-[10px] font-bold">Adverse Reaction</span>
-                </div>
-                <div className="text-[#86868B]">Dx: Tinea Corporis / Erythematous plaque</div>
-                <div className="font-mono text-slate-800 dark:text-slate-200">
-                  Rx: Fluconazole 150mg 1 tab weekly
-                </div>
-                <div className="text-rose-600 dark:text-rose-400 text-[11px] font-semibold">
-                  ⚠️ Patient called clinic on Day 3 reporting acute gastric distress &amp; nausea. Discontinued.
-                </div>
-              </div>
-
-              {/* Visit 2 */}
-              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white">Visit 2 · 02 Sep 2026</span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 text-[10px] font-bold">Success / Cleared</span>
-                </div>
-                <div className="text-[#86868B]">Dx: Switched Antifungal Protocol</div>
-                <div className="font-mono text-slate-800 dark:text-slate-200">
-                  Rx: Itraconazole 200mg (1-0-1 after food) 21d + Ketoconazole lotion
-                </div>
-                <div className="text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold">
-                  ✓ Lesions 90% resolved. Well tolerated with no gastric symptoms.
-                </div>
-              </div>
-
-              {/* Visit 3 (Today) */}
-              <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-blue-900 dark:text-blue-200">Visit 3 · Today (24 Sep 2026)</span>
-                  <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold">Active Consult</span>
-                </div>
-                <div className="text-blue-800 dark:text-blue-300">Chief Complaint: Acne Vulgaris &amp; Post-Inflammatory Hyperpigmentation</div>
-                <div className="font-mono text-blue-900 dark:text-blue-100 font-bold">
-                  Doctor Action: Ready to issue ℞ via Studio pad
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowHistoryDrawer(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
-              >
-                Close
-              </button>
-              <Link
-                href="/dashboard/consult/APT-DERMA-102"
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm"
-              >
-                Open Consultation Pad →
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 2: RESOLVE STUCK TOKEN DIALOG                                        */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showStuckModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="h-5 w-5" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  Resolve Stuck Token #15
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowStuckModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-1 text-xs">
-              <p className="font-bold text-slate-800 dark:text-slate-200">
-                Patient: Vikram P. (50M) • Eczema • Waiting 40 min
-              </p>
-              <p className="text-[#86868B]">
-                Waiting time exceeded clinical threshold (&gt;30m). Choose immediate resolution:
-              </p>
-            </div>
-
-            <div className="space-y-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => handleResolveStuck("call_now")}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer text-left"
-              >
+        {/* ───────────────────────────────────────────────────────────────────────────── */}
+        {/* PANE 2: ACTIVE IN-ROOM PATIENT COCKPIT & SPEED RX STUDIO (lg:col-span-5)      */}
+        {/* ───────────────────────────────────────────────────────────────────────────── */}
+        <section className="lg:col-span-5 rounded-2xl border border-black/[0.06] bg-white p-4 dark:border-white/[0.08] dark:bg-[#1C1C1E] shadow-2xs flex flex-col justify-between space-y-4">
+          <div className="space-y-3.5">
+            {/* Active Patient Demographics Bar */}
+            <div className="rounded-xl border border-emerald-500/25 bg-emerald-50/40 p-3.5 dark:bg-emerald-950/20 space-y-2">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Volume2 className="h-4 w-4" />
-                  <span>Call to Chamber 1 Now (Priority Jump)</span>
+                  <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">
+                    IN ROOM
+                  </span>
+                  <span className="font-mono text-xl font-black text-emerald-600 dark:text-emerald-400">
+                    #{currentPatient.token}
+                  </span>
+                  <span className="text-base font-bold text-[#1D1D1F] dark:text-white">
+                    {currentPatient.patientName}
+                  </span>
+                  <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">
+                    ({currentPatient.ageGender})
+                  </span>
                 </div>
-                <span>⚡</span>
-              </button>
 
-              <button
-                type="button"
-                onClick={() => handleResolveStuck("whatsapp_delay")}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 border border-blue-500/20 text-xs font-bold transition active:scale-95 cursor-pointer text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <Send className="h-4 w-4 text-blue-600" />
-                  <span>Send WhatsApp Delay Alert (+15m)</span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-mono text-[10px] bg-white/70 dark:bg-black/40 px-2 py-1 rounded-full text-[#6E6E73] dark:text-[#A1A1A6]">
+                    {currentPatient.inRoomMins}m in room
+                  </span>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full text-[11px]">
+                    ₹{currentPatient.fee} {currentPatient.paymentMode} ✓
+                  </span>
                 </div>
-                <span>📲</span>
-              </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => handleResolveStuck("no_show")}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.08] text-[#1D1D1F] dark:text-white text-xs font-bold transition active:scale-95 cursor-pointer text-left"
+              {/* Clinical Memory Alert Strip (Visit 3) */}
+              <div
+                onClick={() => setShowHistoryModal(true)}
+                className="rounded-lg bg-amber-500/10 p-2 text-xs text-amber-900 dark:text-amber-200 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition"
               >
-                <div className="flex items-center gap-2">
-                  <UserX className="h-4 w-4 text-red-500" />
-                  <span>Mark Patient Stepped Out / No-Show</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="text-amber-600">⚠️</span>
+                  <span className="font-bold">
+                    Visit #{currentPatient.visitNumber} · Prior Rx: {currentPatient.lastRx}
+                  </span>
                 </div>
-                <span>Skip</span>
-              </button>
+                <span className="font-bold text-[10px] text-amber-700 dark:text-amber-300 underline shrink-0">
+                  Timeline →
+                </span>
+              </div>
+            </div>
+
+            {/* Embedded Speed Rx Studio */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Stethoscope className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
+                  <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                    Speed Rx Pad (NMC Generic Molecules)
+                  </span>
+                </div>
+                <Link
+                  href="/dashboard/consult/APT-DERMA-102"
+                  className="text-[11px] font-bold text-[#0071E3] hover:underline flex items-center gap-0.5"
+                >
+                  Full Rx Studio <ExternalLink className="h-3 w-3" />
+                </Link>
+              </div>
+
+              {/* 1-Tap Quick Molecules Chips */}
+              <div className="flex flex-wrap gap-1.5">
+                {COMMON_SPEED_RX_MOLECULES.slice(0, 5).map((m, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleAddMolecule(m)}
+                    className="rounded-lg border border-black/[0.06] bg-gray-50 px-2 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:border-[#0071E3] hover:bg-blue-50 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-white dark:hover:border-[#2997FF] transition"
+                  >
+                    + {m.brand} ({m.generic.split(" ")[0]})
+                  </button>
+                ))}
+              </div>
+
+              {/* Prescribed Items Table in Active Pad */}
+              <div className="rounded-xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#121316] p-2 space-y-1.5">
+                {activeSpeedRx.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded-lg bg-white p-2 text-xs shadow-2xs dark:bg-[#1C1C1E] border border-black/[0.04] dark:border-white/[0.06]"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-[#1D1D1F] dark:text-white">
+                        {item.form}. {item.generic}
+                      </div>
+                      <div className="text-[10px] text-[#6E6E73] dark:text-[#A1A1A6]">
+                        Dosage: <strong className="text-[#1D1D1F] dark:text-white">{item.dose}</strong> • Duration: {item.days}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMolecule(idx)}
+                      className="text-slate-400 hover:text-red-500 p-1"
+                      title="Remove from Rx"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+                {activeSpeedRx.length === 0 && (
+                  <div className="py-4 text-center text-xs text-[#86868B]">
+                    Click any molecule above or type to add medicines to this prescription.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 3: CA-READY PRINT DAY REPORT (DAY CLOSING LOCK)                      */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showPrintReportModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2">
-                <Printer className="h-5 w-5 text-blue-600" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  Daily Closing Settlement &amp; CA Audit Sheet
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPrintReportModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Printable Statement Area */}
-            <div className="p-5 rounded-2xl border border-black/[0.1] dark:border-white/[0.1] bg-black/[0.01] dark:bg-white/[0.02] space-y-4 text-xs font-mono">
-              <div className="flex justify-between border-b border-black/[0.06] dark:border-white/[0.06] pb-3">
-                <div>
-                  <div className="font-bold text-sm text-[#1D1D1F] dark:text-white">DOCSPHERE CLINIC — RAJPUR ROAD</div>
-                  <div className="text-[11px] text-[#86868B]">GSTIN: 05AAACH7409R1ZZ · Audit Batch #EOD-20260924</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold">DATE: 24 SEP 2026</div>
-                  <div className="text-[11px] text-[#86868B]">SHIFT: 09:00 - 20:00</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[#86868B]">TOTAL FOOTFALL</div>
-                  <div className="text-sm font-bold text-[#1D1D1F] dark:text-white">21 Consultations</div>
-                </div>
-                <div>
-                  <div className="text-[#86868B]">AUDIT DISCREPANCIES</div>
-                  <div className="text-sm font-bold text-emerald-600">0 (100% Soundbox Matched)</div>
-                </div>
-              </div>
-
-              <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-3 space-y-1.5">
-                <div className="flex justify-between">
-                  <span>Soundbox UPI Webhook Verified:</span>
-                  <span className="font-bold">₹{upiCollected.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Physical Cash in Drawer:</span>
-                  <span className="font-bold">₹{cashCollected.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="flex justify-between text-sm font-bold border-t border-black/[0.1] dark:border-white/[0.1] pt-2">
-                  <span>GROSS CLINIC COLLECTIONS:</span>
-                  <span className="text-emerald-600">₹{totalCollected.toLocaleString("en-IN")}</span>
-                </div>
-              </div>
-
-              <div className="border-t border-black/[0.06] dark:border-white/[0.06] pt-3 space-y-1 text-[11px] text-[#86868B]">
-                <div className="flex justify-between">
-                  <span>Dr. Rahul Sharma Payout (70%):</span>
-                  <span>₹4,200</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Dr. Aditi Joshi Payout (70%):</span>
-                  <span>₹2,800</span>
-                </div>
-                <div className="flex justify-between font-bold text-slate-800 dark:text-slate-200">
-                  <span>Clinic Retained Margin (30%):</span>
-                  <span>₹2,535</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowPrintReportModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
-              >
-                Close
-              </button>
+          {/* Action Bar: Print, WhatsApp, Complete & Call Next */}
+          <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => {
                   window.print();
-                  showNotification("Printing CA-Ready Day Closing Report");
+                  showToast("Sending prescription to thermal chamber printer");
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-black/[0.08] bg-white py-2 text-xs font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/[0.1] dark:bg-[#2C2C2E] dark:text-white dark:hover:bg-white/10 transition active:scale-95"
               >
-                <Printer className="h-4 w-4" />
-                <span>Print Official PDF</span>
+                <Printer className="h-3.5 w-3.5 text-blue-600" />
+                <span>Print ℞ Slip</span>
               </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 4: BATCH WHATSAPP QUEUE REMINDERS                                    */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showWhatsappModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2 text-emerald-600">
-                <Send className="h-5 w-5" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  Send WhatsApp Queue Broadcast
-                </h3>
-              </div>
               <button
                 type="button"
-                onClick={() => setShowWhatsappModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+                onClick={() => {
+                  showToast(`Dispatched cryptographic ℞ PDF to ${currentPatient.phone} via WhatsApp`);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-black/[0.08] bg-white py-2 text-xs font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/[0.1] dark:bg-[#2C2C2E] dark:text-white dark:hover:bg-white/10 transition active:scale-95"
               >
-                <X className="h-5 w-5" />
+                <Send className="h-3.5 w-3.5 text-emerald-600" />
+                <span>WhatsApp ℞ PDF</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCompleteAndNext}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-3 text-xs font-black text-white shadow-md transition active:scale-98"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Complete Visit &amp; Call Next Patient →</span>
+            </button>
+          </div>
+        </section>
+
+        {/* ───────────────────────────────────────────────────────────────────────────── */}
+        {/* PANE 3: THE EXCEL REPLACEMENT REGISTER & 9 PM CASH CLOSING (lg:col-span-4)   */}
+        {/* ───────────────────────────────────────────────────────────────────────────── */}
+        <section className="lg:col-span-4 rounded-2xl border border-black/[0.06] bg-white p-3.5 dark:border-white/[0.08] dark:bg-[#1C1C1E] shadow-2xs flex flex-col justify-between space-y-3">
+          <div className="space-y-3">
+            {/* Financial Headliners */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+                  Total Collected
+                </span>
+                <span className="text-base font-black font-mono text-emerald-800 dark:text-emerald-200">
+                  ₹{totalRevenue.toLocaleString("en-IN")}
+                </span>
+                <span className="text-[10px] text-emerald-600 block mt-0.5">
+                  UPI: ₹{upiTotal} • Cash: ₹{cashTotal}
+                </span>
+              </div>
+
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-2.5 flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                    Cash in Drawer
+                  </span>
+                  <span className="text-base font-black font-mono text-amber-800 dark:text-amber-200">
+                    ₹{cashTotal.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCashDrawerModal(true)}
+                  className="text-[10px] font-bold text-amber-800 dark:text-amber-300 underline text-left"
+                >
+                  9 PM Denomination Lock →
+                </button>
+              </div>
+            </div>
+
+            {/* Daily Register Table (The Excel Replacement) Header */}
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-2">
+              <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+                Daily Register ({dayRegister.length} Patients)
+              </span>
+
+              {/* 1-Click Excel CSV Export Button */}
+              <button
+                type="button"
+                onClick={handleExportCSV}
+                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-2xs transition"
+                title="Download CSV formatted for Microsoft Excel"
+              >
+                <Download className="h-3 w-3" />
+                <span>Export .CSV</span>
+              </button>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="flex items-center gap-2 text-xs">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Filter by name, token #..."
+                  className="w-full rounded-lg border border-black/[0.06] bg-[#F5F6F9] py-1.5 pl-8 pr-2 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:border-[#0071E3]"
+                />
+              </div>
+
+              <div className="flex rounded-lg bg-gray-100 p-0.5 dark:bg-white/10 text-[10px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("all")}
+                  className={`px-2 py-1 rounded ${activeTab === "all" ? "bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-white shadow-2xs" : "text-gray-500"}`}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("waiting")}
+                  className={`px-2 py-1 rounded ${activeTab === "waiting" ? "bg-white dark:bg-[#1C1C1E] text-[#1D1D1F] dark:text-white shadow-2xs" : "text-gray-500"}`}
+                >
+                  Waiting
+                </button>
+              </div>
+            </div>
+
+            {/* Excel-style Compact Data Grid */}
+            <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] overflow-hidden">
+              <div className="max-h-[calc(100vh-380px)] overflow-y-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-[#F5F6F9] dark:bg-[#16171B] text-[10px] font-bold text-[#86868B] uppercase tracking-wider sticky top-0 border-b border-black/[0.04] dark:border-white/[0.06]">
+                    <tr>
+                      <th className="py-1.5 px-2">Tk#</th>
+                      <th className="py-1.5 px-2">Patient</th>
+                      <th className="py-1.5 px-2 text-right">Fee</th>
+                      <th className="py-1.5 px-2 text-right">Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+                    {filteredRegister.map((r) => (
+                      <tr
+                        key={r.token}
+                        className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition"
+                      >
+                        <td className="py-1.5 px-2 font-mono font-bold text-[#0071E3] dark:text-[#2997FF]">
+                          #{r.token}
+                        </td>
+                        <td className="py-1.5 px-2">
+                          <div className="font-semibold text-[#1D1D1F] dark:text-white truncate max-w-[110px]">
+                            {r.patientName}
+                          </div>
+                          <div className="text-[10px] text-[#86868B] truncate max-w-[110px]">
+                            {r.complaint}
+                          </div>
+                        </td>
+                        <td className="py-1.5 px-2 font-mono text-right font-bold text-[#1D1D1F] dark:text-white">
+                          ₹{r.fee}
+                        </td>
+                        <td className="py-1.5 px-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePayment(r.token)}
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition ${
+                              r.paymentStatus === "paid"
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                                : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                            }`}
+                          >
+                            {r.paymentMode} {r.paymentStatus === "paid" ? "✓" : "Due"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom EOD Closing Trigger Bar */}
+          <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between text-xs">
+            <button
+              type="button"
+              onClick={() => setShowPrintReportModal(true)}
+              className="text-[#0071E3] font-bold hover:underline flex items-center gap-1"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span>Print Day CA Audit</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowCashDrawerModal(true)}
+              className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] px-3 py-1.5 shadow-2xs transition"
+            >
+              Lock 9 PM Drawer 🔒
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 1: CLINICAL TIMELINE (PATIENT MEMORY)                                  */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-black/[0.08] bg-white p-5 shadow-2xl dark:border-white/[0.1] dark:bg-[#1C1C1E] space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-amber-600" />
+                <h3 className="font-bold text-sm text-[#1D1D1F] dark:text-white">
+                  Priya Singh (24F) · 3-Visit History
+                </h3>
+              </div>
+              <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-black dark:hover:text-white">
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="space-y-2 text-xs">
-              <p className="text-[#86868B]">
-                This will trigger instant WhatsApp live position updates to all 5 waiting patients:
-              </p>
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-900 dark:text-emerald-200 font-mono text-[11px] space-y-1">
-                <p><strong>Sample Message:</strong></p>
-                <p>&quot;Namaste Rohit, your Token #13 at Dr. Rahul Sharma&apos;s chamber is 1 token away. Estimated entry: 11:15 AM. Live link: medic-sept-2026.vercel.app/p/TK-13&quot;</p>
+              <div className="rounded-xl border border-rose-500/20 bg-rose-50/30 dark:bg-rose-950/20 p-3 space-y-1">
+                <div className="flex justify-between font-bold text-rose-800 dark:text-rose-300">
+                  <span>Visit 1 · 14 Aug 2026</span>
+                  <span>Adverse Reaction</span>
+                </div>
+                <div className="text-[11px] text-rose-700 dark:text-rose-400">
+                  Rx: Fluconazole 150mg &bull; Patient called with acute gastric pain. Discontinued.
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/20 p-3 space-y-1">
+                <div className="flex justify-between font-bold text-emerald-800 dark:text-emerald-300">
+                  <span>Visit 2 · 02 Sep 2026</span>
+                  <span>Protocol Success</span>
+                </div>
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                  Rx: Itraconazole 200mg (1-0-1) + Ketoconazole lotion &bull; Lesions 90% resolved. Well tolerated.
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-blue-500/20 bg-blue-50/30 dark:bg-blue-950/20 p-3 space-y-1">
+                <div className="flex justify-between font-bold text-blue-800 dark:text-blue-300">
+                  <span>Visit 3 · Today</span>
+                  <span>Acne Consultation</span>
+                </div>
+                <div className="text-[11px] text-blue-700 dark:text-blue-400">
+                  Prescription ready via embedded Speed Rx pad.
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-2">
+            <div className="flex justify-end pt-2">
               <button
-                type="button"
-                onClick={() => setShowWhatsappModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+                onClick={() => setShowHistoryModal(false)}
+                className="rounded-xl bg-[#0071E3] px-4 py-2 text-xs font-bold text-white hover:bg-[#0077ED]"
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowWhatsappModal(false);
-                  showNotification("Dispatched 5 WhatsApp queue alerts to waiting patients!");
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
-              >
-                <Send className="h-4 w-4" />
-                <span>Send to 5 Patients Now</span>
+                Return to Chamber
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 5: P&L & DOCTOR SPLIT MODAL                                          */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showPnlModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2 text-purple-600">
-                <TrendingUp className="h-5 w-5" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  Today&apos;s Clinic P&amp;L Overview
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPnlModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] space-y-2">
-                <div className="flex justify-between font-bold">
-                  <span>Gross OPD Revenue:</span>
-                  <span className="font-mono text-emerald-600">₹{totalCollected.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="flex justify-between text-[#86868B]">
-                  <span>Doctor Payouts (Dr. Rahul + Dr. Aditi):</span>
-                  <span className="font-mono text-rose-600">-₹5,200</span>
-                </div>
-                <div className="flex justify-between text-[#86868B]">
-                  <span>Medical Consumables &amp; Sterilization:</span>
-                  <span className="font-mono text-rose-600">-₹800</span>
-                </div>
-                <div className="flex justify-between text-[#86868B]">
-                  <span>Reception &amp; Electricity Pro-rata:</span>
-                  <span className="font-mono text-rose-600">-₹450</span>
-                </div>
-                <div className="flex justify-between text-sm font-black border-t border-black/[0.08] dark:border-white/[0.08] pt-2">
-                  <span>Net Retained Clinic Profit:</span>
-                  <span className="font-mono text-emerald-600">
-                    ₹{(totalCollected - 6450).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2.5 pt-2">
-              <Link
-                href="/dashboard/finance"
-                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm"
-              >
-                Full Finance Console →
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 6: ADD WALK-IN PATIENT                                               */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showAddPatientModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 2: ADD WALK-IN PATIENT MODAL                                            */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {showWalkinModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl border border-black/[0.08] bg-white p-5 shadow-2xl dark:border-white/[0.1] dark:bg-[#1C1C1E] space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
               <div className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-blue-600" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  Add Walk-In Patient ({showAddPatientModal === "chamber-1" ? "Chamber 1" : "Chamber 2"})
+                <Plus className="h-5 w-5 text-emerald-600" />
+                <h3 className="font-bold text-sm text-[#1D1D1F] dark:text-white">
+                  Add Walk-In Patient to Queue
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowAddPatientModal(null)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
+              <button onClick={() => setShowWalkinModal(false)} className="text-gray-400 hover:text-black dark:hover:text-white">
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddPatientSubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleAddWalkinSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Patient Full Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Manas Verma"
-                  value={newPatient.name}
-                  onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                  placeholder="e.g. Ramesh Kumar"
+                  value={newWalkin.name}
+                  onChange={(e) => setNewWalkin({ ...newWalkin, name: e.target.value })}
+                  className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3 py-2 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Age</label>
                   <input
                     type="number"
-                    required
-                    placeholder="30"
-                    value={newPatient.age}
-                    onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                    placeholder="35"
+                    value={newWalkin.age}
+                    onChange={(e) => setNewWalkin({ ...newWalkin, age: e.target.value })}
+                    className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3 py-2 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Gender</label>
                   <select
-                    value={newPatient.gender}
-                    onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                    value={newWalkin.gender}
+                    onChange={(e) => setNewWalkin({ ...newWalkin, gender: e.target.value })}
+                    className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-2 py-2 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white"
                   >
-                    <option value="M">Male (M)</option>
-                    <option value="F">Female (F)</option>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
                     <option value="O">Other</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">OPD Fee</label>
+                  <input
+                    type="number"
+                    value={newWalkin.fee}
+                    onChange={(e) => setNewWalkin({ ...newWalkin, fee: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-2 py-2 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white"
+                  />
                 </div>
               </div>
 
@@ -1383,49 +1025,46 @@ export default function DashboardOverviewPage() {
                 <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Chief Complaint</label>
                 <input
                   type="text"
-                  placeholder="e.g. Rash on neck / Tooth pain"
-                  value={newPatient.complaint}
-                  onChange={(e) => setNewPatient({ ...newPatient, complaint: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+                  placeholder="e.g. Skin Allergy / Fungal infection"
+                  value={newWalkin.complaint}
+                  onChange={(e) => setNewWalkin({ ...newWalkin, complaint: e.target.value })}
+                  className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3 py-2 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">OPD Fee (₹)</label>
-                  <input
-                    type="number"
-                    value={newPatient.fee}
-                    onChange={(e) => setNewPatient({ ...newPatient, fee: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Payment Mode</label>
-                  <select
-                    value={newPatient.paymentMode}
-                    onChange={(e) => setNewPatient({ ...newPatient, paymentMode: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] text-xs font-medium focus:outline-blue-600"
+              <div>
+                <label className="block font-bold text-[#1D1D1F] dark:text-white mb-1">Payment Mode</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewWalkin({ ...newWalkin, paymentMode: "UPI" })}
+                    className={`rounded-xl py-2 font-bold text-xs border ${newWalkin.paymentMode === "UPI" ? "border-emerald-600 bg-emerald-500/10 text-emerald-700" : "border-gray-200"}`}
                   >
-                    <option value="UPI">Soundbox UPI (Immediate)</option>
-                    <option value="Cash">Cash (Pending at Desk)</option>
-                  </select>
+                    Soundbox UPI (Immediate)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewWalkin({ ...newWalkin, paymentMode: "Cash" })}
+                    className={`rounded-xl py-2 font-bold text-xs border ${newWalkin.paymentMode === "Cash" ? "border-amber-600 bg-amber-500/10 text-amber-700" : "border-gray-200"}`}
+                  >
+                    Physical Cash (Pending)
+                  </button>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddPatientModal(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+                  onClick={() => setShowWalkinModal(false)}
+                  className="rounded-xl px-4 py-2 font-bold text-gray-500"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                  className="rounded-xl bg-emerald-600 px-5 py-2 font-bold text-white hover:bg-emerald-700"
                 >
-                  Issue Token &amp; Insert
+                  Issue Token &amp; Enqueue
                 </button>
               </div>
             </form>
@@ -1433,217 +1072,158 @@ export default function DashboardOverviewPage() {
         </div>
       )}
 
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 7: COLLECTIONS & PENDING BREAKDOWN                                    */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showCollectionsBreakdown && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2 text-emerald-600">
-                <IndianRupee className="h-5 w-5" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  Live Counter Collections Audit
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCollectionsBreakdown(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex justify-between items-center">
-                <div>
-                  <div className="font-bold text-emerald-900 dark:text-emerald-200">Soundbox UPI Webhook Verified</div>
-                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400">Direct settled to HDFC Bank A/c</div>
-                </div>
-                <div className="font-mono font-black text-sm text-emerald-800 dark:text-emerald-200">
-                  ₹{upiCollected.toLocaleString("en-IN")}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex justify-between items-center">
-                <div>
-                  <div className="font-bold text-amber-900 dark:text-amber-200">Cash in Drawer (Locked)</div>
-                  <div className="text-[10px] text-amber-700 dark:text-amber-400">Reconciled at 9 PM shift closing</div>
-                </div>
-                <div className="font-mono font-black text-sm text-amber-800 dark:text-amber-200">
-                  ₹{cashCollected.toLocaleString("en-IN")}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 flex justify-between items-center">
-                <div>
-                  <div className="font-bold text-rose-900 dark:text-rose-200">Pending / Uncollected OPD Fees</div>
-                  <div className="text-[10px] text-rose-700 dark:text-rose-400">{openTokensCount} Patients with pending balance</div>
-                </div>
-                <div className="font-mono font-black text-sm text-rose-800 dark:text-rose-200">
-                  ₹{chamber2Current.paymentStatus === "pending" ? "5,800" : "1,800"}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowCollectionsBreakdown(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 8: 9 PM DAILY DIGEST NOTIFICATION PREVIEW (RETENTION SECRET)          */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {showDigestModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2 text-emerald-600">
-                <Send className="h-5 w-5" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  9 PM Automated WhatsApp Digest
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowDigestModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <p className="text-[#86868B]">
-                This is the automated evening message sent to Dr. Rahul &amp; Dr. Aditi every night at 9:00 PM. It reinforces daily time saved and zero cash leakage:
-              </p>
-
-              {/* WhatsApp message card preview */}
-              <div className="p-4 rounded-2xl bg-[#EFEAE2] dark:bg-[#0B141A] border border-black/[0.05] dark:border-white/[0.05] text-[#111B21] dark:text-[#E9EDEF] space-y-2">
-                <div className="bg-white dark:bg-[#202C33] p-3 rounded-xl shadow-xs space-y-1.5 font-sans">
-                  <div className="font-bold text-xs text-emerald-700 dark:text-emerald-400">
-                    DocSphere ClinicOS Daily Digest 🩺
-                  </div>
-                  <p className="text-xs leading-relaxed">
-                    &quot;Dr. Rahul, today you saw <strong>21 patients</strong>.<br />
-                    💰 <strong>₹8,450 collected</strong> (₹6,650 UPI + ₹1,800 Cash).<br />
-                    ✅ <strong>0 discrepancies</strong> on counter soundbox.<br />
-                    ⏱️ Saved ~1.8 hours vs paper registers.<br />
-                    Great day! Shift safely closed.&quot;
-                  </p>
-                  <div className="text-[10px] text-right text-slate-400 font-mono">
-                    21:00 ✓✓
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowDigestModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDigestModal(false);
-                  showNotification("Test WhatsApp Digest dispatched to Dr. Rahul's phone (+91 91234 56780)");
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
-              >
-                <Send className="h-4 w-4" />
-                <span>Test Send to Doctor</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 9: RECONCILE CASH DRAWER (ZERO THEFT / 9 PM SHIFT LOCK)               */}
-      {/* ────────────────────────────────────────────────────────────────────────── */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 3: 9 PM CASH DRAWER DENOMINATION LOCK                                   */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
       {showCashDrawerModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#1C1C1E] border border-black/[0.1] dark:border-white/[0.1] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
-              <div className="flex items-center gap-2 text-amber-600">
-                <Lock className="h-5 w-5" />
-                <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  9 PM Cash Drawer Reconciliation
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-2xl border border-black/[0.08] bg-white p-5 shadow-2xl dark:border-white/[0.1] dark:bg-[#1C1C1E] space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-amber-600" />
+                <h3 className="font-bold text-sm text-[#1D1D1F] dark:text-white">
+                  9 PM Cash Drawer Denomination Audit
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCashDrawerModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
+              <button onClick={() => setShowCashDrawerModal(false)} className="text-gray-400 hover:text-black dark:hover:text-white">
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <p className="text-[#86868B]">
-                Physical cash in desk drawer must reconcile with tokens issued prior to closing the shift:
-              </p>
+            <p className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">
+              Count the physical currency notes in the receptionist cash drawer before shift closing:
+            </p>
 
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-2.5 font-mono text-[11px]">
-                <div className="flex justify-between text-amber-900 dark:text-amber-200">
-                  <span>₹500 Notes (3x):</span>
-                  <span className="font-bold">₹1,500</span>
-                </div>
-                <div className="flex justify-between text-amber-900 dark:text-amber-200">
-                  <span>₹200 Notes (1x):</span>
-                  <span className="font-bold">₹200</span>
-                </div>
-                <div className="flex justify-between text-amber-900 dark:text-amber-200">
-                  <span>₹100 Notes (1x):</span>
-                  <span className="font-bold">₹100</span>
-                </div>
-                <div className="border-t border-amber-500/20 pt-2 flex justify-between font-bold text-xs">
-                  <span>PHYSICAL CASH COUNT:</span>
-                  <span className="text-emerald-700 dark:text-emerald-400">₹{cashCollected.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="flex justify-between font-bold text-xs">
-                  <span>EXPECTED SYSTEM CASH:</span>
-                  <span>₹{cashCollected.toLocaleString("en-IN")}</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold text-emerald-600">
-                  <span>DISCREPANCY / LEAKAGE:</span>
-                  <span>₹0.00 (100% Balanced ✓)</span>
-                </div>
+            <div className="rounded-xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#121316] p-3 space-y-2 text-xs font-mono">
+              <div className="flex items-center justify-between">
+                <span>₹500 Notes:</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={denominations.d500}
+                  onChange={(e) => setDenominations({ ...denominations, d500: Number(e.target.value) || 0 })}
+                  className="w-16 rounded border px-2 py-1 text-right font-bold"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>₹200 Notes:</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={denominations.d200}
+                  onChange={(e) => setDenominations({ ...denominations, d200: Number(e.target.value) || 0 })}
+                  className="w-16 rounded border px-2 py-1 text-right font-bold"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span>₹100 Notes:</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={denominations.d100}
+                  onChange={(e) => setDenominations({ ...denominations, d100: Number(e.target.value) || 0 })}
+                  className="w-16 rounded border px-2 py-1 text-right font-bold"
+                />
+              </div>
+
+              <div className="border-t border-black/[0.08] pt-2 flex justify-between font-bold text-xs">
+                <span>Counted Cash:</span>
+                <span className="text-emerald-700 dark:text-emerald-400">₹{countedCash.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex justify-between font-bold text-xs">
+                <span>System Expected Cash:</span>
+                <span>₹{cashTotal.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex justify-between text-xs font-bold text-emerald-600">
+                <span>Discrepancy:</span>
+                <span>
+                  {countedCash === cashTotal
+                    ? "₹0.00 (100% Balanced ✓)"
+                    : `₹${(countedCash - cashTotal).toLocaleString("en-IN")} (Audit Flag)`}
+                </span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-2">
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowCashDrawerModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-bold cursor-pointer"
+                className="rounded-xl px-4 py-2 font-bold text-xs text-gray-500"
               >
-                Close
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setShowCashDrawerModal(false);
-                  showNotification("Cash drawer safely locked at ₹1,800. Shift audit submitted.");
+                  showToast("Cash drawer locked at ₹1,800. Shift audit submitted to Platform ledger.");
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+                className="rounded-xl bg-amber-600 px-5 py-2 text-xs font-bold text-white hover:bg-amber-700"
               >
-                <Check className="h-4 w-4" />
-                <span>Confirm &amp; Lock Drawer</span>
+                Confirm &amp; Lock Drawer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 4: CA-READY AUDIT DAY REPORT                                            */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {showPrintReportModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-2xl border border-black/[0.08] bg-white p-5 shadow-2xl dark:border-white/[0.1] dark:bg-[#1C1C1E] space-y-4">
+            <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
+              <div className="flex items-center gap-2">
+                <Printer className="h-5 w-5 text-blue-600" />
+                <h3 className="font-bold text-sm text-[#1D1D1F] dark:text-white">
+                  Daily Closing &amp; CA Audit Sheet
+                </h3>
+              </div>
+              <button onClick={() => setShowPrintReportModal(false)} className="text-gray-400 hover:text-black dark:hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-black/[0.08] p-4 text-xs font-mono space-y-2 dark:border-white/[0.08]">
+              <div className="font-bold">DERMA CARE SKIN &amp; LASER CENTRE</div>
+              <div className="text-[11px] text-[#86868B]">GSTIN: 05AAACH7409R1ZZ · Audit Batch #EOD-20261102</div>
+              <div className="border-t pt-2 flex justify-between">
+                <span>Total OPD Consultations:</span>
+                <span className="font-bold">{dayRegister.length} Patients</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Soundbox UPI Verified:</span>
+                <span className="font-bold">₹{upiTotal.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Cash in Drawer:</span>
+                <span className="font-bold">₹{cashTotal.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="border-t pt-1 flex justify-between font-bold text-sm text-emerald-600">
+                <span>GROSS COLLECTIONS:</span>
+                <span>₹{totalRevenue.toLocaleString("en-IN")}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPrintReportModal(false)}
+                className="rounded-xl px-4 py-2 font-bold text-xs text-gray-500"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.print();
+                  showToast("Printing official CA closing statement");
+                }}
+                className="rounded-xl bg-[#0071E3] px-4 py-2 text-xs font-bold text-white hover:bg-[#0077ED] flex items-center gap-1.5"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                <span>Print Official PDF</span>
               </button>
             </div>
           </div>

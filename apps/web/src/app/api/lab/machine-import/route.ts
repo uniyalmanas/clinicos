@@ -1,89 +1,133 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { sql } from "@/lib/db";
+import { createHash } from "crypto";
+import { timingSafeEqual } from "crypto";
+import { apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 import { parseMachineData } from "@/lib/lis-parser";
-import { createHash, randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+/**
+ * Analyzer result import (ASTM / HL7 stream).
+ *
+ * Called by the lab middleware, not by a browser session, so it authenticates
+ * with the shared `x-lab-machine-secret` header. The secret is required — the
+ * route refuses to run unconfigured.
+ *
+ * The order must already exist. Imports never invent an order, patient,
+ * clinician, or phone number; a barcode with no requisition is rejected. A
+ * report that a pathologist has already signed is never overwritten.
+ */
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
+    const configuredSecret = (process.env.LAB_MACHINE_SECRET || "").trim();
+    if (!configuredSecret) {
+      return apiError(
+        503,
+        "Analyzer import is not configured. Set LAB_MACHINE_SECRET.",
+        "not_configured"
+      );
+    }
+
+    const providedSecret = (req.headers.get("x-lab-machine-secret") || "").trim();
+    const a = Buffer.from(providedSecret);
+    const b = Buffer.from(configuredSecret);
+    const secretOk = a.length === b.length && timingSafeEqual(a, b);
+    if (!secretOk) {
+      return apiError(401, "Invalid analyzer credentials.", "unauthorized");
+    }
+
+    const body = await req.json();
     const { raw_stream, order_number, pathologist_notes } = body;
 
     if (!raw_stream) {
-      return NextResponse.json({ error: "raw_stream is required" }, { status: 400 });
+      return apiError(400, "raw_stream is required.", "invalid_input");
     }
 
-    // Parse ASTM or HL7 protocol stream
     const parsed = parseMachineData(raw_stream);
-    const targetOrderNumber = order_number || parsed.order_number;
+    const targetOrderNumber = String(order_number || parsed.order_number || "").trim();
+    if (!targetOrderNumber) {
+      return apiError(
+        400,
+        "No order number or sample barcode could be read from the stream.",
+        "order_required"
+      );
+    }
 
-    // Check if order exists in Supabase
-    let existing = await db`
+    const existing = await sql`
       SELECT * FROM diagnostic_lab_orders
-      WHERE order_number = ${targetOrderNumber} OR sample_barcode = ${targetOrderNumber}
+      WHERE order_number = ${targetOrderNumber}
+         OR sample_barcode = ${targetOrderNumber}
       LIMIT 1;
     `;
 
     if (existing.length === 0) {
-      // Auto-create order from machine requisition barcode
-      const newBarcode = `BC-${Date.now().toString().slice(-6)}-EDTA`;
-      existing = await db`
-        INSERT INTO diagnostic_lab_orders (
-          order_number,
-          sample_barcode,
-          patient_name,
-          patient_phone,
-          doctor_name,
-          test_name,
-          category,
-          sample_type,
-          status,
-          sample_collected_at,
-          sample_accessioned_at,
-          sample_collector_name,
-          analyzer_model,
-          import_protocol
-        ) VALUES (
-          ${targetOrderNumber},
-          ${newBarcode},
-          ${parsed.patient_name || "Auto-Accessioned Patient"},
-          '+919876543210',
-          'Automated Analyzer',
-          'Automated Blood Panel',
-          'Hematology',
-          'Whole Blood (EDTA)',
-          'sample_accessioned',
-          NOW(),
-          NOW(),
-          ${parsed.analyzer_model || "RS-232 Serial Benchtop"},
-          ${parsed.analyzer_model || "Sysmex XN-350"},
-          ${parsed.protocol}
-        ) RETURNING *;
-      `;
+      return apiError(
+        404,
+        `No requisition matches ${targetOrderNumber}. Create the lab order in the app before importing analyzer results.`,
+        "order_not_found"
+      );
     }
 
     const order = existing[0];
-    const orderId = order.id;
 
-    // Check Critical Values
+    if (String(order.status || "") === "completed") {
+      return apiError(
+        409,
+        "This report has already been signed. A pathologist must reopen it before new analyzer results can be imported.",
+        "report_already_signed"
+      );
+    }
+
+    if (order.sample_rejected) {
+      return apiError(
+        409,
+        "This specimen was rejected. Collect a fresh sample before importing results.",
+        "specimen_rejected"
+      );
+    }
+
+    if (!Array.isArray(parsed.parameters) || parsed.parameters.length === 0) {
+      return apiError(
+        422,
+        "No measurable parameters were parsed from the stream.",
+        "no_parameters"
+      );
+    }
+
+    // Resolve the tenant from the originating appointment/prescription so the
+    // audit row is attributed correctly.
+    const origin = await sql`
+      SELECT
+        a.clinic_id AS appointment_clinic,
+        p.clinic_id AS prescription_clinic
+      FROM (SELECT 1) AS seed
+      LEFT JOIN appointments a ON a.id::text = ${order.appointment_id ? String(order.appointment_id) : null}
+      LEFT JOIN prescriptions p ON p.id::text = ${order.prescription_id ? String(order.prescription_id) : null}
+      LIMIT 1;
+    `;
+    const clinicId: string | null =
+      origin[0]?.appointment_clinic || origin[0]?.prescription_clinic || null;
+
     let hasCritical = false;
     const criticalParams: string[] = [];
 
     const processedParameters = parsed.parameters.map((p: any) => {
       const num = parseFloat(String(p.value).replace(/[^0-9.]/g, ""));
       let status = p.status || "normal";
+      const name = String(p.parameter || "");
 
       if (!isNaN(num)) {
-        if (p.parameter.includes("Hemoglobin") && (num < 7.0 || num > 20.0)) {
+        if (name.includes("Hemoglobin") && (num < 7.0 || num > 20.0)) {
           status = "critical";
           hasCritical = true;
           criticalParams.push(`CRITICAL Hb: ${num} g/dL`);
-        } else if (p.parameter.includes("Platelet") && (num < 20000 || num > 1000000)) {
+        } else if (name.includes("Platelet") && (num < 20000 || num > 1000000)) {
           status = "critical";
           hasCritical = true;
           criticalParams.push(`CRITICAL Platelets: ${num} /cumm`);
-        } else if (p.parameter.includes("Glucose") && (num < 50 || num > 400)) {
+        } else if (name.includes("Glucose") && (num < 50 || num > 400)) {
           status = "critical";
           hasCritical = true;
           criticalParams.push(`CRITICAL Glucose: ${num} mg/dL`);
@@ -93,61 +137,80 @@ export async function POST(request: Request) {
       return { ...p, status };
     });
 
-    // Generate SHA-256 Hash
-    const rawPayload = `${orderId}-${targetOrderNumber}-${JSON.stringify(processedParameters)}-${parsed.analyzer_model}-${new Date().toISOString()}`;
+    const importedAt = new Date().toISOString();
+    const rawPayload = `${order.id}-${targetOrderNumber}-${JSON.stringify(
+      processedParameters
+    )}-${parsed.analyzer_model || ""}-${importedAt}`;
     const reportSha256 = createHash("sha256").update(rawPayload).digest("hex");
 
-    // If critical, log alert
     if (hasCritical) {
-      await db`
+      await sql`
         INSERT INTO lis_critical_alert_logs (
           id, order_id, order_number, patient_name, doctor_name,
           doctor_phone, parameter_name, critical_value, channel
         ) VALUES (
-          ${randomUUID()},
-          ${orderId},
+          gen_random_uuid(),
+          ${order.id},
           ${targetOrderNumber},
           ${order.patient_name},
           ${order.doctor_name},
           ${order.patient_phone},
           ${criticalParams.join("; ")},
           'CRITICAL_VALUE_FLAGGED',
-          'SMS+DOCTOR_CALL'
+          'analyzer_import'
         );
       `;
     }
 
-    // Update with parsed quantitative results and pathologist notes
-    const updated = await db`
+    // Results are stored as analyzer output. They are NOT marked verified —
+    // a pathologist still has to sign the report via /api/lab/results.
+    const updated = await sql`
       UPDATE diagnostic_lab_orders
-      SET 
+      SET
         results = ${JSON.stringify(processedParameters)}::jsonb,
-        pathologist_notes = ${pathologist_notes || `Auto-imported via ${parsed.protocol} serial protocol from ${parsed.analyzer_model || 'Automated Analyzer'}. Verified by automated calibration standards.`},
-        verified_by = ${parsed.analyzer_model || "Automated Analyzer Engine"},
-        verified_at = NOW(),
-        status = 'completed',
-        analyzer_model = ${parsed.analyzer_model || "Automated Analyzer Engine"},
+        pathologist_notes = ${pathologist_notes || null},
+        status = 'results_entered',
+        analyzer_model = ${parsed.analyzer_model || null},
         import_protocol = ${parsed.protocol || "MANUAL"},
         critical_value_alert = ${hasCritical},
         critical_parameters = ${JSON.stringify(criticalParams)}::jsonb,
         report_sha256 = ${reportSha256},
-        qc_verified = true,
         updated_at = NOW()
-      WHERE id = ${orderId}
+      WHERE id = ${order.id}
       RETURNING *;
     `;
+
+    await logAudit({
+      actorId: null,
+      actorRole: "lab_analyzer",
+      clinicId,
+      action: "lab.machine.import",
+      entity: "diagnostic_lab_order",
+      entityId: String(order.id),
+      after: {
+        order_number: targetOrderNumber,
+        analyzer: parsed.analyzer_model || null,
+        protocol: parsed.protocol || null,
+        parameter_count: processedParameters.length,
+        critical_value_alert: hasCritical,
+        report_sha256: reportSha256,
+      },
+      request: req,
+    });
 
     return NextResponse.json({
       success: true,
       protocol: parsed.protocol,
       analyzer: parsed.analyzer_model,
+      status: "results_entered",
+      awaiting_pathologist_signoff: true,
       order: updated[0],
       critical_value_alert: hasCritical,
       report_sha256: reportSha256,
-      parsed_parameters_count: processedParameters.length
+      parsed_parameters_count: processedParameters.length,
     });
   } catch (error: any) {
-    console.error("LIS Machine Import error:", error);
-    return NextResponse.json({ error: error.message || "Failed to parse and import machine data" }, { status: 500 });
+    console.error("POST /api/lab/machine-import error:", error);
+    return apiError(500, "Failed to parse and import analyzer data.", "internal_error");
   }
 }

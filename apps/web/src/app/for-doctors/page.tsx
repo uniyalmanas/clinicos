@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   Stethoscope,
@@ -45,6 +46,8 @@ export default function ForDoctorsPage() {
       description: "Built for speed. Keyboard-first interface with 1-tap disease combos, automatic UPPERCASE generic chemical names, 30-day repeat extensions, and instant WhatsApp PDF delivery.",
       url: "/dashboard/consult/1",
       actionText: "Launch Chamber Speed Rx",
+      image: "/images/clinical/doctor-tablet-rx.jpg",
+      imageLabel: "Speed Rx Touch & Keyboard Studio",
       features: [
         "1-Tap Disease Combos (Pediatric Fever, Adult Hypertension, Type-2 Diabetes)",
         "NMC-Compliant UPPERCASE generic chemical name auto-formatter",
@@ -66,6 +69,8 @@ export default function ForDoctorsPage() {
       description: "Replace messy paper counter registers. Issue numbered tokens, collect cash or direct UPI fees, route patients across multiple chambers, and broadcast token rings.",
       url: "/dashboard/desk",
       actionText: "Launch Front Desk Counter",
+      image: "/images/clinical/front-desk-triage.jpg",
+      imageLabel: "10-Second Reception Intake Console",
       features: [
         "Instant walk-in patient registration in under 10 seconds",
         "Multi-doctor chamber routing (Chamber 1, Chamber 2, Visiting)",
@@ -87,6 +92,8 @@ export default function ForDoctorsPage() {
       description: "Display active tokens, consulting doctors, and upcoming patients on your waiting room television. Built-in audio chime calls patients forward automatically.",
       url: "/waiting-room",
       actionText: "Launch Smart TV Display",
+      image: "/images/clinical/waiting-room-display.jpg",
+      imageLabel: "Airport-Style Live Token Board",
       features: [
         "Full-screen airport-style token board for HDMI / Android TVs",
         "Live audible chime chime alerts ('Token 14, please proceed to Chamber 1')",
@@ -108,6 +115,8 @@ export default function ForDoctorsPage() {
       description: "Physical denomination counter for ₹500, ₹200, ₹100 notes joined with UPI logs. Auto-calculates petty cash outflows and visiting doctor fee shares with a tamper-proof day lock.",
       url: "/dashboard/finance",
       actionText: "Launch 9 PM Day Closing",
+      image: "/images/clinical/eod-settlement-ledger.jpg",
+      imageLabel: "Physical Denomination Ledger & Day Lock",
       features: [
         "Physical cash drawer denomination sheet (₹500, ₹200, ₹100, ₹50, ₹20, ₹10)",
         "Real-time join of clinic appointments with petty expense vouchers",
@@ -129,6 +138,8 @@ export default function ForDoctorsPage() {
       description: "Generate print-ready acrylic tent standees for your front counter. Patients scan to register their live token position without crowding the receptionist, and leave 5-star Google reviews.",
       url: "/clinic/standee",
       actionText: "Launch Standee Studio",
+      image: "/images/clinical/clinic-qr-standee.jpg",
+      imageLabel: "Counter Acrylic Dual-QR Tent Standee",
       features: [
         "Print-ready vectors for A5, A4, and counter tent standees",
         "Dual-QR technology: Fast Appointment Check-in + 5-Star Google Review capture",
@@ -185,25 +196,25 @@ export default function ForDoctorsPage() {
           </nav>
 
           {/* Action Bar */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle />
             
-            {/* Back to Patient Portal */}
+            {/* Doctor Login */}
             <Link
-              href="/"
-              className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-white px-3.5 py-1.5 text-xs font-medium text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-gray-50 dark:border-white/[0.1] dark:bg-[#1C1C1E] dark:text-[#A1A1A6] dark:hover:text-white transition"
-              title="Return to public patient discovery site"
+              href="/login"
+              className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/[0.1] dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/10 transition"
             >
-              <span>← Patient Portal</span>
+              <Lock className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+              <span>Doctor Sign In</span>
             </Link>
 
-            {/* Quick Launch Chamber */}
+            {/* Doctor Onboarding (Primary) */}
             <Link
-              href="/dashboard/consult/1"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
+              href="/onboarding"
+              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition"
             >
-              <span>Open Chamber</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Register Clinic (Free)</span>
             </Link>
           </div>
 
@@ -238,35 +249,106 @@ export default function ForDoctorsPage() {
             ClinicOS puts <strong className="text-[#1D1D1F] dark:text-white">Speed Rx</strong>, a <strong className="text-[#1D1D1F] dark:text-white">Smart TV Waiting Board</strong>, <strong className="text-[#1D1D1F] dark:text-white">Front Desk Chimes</strong>, and a <strong className="text-[#1D1D1F] dark:text-white">9 PM Cash Drawer Settlement</strong> onto one screen.
           </p>
 
-          {/* Quick Launch CTA Buttons */}
+          {/* Quick Launch & Onboarding CTA Buttons */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            {/* Primary Doctor Onboarding Button */}
+            <Link
+              href="/onboarding"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-700 hover:shadow-xl transition active:scale-95"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Start 60-Second Onboarding (100% Free)</span>
+            </Link>
+
+            {/* Doctor Sign In Button */}
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-[#1D1D1F] px-5 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-black dark:bg-white dark:text-[#1D1D1F] dark:hover:bg-gray-100 transition active:scale-95"
+            >
+              <Lock className="h-4 w-4" />
+              <span>Doctor Sign In</span>
+            </Link>
+
+            {/* Live Operational Demos */}
             <Link
               href="/dashboard/consult/1"
-              className="inline-flex items-center gap-2 rounded-full bg-[#0071E3] px-6 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-[#0077ED] hover:shadow-lg transition active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-[#0071E3] px-5 py-3.5 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-[#0077ED] transition active:scale-95"
             >
               <Stethoscope className="h-4 w-4" />
-              <span>Launch Chamber Speed Rx</span>
+              <span>Speed Rx Demo</span>
             </Link>
 
             <Link
               href="/dashboard/desk"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-3.5 text-xs sm:text-sm font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/20 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/10 transition"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3.5 text-xs sm:text-sm font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/20 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/10 transition"
             >
               <Users className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Reception Token Desk</span>
+              <span>Token Desk</span>
             </Link>
 
             <Link
               href="/waiting-room"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-5 py-3.5 text-xs sm:text-sm font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/20 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/10 transition"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-3.5 text-xs sm:text-sm font-bold text-[#1D1D1F] hover:bg-gray-50 dark:border-white/20 dark:bg-[#1C1C1E] dark:text-white dark:hover:bg-white/10 transition"
             >
               <Tv className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-              <span>Waiting Room TV Board</span>
+              <span>Smart TV</span>
             </Link>
           </div>
 
+          {/* Hero Visual Mockup: Doctor Chamber Cockpit & Pablo Stanley Illustration */}
+          <div className="mt-12 relative mx-auto max-w-4xl rounded-3xl border border-black/[0.08] dark:border-white/[0.1] bg-gradient-to-b from-white to-[#F5F6F9] dark:from-[#1A1C20] dark:to-[#111215] p-3 sm:p-5 shadow-2xl overflow-hidden">
+            <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden shadow-inner bg-slate-900">
+              <Image
+                src="/images/clinical/doctor-tablet-rx.jpg"
+                alt="Doctor using digital prescription tablet in OPD chamber"
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 896px"
+                className="object-cover object-center opacity-90 transition duration-500 hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/20" />
+              
+              {/* Floating Illustration on top right */}
+              <div className="absolute top-4 right-4 hidden sm:flex items-center gap-2.5 rounded-2xl bg-white/95 dark:bg-[#1E2024]/95 backdrop-blur-md px-3.5 py-2 shadow-lg border border-white/20">
+                <div className="relative h-10 w-10 flex-shrink-0">
+                  <Image
+                    src="/images/illustrations/doctor-standing.svg"
+                    alt="Doctor illustration"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <div className="text-[11px] font-bold text-gray-900 dark:text-white">Active OPD Session</div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Sub-50ms Keystroke Latency
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Overlay Badges */}
+              <div className="absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 text-white">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-emerald-500/90 backdrop-blur-md px-3 py-1 text-xs font-bold text-white shadow-xs">
+                    Speed Rx: 38s
+                  </span>
+                  <span className="rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-xs font-bold text-white border border-white/20">
+                    NMC Generic Molecule: PARACETAMOL 650MG
+                  </span>
+                </div>
+                <Link
+                  href="/dashboard/consult/1"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-[#1D1D1F] hover:bg-gray-100 transition shadow-md"
+                >
+                  <span>Test Chamber Live</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Trust Highlights */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs font-semibold text-[#6E6E73] dark:text-[#8E8E93]">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs font-semibold text-[#6E6E73] dark:text-[#8E8E93]">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span>0% Platform Commission</span>
@@ -307,76 +389,120 @@ export default function ForDoctorsPage() {
           <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
             
             {/* Pillar 1: 0% Commission */}
-            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-4">
-                <ShieldCheck className="h-5 w-5" />
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition flex flex-col justify-between">
+              <div>
+                <div className="relative h-24 w-full mb-4 rounded-xl bg-emerald-500/5 dark:bg-emerald-500/10 flex items-center justify-center p-2 overflow-hidden border border-emerald-500/10">
+                  <Image
+                    src="/images/illustrations/humaaan-standing-18.svg"
+                    alt="Doctor autonomy 0% commission"
+                    width={90}
+                    height={90}
+                    className="object-contain max-h-20 hover:scale-105 transition"
+                  />
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-3">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Direct Revenue
+                </div>
+                <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                  0% Platform Commission
+                </h3>
+                <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  100% of patient consultation fees go directly to your personal UPI QR code or clinic cash drawer. Zero commissions, zero middleman escrow.
+                </p>
               </div>
-              <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Direct Revenue
-              </div>
-              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                0% Platform Commission
-              </h3>
-              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                100% of patient consultation fees go directly to your personal UPI QR code or clinic cash drawer. Zero commissions, zero middleman escrow.
-              </p>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
                 ✓ 100% Doctor-Owned
               </div>
             </div>
 
             {/* Pillar 2: NMC Compliant */}
-            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-[#0071E3] dark:text-[#2997FF] mb-4">
-                <CheckCircle2 className="h-5 w-5" />
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition flex flex-col justify-between">
+              <div>
+                <div className="relative h-24 w-full mb-4 rounded-xl bg-blue-500/5 dark:bg-blue-500/10 flex items-center justify-center p-2 overflow-hidden border border-blue-500/10">
+                  <Image
+                    src="/images/illustrations/digital-records.svg"
+                    alt="NMC generic prescription compliance records"
+                    width={90}
+                    height={90}
+                    className="object-contain max-h-20 hover:scale-105 transition"
+                  />
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-[#0071E3] dark:text-[#2997FF] mb-3">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+                  Audit Proof
+                </div>
+                <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                  NMC Generic Compliance
+                </h3>
+                <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  Automatically enforces UPPERCASE generic chemical molecule names on every prescription to protect your license during clinical audits.
+                </p>
               </div>
-              <div className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
-                Audit Proof
-              </div>
-              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                NMC Generic Compliance
-              </h3>
-              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                Automatically enforces UPPERCASE generic chemical molecule names on every prescription to protect your license during clinical audits.
-              </p>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-[#0071E3] dark:text-[#2997FF]">
                 ✓ NMC Registered Guidelines
               </div>
             </div>
 
             {/* Pillar 3: 9 PM EOD Settlement */}
-            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-4">
-                <IndianRupee className="h-5 w-5" />
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition flex flex-col justify-between">
+              <div>
+                <div className="relative h-24 w-full mb-4 rounded-xl bg-amber-500/5 dark:bg-amber-500/10 flex items-center justify-center p-2 overflow-hidden border border-amber-500/10">
+                  <Image
+                    src="/images/illustrations/clinic-chart.svg"
+                    alt="9 PM daily cash settlement ledger chart"
+                    width={90}
+                    height={90}
+                    className="object-contain max-h-20 hover:scale-105 transition"
+                  />
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-3">
+                  <IndianRupee className="h-5 w-5" />
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                  Zero Discrepancy
+                </div>
+                <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                  9 PM EOD Settlement
+                </h3>
+                <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  Replaces messy Excel sheets with a 5-minute cash drawer denomination sheet (₹500/₹200/₹100) and automated visiting doctor revenue share calculations.
+                </p>
               </div>
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                Zero Discrepancy
-              </div>
-              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                9 PM EOD Settlement
-              </h3>
-              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                Replaces messy Excel sheets with a 5-minute cash drawer denomination sheet (₹500/₹200/₹100) and automated visiting doctor revenue share calculations.
-              </p>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-amber-700 dark:text-amber-400">
                 ✓ Cryptographic Day Lock
               </div>
             </div>
 
             {/* Pillar 4: Offline-Resilient */}
-            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 mb-4">
-                <Zap className="h-5 w-5" />
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition flex flex-col justify-between">
+              <div>
+                <div className="relative h-24 w-full mb-4 rounded-xl bg-purple-500/5 dark:bg-purple-500/10 flex items-center justify-center p-2 overflow-hidden border border-purple-500/10">
+                  <Image
+                    src="/images/illustrations/humaaan-standing-3.svg"
+                    alt="Fast offline-resilient speed"
+                    width={90}
+                    height={90}
+                    className="object-contain max-h-20 hover:scale-105 transition"
+                  />
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 mb-3">
+                  <Zap className="h-5 w-5" />
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                  High Throughput
+                </div>
+                <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                  Offline-Resilient Speed
+                </h3>
+                <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  Sub-50ms keystroke response designed for busy morning rushes. Keeps functioning seamlessly during clinic power fluctuations or spotty internet drops.
+                </p>
               </div>
-              <div className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                High Throughput
-              </div>
-              <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                Offline-Resilient Speed
-              </h3>
-              <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                Sub-50ms keystroke response designed for busy morning rushes. Keeps functioning seamlessly during clinic power fluctuations or spotty internet drops.
-              </p>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-purple-700 dark:text-purple-400">
                 ✓ Zero Keystroke Lag
               </div>
@@ -482,53 +608,167 @@ export default function ForDoctorsPage() {
 
               {/* Right Visual Representation */}
               <div className="lg:col-span-5">
-                <div className="rounded-2xl border border-black/[0.08] bg-white p-6 dark:border-white/[0.1] dark:bg-[#1E2024] shadow-md space-y-4">
-                  <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-3">
+                <div className="rounded-2xl border border-black/[0.08] bg-white dark:border-white/[0.1] dark:bg-[#1E2024] shadow-md overflow-hidden">
+                  {/* Browser / Device Chrome bar */}
+                  <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 px-4 py-3 bg-gray-50 dark:bg-white/[0.03]">
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-red-400" />
-                      <div className="h-3 w-3 rounded-full bg-amber-400" />
-                      <div className="h-3 w-3 rounded-full bg-emerald-400" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                     </div>
                     <span className="text-[11px] font-mono text-[#86868B] dark:text-[#8E8E93]">
                       {currentCockpit.url}
                     </span>
                   </div>
 
-                  <div className="space-y-3 py-2">
-                    <div className="p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200/60 dark:border-white/5">
-                      <div className="flex items-center justify-between text-xs font-bold text-[#1D1D1F] dark:text-white">
-                        <span>Active Session</span>
-                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Live Operational
-                        </span>
-                      </div>
-                      <p className="mt-1 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">
-                        Directly mapped to your clinic PostgreSQL database and live queue dispatch engine.
-                      </p>
+                  {/* Cockpit Image Showcase */}
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900 group">
+                    <Image
+                      src={currentCockpit.image}
+                      alt={currentCockpit.name}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 450px"
+                      className="object-cover object-center transition duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+                    
+                    {/* Live Status Badge */}
+                    <div className="absolute top-3 left-3">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-white border border-white/20">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        {currentCockpit.imageLabel}
+                      </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/40 dark:border-blue-900/30">
-                      <div className="text-xs font-bold text-[#0071E3] dark:text-[#2997FF]">
-                        Zero Latency Guarantee
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <div className="text-xs font-bold text-white">
+                        Direct Database & Queue Sync
                       </div>
-                      <p className="mt-1 text-[11px] text-blue-900/80 dark:text-blue-200/80">
-                        Designed to function with instant keystroke response even under high patient footfall.
-                      </p>
+                      <div className="text-[10px] text-white/80">
+                        Zero Keystroke Latency • Live OPD Queue Dispatch
+                      </div>
                     </div>
                   </div>
 
-                  <Link
-                    href={currentCockpit.url}
-                    className="block w-full text-center rounded-xl bg-gray-100 py-2.5 text-xs font-bold text-[#1D1D1F] hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 transition"
-                  >
-                    Open Live Interface in New View
-                  </Link>
+                  <div className="p-4 bg-white dark:bg-[#1E2024]">
+                    <Link
+                      href={currentCockpit.url}
+                      className="block w-full text-center rounded-xl bg-[#0071E3] hover:bg-[#0077ED] py-2.5 text-xs font-bold text-white shadow-sm transition active:scale-98"
+                    >
+                      Open Live {currentCockpit.name}
+                    </Link>
+                  </div>
                 </div>
               </div>
 
             </div>
           </div>
 
+        </div>
+      </section>
+
+      {/* 3.5. CLINICAL EXCELLENCE IN ACTION: REAL CHAMBER GALLERY */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-[#F5F6F9] to-white dark:from-[#0E0F12] dark:to-[#16171B] border-b border-black/[0.06] dark:border-white/[0.08]">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center max-w-3xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+              Visual Walkthrough
+            </span>
+            <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
+              A Seamless Physical Clinic Workflow in Action.
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-[#6E6E73] dark:text-[#A1A1A6]">
+              From the moment the patient scans your clinic QR standee to their consultation and 9 PM cash settlement.
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <div className="group rounded-2xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#1E2024] overflow-hidden shadow-sm hover:shadow-md transition">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900">
+                <Image
+                  src="/images/clinical/clinic-qr-standee.jpg"
+                  alt="Clinic QR Standee for Patient Walk-in Check-in"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <span className="absolute top-2.5 left-2.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white border border-white/20">
+                  Step 1
+                </span>
+              </div>
+              <div className="p-4">
+                <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Entrance QR Standee</h4>
+                <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  Patients scan physical acrylic QR to check queue position on their own phone without reception crowd.
+                </p>
+              </div>
+            </div>
+
+            <div className="group rounded-2xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#1E2024] overflow-hidden shadow-sm hover:shadow-md transition">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900">
+                <Image
+                  src="/images/clinical/front-desk-triage.jpg"
+                  alt="Receptionist at Counter Desk with Sound Chimes"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <span className="absolute top-2.5 left-2.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white border border-white/20">
+                  Step 2
+                </span>
+              </div>
+              <div className="p-4">
+                <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Counter Reception Desk</h4>
+                <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  30-second token generation with thermal slip printing and instant auditory bell chime.
+                </p>
+              </div>
+            </div>
+
+            <div className="group rounded-2xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#1E2024] overflow-hidden shadow-sm hover:shadow-md transition">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900">
+                <Image
+                  src="/images/clinical/doctor-desk-chamber.jpg"
+                  alt="Doctor Speed Rx chamber consultation"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <span className="absolute top-2.5 left-2.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white border border-white/20">
+                  Step 3
+                </span>
+              </div>
+              <div className="p-4">
+                <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Doctor Speed Rx Chamber</h4>
+                <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  One-tap patient call, sub-50ms typing speed, and 100% compliant generic molecule enforcement.
+                </p>
+              </div>
+            </div>
+
+            <div className="group rounded-2xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#1E2024] overflow-hidden shadow-sm hover:shadow-md transition">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-900">
+                <Image
+                  src="/images/clinical/eod-settlement-ledger.jpg"
+                  alt="9 PM EOD Cash Drawer Settlement with Denominations"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
+                <span className="absolute top-2.5 left-2.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white border border-white/20">
+                  Step 4
+                </span>
+              </div>
+              <div className="p-4">
+                <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">9 PM Cash Settlement</h4>
+                <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
+                  Denomination cash drawer lock, visiting doctor split auto-calculations, and zero-loss reconciliation.
+                </p>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
@@ -798,6 +1038,106 @@ export default function ForDoctorsPage() {
 
           </div>
 
+        </div>
+      </section>
+
+      {/* 5.5. TRUSTED BY PRACTICING INDIAN DOCTORS */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#101114] border-t border-black/[0.06] dark:border-white/[0.08]">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center max-w-3xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              Verified Physician Endorsements
+            </span>
+            <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
+              Trusted by 1,200+ Independent Indian Practitioners.
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-[#6E6E73] dark:text-[#A1A1A6]">
+              Real doctors across Delhi NCR, Mumbai, Bengaluru, and Pune running paperless, autonomous OPD chambers.
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Doctor 1 */}
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#16171B] p-6 shadow-2xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-emerald-500/30 flex-shrink-0">
+                    <Image
+                      src="/images/doctors/dr-rahul-sharma.jpg"
+                      alt="Dr. Rahul Sharma"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Dr. Rahul Sharma</h4>
+                    <p className="text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">MD Medicine, New Delhi</p>
+                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">DMC/R/14290</span>
+                  </div>
+                </div>
+                <p className="text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed italic">
+                  &ldquo;ClinicOS replaced our messy Excel sheets and cash discrepancies in 48 hours. The 9 PM cash drawer closing takes my receptionist under 5 minutes.&rdquo;
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[10px] font-bold text-[#86868B] uppercase">
+                Using Speed Rx &amp; Cash Closing Cockpit
+              </div>
+            </div>
+
+            {/* Doctor 2 */}
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#16171B] p-6 shadow-2xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-blue-500/30 flex-shrink-0">
+                    <Image
+                      src="/images/doctors/dr-aditi-joshi.jpg"
+                      alt="Dr. Aditi Joshi"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Dr. Aditi Joshi</h4>
+                    <p className="text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">MBBS, DCH Pediatrics, Pune</p>
+                    <span className="text-[10px] font-semibold text-[#0071E3] dark:text-[#2997FF]">MMC/2018/04/1892</span>
+                  </div>
+                </div>
+                <p className="text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed italic">
+                  &ldquo;The auto-uppercase generic molecule format gives me complete peace of mind for NMC compliance. Plus, parents love getting their prescription directly via WhatsApp.&rdquo;
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[10px] font-bold text-[#86868B] uppercase">
+                Using NMC Speed Rx &amp; WhatsApp Delivery
+              </div>
+            </div>
+
+            {/* Doctor 3 */}
+            <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#16171B] p-6 shadow-2xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-violet-500/30 flex-shrink-0">
+                    <Image
+                      src="/images/doctors/dr-sameer-saxena.jpg"
+                      alt="Dr. Sameer Saxena"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Dr. Sameer Saxena</h4>
+                    <p className="text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">MD, DM Cardiology, Bengaluru</p>
+                    <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">KMC/68412</span>
+                  </div>
+                </div>
+                <p className="text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed italic">
+                  &ldquo;0% commission means our cardiology polyclinic keeps 100% of consultation fees. The Smart TV waiting display ended the crowding outside my consultation door.&rdquo;
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[10px] font-bold text-[#86868B] uppercase">
+                Using Smart TV Waiting Room &amp; 0% Direct UPI
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

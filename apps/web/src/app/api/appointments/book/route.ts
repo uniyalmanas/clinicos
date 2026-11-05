@@ -1,98 +1,178 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { apiError } from "@/lib/api-auth";
+import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
+const PAYMENT_MODES = ["cash", "counter_soundbox", "counter_cash", "online_upi", "online", "card"];
+
+/**
+ * Public appointment booking.
+ *
+ * The doctor and clinic come from the doctor record, the fee comes from the
+ * doctor's configured consultation fee, and payment is always recorded as
+ * pending. A caller cannot claim a payment succeeded — that requires
+ * `/api/payments/verify`. No sample clinic, doctor or ₹600 fallback is used.
+ */
 export async function POST(req: NextRequest) {
   try {
+    const ipLimit = await rateLimit(rateLimitKey(req, "book:ip"), 10, 3600);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(tooManyRequests(ipLimit.retryAfterSeconds), {
+        status: 429,
+        headers: { "Retry-After": String(ipLimit.retryAfterSeconds) },
+      });
+    }
+
     const body = await req.json();
     const {
       doctor_slug,
       patient_name,
       patient_phone,
-      appointment_date,
-      time_slot,
-      consultation_type = "clinic_visit",
-      symptoms_description = "",
-      payment_status = "pending",
-      payment_mode = "cash"
+      appointment_date = null,
+      time_slot = null,
+      symptoms_description = null,
+      payment_mode = "cash",
     } = body;
 
     if (!doctor_slug || !patient_name || !patient_phone) {
-      return NextResponse.json({ error: "Doctor, patient name, and phone are required" }, { status: 400 });
+      return apiError(
+        400,
+        "doctor_slug, patient_name and patient_phone are required.",
+        "invalid_input"
+      );
     }
 
-    // Get doctor record
+    const phone = String(patient_phone).replace(/[^0-9]/g, "").slice(-10);
+    if (phone.length !== 10) {
+      return apiError(400, "A valid 10-digit patient phone is required.", "invalid_phone");
+    }
+
+    const phoneLimit = await rateLimit(`book:phone:${phone}`, 5, 3600);
+    if (!phoneLimit.allowed) {
+      return NextResponse.json(tooManyRequests(phoneLimit.retryAfterSeconds), {
+        status: 429,
+        headers: { "Retry-After": String(phoneLimit.retryAfterSeconds) },
+      });
+    }
+
     const doctors = await sql`
-      SELECT id, full_name, specialization, consultation_fee, followup_validity_days, clinic_id, clinic_name, clinic_slug 
-      FROM doctors 
-      WHERE slug = ${doctor_slug} 
+      SELECT id, slug, full_name, clinic_id, clinic_name, clinic_slug,
+             consultation_fee, followup_validity_days
+      FROM doctors
+      WHERE slug = ${String(doctor_slug)}
+        AND COALESCE(is_active, true) = true
       LIMIT 1;
     `;
-
+    if (doctors.length === 0) {
+      return apiError(404, "Doctor not found or not accepting appointments.", "doctor_not_found");
+    }
     const doc = doctors[0];
-    const todayStr = appointment_date || new Date().toISOString().split("T")[0];
 
-    const validityDays = doc?.followup_validity_days || 7;
-    let isFreeFollowup = false;
+    if (!doc.clinic_id) {
+      return apiError(
+        422,
+        "This doctor is not linked to a clinic and cannot accept bookings.",
+        "clinic_not_configured"
+      );
+    }
+    if (doc.consultation_fee == null || !Number.isFinite(Number(doc.consultation_fee))) {
+      return apiError(
+        422,
+        "This doctor has no consultation fee configured.",
+        "fee_not_configured"
+      );
+    }
+    const doctorFee = Number(doc.consultation_fee);
 
-    // Atomic Token Generation with PostgreSQL Advisory Lock (Zero Concurrency Collision)
+    let clinicName = doc.clinic_name ? String(doc.clinic_name) : null;
+    if (!clinicName) {
+      const clinicRows = await sql`
+        SELECT name FROM clinics WHERE id::text = ${String(doc.clinic_id)}::text LIMIT 1;
+      `;
+      clinicName = clinicRows[0]?.name || null;
+    }
+    if (!clinicName) {
+      return apiError(422, "The doctor's clinic record is incomplete.", "clinic_not_configured");
+    }
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const requestedDate = appointment_date ? String(appointment_date) : todayStr;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
+      return apiError(400, "appointment_date must be YYYY-MM-DD.", "invalid_date");
+    }
+    const maxDate = new Date(Date.now() + 90 * 86400000).toISOString().split("T")[0];
+    if (requestedDate < todayStr || requestedDate > maxDate) {
+      return apiError(400, "appointment_date must be between today and 90 days ahead.", "invalid_date");
+    }
+
+    const mode = PAYMENT_MODES.includes(String(payment_mode))
+      ? String(payment_mode)
+      : "cash";
+
+    const validityDays =
+      doc.followup_validity_days == null ? null : Number(doc.followup_validity_days);
+
     const inserted = await sql.begin(async (tx) => {
-      await tx`SELECT pg_advisory_xact_lock(hashtext(${doctor_slug} || ':' || ${todayStr}));`;
+      await tx`SELECT pg_advisory_xact_lock(hashtext(${String(doc.clinic_id)} || ':' || ${doc.slug} || ':' || ${requestedDate}));`;
 
       const tokenQuery = await tx`
-        SELECT COALESCE(MAX(token_number), 0) + 1 AS next_token 
-        FROM appointments 
-        WHERE doctor_slug = ${doctor_slug} AND appointment_date = ${todayStr};
+        SELECT COALESCE(MAX(token_number), 0) + 1 AS next_token
+        FROM appointments
+        WHERE clinic_id::text = ${String(doc.clinic_id)}::text
+          AND doctor_slug = ${doc.slug}
+          AND appointment_date = ${requestedDate};
       `;
       const nextToken = Number(tokenQuery[0]?.next_token || 1);
 
-      // Check Marley 7-Day Fee Validity
-      const pastConsultations = await tx`
-        SELECT id, created_at FROM appointments
-        WHERE doctor_slug = ${doctor_slug} 
-          AND patient_phone = ${patient_phone}
-          AND status = 'completed'
-          AND created_at >= NOW() - INTERVAL '1 day' * ${validityDays}
-        ORDER BY created_at DESC
-        LIMIT 1;
-      `;
+      let isFreeFollowup = false;
+      if (validityDays != null && Number.isFinite(validityDays) && validityDays > 0) {
+        const pastConsultations = await tx`
+          SELECT id FROM appointments
+          WHERE clinic_id::text = ${String(doc.clinic_id)}::text
+            AND doctor_slug = ${doc.slug}
+            AND patient_phone = ${phone}
+            AND status = 'completed'
+            AND created_at >= NOW() - INTERVAL '1 day' * ${validityDays}
+          LIMIT 1;
+        `;
+        isFreeFollowup = pastConsultations.length > 0;
+      }
 
-      isFreeFollowup = pastConsultations.length > 0;
-      const finalFee = isFreeFollowup ? 0 : (doc?.consultation_fee ?? 600);
-
-      const aptPrefix = doctor_slug.replace(/^dr-/, "").slice(0, 5).toUpperCase();
-      const dateCompact = todayStr.replace(/-/g, "").slice(2);
+      const finalFee = isFreeFollowup ? 0 : doctorFee;
+      const aptPrefix = doc.slug.replace(/^dr-/, "").slice(0, 5).toUpperCase();
+      const dateCompact = requestedDate.replace(/-/g, "").slice(2);
       const randSuffix = Math.floor(1000 + Math.random() * 9000);
-      const aptNumber = `APT-${dateCompact}-${aptPrefix}-${nextToken.toString().padStart(2, '0')}-${randSuffix}`;
-      const id = randomUUID();
-
-      const slotLabel = time_slot || `Live OPD Token #${nextToken}`;
+      const aptNumber = `APT-${dateCompact}-${aptPrefix}-${nextToken
+        .toString()
+        .padStart(2, "0")}-${randSuffix}`;
+      const slotLabel = time_slot ? String(time_slot) : `Live OPD Token #${nextToken}`;
 
       return await tx`
         INSERT INTO appointments (
-          id, appointment_number, doctor_slug, clinic_id, doctor_name, 
-          clinic_name, patient_name, patient_phone, appointment_date, 
-          time_slot, token_number, status, fee_amount, payment_status, 
+          id, appointment_number, doctor_slug, clinic_id, doctor_name,
+          clinic_name, patient_name, patient_phone, appointment_date,
+          time_slot, token_number, status, fee_amount, payment_status,
           payment_mode, symptoms_description, created_at
         ) VALUES (
-          ${id},
+          ${randomUUID()},
           ${aptNumber},
-          ${doctor_slug},
-          ${doc?.clinic_id || 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'},
-          ${doc?.full_name || 'Dr. Rahul Sharma'},
-          ${doc?.clinic_name || 'Derma Care Skin & Laser Centre'},
-          ${patient_name},
-          ${patient_phone},
-          ${todayStr},
+          ${doc.slug},
+          ${String(doc.clinic_id)},
+          ${doc.full_name},
+          ${clinicName},
+          ${String(patient_name)},
+          ${phone},
+          ${requestedDate},
           ${slotLabel},
           ${nextToken},
           'confirmed',
           ${finalFee},
-          ${payment_status || 'pending'},
-          ${payment_mode || 'cash'},
-          ${symptoms_description},
+          'pending',
+          ${mode},
+          ${symptoms_description ? String(symptoms_description).slice(0, 2000) : null},
           NOW()
         )
         RETURNING *;
@@ -101,12 +181,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       status: "confirmed",
-      is_free_followup: isFreeFollowup,
-      followup_note: isFreeFollowup ? `Marley Protocol: 0 Fee applied (Valid Follow-up within ${validityDays} days)` : null,
-      appointment: inserted[0]
+      is_free_followup: Number(inserted[0].fee_amount) === 0,
+      followup_note:
+        Number(inserted[0].fee_amount) === 0 && validityDays != null
+          ? `No fee applied — valid follow-up within ${validityDays} days.`
+          : null,
+      appointment: inserted[0],
     });
   } catch (error: any) {
     console.error("POST /api/appointments/book error:", error);
-    return NextResponse.json({ error: error.message || "Failed to book appointment" }, { status: 500 });
+    return apiError(500, "Failed to book appointment.", "internal_error");
   }
 }

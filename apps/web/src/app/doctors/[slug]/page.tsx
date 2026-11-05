@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import ThemeToggle from "@/components/ThemeToggle";
 import { notFound } from "next/navigation";
 import { 
@@ -86,22 +87,41 @@ export default async function DoctorProfilePage({ params }: Props) {
           <div className="lg:col-span-8 space-y-6">
             {/* Header Profile Box */}
             <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card transition-all">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-apple-blue/10 dark:bg-apple-blue/15 px-3 py-1 text-xs font-semibold text-apple-blue">
-                      {doctor.specialization}
-                    </span>
-                    <span className="flex items-center gap-1 rounded-full bg-apple-teal/10 dark:bg-apple-teal/15 px-3 py-1 text-xs font-medium text-apple-teal dark:text-[#30D1BE]">
-                      <ShieldCheck className="h-3.5 w-3.5" /> Verified NMC Doctor
-                    </span>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                  <div className="relative h-20 w-20 sm:h-28 sm:w-28 shrink-0 overflow-hidden rounded-3xl border-2 border-white dark:border-[#2C2C2E] shadow-apple-sm">
+                    <Image
+                      src={
+                        slug === "dr-rahul-sharma"
+                          ? "/images/doctors/dr-rahul-sharma.jpg"
+                          : slug === "dr-aditi-joshi"
+                          ? "/images/doctors/dr-aditi-joshi.jpg"
+                          : slug === "dr-sameer-saxena"
+                          ? "/images/doctors/dr-sameer-saxena.jpg"
+                          : "/images/doctors/dr-rahul-sharma.jpg"
+                      }
+                      alt={doctor.full_name}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
                   </div>
-                  <h1 className="mt-3 text-3xl font-bold tracking-tight text-[#1D1D1F] dark:text-white">
-                    {doctor.full_name}
-                  </h1>
-                  <p className="mt-1 text-sm font-normal text-[#86868B]">
-                    {doctor.qualification_summary}
-                  </p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-apple-blue/10 dark:bg-apple-blue/15 px-3 py-1 text-xs font-semibold text-apple-blue">
+                        {doctor.specialization}
+                      </span>
+                      <span className="flex items-center gap-1 rounded-full bg-apple-teal/10 dark:bg-apple-teal/15 px-3 py-1 text-xs font-medium text-apple-teal dark:text-[#30D1BE]">
+                        <ShieldCheck className="h-3.5 w-3.5" /> Verified NMC Doctor
+                      </span>
+                    </div>
+                    <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-[#1D1D1F] dark:text-white">
+                      {doctor.full_name}
+                    </h1>
+                    <p className="mt-1 text-xs sm:text-sm font-normal text-[#86868B]">
+                      {doctor.qualification_summary}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Rating Badge */}

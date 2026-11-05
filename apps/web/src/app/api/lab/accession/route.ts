@@ -1,99 +1,137 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { sql } from "@/lib/db";
+import { guard, CLINICAL_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
+import { findClinicLabOrder } from "@/lib/lab-scope";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Smart Sample Accessioning & Quality Integrity Gate API
- * 1. Verifies physical barcode match to digital requisition.
- * 2. Pre-analytical Quality Checks: rejects compromised specimens (Hemolyzed, Clotted, Insufficient QNS, Mismatched).
- * 3. Transitions status to 'sample_accessioned' and routes to benchtop analyzer.
+ * Smart sample accessioning and quality gate.
+ *
+ * Verifies the physical barcode against the digital requisition and rejects
+ * compromised specimens. The order must belong to the caller's clinic through
+ * its originating appointment or prescription.
  */
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { 
-      order_id, 
-      action = "accession", // 'accession' or 'reject'
-      scanned_barcode, 
-      accessioner_name = "Rajesh Sharma (Senior Lab Tech)",
-      rejection_reason = "HEMOLYZED_SAMPLE",
-      rejection_notes 
+    const auth = await guard(req, { roles: CLINICAL_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicId = auth.auth.clinic!.id;
+    const body = await req.json();
+    const {
+      order_id,
+      action = "accession",
+      scanned_barcode,
+      accessioner_name,
+      rejection_reason,
+      rejection_notes,
     } = body;
 
     if (!order_id) {
-      return NextResponse.json({ error: "order_id is required" }, { status: 400 });
+      return apiError(400, "order_id is required.", "invalid_input");
     }
 
-    const orderQuery = await db`SELECT * FROM diagnostic_lab_orders WHERE id = ${order_id} LIMIT 1;`;
-    if (orderQuery.length === 0) {
-      return NextResponse.json({ error: "Lab order not found" }, { status: 404 });
+    const order = await findClinicLabOrder(clinicId, order_id);
+    if (!order) {
+      return apiError(404, "Lab order not found in your clinic.", "order_not_found");
     }
-    const order = orderQuery[0];
 
-    // ACTION: ACCESSION (Barcode verification + Tube integrity passed)
+    const accessioner = String(accessioner_name || auth.auth.user.full_name);
+
     if (action === "accession") {
-      // Validate barcode if provided
-      if (scanned_barcode && order.sample_barcode && scanned_barcode !== order.sample_barcode) {
-        return NextResponse.json({
-          error: `BARCODE MISMATCH ERROR: Scanned tag "${scanned_barcode}" does not match patient tube "${order.sample_barcode}". Accessioning rejected to prevent specimen mix-up.`,
-          code: "BARCODE_MISMATCH"
-        }, { status: 422 });
+      if (
+        scanned_barcode &&
+        order.sample_barcode &&
+        String(scanned_barcode) !== String(order.sample_barcode)
+      ) {
+        return apiError(
+          422,
+          `Scanned barcode ${scanned_barcode} does not match the collected sample ${order.sample_barcode}.`,
+          "barcode_mismatch"
+        );
       }
 
-      // Determine analyzer routing bench
-      let targetBench = "Mindray BC-5150 Hematology Bench";
-      if (order.category === "Biochemistry") targetBench = "Roche Cobas c311 Chemistry Analyzer";
-      else if (order.category === "Serology") targetBench = "Beckman Coulter Immunoassay Bench";
-
-      const updated = await db`
+      const updated = await sql`
         UPDATE diagnostic_lab_orders
-        SET 
+        SET
           status = 'sample_accessioned',
           sample_accessioned_at = NOW(),
-          sample_accessioner_name = ${accessioner_name},
+          sample_accessioner_name = ${accessioner},
           sample_rejected = false,
           sample_rejection_reason = NULL,
           updated_at = NOW()
-        WHERE id = ${order_id}
+        WHERE id = ${String(order.id)}
         RETURNING *;
       `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "lab.sample.accession",
+        entity: "diagnostic_lab_order",
+        entityId: String(order.id),
+        after: { accessioner, barcode: order.sample_barcode },
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
-        message: `✓ Sample ${order.sample_barcode} accessioned successfully by ${accessioner_name}. Specimen routed to ${targetBench}.`,
-        target_bench: targetBench,
-        order: updated[0]
+        message: `Sample ${order.sample_barcode || order.order_number} accessioned by ${accessioner}.`,
+        order: updated[0],
       });
     }
 
-    // ACTION: REJECT COMPROMISED SPECIMEN (Hemolysis, Clotting, QNS)
     if (action === "reject") {
-      const updated = await db`
+      const reason = String(rejection_reason || "").trim();
+      if (!reason) {
+        return apiError(
+          400,
+          "rejection_reason is required when rejecting a specimen.",
+          "reason_required"
+        );
+      }
+
+      const updated = await sql`
         UPDATE diagnostic_lab_orders
-        SET 
-          status = 'ordered', -- Reset for redraw
+        SET
+          status = 'ordered',
           sample_rejected = true,
-          sample_rejection_reason = ${rejection_reason},
+          sample_rejection_reason = ${reason},
           sample_collected_at = NULL,
           sample_accessioned_at = NULL,
-          pathologist_notes = ${`SPECIMEN REJECTED [${rejection_reason}]: ${rejection_notes || 'Sample compromised during pre-analytical phase. Mandatory phlebotomy redraw requested.'}`},
+          pathologist_notes = ${`Specimen rejected [${reason}]: ${
+            rejection_notes || "Compromised during pre-analytical phase. Redraw required."
+          }`},
           updated_at = NOW()
-        WHERE id = ${order_id}
+        WHERE id = ${String(order.id)}
         RETURNING *;
       `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "lab.sample.reject",
+        entity: "diagnostic_lab_order",
+        entityId: String(order.id),
+        after: { rejection_reason: reason, rejection_notes: rejection_notes || null },
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
         rejected: true,
-        message: `⚠️ Specimen REJECTED due to [${rejection_reason}]. Order reset to 'ordered' for immediate phlebotomy re-draw notification.`,
-        order: updated[0]
+        message: `Specimen rejected due to ${reason}. Order reset to 'ordered' for redraw.`,
+        order: updated[0],
       });
     }
 
-    return NextResponse.json({ error: "Invalid accession action" }, { status: 400 });
+    return apiError(400, "Invalid accession action.", "invalid_action");
   } catch (error: any) {
     console.error("Accession error:", error);
-    return NextResponse.json({ error: error.message || "Failed to process sample accessioning" }, { status: 500 });
+    return apiError(500, "Failed to process sample accessioning.", "internal_error");
   }
 }

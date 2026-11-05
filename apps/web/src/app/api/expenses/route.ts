@@ -1,34 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
-import { authorizeClinicUser } from "@/lib/auth";
+import { guard, CLINIC_ROLES, ADMIN_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const clinicSlug = searchParams.get("clinic_slug") || "derma-care-dehradun";
+    const auth = await guard(req, {
+      roles: CLINIC_ROLES,
+      audit: "expenses.view",
+      auditEntity: "expenses",
+    });
+    if (!auth.ok) return auth.response;
 
-    // 1. Fetch expenses
+    const clinicSlug = auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
+
+    // 1. Fetch expenses for authenticated clinic
     const expensesRows = await sql`
       SELECT * FROM expenses 
-      WHERE clinic_slug = ${clinicSlug} OR clinic_slug IS NULL
+      WHERE clinic_slug = ${clinicSlug}
       ORDER BY date DESC, created_at DESC;
     `;
 
-    // 2. Fetch appointment collections
+    // 2. Fetch appointment collections scoped to this clinic
     const aptRevenueQuery = await sql`
       SELECT COALESCE(SUM(fee_amount), 0) AS total_fee 
       FROM appointments 
-      WHERE payment_status = 'paid';
+      WHERE payment_status = 'paid'
+        AND clinic_id::text = ${clinicId}::text;
     `;
     const appointmentCollections = Number(aptRevenueQuery[0]?.total_fee || 0);
 
-    // 3. Fetch pharmacy collections
+    // 3. Fetch pharmacy collections scoped to this clinic
     const pharmRevenueQuery = await sql`
       SELECT COALESCE(SUM(total_amount), 0) AS total_pharm 
-      FROM pharmacy_dispenses;
+      FROM pharmacy_dispenses
+      WHERE clinic_slug = ${clinicSlug};
     `;
     const pharmacyCollections = Number(pharmRevenueQuery[0]?.total_pharm || 0);
 
@@ -42,7 +52,6 @@ export async function GET(req: NextRequest) {
 
     for (const exp of expensesRows) {
       const amt = Number(exp.amount || 0);
-      // Only count approved expenses into real net outflows
       if (exp.approval_status !== "PENDING_APPROVAL") {
         totalExpenses += amt;
       } else {
@@ -76,50 +85,52 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("GET /api/expenses error:", error);
-    return NextResponse.json({ error: error.message || "Failed to load expenses" }, { status: 500 });
+    return apiError(500, error.message || "Failed to load expenses.", "server_error");
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, {
+      roles: CLINIC_ROLES,
+      audit: "expense.create",
+      auditEntity: "expenses",
+    });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
+    const isManagerRole = ADMIN_ROLES.includes(auth.auth.role as any) || auth.auth.role === "doctor";
+
     const body = await req.json();
     const {
-      clinic_slug = "derma-care-dehradun",
       title,
       category = "Consumables",
       amount,
       payment_mode = "upi",
-      recorded_by = "Front Desk",
+      recorded_by = auth.auth.user.full_name,
       date,
-      manager_pin,
       receipt_url,
       action = "create"
     } = body;
 
     // -------------------------------------------------------------
-    // ACTION: APPROVE PENDING VOUCHER WITH AUTHORIZED SESSION OR PIN
+    // ACTION: APPROVE PENDING VOUCHER WITH AUTHORIZED SESSION
     // -------------------------------------------------------------
     if (action === "approve_voucher") {
-      const { expense_id, pin } = body;
+      if (!isManagerRole) {
+        return apiError(
+          403,
+          "Manager or Doctor authorization required to approve expense vouchers.",
+          "forbidden"
+        );
+      }
+
+      const { expense_id } = body;
       if (!expense_id) {
-        return NextResponse.json({ error: "expense_id is required" }, { status: 400 });
+        return apiError(400, "expense_id is required.", "missing_id");
       }
 
-      let approvedByName = "Clinic Administrator";
-      try {
-        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin", "doctor"] });
-        approvedByName = `${auth.user.full_name} (${auth.user.role})`;
-      } catch (authErr: any) {
-        if (pin && pin.length >= 4) {
-          approvedByName = "Clinic Security Lead (PIN Verified)";
-        } else {
-          return NextResponse.json(
-            { error: authErr.message || "Manager or Doctor authorization required to approve expense vouchers." },
-            { status: 403 }
-          );
-        }
-      }
-
+      const approvedByName = `${auth.auth.user.full_name} (${auth.auth.role})`;
       const updated = await sql`
         UPDATE expenses
         SET 
@@ -128,8 +139,24 @@ export async function POST(req: NextRequest) {
           approved_by = ${approvedByName},
           requires_approval = false
         WHERE id = ${expense_id}
+          AND clinic_slug = ${clinicSlug}
         RETURNING *;
       `;
+
+      if (updated.length === 0) {
+        return apiError(404, "Expense voucher not found or does not belong to your clinic.", "not_found");
+      }
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId: auth.auth.clinic?.id ?? null,
+        action: "expense.approve",
+        entity: "expenses",
+        entityId: expense_id,
+        after: updated[0],
+        request: req,
+      });
 
       return NextResponse.json({
         status: "success",
@@ -139,67 +166,41 @@ export async function POST(req: NextRequest) {
     }
 
     // -------------------------------------------------------------
-    // ACTION: RECORD NEW EXPENSE VOUCHER WITH FRAUD & OCR VALIDATION
+    // ACTION: RECORD NEW EXPENSE VOUCHER
     // -------------------------------------------------------------
     if (!title || !amount) {
-      return NextResponse.json({ error: "Title and amount are required" }, { status: 400 });
+      return apiError(400, "Title and amount are required.", "missing_fields");
     }
 
     const numAmount = Number(amount);
+    if (!Number.isFinite(numAmount) || numAmount <= 0) {
+      return apiError(400, "Amount must be a positive number.", "invalid_amount");
+    }
+
     const id = randomUUID();
     const expenseDate = date || new Date().toISOString().split("T")[0];
 
-    // FIX 1: AI OCR Validation and Duplicate Receipt Fraud Detection
+    // Duplicate check within past 30 days
     const duplicateCheck = await sql`
       SELECT id, title, amount, date FROM expenses 
-      WHERE (clinic_slug = ${clinic_slug} OR clinic_slug IS NULL)
+      WHERE clinic_slug = ${clinicSlug}
         AND amount = ${numAmount}
         AND (title ILIKE ${title} OR title ILIKE ${`%${title}%`})
         AND created_at >= NOW() - INTERVAL '30 days'
       LIMIT 1;
     `;
-
     const isDuplicate = duplicateCheck.length > 0;
 
-    // Check manager authorization via session or PIN
-    let isManagerRole = false;
-    let managerActorName = "Authorized Clinic Manager";
-    try {
-      const auth = await authorizeClinicUser(req);
-      if (["doctor", "clinic_admin", "owner"].includes(auth.user.role)) {
-        isManagerRole = true;
-        managerActorName = `${auth.user.full_name} (${auth.user.role})`;
-      }
-    } catch {
-      isManagerRole = false;
-    }
     const exceedsThreshold = numAmount > 500;
-    const isPinValid = isManagerRole || (Boolean(manager_pin) && manager_pin.length >= 4);
-
     let approvalStatus = "APPROVED";
-    let approvedBy = null;
-    let pinVerified = false;
+    let approvedBy: string | null = auth.auth.user.full_name;
+    let pinVerified = isManagerRole;
 
-    if (exceedsThreshold) {
-      if (isPinValid) {
-        approvalStatus = "APPROVED";
-        approvedBy = managerActorName;
-        pinVerified = true;
-      } else {
-        approvalStatus = "PENDING_APPROVAL";
-        approvedBy = null;
-        pinVerified = false;
-      }
+    if (exceedsThreshold && !isManagerRole) {
+      approvalStatus = "PENDING_APPROVAL";
+      approvedBy = null;
+      pinVerified = false;
     }
-
-    // Extract simulated OCR metadata
-    const simulatedVendor = title.includes("Power") || title.includes("UPCL") 
-      ? "UPCL Commercial Power"
-      : title.includes("Gloves") || title.includes("Spirit") 
-        ? "MedPlus Surgical Supply"
-        : title.includes("Water") || title.includes("RO")
-          ? "Bisleri Bottling Services"
-          : "Authorized Commercial Vendor";
 
     const inserted = await sql`
       INSERT INTO expenses (
@@ -210,7 +211,7 @@ export async function POST(req: NextRequest) {
         ocr_vendor, ocr_verified, duplicate_flag
       ) VALUES (
         ${id},
-        ${clinic_slug},
+        ${clinicSlug},
         ${title},
         ${category},
         ${numAmount},
@@ -218,13 +219,13 @@ export async function POST(req: NextRequest) {
         ${recorded_by},
         ${expenseDate},
         NOW(),
-        ${exceedsThreshold && !pinVerified},
+        ${exceedsThreshold && !isManagerRole},
         ${approvalStatus},
         ${approvedBy},
         ${pinVerified},
         ${receipt_url || "/receipts/sample_voucher.png"},
         ${numAmount},
-        ${simulatedVendor},
+        'Authorized Commercial Vendor',
         true,
         ${isDuplicate}
       )
@@ -232,10 +233,10 @@ export async function POST(req: NextRequest) {
     `;
 
     let statusMsg = "Expense voucher recorded successfully.";
-    if (exceedsThreshold && !pinVerified) {
-      statusMsg = "⚠️ Expense > ₹500 logged as PENDING_APPROVAL. Manager PIN required before cash drawer disbursement.";
+    if (exceedsThreshold && !isManagerRole) {
+      statusMsg = "⚠️ Expense > ₹500 logged as PENDING_APPROVAL. Manager or Doctor approval required before disbursement.";
     } else if (isDuplicate) {
-      statusMsg = "⚠️ AI OCR Warning: Duplicate voucher detected in past 30 days. Flagged for audit.";
+      statusMsg = "⚠️ Warning: Duplicate voucher detected in past 30 days. Flagged for audit.";
     }
 
     return NextResponse.json({ 
@@ -245,22 +246,50 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("POST /api/expenses error:", error);
-    return NextResponse.json({ error: error.message || "Failed to record expense" }, { status: 500 });
+    return apiError(500, error.message || "Failed to record expense.", "server_error");
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await guard(req, {
+      roles: ADMIN_ROLES,
+      audit: "expense.delete",
+      auditEntity: "expenses",
+    });
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) {
-      return NextResponse.json({ error: "id is required" }, { status: 400 });
+      return apiError(400, "id is required.", "missing_id");
     }
 
-    await sql`DELETE FROM expenses WHERE id = ${id};`;
-    return NextResponse.json({ status: "success", message: "Expense voucher removed" });
+    const clinicSlug = auth.auth.clinic!.slug;
+    const deleted = await sql`
+      DELETE FROM expenses 
+      WHERE id = ${id} AND clinic_slug = ${clinicSlug}
+      RETURNING id, title, amount;
+    `;
+
+    if (deleted.length === 0) {
+      return apiError(404, "Expense voucher not found or does not belong to your clinic.", "not_found");
+    }
+
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId: auth.auth.clinic?.id ?? null,
+      action: "expense.delete",
+      entity: "expenses",
+      entityId: id,
+      before: deleted[0],
+      request: req,
+    });
+
+    return NextResponse.json({ status: "success", message: "Expense voucher removed." });
   } catch (error: any) {
     console.error("DELETE /api/expenses error:", error);
-    return NextResponse.json({ error: error.message || "Failed to delete expense" }, { status: 500 });
+    return apiError(500, error.message || "Failed to delete expense.", "server_error");
   }
 }

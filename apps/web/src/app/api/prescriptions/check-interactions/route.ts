@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,9 @@ const DRUG_INTERACTION_RULES: Array<{
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const { medications = [], patient_allergies = [] } = body;
 
@@ -132,6 +136,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Prescription safety check error:", error);
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    return apiError(500, "Failed to run the interaction check.", "internal_error");
   }
 }

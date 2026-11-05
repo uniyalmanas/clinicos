@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { createHash, randomUUID } from "crypto";
-import { authorizeClinicUser } from "@/lib/auth";
+import { guard, CLINIC_ROLES, CLINICAL_ROLES, ADMIN_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 import { 
   checkAllergyConflict, 
   EMRAllergy, 
@@ -16,44 +17,98 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await guard(req, {
+      roles: CLINIC_ROLES,
+      audit: "patients.directory_view",
+      auditEntity: "emr_patients",
+    });
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q")?.toLowerCase();
     const uhidParam = searchParams.get("uhid");
 
-    // 1. Fetch EMR Patients from database
-    let patients = await sql`
-      SELECT * FROM emr_patients 
-      ORDER BY created_at ASC;
-    `;
+    // 1. Fetch EMR Patients scoped to the authenticated clinic (or all if super admin)
+    let patients: any[];
+    if (auth.auth.isSuperAdmin) {
+      patients = await sql`
+        SELECT * FROM emr_patients 
+        ORDER BY created_at ASC;
+      `;
+    } else {
+      const clinicId = auth.auth.clinic!.id;
+      patients = await sql`
+        SELECT DISTINCT p.* FROM emr_patients p
+        WHERE RIGHT(REGEXP_REPLACE(p.phone, '[^0-9]', '', 'g'), 10) IN (
+          SELECT RIGHT(REGEXP_REPLACE(patient_phone, '[^0-9]', '', 'g'), 10)
+          FROM appointments
+          WHERE clinic_id::text = ${clinicId}::text
+          UNION
+          SELECT RIGHT(REGEXP_REPLACE(patient_phone, '[^0-9]', '', 'g'), 10)
+          FROM prescriptions
+          WHERE clinic_id::text = ${clinicId}::text
+          UNION
+          SELECT RIGHT(REGEXP_REPLACE(patient_phone, '[^0-9]', '', 'g'), 10)
+          FROM patient_documents
+          WHERE clinic_id::text = ${clinicId}::text
+        )
+        ORDER BY p.created_at ASC;
+      `;
+    }
 
-    // 2. Fetch Allergies
+    if (uhidParam) {
+      patients = patients.filter((p: any) => p.uhid === uhidParam);
+    }
+    if (query) {
+      patients = patients.filter((p: any) => 
+        p.full_name?.toLowerCase().includes(query) ||
+        p.phone?.includes(query) ||
+        p.uhid?.toLowerCase().includes(query)
+      );
+    }
+
+    if (patients.length === 0) {
+      return NextResponse.json({
+        total: 0,
+        patients: []
+      });
+    }
+
+    const patientUhids = patients.map((p: any) => p.uhid).filter(Boolean);
+
+    // 2. Fetch Allergies scoped to patient UHIDs
     const allergies = await sql`
       SELECT * FROM emr_allergies 
       WHERE is_active = true
+        AND patient_uhid = ANY(${patientUhids})
       ORDER BY created_at DESC;
     `;
 
-    // 3. Fetch Lab Results (Structured HL7/FHIR vault)
+    // 3. Fetch Lab Results scoped to patient UHIDs
     const labResults = await sql`
       SELECT * FROM emr_lab_vault 
+      WHERE patient_uhid = ANY(${patientUhids})
       ORDER BY report_date ASC, created_at ASC;
     `;
 
-    // 4. Fetch Clinical Visits (Versioned SOAP notes)
+    // 4. Fetch Clinical Visits scoped to patient UHIDs
     const visits = await sql`
       SELECT * FROM emr_clinical_visits 
+      WHERE patient_uhid = ANY(${patientUhids})
       ORDER BY visit_date DESC, version DESC;
     `;
 
-    // 5. Fetch Audit Trail entries (DPDP compliance)
+    // 5. Fetch Audit Trail entries scoped to patient UHIDs
     const auditEntries = await sql`
       SELECT * FROM emr_audit_trail 
+      WHERE patient_uhid = ANY(${patientUhids})
       ORDER BY created_at DESC;
     `;
 
     // 6. Fetch Duplicate Merge Tickets
     const mergeTickets = await sql`
       SELECT * FROM emr_duplicate_merges 
+      WHERE source_uhid = ANY(${patientUhids}) OR target_uhid = ANY(${patientUhids})
       ORDER BY created_at DESC;
     `;
 
@@ -62,6 +117,7 @@ export async function GET(req: NextRequest) {
     try {
       secureExports = await sql`
         SELECT * FROM emr_secure_exports 
+        WHERE patient_uhid = ANY(${patientUhids})
         ORDER BY created_at DESC;
       `;
     } catch {
@@ -170,6 +226,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const { action = "check_allergy" } = body;
 
@@ -247,21 +306,17 @@ export async function POST(req: NextRequest) {
 
       // Real-Time Role & NMC Credential Check via Authenticated Session
       let seniorDoctor: SeniorDoctorCredential;
-      try {
-        const auth = await authorizeClinicUser(req, { requiredRoles: ["doctor", "owner", "clinic_admin"] });
-        seniorDoctor = {
-          doctor_name: auth.doctor?.full_name || auth.user.full_name,
-          role: "Senior Consultant",
-          nmc_reg_number: auth.doctor?.medical_council_reg_number || "NMC-UK-2024-REG",
-          state_medical_council: "Uttarakhand Medical Council",
-          specialization: auth.doctor?.specialization || "Clinical Medicine",
-          is_active: true,
-        };
-      } catch (authErr: any) {
-        return NextResponse.json({ 
-          error: authErr.message || "Override Denied: Only Senior Consultants with verified active NMC credentials can override a Fatal Allergy Hard-Stop." 
-        }, { status: 403 });
-      }
+      const auth = await guard(req, { roles: ["doctor", "owner", "clinic_admin"] });
+      if (!auth.ok) return auth.response;
+
+      seniorDoctor = {
+        doctor_name: auth.auth.doctor?.full_name || auth.auth.user.full_name,
+        role: "Senior Consultant",
+        nmc_reg_number: auth.auth.doctor?.medical_council_reg_number || "NMC-UK-2024-REG",
+        state_medical_council: "Uttarakhand Medical Council",
+        specialization: auth.auth.doctor?.specialization || "Clinical Medicine",
+        is_active: true,
+      };
 
       if (!reason_code || !reason_text) {
         return NextResponse.json({ error: "Clinical reason code and explanation are mandatory for override." }, { status: 400 });
@@ -410,12 +465,9 @@ export async function POST(req: NextRequest) {
       }
 
       let authorizedDoctor = doctor_name || "Consultant Doctor";
-      try {
-        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin", "doctor"] });
-        authorizedDoctor = `${auth.user.full_name} (${auth.membership.role})`;
-      } catch (authErr: any) {
-        return NextResponse.json({ error: authErr.message || "Senior Doctor / Clinical Lead authorization required to e-sign amendment addendum" }, { status: 403 });
-      }
+      const auth = await guard(req, { roles: ["owner", "clinic_admin", "doctor"] });
+      if (!auth.ok) return auth.response;
+      authorizedDoctor = `${auth.auth.user.full_name} (${auth.auth.role})`;
 
       // Find current latest version
       const existing = await sql`
@@ -489,12 +541,9 @@ export async function POST(req: NextRequest) {
       const { ticket_id } = body;
 
       let approver_2 = "Medical Director";
-      try {
-        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
-        approver_2 = `${auth.user.full_name} (${auth.membership.role})`;
-      } catch (authErr: any) {
-        return NextResponse.json({ error: authErr.message || "Second Admin Authorization required to merge patient identities" }, { status: 403 });
-      }
+      const auth = await guard(req, { roles: ["owner", "clinic_admin"] });
+      if (!auth.ok) return auth.response;
+      approver_2 = `${auth.auth.user.full_name} (${auth.auth.role})`;
 
       const ticketRows = await sql`
         SELECT * FROM emr_duplicate_merges WHERE id = ${ticket_id} LIMIT 1;

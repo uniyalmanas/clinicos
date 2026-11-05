@@ -31,9 +31,11 @@ interface Props {
   patientPhone: string;
   patientName: string;
   isDoctorView?: boolean;
+  /** Patients can read their own documents but only clinic staff may upload. */
+  readOnly?: boolean;
 }
 
-export default function PatientDocumentsManager({ patientPhone, patientName, isDoctorView = false }: Props) {
+export default function PatientDocumentsManager({ patientPhone, patientName, isDoctorView = false, readOnly = false }: Props) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -46,6 +48,16 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+
+  const readFileAsDataUrl = (f: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Could not read the selected file."));
+      reader.readAsDataURL(f);
+    });
 
   const handleDownloadDocument = async (doc: DocumentItem) => {
     try {
@@ -86,9 +98,20 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
+    setErrorMsg("");
+
+    if (!file) {
+      setErrorMsg("Choose a PDF or image file to upload.");
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      setErrorMsg("File too large. Maximum size is 25 MB.");
+      return;
+    }
 
     setUploading(true);
     try {
+      const file_base64 = await readFileAsDataUrl(file);
       const res = await fetch(`/api/documents/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,25 +119,30 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
           patient_phone: patientPhone,
           patient_name: patientName,
           document_type: docType,
-          title: title,
-          doctor_notes: notes,
-          file_name: `${title.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`,
-          file_size_kb: Math.floor(Math.random() * 400) + 150
-        })
+          title: title.trim(),
+          doctor_notes: notes.trim() || undefined,
+          file_name: file.name,
+          mime_type: file.type || "application/pdf",
+          file_base64,
+        }),
       });
 
-      if (res.ok) {
-        setSuccessMsg("Document attached to clinical EMR successfully!");
-        setTimeout(() => {
-          setIsUploadModalOpen(false);
-          setSuccessMsg("");
-          setTitle("");
-          setNotes("");
-          loadDocs();
-        }, 1000);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Document upload failed.");
       }
-    } catch (err) {
-      console.error("Error uploading document:", err);
+
+      setSuccessMsg("Document saved to the private patient locker.");
+      setTimeout(() => {
+        setIsUploadModalOpen(false);
+        setSuccessMsg("");
+        setTitle("");
+        setNotes("");
+        setFile(null);
+        loadDocs();
+      }, 1000);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Document upload failed.");
     } finally {
       setUploading(false);
     }
@@ -133,13 +161,15 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
           </p>
         </div>
 
-        <button
-          onClick={() => setIsUploadModalOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-apple-teal hover:bg-[#00B49A] px-4 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
-        >
-          <UploadCloud className="h-4 w-4" />
-          <span>Upload Lab Report / Scan</span>
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-apple-teal hover:bg-[#00B49A] px-4 py-2 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
+          >
+            <UploadCloud className="h-4 w-4" />
+            <span>Upload Lab Report / Scan</span>
+          </button>
+        )}
       </div>
 
       {/* Documents List */}
@@ -147,7 +177,9 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
         <div className="py-6 text-center text-xs text-[#86868B]">Loading diagnostic records...</div>
       ) : documents.length === 0 ? (
         <div className="py-8 text-center text-xs text-[#86868B]">
-          No lab reports uploaded yet. Upload CBC, Lipid, X-Ray, or prior prescriptions here.
+          {readOnly
+            ? "No documents have been shared with you yet. Ask your clinic to upload reports here."
+            : "No lab reports uploaded yet. Upload CBC, Lipid, X-Ray, or prior prescriptions here."}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -222,12 +254,12 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
                 <strong className="text-apple-teal dark:text-[#30D1BE] font-medium">{previewDoc.document_type}</strong>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-[#86868B]">Clinical Interpretation:</span>
-                <span className="text-[#515154] dark:text-[#A1A1A6]">{previewDoc.doctor_notes || "Report recorded in patient locker without abnormal findings."}</span>
+                <span className="text-[#86868B]">Clinical Notes:</span>
+                <span className="text-[#515154] dark:text-[#A1A1A6]">{previewDoc.doctor_notes || "No note attached to this document."}</span>
               </div>
-              <div className="rounded-xl bg-apple-teal/10 p-3 text-[11px] text-apple-teal dark:text-[#30D1BE] flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>Verified Diagnostic Pathology Lab Signature attached.</span>
+              <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] p-3 text-[11px] text-[#86868B] flex items-center gap-2">
+                <FileText className="h-4 w-4 shrink-0" />
+                <span>Stored privately. A temporary signed link is generated on download.</span>
               </div>
             </div>
 
@@ -321,12 +353,33 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
                   />
                 </div>
 
-                <div className="rounded-[20px] border border-dashed border-black/[0.12] dark:border-white/[0.15] p-5 text-center bg-[#ECEEF2]/50 dark:bg-black/20">
-                  <UploadCloud className="mx-auto h-6 w-6 text-[#86868B]" />
-                  <p className="mt-1.5 text-xs text-[#86868B] font-medium">
-                    PDF, JPEG, or DICOM scans up to 25 MB
-                  </p>
+                <div>
+                  <label className="block font-medium text-[#1D1D1F] dark:text-white">
+                    Attach File
+                  </label>
+                  <label className="mt-1.5 flex cursor-pointer flex-col items-center justify-center rounded-[20px] border border-dashed border-black/[0.12] bg-[#ECEEF2]/50 p-5 text-center dark:border-white/[0.15] dark:bg-black/20">
+                    <UploadCloud className="h-6 w-6 text-[#86868B]" />
+                    <span className="mt-1.5 text-xs font-medium text-[#86868B]">
+                      {file ? file.name : "Choose a PDF or image (max 25 MB)"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      className="sr-only"
+                      onChange={(e) => {
+                        setErrorMsg("");
+                        setFile(e.target.files?.[0] || null);
+                      }}
+                    />
+                  </label>
                 </div>
+
+                {errorMsg && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-[11px] text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-black/[0.04] dark:border-white/[0.06]">
                   <button

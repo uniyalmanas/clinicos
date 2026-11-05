@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Volume2,
@@ -38,6 +38,39 @@ import {
 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
+
+// Simple API helper for public endpoints (no auth required)
+const API = {
+  get: async (path: string) => {
+    const res = await fetch(path);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+  post: async (path: string, body: any) => {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+};
+
+interface Doctor {
+  id: string;
+  slug: string;
+  full_name: string;
+  specialization: string;
+  consultation_fee: number;
+  chamber_name: string;
+}
 
 interface QueuePatient {
   appointment_number: string;
@@ -152,40 +185,84 @@ export default function WaitingRoomSmartDisplayPage() {
   const [recentCallAlert, setRecentCallAlert] = useState<boolean>(false);
   const [tvTheme, setTvTheme] = useState<"dark" | "light">("dark");
 
-  // Clinic metadata
-  const [clinic] = useState({
-    name: "Derma Care Skin & Laser Centre",
-    tagline: "Advanced Dermatology, Laser & Aesthetic Surgery",
-    address: "14, Rajpur Road, Dehradun",
-    helpline: "+91 98765 43210",
-    slug: "derma-care-dehradun"
+  // Clinic metadata — loaded from ?clinic= URL param
+  const [clinic, setClinic] = useState<{
+    name: string;
+    tagline: string;
+    address: string;
+    helpline: string;
+    slug: string;
+    id: string;
+  }>({
+    name: "Clinic",
+    tagline: "Clinic Care",
+    address: "",
+    helpline: "",
+    slug: "",
+    id: "",
   });
+  const [clinicDoctors, setClinicDoctors] = useState<Doctor[]>([]);
+  const [clinicLoading, setClinicLoading] = useState(true);
 
-  // Multi-Chambers status for Polyclinics
-  const [chambers, setChambers] = useState<ChamberStatus[]>([
-    {
-      chamber_id: "ch-1",
-      chamber_name: "Chamber 1 - OPD Main",
-      doctor_name: "Dr. Rahul Sharma",
-      specialty: "MBBS, MD Dermatology",
-      current_token: 2,
-      patient_name: "Priya Singh",
-      status: "consulting",
-      elapsed_seconds: 245
-    },
-    {
-      chamber_id: "ch-2",
-      chamber_name: "Chamber 2 - Laser & Aesthetics",
-      doctor_name: "Dr. Ananya Rawat",
-      specialty: "Aesthetic Cosmetology",
-      current_token: 1,
-      patient_name: "Neha Gupta",
-      status: "consulting",
-      elapsed_seconds: 410
+  // Read clinic slug from URL on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get("clinic") || "derma-care-dehradun";
+    loadClinic(slug);
+  }, []);
+
+  const loadClinic = useCallback(async (slug: string) => {
+    setClinicLoading(true);
+    try {
+      const data = await API.get(`/api/check-in/public?clinic_slug=${encodeURIComponent(slug)}`);
+      setClinic({
+        id: data.clinic.id,
+        name: data.clinic.name,
+        tagline: data.clinic.tagline || "Advanced Clinic Care",
+        address: data.clinic.address || "Clinic Address",
+        helpline: data.clinic.phone || "",
+        slug: data.clinic.slug,
+      });
+      setClinicDoctors(data.doctors || []);
+    } catch (err) {
+      console.error("Failed to load clinic:", err);
+      // Fallback clinic
+      setClinic({
+        id: "fallback",
+        name: "Clinic",
+        tagline: "Clinic Care",
+        address: "",
+        helpline: "",
+        slug,
+      });
+    } finally {
+      setClinicLoading(false);
     }
-  ]);
+  }, []);
 
   const [activeChamberIndex, setActiveChamberIndex] = useState<number>(0);
+
+  // Chambers state — initialized from clinic doctors, updated via SSE
+  const [chambers, setChambers] = useState<ChamberStatus[]>([]);
+
+  // Initialize chambers from clinic doctors when they load
+  useEffect(() => {
+    if (clinicDoctors.length > 0 && chambers.length === 0) {
+      setChambers(
+        clinicDoctors.map((doc, idx) => ({
+          chamber_id: `ch-${idx}`,
+          chamber_name: doc.chamber_name || `Chamber ${idx + 1}`,
+          doctor_name: doc.full_name,
+          specialty: doc.specialization,
+          current_token: null,
+          patient_name: null,
+          status: "idle" as const,
+          elapsed_seconds: 0,
+        }))
+      );
+    }
+  }, [clinicDoctors, chambers.length]);
 
   // Upcoming Queue state
   const [queue, setQueue] = useState<QueuePatient[]>([
@@ -369,43 +446,66 @@ export default function WaitingRoomSmartDisplayPage() {
     [isMuted, speechLanguage]
   );
 
-  // Poll real queue from API
+  // Poll real queue from public API (clinic-scoped)
   const fetchQueueFromAPI = useCallback(async () => {
+    if (!clinic?.slug) return;
     try {
-      const res = await fetch(`/api/clinic/desk-queue`);
+      const res = await fetch(
+        `/api/waiting-room/queue?clinic_slug=${encodeURIComponent(clinic.slug)}`
+      );
       if (res.ok) {
         const json = await res.json();
         if (json.queue && json.queue.length > 0) {
           const apiQueue: any[] = json.queue;
           const inConsult = apiQueue.find(q => q.status === "in_consultation");
-          const waiting = apiQueue.filter(q => q.status === "in_waiting" || q.status === "confirmed");
+          const waiting = apiQueue.filter(
+            q => q.status === "waiting" || q.status === "confirmed" || q.status === "arrived"
+          );
 
+          // Update chamber with current consultation
           if (inConsult) {
             setChambers(prev => {
-              const updated = [...prev];
-              updated[0] = {
-                ...updated[0],
-                current_token: inConsult.token_number,
-                patient_name: inConsult.patient_name,
-                doctor_name: inConsult.doctor_name || updated[0].doctor_name,
-                status: "consulting"
-              };
-              return updated;
+              const copy = [...prev];
+              const chamberIdx = copy.findIndex(c => c.doctor_name === inConsult.doctor_name);
+              if (chamberIdx >= 0) {
+                copy[chamberIdx] = {
+                  ...copy[chamberIdx],
+                  current_token: inConsult.token_number,
+                  patient_name: inConsult.patient_name,
+                  status: "consulting",
+                  elapsed_seconds: 0,
+                };
+              } else {
+                // Doctor not in chambers yet — add them
+                copy.push({
+                  chamber_id: `ch-${copy.length}`,
+                  chamber_name: "Chamber",
+                  doctor_name: inConsult.doctor_name || "Doctor",
+                  specialty: "",
+                  current_token: inConsult.token_number,
+                  patient_name: inConsult.patient_name,
+                  status: "consulting",
+                  elapsed_seconds: 0,
+                });
+              }
+              return copy;
             });
 
             if (
               lastAnnouncedTokenRef.current !== null &&
               lastAnnouncedTokenRef.current !== inConsult.token_number
             ) {
+              const chamberName = clinicDoctors.find(d => d.full_name === inConsult.doctor_name)?.chamber_name || "Chamber";
               triggerAudioAnnouncement(
                 inConsult.token_number,
                 inConsult.patient_name,
-                "Chamber 1 - OPD Main"
+                chamberName
               );
             }
             lastAnnouncedTokenRef.current = inConsult.token_number;
           }
 
+          // Update waiting queue
           if (waiting.length > 0) {
             const mappedWaiting: QueuePatient[] = waiting.map((w, idx) => ({
               appointment_number: w.appointment_number,
@@ -414,47 +514,109 @@ export default function WaitingRoomSmartDisplayPage() {
               patient_phone: w.patient_phone,
               time_slot: w.time_slot || "Upcoming",
               status: "in_waiting",
-              doctor_name: w.doctor_name || "Dr. Rahul Sharma",
-              chamber_name: "Chamber 1 - OPD Main",
-              estimated_wait_mins: Math.max(5, (idx + 1) * 8)
+              doctor_name: w.doctor_name || "Doctor",
+              chamber_name: clinicDoctors.find(d => d.full_name === w.doctor_name)?.chamber_name || "Chamber",
+              estimated_wait_mins: Math.max(5, (idx + 1) * 8),
             }));
             setQueue(mappedWaiting);
           }
         }
       }
     } catch (e) {
-      // Offline fallback preserved
+      // Offline fallback preserved — mock data remains
     }
-  }, [triggerAudioAnnouncement]);
+  }, [clinic?.slug, clinicDoctors, triggerAudioAnnouncement]);
 
-  // Connect to SSE real-time stream
+  // Connect to SSE real-time stream (public, clinic-scoped)
   useEffect(() => {
+    if (!clinic?.slug) return;
+
     fetchQueueFromAPI();
     const pollInterval = setInterval(fetchQueueFromAPI, 4000);
 
     let eventSource: EventSource | null = null;
     try {
-      eventSource = new EventSource(`/api/clinic/stream`);
+      eventSource = new EventSource(
+        `/api/waiting-room/stream?clinic_slug=${encodeURIComponent(clinic.slug)}`
+      );
       eventSource.onopen = () => setSseConnected(true);
       eventSource.onmessage = (event) => {
         try {
           const parsed = JSON.parse(event.data);
-          if (parsed.event === "token_called" && parsed.data) {
+          if (parsed.event === "walk_in_registered" && parsed.data) {
             const d = parsed.data;
+            // New patient checked in via kiosk — add to waiting queue
+            const alreadyExists = queue.some(q => q.appointment_number === d.appointment_number);
+            if (!alreadyExists) {
+              const doctor = clinicDoctors.find(dr => dr.slug === d.doctor_slug);
+              setQueue(prev => [
+                ...prev,
+                {
+                  appointment_number: d.appointment_number,
+                  token_number: d.token_number,
+                  patient_name: d.patient_name,
+                  patient_phone: "", // not exposed publicly
+                  time_slot: d.time_slot || "Kiosk Check-in",
+                  status: "in_waiting",
+                  doctor_name: d.doctor_name || doctor?.full_name || "Doctor",
+                  chamber_name: doctor?.chamber_name || "Chamber",
+                  estimated_wait_mins: Math.max(5, (queue.length + 1) * 8),
+                }
+              ]);
+            }
+          } else if (parsed.event === "token_called" && parsed.data) {
+            const d = parsed.data;
+            const doctor = clinicDoctors.find(dr => dr.slug === d.doctor_slug);
             setChambers(prev => {
               const copy = [...prev];
-              copy[0] = {
-                ...copy[0],
-                current_token: d.token_number,
-                patient_name: d.patient_name,
-                status: "consulting",
-                elapsed_seconds: 0
-              };
+              const chamberIdx = copy.findIndex(c => c.doctor_name === d.doctor_name);
+              if (chamberIdx >= 0) {
+                copy[chamberIdx] = {
+                  ...copy[chamberIdx],
+                  current_token: d.token_number,
+                  patient_name: d.patient_name,
+                  status: "consulting",
+                  elapsed_seconds: 0,
+                };
+              } else if (doctor) {
+                copy.push({
+                  chamber_id: `ch-${copy.length}`,
+                  chamber_name: doctor.chamber_name,
+                  doctor_name: d.doctor_name,
+                  specialty: doctor.specialization,
+                  current_token: d.token_number,
+                  patient_name: d.patient_name,
+                  status: "consulting",
+                  elapsed_seconds: 0,
+                });
+              }
               return copy;
             });
 
-            triggerAudioAnnouncement(d.token_number, d.patient_name, "Chamber 1 - OPD Main");
+            triggerAudioAnnouncement(
+              d.token_number,
+              d.patient_name,
+              doctor?.chamber_name || "Chamber"
+            );
             fetchQueueFromAPI();
+          } else if (parsed.event === "token_completed" && parsed.data) {
+            const d = parsed.data;
+            setChambers(prev => {
+              const copy = [...prev];
+              const chamberIdx = copy.findIndex(c => c.doctor_name === d.doctor_name);
+              if (chamberIdx >= 0) {
+                copy[chamberIdx] = {
+                  ...copy[chamberIdx],
+                  current_token: null,
+                  patient_name: null,
+                  status: "idle",
+                  elapsed_seconds: 0,
+                };
+              }
+              return copy;
+            });
+            // Remove completed from queue
+            setQueue(prev => prev.filter(q => q.appointment_number !== d.appointment_number));
           }
         } catch (err) {
           console.error("SSE parse error", err);
@@ -469,7 +631,7 @@ export default function WaitingRoomSmartDisplayPage() {
       clearInterval(pollInterval);
       if (eventSource) eventSource.close();
     };
-  }, [fetchQueueFromAPI, triggerAudioAnnouncement]);
+  }, [clinic?.slug, clinicDoctors, queue, fetchQueueFromAPI, triggerAudioAnnouncement]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -698,8 +860,18 @@ export default function WaitingRoomSmartDisplayPage() {
         </div>
       </header>
 
-      {/* 3. MAIN CONTENT: CONDITIONAL VIEW (PATIENT MOBILE PASS vs LOUNGE TV DISPLAY) */}
-      {viewMode === "patient" ? (
+      {/* Clinic loading / not-found guard */}
+      {clinicLoading && (
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="h-10 w-10 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin text-[#0071E3] mx-auto mb-4">
+              <div className="absolute inset-0" />
+            </div>
+            <p className="text-lg font-bold text-[#1D1D1F] dark:text-white">Loading clinic display…</p>
+          </div>
+        </main>
+      )}
+      {!clinicLoading && viewMode === "patient" && (
         /* PATIENT MOBILE TOKEN TRACKER (APPLE WALLET LIVE ACTIVITY DESIGN) */
         <main className="flex-1 p-4 sm:p-6 max-w-lg mx-auto w-full space-y-4 animate-in fade-in duration-300">
           
@@ -938,8 +1110,10 @@ export default function WaitingRoomSmartDisplayPage() {
             </button>
           </div>
         </main>
-      ) : (
-        /* 3. LOUNGE SMART TV MATRIX DISPLAY (OPTIMIZED FOR 43"-65" SCREENS) */
+      )}
+
+      {/* 3. LOUNGE SMART TV MATRIX DISPLAY (OPTIMIZED FOR 43"-65" SCREENS) */}
+      {!clinicLoading && viewMode === "tv" && (
         <main className="flex-1 p-6 lg:p-8 max-w-[1800px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-in fade-in duration-300">
           
           {/* LEFT COLUMN: HERO "NOW SERVING" CHAMBER SPOTLIGHT (7 Cols) */}

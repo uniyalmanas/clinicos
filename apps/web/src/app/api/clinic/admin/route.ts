@@ -1,14 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
-import { authorizeClinicUser } from "@/lib/auth";
+import { guard, ADMIN_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(req.url);
-    const slug = searchParams.get("clinic_slug") || "derma-care-dehradun";
+    const slug = searchParams.get("clinic_slug") || auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
 
     // 1. Fetch clinic base data
     const clinics = await sql`
@@ -17,63 +22,65 @@ export async function GET(req: Request) {
       LIMIT 1;
     `;
 
-    const clinic = clinics.length > 0 ? clinics[0] : {
-      name: "Derma Care Skin & Laser Centre",
-      slug: "derma-care-dehradun",
-      reg_number: "UK-CEA-2024-8891",
-      phone: "+91 98765 43210",
-      upi_vpa: "dermacare@icici",
-      address_line: "14, Rajpur Road, Near Ashley Hall",
-      city: "Dehradun",
-      state: "Uttarakhand",
-      postal_code: "248001"
-    };
+    if (clinics.length === 0) {
+      return apiError(404, "Clinic not found.", "clinic_not_found");
+    }
+    const clinic = clinics[0];
 
     // 2. Fetch doctors linked to this clinic
     const doctors = await sql`
       SELECT id, slug, full_name, specialization, consultation_fee, is_active, chamber_name
       FROM doctors
-      WHERE clinic_slug = ${slug} OR clinic_id::text = ${clinic.id || ''}::text
+      WHERE clinic_slug = ${clinic.slug} OR clinic_id::text = ${clinicId}::text
       ORDER BY full_name ASC;
     `;
 
-    // 3. Global Configuration Hub
+    const todayStr = new Date().toISOString().split("T")[0];
+    const monthStart = `${todayStr.slice(0, 7)}-01`;
+
+    // 3. Global configuration — only values that actually exist for this tenant.
+    // Unconfigured fields are returned as null so the console can prompt for them
+    // instead of showing invented registrations or bank details.
     const global_config = {
-      clinic_name: clinic.name || "Derma Care Skin & Laser Centre",
-      tagline: clinic.tagline || "Advanced Dermatology, Laser & Aesthetic Surgery",
-      reg_number: clinic.reg_number || "UK-CEA-2024-8891",
-      gstin: "05AAACD1234F1Z8",
-      abdm_facility_id: "IN0510001298",
-      nabl_cert_no: "NABL-MC-2026-9912",
-      official_helpline: clinic.phone || "+91 98765 43210",
-      official_email: "contact@dermacare.in",
-      address_line: clinic.address_line || "14, Rajpur Road, Near Ashley Hall",
-      city: clinic.city || "Dehradun",
-      state: clinic.state || "Uttarakhand",
-      postal_code: clinic.postal_code || "248001",
-      bank_account_no: "001405009821",
-      bank_ifsc: "ICIC0000014",
-      bank_name: "ICICI Bank - Rajpur Road Branch",
-      upi_vpa: clinic.upi_vpa || "dermacare@icici",
-      default_consultation_fee: Number(clinic.consultation_fee) || 600,
-      default_followup_fee: Number(clinic.followup_fee) || 300,
-      default_doctor_split: Number(clinic.doctor_split_percentage) || 80,
-      tax_rates: {
-        clinical_consultations: 0, // GST Exempt in India
-        aesthetic_laser_procedures: 18,
-        pharmacy_dispensing: 12
-      },
-      invoice_header_note: "Govt Recognized Clinical Establishment • NABH Compliant Standards",
-      invoice_footer_note: "Computer Generated Tax Invoice. All disputes subject to Dehradun jurisdiction."
+      clinic_name: clinic.name,
+      slug: clinic.slug,
+      tagline: clinic.tagline || null,
+      reg_number: clinic.reg_number || null,
+      practice_type: clinic.practice_type || null,
+      official_helpline: clinic.phone || null,
+      address_line: clinic.address_line || null,
+      city: clinic.city || null,
+      state: clinic.state || null,
+      postal_code: clinic.postal_code || null,
+      upi_vpa: clinic.upi_vpa || null,
+      organization_id: clinic.organization_id || null,
+      subscription_status: clinic.subscription_status || null,
+      subscription_plan: clinic.subscription_plan || null,
+      subscription_expires_at: clinic.subscription_expires_at || null,
+      default_doctor_split:
+        clinic.doctor_split_percentage == null
+          ? null
+          : Number(clinic.doctor_split_percentage),
+      // Not modelled in the database yet — surfaced as null, never fabricated.
+      gstin: null,
+      abdm_facility_id: null,
+      nabl_cert_no: null,
+      official_email: null,
+      bank_account_no: null,
+      bank_ifsc: null,
+      bank_name: null,
+      tax_rates: null,
     };
 
-    // 4. Active Discount Tiers
-    const discount_tiers = [
-      { id: "disc-1", code: "SSP_SURGICAL", label: "Special Surgical Package", discount_pct: 15, applicable_to: "Dermatosurgery / Minor OT", is_active: true },
-      { id: "disc-2", code: "SR_CITIZEN", label: "Senior Citizen Welfare (>60y)", discount_pct: 20, applicable_to: "All OPD Consultations", is_active: true },
-      { id: "disc-3", code: "CLINIC_STAFF", label: "Clinic Staff & Dependent Proxy", discount_pct: 50, applicable_to: "Consultations & In-house Labs", is_active: true },
-      { id: "disc-4", code: "DEFENSE_VET", label: "Armed Forces & Veterans", discount_pct: 25, applicable_to: "Full Clinic Services", is_active: true }
-    ];
+    // 4. Discount tiers are not yet modelled in the database. Return an empty
+    // list rather than inventing codes and percentages the clinic never set.
+    const discount_tiers: Array<{
+      code: string;
+      label: string;
+      discount_pct: number;
+      applicable_to: string;
+      is_active: boolean;
+    }> = [];
 
     // 5. Dynamic Role & Permission Matrix (RBAC)
     const rbac_matrix = {
@@ -139,162 +146,190 @@ export async function GET(req: Request) {
       }
     };
 
-    // 6. Active Staff Roster
-    const staff_users = [
-      {
-        id: "usr-1",
-        name: "Dr. Rahul Sharma",
-        role: "super_admin",
-        role_label: "Medical Director & Super Admin",
-        email: "dr.rahul@dermacare.in",
-        phone: "+91 98765 43210",
-        is_active: true,
-        last_login: "Today 10:14 AM",
-        assigned_chamber: "Chamber 1 - OPD Main",
-        mfa_enabled: true
-      },
-      {
-        id: "usr-2",
-        name: "Dr. Ananya Rawat",
-        role: "doctor",
-        role_label: "Consultant Cosmetologist",
-        email: "ananya.rawat@dermacare.in",
-        phone: "+91 98112 34567",
-        is_active: true,
-        last_login: "Today 09:30 AM",
-        assigned_chamber: "Chamber 2 - Laser Suite",
-        mfa_enabled: true
-      },
-      {
-        id: "usr-3",
-        name: "Aarav Sharma",
-        role: "receptionist",
-        role_label: "Lead Billing & Token Desk",
-        email: "aarav.frontdesk@dermacare.in",
-        phone: "+91 99221 00291",
-        is_active: true,
-        last_login: "Today 08:45 AM",
-        assigned_chamber: "Front Desk Counter 1",
-        mfa_enabled: false
-      },
-      {
-        id: "usr-4",
-        name: "Priyanka Negi",
-        role: "pharmacist",
-        role_label: "Chief Pharmacist & Jan Aushadhi Incharge",
-        email: "dispensary@dermacare.in",
-        phone: "+91 98334 11223",
-        is_active: true,
-        last_login: "Today 09:12 AM",
-        assigned_chamber: "Pharmacy Counter A",
-        mfa_enabled: true
-      },
-      {
-        id: "usr-5",
-        name: "Suresh Rawat",
-        role: "lab_tech",
-        role_label: "Pathology LIS Accession Officer",
-        email: "pathology@dermacare.in",
-        phone: "+91 97223 44556",
-        is_active: true,
-        last_login: "Today 08:30 AM",
-        assigned_chamber: "Central Lab Accession Room",
-        mfa_enabled: false
-      },
-      {
-        id: "usr-6",
-        name: "Meena Devi",
-        role: "receptionist",
-        role_label: "Evening OPD Check-In Staff",
-        email: "meena.opd@dermacare.in",
-        phone: "+91 99112 88776",
-        is_active: true,
-        last_login: "Yesterday 07:15 PM",
-        assigned_chamber: "Counter 2 (Evening Shift)",
-        mfa_enabled: false
-      }
-    ];
+    // 6. Active staff roster — real memberships joined to real accounts.
+    const staffRows = await sql`
+      SELECT
+        m.id AS membership_id,
+        m.role,
+        m.is_active,
+        m.created_at AS joined_at,
+        u.id AS user_id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.is_active AS account_active,
+        u.is_verified,
+        u.created_at AS account_created_at
+      FROM clinic_memberships m
+      JOIN user_accounts u ON u.id::text = m.user_id::text
+      WHERE m.clinic_id::text = ${clinicId}::text
+      ORDER BY m.is_active DESC, u.full_name ASC;
+    `;
 
-    // 7. Live System Integration Status
+    const lastLogins = await sql`
+      SELECT actor_id, MAX(created_at) AS last_seen
+      FROM audit_events
+      WHERE clinic_id::text = ${clinicId}::text
+        AND actor_id IS NOT NULL
+      GROUP BY actor_id;
+    `;
+    const lastLoginByUser = new Map<string, string>();
+    for (const row of lastLogins) {
+      lastLoginByUser.set(String(row.actor_id), String(row.last_seen));
+    }
+
+    const staff_users = staffRows.map((s: any) => ({
+      membership_id: s.membership_id,
+      id: s.user_id,
+      name: s.full_name,
+      role: s.role,
+      email: s.email,
+      phone: s.phone,
+      is_active: Boolean(s.is_active && s.account_active),
+      is_verified: Boolean(s.is_verified),
+      joined_at: s.joined_at,
+      last_login: lastLoginByUser.get(String(s.user_id)) || null,
+    }));
+
+    // 7. Integration status derived from the environment, not asserted.
     const system_integrations = [
       {
-        id: "nha_abdm",
-        name: "National Health Authority (NHA / ABDM Gateway)",
-        category: "Govt Gateway",
-        status: "ONLINE",
-        latency_ms: 38,
-        last_sync: "12s ago",
-        endpoint: "https://gateway.abdm.gov.in/v0.5",
-        details: "ABHA v3 & FHIR Milestones M1, M2, M3 fully active"
-      },
-      {
-        id: "pharmacy_pos",
-        name: "Dispensary POS & Batch Inventory Sync",
-        category: "Internal API",
-        status: "SYNCING",
-        latency_ms: 12,
-        last_sync: "Just now",
-        endpoint: "/api/pharmacy/inventory",
-        details: "Sub-second stock deduction active, 0 backlogged orders"
-      },
-      {
-        id: "pathology_lis",
-        name: "Pathology LIS Auto-Accession Bridge",
-        category: "Diagnostic Interface",
-        status: "ONLINE",
-        latency_ms: 24,
-        last_sync: "45s ago",
-        endpoint: "hl7://192.168.1.180:2575",
-        details: "Beckman / Sysmex ASTM & HL7 bidirectional stream active"
-      },
-      {
-        id: "thermal_printer",
-        name: "Front Desk ESC/POS Thermal Receipt Printer",
-        category: "Hardware Peripheral",
-        status: "READY",
-        latency_ms: 5,
-        last_sync: "Live",
-        endpoint: "tcp://192.168.1.140:9100",
-        details: "80mm High-Speed Thermal, Paper Roll status: 88% OK"
-      },
-      {
         id: "whatsapp_cloud",
-        name: "WhatsApp Cloud Business API (Meta Gateway)",
+        name: "WhatsApp Cloud Business API",
         category: "Messaging Gateway",
-        status: "ONLINE",
-        latency_ms: 45,
-        last_sync: "1m ago",
-        endpoint: "https://graph.facebook.com/v21.0/messages",
-        details: "Template TOKEN_ALERT_V2 active, 99.4% delivery SLA"
-      }
-    ];
+        configured: Boolean(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
+      },
+      {
+        id: "razorpay",
+        name: "Razorpay Payments",
+        category: "Payment Gateway",
+        configured: Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
+      },
+      {
+        id: "supabase_storage",
+        name: "Document Storage (Supabase)",
+        category: "Storage",
+        configured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+      },
+      {
+        id: "sms_otp",
+        name: "Patient OTP Delivery",
+        category: "Messaging Gateway",
+        configured:
+          process.env.OTP_DEV_MODE === "true" ||
+          Boolean(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID),
+      },
+    ].map((row) => ({ ...row, status: row.configured ? "configured" : "not_configured" }));
 
-    // 8. Executive Financial & P&L Telemetry
+    // 8. Financial telemetry — aggregated from real rows for the current month.
+    const aptRevenue = await sql`
+      SELECT
+        COALESCE(SUM(fee_amount), 0) AS gross,
+        COALESCE(SUM(CASE WHEN payment_mode IN ('upi', 'online_upi') THEN fee_amount ELSE 0 END), 0) AS upi,
+        COALESCE(SUM(CASE WHEN payment_mode = 'cash' THEN fee_amount ELSE 0 END), 0) AS cash
+      FROM appointments
+      WHERE clinic_id::text = ${clinicId}::text
+        AND payment_status = 'paid'
+        AND COALESCE(appointment_date, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart};
+    `;
+
+    const pharmRevenue = await sql`
+      SELECT
+        COALESCE(SUM(total_amount), 0) AS gross,
+        COALESCE(SUM(CASE WHEN payment_mode = 'upi' THEN total_amount ELSE 0 END), 0) AS upi,
+        COALESCE(SUM(CASE WHEN payment_mode = 'cash' THEN total_amount ELSE 0 END), 0) AS cash
+      FROM pharmacy_dispenses
+      WHERE clinic_slug = ${clinic.slug}
+        AND created_at::date >= ${monthStart}::date;
+    `;
+
+    const monthExpenses = await sql`
+      SELECT
+        category,
+        COALESCE(SUM(amount), 0) AS amount
+      FROM expenses
+      WHERE clinic_slug = ${clinic.slug}
+        AND COALESCE(date, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart}
+      GROUP BY category
+      ORDER BY amount DESC;
+    `;
+
+    const payouts = await sql`
+      SELECT COALESCE(SUM(net_amount), 0) AS pending
+      FROM payout_ledger
+      WHERE clinic_id::text = ${clinicId}::text
+        AND status IN ('pending', 'approved');
+    `;
+
+    const floats = await sql`
+      SELECT COALESCE(current_balance, 0) AS balance
+      FROM clinic_petty_cash_float
+      WHERE clinic_slug = ${clinic.slug}
+      LIMIT 1;
+    `;
+
+    const grossRevenueMtd =
+      Number(aptRevenue[0]?.gross || 0) + Number(pharmRevenue[0]?.gross || 0);
+    const upiMtd = Number(aptRevenue[0]?.upi || 0) + Number(pharmRevenue[0]?.upi || 0);
+    const cashMtd = Number(aptRevenue[0]?.cash || 0) + Number(pharmRevenue[0]?.cash || 0);
+    const expensesMtd = monthExpenses.reduce(
+      (sum: number, row: any) => sum + Number(row.amount || 0),
+      0
+    );
+    const pendingDoctorPayouts = Number(payouts[0]?.pending || 0);
+    const netProfitMtd = grossRevenueMtd - expensesMtd - pendingDoctorPayouts;
+
+    const monthly_expense_breakdown: Record<string, number> = {};
+    for (const row of monthExpenses) {
+      monthly_expense_breakdown[String(row.category || "uncategorised")] = Number(
+        row.amount || 0
+      );
+    }
+
     const financial_kpis = {
-      gross_revenue_mtd: 342600,
-      soundbox_upi_inflow: 245000,
-      cash_collected: 97600,
-      total_expenses_mtd: 158400,
-      real_net_profit_mtd: 184200,
-      profit_margin_pct: 53.8,
-      pending_doctor_payouts: 13240,
-      petty_cash_reserve: 1450,
-      monthly_expense_breakdown: {
-        clinic_lease_rent: 45000,
-        staff_salaries: 65000,
-        clinical_consumables: 32400,
-        power_utilities_internet: 16000
-      }
+      period_start: monthStart,
+      period_end: todayStr,
+      gross_revenue_mtd: Math.round(grossRevenueMtd * 100) / 100,
+      soundbox_upi_inflow: Math.round(upiMtd * 100) / 100,
+      cash_collected: Math.round(cashMtd * 100) / 100,
+      total_expenses_mtd: Math.round(expensesMtd * 100) / 100,
+      real_net_profit_mtd: Math.round(netProfitMtd * 100) / 100,
+      profit_margin_pct:
+        grossRevenueMtd > 0
+          ? Math.round((netProfitMtd / grossRevenueMtd) * 1000) / 10
+          : 0,
+      pending_doctor_payouts: Math.round(pendingDoctorPayouts * 100) / 100,
+      petty_cash_reserve: Number(floats[0]?.balance || 0),
+      monthly_expense_breakdown,
     };
 
-    // 9. Immutable Administrative Audit Log
-    const audit_logs = [
-      { id: "aud-1", timestamp: "2026-09-25T10:14:00Z", user: "Dr. Rahul Sharma", action: "SUPER_ADMIN_LOGIN", details: "MFA Authenticated from 192.168.1.10 (Clinic Admin Console)" },
-      { id: "aud-2", timestamp: "2026-09-25T09:42:00Z", user: "Dr. Rahul Sharma", action: "TARIFF_VERSION_PUBLISHED", details: "Tariff v4.2 effective dated to 2026-09-01 (Admin Session verified)" },
-      { id: "aud-3", timestamp: "2026-09-25T08:45:00Z", user: "Aarav Sharma", action: "STAFF_SHIFT_STARTED", details: "Morning OPD Front Desk Drawer opened with ₹2,000 float" },
-      { id: "aud-4", timestamp: "2026-09-24T19:30:00Z", user: "Dr. Rahul Sharma", action: "EOD_FINANCIAL_LOCK", details: "Day closing locked for 24-Sep-2026, Net cash ₹8,950 verified" },
-      { id: "aud-5", timestamp: "2026-09-24T16:10:00Z", user: "Dr. Rahul Sharma", action: "CHAMBER_SHIFT_UPDATED", details: "Chamber 1 Morning OPD guardrails synchronized with 30m cutoff" }
-    ];
+    // 9. Administrative audit trail — the real append-only events table.
+    const auditRows = await sql`
+      SELECT
+        e.id,
+        e.created_at,
+        e.action,
+        e.entity,
+        e.entity_id,
+        e.actor_role,
+        e.actor_id,
+        u.full_name AS actor_name
+      FROM audit_events e
+      LEFT JOIN user_accounts u ON u.id::text = e.actor_id::text
+      WHERE e.clinic_id::text = ${clinicId}::text
+      ORDER BY e.created_at DESC
+      LIMIT 50;
+    `;
+
+    const audit_logs = auditRows.map((row: any) => ({
+      id: row.id,
+      timestamp: row.created_at,
+      user: row.actor_name || row.actor_id || "system",
+      actor_role: row.actor_role,
+      action: row.action,
+      entity: row.entity,
+      entity_id: row.entity_id,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -313,200 +348,298 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action } = body;
 
-    let auth;
-    try {
-      auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
-    } catch (authErr: any) {
-      return NextResponse.json(
-        { detail: authErr.message || "Unauthorized: Clinic administrator / owner session required." },
-        { status: 403 }
-      );
-    }
+    // Every action here changes tenant configuration, staff access, or billing.
+    const auth = await guard(req, { roles: ADMIN_ROLES });
+    if (!auth.ok) return auth.response;
 
-    const clinic = auth.clinic;
-    const actorName = `${auth.user.full_name} (${auth.membership.role})`;
+    const clinicRows = await sql`
+      SELECT * FROM clinics WHERE id::text = ${auth.auth.clinic!.id}::text LIMIT 1;
+    `;
+    if (clinicRows.length === 0) {
+      return apiError(404, "Clinic not found.", "clinic_not_found");
+    }
+    const clinic: any = clinicRows[0];
+    const monthStart = `${new Date().toISOString().split("T")[0].slice(0, 7)}-01`;
+    const actorName = `${auth.auth.user.full_name} (${auth.auth.role})`;
 
     // 1. ACTION: Toggle User Account Lock (Revoke / Restore Staff Access)
     if (action === "toggle_user_lock") {
       const { user_id, is_active } = body;
 
-      return NextResponse.json({
-        success: true,
-        message: is_active 
-          ? `User access restored. Staff account is now unlocked by ${actorName}.` 
-          : `Staff account revoked and locked immediately by ${actorName}. Active sessions terminated per DPDP security policy.`,
-        user_id,
-        is_active
-      });
-    }
+      if (!user_id || typeof is_active !== "boolean") {
+        return apiError(400, "user_id and is_active are required.", "invalid_input");
+      }
 
-    // 2. ACTION: Update Role-Based Access Control (RBAC) Permissions
-    if (action === "update_rbac_permissions") {
-      const { role_key, permissions } = body;
+      // The target must be a member of this clinic. Cross-tenant locks are
+      // rejected outright so one clinic cannot disable another's staff.
+      const target = await sql`
+        SELECT m.id AS membership_id, u.id AS user_id, u.full_name
+        FROM clinic_memberships m
+        JOIN user_accounts u ON u.id::text = m.user_id::text
+        WHERE m.clinic_id::text = ${clinic.id}::text
+          AND u.id::text = ${String(user_id)}
+        LIMIT 1;
+      `;
+      if (target.length === 0) {
+        return apiError(404, "Staff member not found in your clinic.", "staff_not_found");
+      }
+      if (String(target[0].user_id) === String(auth.auth.user.id) && !is_active) {
+        return apiError(409, "You cannot revoke your own access.", "self_lock_forbidden");
+      }
 
-      return NextResponse.json({
-        success: true,
-        message: `RBAC Permission Matrix updated for ${role_key} by ${actorName}. New security privileges are active system-wide.`,
-        role_key,
-        permissions
-      });
-    }
+      await sql`
+        UPDATE clinic_memberships
+        SET is_active = ${is_active}
+        WHERE id = ${target[0].membership_id};
+      `;
 
-    // 3. ACTION: Save Global Clinic Parameters (Tariffs, Legal, Discount Tiers)
-    if (action === "save_global_config") {
-      const { global_config, discount_tiers } = body;
-
-      // Synchronize with clinics table
-      if (global_config.clinic_name) {
+      if (!is_active) {
+        // Bump the token version so existing JWTs stop working immediately,
+        // and revoke every active session for the account.
         await sql`
-          UPDATE clinics
-          SET
-            name = COALESCE(${global_config.clinic_name}, name),
-            tagline = COALESCE(${global_config.tagline}, tagline),
-            reg_number = COALESCE(${global_config.reg_number}, reg_number),
-            phone = COALESCE(${global_config.official_helpline}, phone),
-            upi_vpa = COALESCE(${global_config.upi_vpa}, upi_vpa),
-            consultation_fee = COALESCE(${Number(global_config.default_consultation_fee) || 600}, consultation_fee),
-            followup_fee = COALESCE(${Number(global_config.default_followup_fee) || 300}, followup_fee),
-            doctor_split_percentage = COALESCE(${Number(global_config.default_doctor_split) || 80}, doctor_split_percentage)
-          WHERE id::text = ${clinic.id}::text OR lower(slug) = ${clinic.slug.toLowerCase()};
+          UPDATE user_accounts
+          SET token_version = COALESCE(token_version, 1) + 1
+          WHERE id::text = ${String(user_id)};
         `;
       }
 
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId: clinic.id,
+        action: is_active ? "staff.access.restore" : "staff.access.revoke",
+        entity: "user_account",
+        entityId: String(user_id),
+        after: { is_active },
+        request: req,
+      });
+
       return NextResponse.json({
         success: true,
-        message: `Global clinic configuration, tariffs, and legal identifiers updated successfully by ${actorName}.`,
-        global_config,
-        discount_tiers
+        message: is_active
+          ? `Access restored for ${target[0].full_name}.`
+          : `Access revoked for ${target[0].full_name}. All active sessions were invalidated.`,
+        user_id,
+        is_active,
+      });
+    }
+
+    // 2. ACTION: RBAC permission overrides are not modelled yet.
+    if (action === "update_rbac_permissions") {
+      return apiError(
+        501,
+        "Per-role permission overrides are not implemented. Roles are enforced from clinic_memberships.role.",
+        "not_implemented"
+      );
+    }
+
+    // 3. ACTION: Save Global Clinic Parameters
+    if (action === "save_global_config") {
+      const { global_config = {} } = body;
+
+      // Only columns that actually exist on clinics are written. Values the
+      // schema does not model (GSTIN, bank details, ABDM/NHA IDs) are rejected
+      // rather than silently dropped.
+      const unmodelled = [
+        "gstin",
+        "abdm_facility_id",
+        "nabl_cert_no",
+        "bank_account_no",
+        "bank_ifsc",
+        "bank_name",
+        "official_email",
+      ].filter((key) => global_config[key] != null);
+      if (unmodelled.length > 0) {
+        return apiError(
+          400,
+          `These fields are not supported by the clinic schema: ${unmodelled.join(", ")}.`,
+          "unsupported_fields"
+        );
+      }
+
+      const updated = await sql`
+        UPDATE clinics
+        SET
+          name = COALESCE(${global_config.clinic_name ?? null}, name),
+          tagline = COALESCE(${global_config.tagline ?? null}, tagline),
+          reg_number = COALESCE(${global_config.reg_number ?? null}, reg_number),
+          phone = COALESCE(${global_config.official_helpline ?? null}, phone),
+          upi_vpa = COALESCE(${global_config.upi_vpa ?? null}, upi_vpa),
+          address_line = COALESCE(${global_config.address_line ?? null}, address_line),
+          city = COALESCE(${global_config.city ?? null}, city),
+          state = COALESCE(${global_config.state ?? null}, state),
+          postal_code = COALESCE(${global_config.postal_code ?? null}, postal_code),
+          doctor_split_percentage = COALESCE(
+            ${global_config.default_doctor_split == null ? null : Number(global_config.default_doctor_split)},
+            doctor_split_percentage
+          )
+        WHERE id::text = ${clinic.id}::text
+        RETURNING *;
+      `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId: clinic.id,
+        action: "clinic.config.update",
+        entity: "clinic",
+        entityId: clinic.id,
+        after: updated[0] || null,
+        request: req,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Clinic configuration updated by ${actorName}.`,
+        global_config: updated[0] || null,
       });
     }
 
     // 4. ACTION: Real-Time "What-If" Scenario Simulation Engine
     if (action === "run_what_if_simulation") {
-      const { fee_delta = 200, split_pct = 80, monthly_volume = 450, base_fee = 600 } = body;
+      // Baseline comes from this tenant's actual paid consultations this month,
+      // not from assumed values.
+      const baseline = await sql`
+        SELECT
+          COUNT(*)::int AS visits,
+          COALESCE(AVG(NULLIF(fee_amount, 0)), 0) AS avg_fee
+        FROM appointments
+        WHERE clinic_id::text = ${clinic.id}::text
+          AND payment_status = 'paid'
+          AND COALESCE(appointment_date, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart};
+      `;
 
-      const newFee = Math.max(100, Number(base_fee) + Number(fee_delta));
-      const doctorSplitRatio = Number(split_pct) / 100;
+      const currentVolume = Number(baseline[0]?.visits || 0);
+      const baseFee = Number(baseline[0]?.avg_fee || 0);
+      const monthlyVolume = Number(body.monthly_volume ?? currentVolume);
+      const splitPct = Number(
+        body.split_pct ??
+          clinic.doctor_split_percentage ??
+          100
+      );
+      const feeDelta = Number(body.fee_delta ?? 0);
+
+      if (baseFee === 0 || monthlyVolume === 0) {
+        return NextResponse.json({
+          success: true,
+          simulation: null,
+          message:
+            "No paid consultations recorded this month, so there is no baseline to simulate against.",
+        });
+      }
+
+      const newFee = Math.max(0, baseFee + feeDelta);
+      const doctorSplitRatio = splitPct / 100;
       const clinicSplitRatio = 1 - doctorSplitRatio;
 
-      const currentMonthlyGross = Number(base_fee) * Number(monthly_volume);
-      const projectedMonthlyGross = newFee * Number(monthly_volume);
+      const currentMonthlyGross = baseFee * monthlyVolume;
+      const projectedMonthlyGross = newFee * monthlyVolume;
       const grossRevenueDelta = projectedMonthlyGross - currentMonthlyGross;
 
-      // Payouts
-      const currentDoctorPayoutTotal = currentMonthlyGross * 0.80;
+      const currentDoctorPayoutTotal = currentMonthlyGross * doctorSplitRatio;
       const projectedDoctorPayoutTotal = projectedMonthlyGross * doctorSplitRatio;
       const doctorTakeHomePerVisit = newFee * doctorSplitRatio;
-      const doctorPerVisitDelta = doctorTakeHomePerVisit - (Number(base_fee) * 0.80);
+      const doctorPerVisitDelta = doctorTakeHomePerVisit - baseFee * doctorSplitRatio;
 
-      // Clinic Net Profit
-      const currentClinicRetained = currentMonthlyGross * 0.20;
+      const currentClinicRetained = currentMonthlyGross * clinicSplitRatio;
       const projectedClinicRetained = projectedMonthlyGross * clinicSplitRatio;
       const netProfitIncrease = projectedClinicRetained - currentClinicRetained;
 
-      // Risk score: If fee increase is > 50%, risk is high; between 20-50%, medium; else low
-      const feeHikePercent = ((newFee - base_fee) / base_fee) * 100;
-      let elasticityRisk = "LOW";
-      let retentionPrediction = "94% Patient Retention";
-      if (feeHikePercent > 50) {
-        elasticityRisk = "HIGH";
-        retentionPrediction = "78% Patient Retention (High Price Elasticity)";
-      } else if (feeHikePercent > 25) {
-        elasticityRisk = "MODERATE";
-        retentionPrediction = "88% Patient Retention (Standard Elasticity)";
-      }
+      const feeHikePercent = ((newFee - baseFee) / baseFee) * 100;
 
       return NextResponse.json({
         success: true,
         simulation: {
-          base_fee,
+          baseline_source: "appointments (current month, paid)",
+          base_fee: baseFee,
           new_consultation_fee: newFee,
-          fee_hike_delta: Number(fee_delta),
+          fee_hike_delta: feeDelta,
           fee_hike_percent: feeHikePercent.toFixed(1),
-          doctor_split_pct: Number(split_pct),
-          clinic_split_pct: (100 - Number(split_pct)),
-          monthly_consultations: Number(monthly_volume),
+          doctor_split_pct: splitPct,
+          clinic_split_pct: 100 - splitPct,
+          monthly_consultations: monthlyVolume,
           current_monthly_gross: currentMonthlyGross,
           projected_monthly_gross: projectedMonthlyGross,
           gross_monthly_delta: grossRevenueDelta,
+          current_doctor_payout_total: currentDoctorPayoutTotal,
+          projected_doctor_payout_total: projectedDoctorPayoutTotal,
           projected_clinic_net_profit_delta: netProfitIncrease,
           projected_doctor_payout_per_visit: doctorTakeHomePerVisit,
           doctor_payout_per_visit_delta: doctorPerVisitDelta,
-          elasticity_risk: elasticityRisk,
-          retention_prediction: retentionPrediction,
-          summary_text: `Net clinic profit ${netProfitIncrease >= 0 ? 'increases' : 'decreases'} by ₹${Math.abs(netProfitIncrease).toLocaleString('en-IN')}/month. Payout to doctor becomes ₹${doctorTakeHomePerVisit.toFixed(0)}/visit (${doctorPerVisitDelta >= 0 ? '+' : ''}₹${doctorPerVisitDelta.toFixed(0)}).`
-        }
+          retention_prediction: null,
+          elasticity_risk: null,
+          summary_text: `Net clinic profit ${netProfitIncrease >= 0 ? "increases" : "decreases"} by ₹${Math.abs(netProfitIncrease).toLocaleString("en-IN")}/month. Payout to doctor becomes ₹${doctorTakeHomePerVisit.toFixed(0)}/visit (${doctorPerVisitDelta >= 0 ? "+" : ""}₹${doctorPerVisitDelta.toFixed(0)}).`,
+        },
       });
     }
 
-    // 5. ACTION: Apply Simulation Results Directly to Live Practice
+    // 5. ACTION: Apply Simulation Results to Live Tariffs
     if (action === "apply_simulation_to_live") {
       const { new_fee, split_pct } = body;
+      const fee = Number(new_fee);
+      const split = Number(split_pct);
 
-      await sql`
-        UPDATE clinics
-        SET
-          consultation_fee = ${Number(new_fee) || 600},
-          doctor_split_percentage = ${Number(split_pct) || 80}
-        WHERE id::text = ${clinic.id}::text OR lower(slug) = ${clinic.slug.toLowerCase()};
+      if (!Number.isFinite(fee) || fee <= 0) {
+        return apiError(400, "new_fee must be a positive number.", "invalid_fee");
+      }
+      if (!Number.isFinite(split) || split < 0 || split > 100) {
+        return apiError(400, "split_pct must be between 0 and 100.", "invalid_split");
+      }
+
+      const tariffId = randomUUID();
+      const followupFee = Number(body.followup_fee ?? 0) || 0;
+      const followupValidityDays = Number(body.followup_validity_days ?? 0) || 0;
+
+      const insertedTariff = await sql`
+        INSERT INTO clinic_tariff_versions (
+          id, clinic_slug, effective_from, consultation_fee, followup_fee,
+          followup_validity_days, doctor_split_percentage, authorized_by,
+          change_reason, is_active
+        ) VALUES (
+          ${tariffId}, ${clinic.slug}, CURRENT_DATE, ${fee},
+          ${followupFee}, ${followupValidityDays}, ${split},
+          ${auth.auth.user.full_name},
+          'Tariff updated via admin console', true
+        )
+        RETURNING *;
       `;
 
       await sql`
         UPDATE doctors
-        SET consultation_fee = ${Number(new_fee) || 600}
+        SET consultation_fee = ${fee}
         WHERE clinic_id::text = ${clinic.id}::text OR clinic_slug = ${clinic.slug};
       `;
 
-      // Insert immutable version log
-      await sql`
-        INSERT INTO clinic_tariff_versions (
-          clinic_slug,
-          effective_from,
-          consultation_fee,
-          followup_fee,
-          followup_validity_days,
-          doctor_split_percentage,
-          authorized_by,
-          change_reason,
-          is_active
-        ) VALUES (
-          ${clinic.slug},
-          NOW(),
-          ${Number(new_fee) || 600},
-          300.00,
-          7,
-          ${Number(split_pct) || 80},
-          ${`${actorName} (Simulation Applied)`},
-          'Simulated Scenario Applied to Live Production: Optimized Tariff & Split',
-          true
-        );
-      `;
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId: clinic.id,
+        action: "clinic.tariff.apply",
+        entity: "clinic",
+        entityId: clinic.id,
+        after: { consultation_fee: fee, doctor_split_percentage: split },
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
-        message: `Simulation successfully applied by ${actorName}! Live consultation tariff updated to ₹${new_fee} with ${split_pct}/${100 - Number(split_pct)} split across the practice.`
+        message: `Consultation tariff updated to ₹${fee} with a ${split}/${100 - split} split.`,
+        tariff: insertedTariff[0] || null,
       });
     }
 
-    // 6. ACTION: Bi-Directional System Sync & Diagnostic Ping
+    // 6. ACTION: System sync requires a configured integration.
     if (action === "trigger_system_sync") {
-      const { target } = body;
-
-      return NextResponse.json({
-        success: true,
-        target,
-        timestamp: new Date().toISOString(),
-        message: target === "push_pharmacy" 
-          ? "Successfully pushed 18 pending digital prescriptions to Pharmacy POS. All stock reservations confirmed."
-          : target === "resync_lab"
-            ? "Bi-directional LIS accession stream resynchronized. 6 diagnostic reports imported into Patient Vaults."
-            : "Diagnostic health check completed: 5/5 services responded with 100% operational SLA."
-      });
+      return apiError(
+        501,
+        "No external integration sync is configured for this deployment.",
+        "not_implemented"
+      );
     }
 
     // 7. ACTION: Onboard New Visiting Doctor to Clinic Roster
@@ -521,70 +654,118 @@ export async function POST(req: Request) {
       } = body;
 
       if (!full_name || !specialization) {
-        return NextResponse.json({ detail: "Doctor full name and clinical specialization are mandatory." }, { status: 400 });
+        return apiError(400, "Doctor full name and specialization are required.", "invalid_input");
+      }
+      const fee = Number(consultation_fee);
+      const followupFee = Number(body.followup_fee ?? 0) || 0;
+      if (!Number.isFinite(fee) || fee <= 0) {
+        return apiError(400, "consultation_fee must be a positive number.", "fee_required");
+      }
+      if (!chamber_name || !String(chamber_name).trim()) {
+        return apiError(400, "chamber_name is required.", "chamber_required");
+      }
+      if (!medical_council_reg_number || !String(medical_council_reg_number).trim()) {
+        return apiError(
+          400,
+          "medical_council_reg_number is required for a practising clinician.",
+          "registration_required"
+        );
       }
 
-      // Plan Guardrail Check: Solo Plan (1 Doctor limit) vs Clinic Plan (Multi-Doctor)
+      // Plan guardrail: doctor seat count for this clinic.
       const existingDoctors = await sql`
-        SELECT COUNT(*)::int as count FROM doctors
-        WHERE (clinic_id::text = ${clinic.id}::text OR clinic_slug = ${clinic.slug}) AND is_active = true
+        SELECT COUNT(*)::int AS count FROM doctors
+        WHERE (clinic_id::text = ${clinic.id}::text OR clinic_slug = ${clinic.slug})
+          AND is_active = true
       `;
-      const currentDoctorCount = existingDoctors[0]?.count || 0;
-      const maxAllowedDoctors = clinic.max_doctors || (clinic.practice_type === "clinic" ? 10 : 1);
+      const currentDoctorCount = Number(existingDoctors[0]?.count || 0);
+      const maxAllowedDoctors = clinic.practice_type === "clinic" ? 10 : 1;
 
-      if (currentDoctorCount >= maxAllowedDoctors && clinic.practice_type !== "clinic") {
-        return NextResponse.json({
-          detail: "Plan Limit Reached: Solo Practice Pro (₹599/mo) is restricted to 1 Doctor. Upgrade to the Multi-Doctor Polyclinic Plan (₹1,299/mo) to onboard additional practitioners.",
-          plan_limit_breached: true,
-          current_count: currentDoctorCount,
-          max_allowed: maxAllowedDoctors,
-          required_plan: "multi_clinic",
-          required_price_inr: 1299.00
-        }, { status: 403 });
+      if (currentDoctorCount >= maxAllowedDoctors) {
+        return NextResponse.json(
+          {
+            detail: "Your current plan has reached its doctor seat limit.",
+            code: "plan_limit_reached",
+            current_count: currentDoctorCount,
+            max_allowed: maxAllowedDoctors,
+            required_plan: "multi_clinic",
+          },
+          { status: 403 }
+        );
       }
 
-      const cleanName = full_name.trim();
+      const cleanName = String(full_name).trim();
       let docSlug = cleanName
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "");
       if (!docSlug.startsWith("dr-")) docSlug = `dr-${docSlug}`;
 
-      const doctorId = randomUUID();
-      const fee = Number(consultation_fee) || 700;
-      const fFee = Math.round(fee * 0.5);
-      const chamber = chamber_name || "Chamber 2 - Laser Suite";
-      const councilReg = medical_council_reg_number || "UKMC-REG-2024";
+      const clash = await sql`SELECT 1 FROM doctors WHERE slug = ${docSlug} LIMIT 1;`;
+      if (clash.length > 0) {
+        return apiError(409, "A doctor with this name already exists.", "doctor_exists");
+      }
 
-      await sql`
+      const doctorId = randomUUID();
+      const chamber = String(chamber_name).trim();
+      const councilReg = String(medical_council_reg_number).trim();
+      const splitPct =
+        doctor_split_percentage == null
+          ? Number(clinic.doctor_split_percentage ?? 100)
+          : Number(doctor_split_percentage);
+
+      const created = await sql`
         INSERT INTO doctors (
           id, slug, full_name, specialization, qualification_summary,
           medical_council_reg_number, consultation_fee, followup_fee,
           chamber_name, clinic_slug, clinic_id, is_active, created_at
         ) VALUES (
-          ${doctorId}, ${docSlug}, ${cleanName}, ${specialization.trim()},
-          'MBBS, MD / Senior Consultant', ${councilReg}, ${fee}, ${fFee},
+          ${doctorId}, ${docSlug}, ${cleanName}, ${String(specialization).trim()},
+          ${body.qualification_summary ?? null}, ${councilReg}, ${fee}, ${followupFee},
           ${chamber}, ${clinic.slug}, ${clinic.id}, true, NOW()
+        )
+        RETURNING *;
+      `;
+
+      // Record the compensation contract so payouts are never guessed.
+      await sql`
+        INSERT INTO doctor_compensation_contracts (
+          id, doctor_id, clinic_id, split_pct, consumables_policy,
+          fixed_fee_inr, effective_from, created_by
+        ) VALUES (
+          ${randomUUID()}, ${doctorId}, ${clinic.id}, ${splitPct},
+          'clinic_bears', 0, CURRENT_DATE, ${auth.auth.user.id}
         );
       `;
 
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId: clinic.id,
+        action: "doctor.onboard",
+        entity: "doctor",
+        entityId: doctorId,
+        after: created[0] || null,
+        request: req,
+      });
+
       return NextResponse.json({
         success: true,
-        message: `Dr. ${cleanName} (${specialization}) onboarded to clinic roster with ₹${fee} fee in ${chamber} by ${actorName}.`,
-        doctor: {
-          id: doctorId,
-          slug: docSlug,
-          full_name: cleanName,
-          specialization: specialization.trim(),
-          consultation_fee: fee,
-          chamber_name: chamber,
-          is_active: true
-        }
+        message: `Dr. ${cleanName} (${specialization}) onboarded to the clinic roster.`,
+        doctor: created[0],
       });
     }
 
-    // 8. ACTION: Upgrade Practice Plan (Solo ₹599 -> Polyclinic ₹1,299/mo)
+    // 8. ACTION: Change Practice Plan — requires platform (super admin) rights
+    // until a paid billing flow exists. Entitlements are never self-granted.
     if (action === "upgrade_plan") {
+      if (!auth.auth.isSuperAdmin) {
+        return apiError(
+          402,
+          "Plan changes require a completed payment. Contact support to upgrade.",
+          "payment_required"
+        );
+      }
       const { target_plan = "multi_clinic" } = body;
       const newPlan = target_plan === "multi_clinic" ? "multi_clinic" : "solo_practice";
       const newPracticeType = newPlan === "multi_clinic" ? "clinic" : "solo";
@@ -617,9 +798,20 @@ export async function POST(req: Request) {
         }
       }
 
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId: clinic.id,
+        action: "clinic.plan.change",
+        entity: "clinic",
+        entityId: clinic.id,
+        after: { practice_type: newPracticeType, subscription_plan: newPlan },
+        request: req,
+      });
+
       return NextResponse.json({
         success: true,
-        message: `Practice plan successfully upgraded to ${newPlan === 'multi_clinic' ? 'Multi-Doctor Polyclinic (₹1,299/mo)' : 'Solo Practice Pro (₹599/mo)'} by ${actorName}. Doctor seats capacity updated to ${newMaxDoctors}.`,
+        message: `Practice plan changed to ${newPlan} by ${actorName}.`,
         practice_type: newPracticeType,
         plan_type: newPlan,
         plan_price_inr: newPrice,
@@ -627,9 +819,9 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ detail: `Unknown action: ${action}` }, { status: 400 });
+    return apiError(400, `Unknown action: ${action}`, "unknown_action");
   } catch (error: any) {
     console.error("Admin API POST error:", error);
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    return apiError(500, "Failed to update clinic administration settings.", "internal_error");
   }
 }

@@ -19,9 +19,22 @@ export default function BackButton({
 
   const handleBack = () => {
     if (typeof window !== "undefined") {
-      // Check if we have previous history on the same origin
-      const hasHistory = window.history.length > 1 && document.referrer && document.referrer.includes(window.location.host);
-      if (hasHistory) {
+      const state = window.history.state;
+      // In Next.js App Router, in-app client-side navigation sets history.state.idx > 0
+      const hasInternalHistory = Boolean(
+        state && typeof state.idx === "number" && state.idx > 0
+      );
+      if (hasInternalHistory) {
+        router.back();
+        return;
+      }
+
+      // If document.referrer came from the same host (and not the exact same page)
+      if (
+        document.referrer &&
+        document.referrer.includes(window.location.host) &&
+        !document.referrer.endsWith(window.location.pathname)
+      ) {
         router.back();
         return;
       }

@@ -115,6 +115,28 @@ export default function DynamicConsultationStudioPage() {
   const [isSigning, setIsSigning] = useState(false);
   const [scribeSuccessMessage, setScribeSuccessMessage] = useState<string | null>(null);
 
+  // Real-time Voice Recognition & Dual Clinical Report State
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = React.useRef<any>(null);
+
+  const [clinicalReportDoctor, setClinicalReportDoctor] = useState<{
+    vitals_assessment?: string;
+    clinical_summary?: string;
+    differential_diagnoses?: string[];
+    red_flags?: string[];
+  } | null>(null);
+
+  const [patientHealthReport, setPatientHealthReport] = useState<{
+    condition_overview?: string;
+    medicine_schedule?: Array<{ timing: string; medicine: string; instructions: string }>;
+    home_care_guidance?: string;
+    emergency_warning_signs?: string;
+    followup_instruction?: string;
+  } | null>(null);
+
+  const [reportActiveTab, setReportActiveTab] = useState<"patient" | "doctor">("patient");
+
   // Inpatient Bed Admission State (Marley Health Integration)
   const [showAdmitModal, setShowAdmitModal] = useState(false);
   const [availableBeds, setAvailableBeds] = useState<any[]>([]);
@@ -132,6 +154,63 @@ export default function DynamicConsultationStudioPage() {
     clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
     phone: "+919876543210"
   });
+
+  // Initialize Web Speech API for Ambient Clinical Dictation
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        setSpeechSupported(true);
+        const rec = new SpeechRecognition();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = "en-IN";
+
+        rec.onresult = (event: any) => {
+          let text = "";
+          for (let i = 0; i < event.results.length; i++) {
+            text += event.results[i][0].transcript + " ";
+          }
+          setDictationInput(text.trim());
+        };
+
+        rec.onerror = (err: any) => {
+          console.warn("Speech recognition error:", err);
+          setIsListening(false);
+        };
+
+        rec.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = rec;
+      }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+    };
+  }, []);
+
+  const toggleSpeechRecognition = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please use Google Chrome, Edge, or Safari, or click our 1-Tap Simulation Presets.");
+      return;
+    }
+    if (isListening) {
+      try { recognitionRef.current.stop(); } catch {}
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e) {
+        console.warn("Could not start recognition:", e);
+      }
+    }
+  };
 
   // Fetch real appointment details if available
   useEffect(() => {
@@ -996,6 +1075,10 @@ export default function DynamicConsultationStudioPage() {
         if (data.chief_complaints) setChiefComplaints(data.chief_complaints);
         if (data.provisional_diagnosis) setProvisionalDiagnosis(data.provisional_diagnosis);
         if (data.followup_advice) setFollowupAdvice(data.followup_advice);
+        if (data.diet_advice) setFollowupAdvice(data.diet_advice);
+        if (data.clinical_report_doctor) setClinicalReportDoctor(data.clinical_report_doctor);
+        if (data.patient_health_report) setPatientHealthReport(data.patient_health_report);
+
         if (data.medicines && data.medicines.length > 0) {
           const mappedMeds: PrescribedMedicine[] = data.medicines.map((m: any, idx: number) => ({
             id: `rx-ai-${Date.now()}-${idx}`,
@@ -1011,7 +1094,7 @@ export default function DynamicConsultationStudioPage() {
         }
 
         setShowScribeModal(false);
-        setScribeSuccessMessage("AI Clinical Scribe parsed and populated vitals, diagnosis, and prescription items!");
+        setScribeSuccessMessage("AI Clinical Scribe parsed vitals, diagnosis, medicines & generated Dual Clinical Reports!");
         setTimeout(() => setScribeSuccessMessage(null), 5000);
       }
     } catch (e) {
@@ -1071,10 +1154,17 @@ export default function DynamicConsultationStudioPage() {
       if (res.ok) {
         const json = await res.json();
         const rxNum = json.prescription?.prescription_number || rxNumber;
-        setSignedPrescription({
+        const fullRx = {
           ...json.prescription,
-          labs: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id))
-        });
+          labs: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id)),
+          clinical_report_doctor: clinicalReportDoctor,
+          patient_health_report: patientHealthReport
+        };
+        setSignedPrescription(fullRx);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`clinicos_rx_${rxNum}`, JSON.stringify(fullRx));
+          localStorage.setItem("clinicos_latest_rx", JSON.stringify(fullRx));
+        }
         initAutomations(rxNum);
 
         // Schedule WhatsApp automations & Notify clinic desk that token is completed
@@ -1153,8 +1243,15 @@ export default function DynamicConsultationStudioPage() {
       })),
       labs: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id)),
       instructions: followupAdvice,
-      followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      followup_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      clinical_report_doctor: clinicalReportDoctor,
+      patient_health_report: patientHealthReport
     };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`clinicos_rx_${rxNumber}`, JSON.stringify(rxData));
+      localStorage.setItem("clinicos_latest_rx", JSON.stringify(rxData));
+    }
 
     initAutomations(rxNumber);
     setSignedPrescription(rxData);
@@ -1632,96 +1729,148 @@ export default function DynamicConsultationStudioPage() {
       {/* AI Clinical Voice & Dictation Scribe Modal */}
       {showScribeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-          <div className="w-full max-w-xl rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-modal">
+          <div className="w-full max-w-xl rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-modal space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
-                  AI Clinical Consultation Scribe
+                  AI Clinical Consultation Voice Scribe
                 </h3>
               </div>
               <button
                 onClick={() => setShowScribeModal(false)}
-                className="rounded-full p-1.5 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                className="rounded-full p-1.5 text-[#86868B] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mt-4 space-y-3">
-              <p className="text-xs text-[#86868B]">
-                Dictate or type unstructured doctor notes. Our clinical parser extracts Vitals, Diagnosis, and UPPERCASE generic medications automatically:
-              </p>
+            {/* Interactive Microphone Bar */}
+            <div className={`p-4 rounded-2xl border transition-all ${
+              isListening 
+                ? "bg-red-500/10 border-red-500/30 dark:bg-red-950/20" 
+                : "bg-gradient-to-r from-blue-500/[0.08] via-indigo-500/[0.08] to-purple-500/[0.08] border-blue-500/20"
+            }`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={toggleSpeechRecognition}
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl transition cursor-pointer ${
+                      isListening
+                        ? "bg-red-600 text-white shadow-lg shadow-red-500/30 animate-pulse"
+                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/20 active:scale-95"
+                    }`}
+                    title={isListening ? "Click to stop listening" : "Click to speak into microphone"}
+                  >
+                    <Mic className={`h-6 w-6 ${isListening ? "animate-bounce" : ""}`} />
+                  </button>
+                  <div>
+                    <div className="text-xs font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                      <span>{isListening ? "🔴 Listening to Doctor's Voice..." : "🎙️ Doctor Ambient Voice Mic"}</span>
+                      {isListening && (
+                        <span className="flex items-center gap-0.5 ml-1">
+                          <span className="h-2 w-0.5 bg-red-500 animate-pulse" />
+                          <span className="h-3.5 w-0.5 bg-red-500 animate-pulse delay-75" />
+                          <span className="h-4 w-0.5 bg-red-500 animate-pulse delay-150" />
+                          <span className="h-2.5 w-0.5 bg-red-500 animate-pulse delay-100" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-[#86868B] mt-0.5">
+                      {isListening
+                        ? "Speak naturally: Vitals (Temp, Pulse, BP), Diagnosis, and Medications..."
+                        : "Click mic to speak, or select 1-tap simulation below"}
+                    </div>
+                  </div>
+                </div>
 
-              {/* Sample Dictation Chips */}
+                {isListening && (
+                  <button
+                    type="button"
+                    onClick={toggleSpeechRecognition}
+                    className="rounded-full bg-red-600 text-white px-3 py-1 text-xs font-bold shadow-sm hover:bg-red-700 transition cursor-pointer"
+                  >
+                    Done Speaking
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick 1-Tap Presets */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-[#86868B] block">
+                1-Tap Clinical Voice Simulation:
+              </span>
               <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] font-semibold text-[#86868B] self-center">Try Samples:</span>
                 <button
                   type="button"
-                  onClick={() => setDictationInput("Patient 24 female with acute severe urticaria and facial itching for 2 days. BP 120/80, pulse 76. Start Bilastine 20mg once daily at night for 7 days, Calamine lotion application, and advise review after 7 days.")}
-                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white"
+                  onClick={() => setDictationInput("Patient Manas Uniyal, 25-year-old male with moderate fever and severe body ache for 2 days. Examination findings: Temperature 101.2 Fahrenheit, pulse 88 beats per minute, SpO2 98 percent on room air, blood pressure 120 over 78. Provisional diagnosis is Acute Viral Pyrexia. Start Tab Paracetamol 650 milligram one tablet three times a day after meals for 3 days SOS, Tab Pantoprazole 40 milligram once daily before breakfast for 5 days, Tab Cetirizine 10 milligram at bedtime for 3 days. Prescribe Multivitamin Zinc syrup 10ml once daily after lunch for 5 days. Advise complete bed rest, drink 3 litres of warm fluids and ORS. Review in 3 days if fever persists.")}
+                  className="rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:from-amber-500/25 hover:to-orange-500/25 transition cursor-pointer flex items-center gap-1.5"
                 >
-                  Urticaria & Itching
+                  <Flame className="h-3 w-3 text-amber-600" />
+                  <span>🌟 Manas Uniyal: Viral Fever (101.2°F, 88 bpm, 120/78)</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDictationInput("Patient with Grade II inflammatory acne with pustules on cheeks for 3 weeks. BP 118/74. Prescribe Doxy-100 capsule once daily after food for 14 days and Clindac-A gel at night. Review in 2 weeks.")}
-                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white"
+                  onClick={() => setDictationInput("Patient with Grade II inflammatory acne with pustules on cheeks for 3 weeks. BP 118/74, pulse 76, temp 98.4. Prescribe Doxy-100 capsule once daily after food for 14 days and Clindac-A gel at night. Review in 2 weeks.")}
+                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white cursor-pointer"
                 >
-                  Cystic Acne
+                  Cystic Acne Protocol
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDictationInput("Fever 101F, body ache, dry cough for 3 days. Temp 101, pulse 88, BP 110/72. Acute viral pharyngitis. Start Dolo 650mg TDS SOS for 3 days, Pan-40 before breakfast for 5 days. Blood test advised: CBC.")}
-                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white"
+                  onClick={() => setDictationInput("Patient 24 female with acute severe urticaria and facial itching for 2 days. BP 120/80, pulse 76, temp 98.6. Start Bilastine 20mg once daily at night for 7 days, Calamine lotion application, and advise review after 7 days.")}
+                  className="rounded-full bg-black/[0.04] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-white cursor-pointer"
                 >
-                  Viral Fever & CBC
+                  Urticaria &amp; Itching
                 </button>
               </div>
+            </div>
 
-              <div className="relative">
-                <textarea
-                  rows={5}
-                  value={dictationInput}
-                  onChange={(e) => setDictationInput(e.target.value)}
-                  placeholder="e.g. Patient 24F with severe itchy rash on arms after cosmetic cream. BP 118/74, pulse 76. Diagnosed with Allergic Contact Dermatitis. Give Cetzine 10mg night for 5 days, Momate cream morning for 7 days..."
-                  className="w-full rounded-[16px] border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-black/40 p-3.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-                />
+            {/* Transcript Box */}
+            <div className="relative">
+              <textarea
+                rows={5}
+                value={dictationInput}
+                onChange={(e) => setDictationInput(e.target.value)}
+                placeholder="Speech appears here in real-time as you speak... e.g. Patient Manas Uniyal 25M with fever 101.2F, pulse 88, BP 120/78. Diagnosis Acute Viral Pyrexia. Give Dolo 650 TDS, Pan 40 before breakfast..."
+                className="w-full rounded-[16px] border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-black/40 p-3.5 text-xs text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+              <div className="flex items-center gap-1.5 text-[11px] text-[#86868B]">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                <span>Extracts Vitals, Diagnosis, Medicines &amp; Generates Dual Reports</span>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-1.5 text-[11px] text-[#86868B]">
-                  <Mic className="h-3.5 w-3.5 text-indigo-500" />
-                  <span>Speech-to-text / Audio dictation enabled</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowScribeModal(false)}
-                    className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#86868B]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isScribing || !dictationInput.trim()}
-                    onClick={() => handleRunAIScribe()}
-                    className="inline-flex items-center gap-1.5 rounded-[12px] bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition"
-                  >
-                    {isScribing ? (
-                      <>
-                        <RotateCw className="h-3.5 w-3.5 animate-spin" />
-                        <span>Analyzing & Extracting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span>Extract & Populate Rx</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowScribeModal(false)}
+                  className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.1] px-4 py-2 text-xs font-semibold text-[#86868B] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isScribing || !dictationInput.trim()}
+                  onClick={() => handleRunAIScribe()}
+                  className="inline-flex items-center gap-1.5 rounded-[12px] bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition cursor-pointer"
+                >
+                  {isScribing ? (
+                    <>
+                      <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>Synthesizing Clinical Reports...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Generate AI Rx &amp; Reports</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -1864,6 +2013,16 @@ export default function DynamicConsultationStudioPage() {
                 >
                   <Send className="h-3.5 w-3.5" /> WhatsApp Dispatch
                 </button>
+
+                <Link
+                  href={`/p/${signedPrescription.prescription_number || "latest"}`}
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-4 py-2 text-xs font-bold text-white shadow-apple-sm active:scale-95 transition cursor-pointer"
+                  title="Open the exact view the patient will see on their phone or app"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  <span>📱 Open Patient Health Report</span>
+                </Link>
 
                 <button
                   onClick={handleAdvanceToNextPatient}
@@ -2582,6 +2741,165 @@ export default function DynamicConsultationStudioPage() {
 
         /* ================= DRAFTING CONSULTATION STUDIO ================= */
         <div className="space-y-5">
+          {/* AMBIENT AI VOICE SCRIBE PROMPT BAR */}
+          <div className="rounded-[22px] border border-indigo-500/30 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 p-4 shadow-apple-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowScribeModal(true)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm hover:scale-105 active:scale-95 transition cursor-pointer"
+              >
+                <Mic className="h-5 w-5" />
+              </button>
+              <div>
+                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
+                  <span>AI Clinical Scribe &amp; Voice Dictation</span>
+                  <span className="rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-bold px-2 py-0.5">
+                    Web Speech &amp; LLM
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#86868B] mt-0.5">
+                  Talk to the AI to record Temperature, Pulse, SpO2, BP, diagnosis, and medicines hands-free.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  setDictationInput("Patient Manas Uniyal, 25-year-old male with moderate fever and severe body ache for 2 days. Examination findings: Temperature 101.2 Fahrenheit, pulse 88 beats per minute, SpO2 98 percent on room air, blood pressure 120 over 78. Provisional diagnosis is Acute Viral Pyrexia. Start Tab Paracetamol 650 milligram one tablet three times a day after meals for 3 days SOS, Tab Pantoprazole 40 milligram once daily before breakfast for 5 days, Tab Cetirizine 10 milligram at bedtime for 3 days. Prescribe Multivitamin Zinc syrup 10ml once daily after lunch for 5 days. Advise complete bed rest, drink 3 litres of warm fluids and ORS. Review in 3 days if fever persists.");
+                  setShowScribeModal(true);
+                }}
+                className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Flame className="h-3 w-3 text-amber-600" />
+                <span>Simulate Manas (101.2°F Fever)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowScribeModal(true)}
+                className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition cursor-pointer flex items-center gap-1.5"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Open Voice Scribe</span>
+              </button>
+            </div>
+          </div>
+
+          {/* AI DUAL CLINICAL INTELLIGENCE & PATIENT CARE REPORT (PREVIEW IN STUDIO) */}
+          {(patientHealthReport || clinicalReportDoctor) && (
+            <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 shadow-apple-card space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/[0.04] dark:border-white/[0.06] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold text-[#1D1D1F] dark:text-white uppercase tracking-wider">
+                      AI Clinical Synthesis &amp; Patient Health Report
+                    </h3>
+                    <p className="text-[11px] text-[#86868B]">
+                      Auto-generated for both the physician and patient portal
+                    </p>
+                  </div>
+                </div>
+
+                <div className="inline-flex rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setReportActiveTab("patient")}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
+                      reportActiveTab === "patient"
+                        ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
+                    }`}
+                  >
+                    👤 Patient App Report
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportActiveTab("doctor")}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer ${
+                      reportActiveTab === "doctor"
+                        ? "bg-white text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
+                        : "text-[#86868B] hover:text-[#1D1D1F]"
+                    }`}
+                  >
+                    🩺 Doctor Assessment
+                  </button>
+                </div>
+              </div>
+
+              {reportActiveTab === "patient" && patientHealthReport && (
+                <div className="space-y-3 text-xs">
+                  <div className="rounded-2xl bg-blue-500/[0.05] border border-blue-500/20 p-3.5 space-y-1.5">
+                    <div className="font-bold text-blue-900 dark:text-blue-300">
+                      Condition Summary (Patient Facing):
+                    </div>
+                    <p className="text-[#86868B] dark:text-[#A1A1A6] leading-relaxed">
+                      {patientHealthReport.condition_overview}
+                    </p>
+                  </div>
+
+                  {Array.isArray(patientHealthReport.medicine_schedule) && patientHealthReport.medicine_schedule.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                      {patientHealthReport.medicine_schedule.map((item: any, idx: number) => (
+                        <div key={idx} className="rounded-xl border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.01] dark:bg-white/[0.02] p-3 space-y-1">
+                          <div className="font-bold text-[#1D1D1F] dark:text-white">{item.timing}</div>
+                          <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">{item.medicine}</div>
+                          <div className="text-[10px] text-[#86868B]">{item.instructions}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    <div className="rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20 p-3">
+                      <div className="font-bold text-emerald-800 dark:text-emerald-300 mb-1">💧 Home Care &amp; Hydration:</div>
+                      <p className="text-[11px] text-[#86868B] dark:text-[#A1A1A6]">{patientHealthReport.home_care_guidance}</p>
+                    </div>
+                    <div className="rounded-xl bg-red-500/[0.05] border border-red-500/20 p-3">
+                      <div className="font-bold text-red-800 dark:text-red-300 mb-1">🚨 Red Flag Warning Signs:</div>
+                      <p className="text-[11px] text-red-700/80 dark:text-red-300/80">{patientHealthReport.emergency_warning_signs}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {reportActiveTab === "doctor" && clinicalReportDoctor && (
+                <div className="space-y-3 text-xs">
+                  <div className="rounded-2xl bg-purple-500/[0.05] border border-purple-500/20 p-3.5 space-y-1.5">
+                    <div className="font-bold text-purple-900 dark:text-purple-300">
+                      Vitals &amp; Hemodynamic Synthesis:
+                    </div>
+                    <p className="text-[#86868B] dark:text-[#A1A1A6] font-mono text-[11px]">
+                      {clinicalReportDoctor.vitals_assessment}
+                    </p>
+                    <p className="text-[#86868B] dark:text-[#A1A1A6]">
+                      {clinicalReportDoctor.clinical_summary}
+                    </p>
+                  </div>
+
+                  {Array.isArray(clinicalReportDoctor.differential_diagnoses) && clinicalReportDoctor.differential_diagnoses.length > 0 && (
+                    <div className="rounded-xl bg-black/[0.02] dark:bg-white/[0.03] p-3 border border-black/[0.04] dark:border-white/[0.06]">
+                      <div className="font-bold text-[#1D1D1F] dark:text-white mb-1.5">
+                        Differential Diagnoses Evaluated:
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {clinicalReportDoctor.differential_diagnoses.map((diff: string, dIdx: number) => (
+                          <span key={dIdx} className="rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
+                            {diff}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {/* DRUG ALLERGY WARNING BANNER */}
           {patient.allergies && !patient.allergies.toLowerCase().includes("no known drug") && (
             <div className="rounded-[22px] border-2 border-red-500/50 bg-red-500/10 dark:bg-red-950/40 p-4 text-xs font-semibold text-red-700 dark:text-red-300 flex items-center justify-between shadow-apple-sm animate-in fade-in">

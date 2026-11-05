@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { 
@@ -208,6 +209,7 @@ function BookingExperience() {
   // Submission & confirmation state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState<any>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   // 1. On mount, optionally merge latest doctors from API
   useEffect(() => {
@@ -348,10 +350,22 @@ function BookingExperience() {
     });
   }, [doctorsList, searchQuery, selectedSpecialty, selectedLocality]);
 
+  // WhatsApp confirmation link built from the appointment the API returned —
+  // never from a client-invented token or fee.
+  const confirmedAppointment = bookingConfirmed?.appointment || null;
+  const confirmationWhatsappUrl = confirmedAppointment
+    ? `https://wa.me/91${String(confirmedAppointment.patient_phone || "")
+        .replace(/[^0-9]/g, "")
+        .slice(-10)}?text=${encodeURIComponent(
+        `Your OPD token #${confirmedAppointment.token_number} with ${confirmedAppointment.doctor_name || selectedDoc?.full_name || "the doctor"} at ${confirmedAppointment.clinic_name || selectedDoc?.clinic_name || "the clinic"} is booked for ${confirmedAppointment.appointment_date}. Please arrive 10-15 minutes before your turn.`
+      )}`
+    : null;
+
   // Action: Select a doctor and update URL
   const handleSelectDoctor = (doc: DoctorProfile) => {
     setSelectedDoc(doc);
     setBookingConfirmed(null);
+    setBookingError(null);
     window.history.pushState({}, "", `/book?doctor=${doc.slug}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -360,6 +374,7 @@ function BookingExperience() {
   const handleBackToDoctorSelection = () => {
     setSelectedDoc(null);
     setBookingConfirmed(null);
+    setBookingError(null);
     window.history.pushState({}, "", "/book");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -369,31 +384,34 @@ function BookingExperience() {
     e.preventDefault();
     if (!selectedDoc) return;
 
+    setBookingError(null);
+
     if (!patientName.trim()) {
-      alert("Please enter the patient's full name.");
+      setBookingError("Please enter the patient's full name.");
       return;
     }
 
     const cleanPhone = patientPhone.replace(/[^0-9]/g, "");
     if (cleanPhone.length < 10) {
-      alert("Please enter a valid 10-digit mobile number for WhatsApp token notification.");
+      setBookingError("Please enter a valid 10-digit mobile number for WhatsApp token notification.");
       return;
     }
 
     setIsSubmitting(true);
-    const calculatedNextToken = liveQueue?.next_token_available || selectedDoc.next_token || 4;
 
-    const slotLabel = 
-      slotType === "live_token" 
-        ? `Live OPD Token #${calculatedNextToken}`
+    const slotLabel =
+      slotType === "live_token"
+        ? "Live OPD Token"
         : slotType === "morning"
         ? "Morning OPD Shift (10:00 AM - 01:30 PM)"
         : "Evening OPD Shift (05:00 PM - 08:30 PM)";
 
-    const formattedDate = appointmentDate === "today" 
+    const formattedDate = appointmentDate === "today"
       ? new Date().toISOString().split("T")[0]
       : appointmentDate === "tomorrow"
       ? new Date(Date.now() + 86400000).toISOString().split("T")[0]
+      : appointmentDate === "day_after"
+      ? new Date(Date.now() + 2 * 86400000).toISOString().split("T")[0]
       : appointmentDate;
 
     try {
@@ -403,104 +421,47 @@ function BookingExperience() {
         body: JSON.stringify({
           doctor_slug: selectedDoc.slug,
           patient_name: patientName.trim(),
-          patient_phone: `+91${cleanPhone.slice(-10)}`,
+          patient_phone: cleanPhone.slice(-10),
           appointment_date: formattedDate,
           time_slot: slotLabel,
           consultation_type: consultationMode,
           symptoms_description: symptoms.trim() || undefined,
-          payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
-          payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash"
-        })
+          payment_mode: "cash",
+        }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setBookingConfirmed(data);
-
-        // Auto-register / link patient session into Personal Health Vault
-        updateActiveBooking({
-          appointment_number: data.appointment?.appointment_number || `APT-${selectedDoc.slug.slice(3, 8).toUpperCase()}-${100 + calculatedNextToken}`,
-          token_number: data.appointment?.token_number || calculatedNextToken,
-          doctor_name: selectedDoc.full_name,
-          doctor_slug: selectedDoc.slug,
-          specialization: selectedDoc.specialization,
-          clinic_name: selectedDoc.clinic_name,
-          clinic_address: selectedDoc.clinic_address,
-          time_slot: slotLabel,
-          appointment_date: formattedDate,
-          fee_amount: selectedDoc.consultation_fee,
-          payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
-          payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash",
-          booked_at: new Date().toISOString()
-        }, patientName.trim(), `+91${cleanPhone.slice(-10)}`);
-
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        fallbackConfirmation(calculatedNextToken, slotLabel, formattedDate, cleanPhone);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          data.error || data.detail || "The clinic could not reserve this token. Please try again."
+        );
       }
-    } catch (err) {
-      fallbackConfirmation(calculatedNextToken, slotLabel, formattedDate, cleanPhone);
+
+      setBookingConfirmed(data);
+
+      const appointment = data.appointment || {};
+      updateActiveBooking({
+        appointment_number: appointment.appointment_number,
+        token_number: appointment.token_number,
+        doctor_name: selectedDoc.full_name,
+        doctor_slug: selectedDoc.slug,
+        specialization: selectedDoc.specialization,
+        clinic_name: selectedDoc.clinic_name,
+        clinic_address: selectedDoc.clinic_address,
+        time_slot: appointment.time_slot || slotLabel,
+        appointment_date: appointment.appointment_date || formattedDate,
+        fee_amount: appointment.fee_amount ?? selectedDoc.consultation_fee,
+        payment_status: "pending",
+        payment_mode: appointment.payment_mode || "cash",
+        booked_at: new Date().toISOString(),
+      }, patientName.trim(), cleanPhone.slice(-10));
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err: any) {
+      setBookingError(err.message || "Booking failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Fallback if backend API is not responding
-  const fallbackConfirmation = (
-    assignedToken: number, 
-    slotLabel: string, 
-    dateStr: string,
-    cleanPhone: string
-  ) => {
-    if (!selectedDoc) return;
-    const phoneNum = cleanPhone.slice(-10);
-    const waText = 
-      `🏥 *Appointment Confirmed - ${selectedDoc.clinic_name}*\n\n` +
-      `Hello ${patientName}, your appointment with *${selectedDoc.full_name}* is confirmed!\n\n` +
-      `🎟️ *Token Number:* #${assignedToken}\n` +
-      `📅 *Date:* ${dateStr}\n` +
-      `⏰ *Shift:* ${slotLabel}\n` +
-      `📍 *Clinic:* ${selectedDoc.clinic_address}\n` +
-      `💰 *Consultation Fee:* ₹${selectedDoc.consultation_fee} (Pay at counter via Cash/UPI)\n\n` +
-      `_Please arrive 10-15 minutes prior to your turn._`;
-
-    // Auto-register / link patient session into Personal Health Vault
-    updateActiveBooking({
-      appointment_number: `APT-${selectedDoc.slug.slice(3, 8).toUpperCase()}-${100 + assignedToken}`,
-      token_number: assignedToken,
-      doctor_name: selectedDoc.full_name,
-      doctor_slug: selectedDoc.slug,
-      specialization: selectedDoc.specialization,
-      clinic_name: selectedDoc.clinic_name,
-      clinic_address: selectedDoc.clinic_address,
-      time_slot: slotLabel,
-      appointment_date: dateStr,
-      fee_amount: selectedDoc.consultation_fee,
-      payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
-      payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash",
-      booked_at: new Date().toISOString()
-    }, patientName.trim(), `+91${phoneNum}`);
-
-    setBookingConfirmed({
-      status: "confirmed",
-      appointment: {
-        appointment_number: `APT-${selectedDoc.slug.slice(3, 8).toUpperCase()}-${100 + assignedToken}`,
-        token_number: assignedToken,
-        patient_name: patientName.trim(),
-        patient_phone: `+91${phoneNum}`,
-        doctor_name: selectedDoc.full_name,
-        clinic_name: selectedDoc.clinic_name,
-        clinic_address: selectedDoc.clinic_address,
-        time_slot: slotLabel,
-        appointment_date: dateStr,
-        fee_amount: selectedDoc.consultation_fee,
-        payment_status: paymentMethod === "pay_online" ? "paid" : "pending",
-        payment_mode: paymentMethod === "pay_online" ? "online_upi" : "cash"
-      },
-      whatsapp_notification_link: `https://wa.me/91${phoneNum}?text=${encodeURIComponent(waText)}`,
-      message: `Your appointment is confirmed! Token Number is #${assignedToken}.`
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -559,17 +520,27 @@ function BookingExperience() {
             </div>
 
             <div className="p-6 sm:p-8 space-y-6">
-              {/* Giant Live Token Display */}
-              <div className="rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] p-6 text-center">
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
-                  Your OPD Live Queue Token
+              {/* Giant Live Token Display with Illustration */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 rounded-[24px] border border-black/[0.06] dark:border-white/[0.08] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] p-6 text-center sm:text-left">
+                <div className="relative h-28 w-28 shrink-0">
+                  <Image
+                    src="/images/illustrations/booking-confirmed.svg"
+                    alt="Booking Confirmed"
+                    fill
+                    className="object-contain"
+                  />
                 </div>
-                <div className="mt-1 text-6xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
-                  #{bookingConfirmed.appointment.token_number}
-                </div>
-                <div className="mt-2 text-xs text-[#86868B] flex items-center justify-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-apple-amber" />
-                  Estimated wait time: <strong className="text-[#1D1D1F] dark:text-white font-semibold">~{liveQueue?.wait_minutes || 15} minutes</strong>
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
+                    Your OPD Live Queue Token
+                  </div>
+                  <div className="mt-1 text-5xl sm:text-6xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
+                    #{bookingConfirmed.appointment.token_number}
+                  </div>
+                  <div className="mt-2 text-xs text-[#86868B] flex items-center justify-center sm:justify-start gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-apple-amber" />
+                    Estimated wait time: <strong className="text-[#1D1D1F] dark:text-white font-semibold">~{liveQueue?.wait_minutes || 15} minutes</strong>
+                  </div>
                 </div>
               </div>
 
@@ -598,7 +569,11 @@ function BookingExperience() {
                 <div className="flex justify-between py-1.5">
                   <span className="text-[#86868B]">Consultation Fee:</span>
                   <span className="font-bold text-apple-teal dark:text-[#30D1BE] font-mono">
-                    ₹{selectedDoc.consultation_fee} (Pay at clinic counter)
+                    ₹{Number(bookingConfirmed.appointment.fee_amount ?? selectedDoc.consultation_fee).toLocaleString("en-IN")}
+                    {" — "}
+                    {bookingConfirmed.appointment.payment_status === "paid"
+                      ? "Paid"
+                      : "Pay at clinic counter"}
                   </span>
                 </div>
               </div>
@@ -610,13 +585,13 @@ function BookingExperience() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
-                    <span>Personal Health Vault Activated</span>
+                    <span>Keep this token handy</span>
                     <span className="rounded-full bg-emerald-200/60 dark:bg-emerald-800/40 px-2 py-0.2 text-[10px] font-semibold text-emerald-800 dark:text-emerald-200">
-                      Passwordless
+                      OTP sign-in
                     </span>
                   </div>
                   <p className="text-[11px] text-emerald-800/80 dark:text-emerald-400/90 mt-0.5">
-                    Your digital OPD token, upcoming prescriptions, and dosage reminders are now linked to <strong>{bookingConfirmed.appointment.patient_phone}</strong>.
+                    Use the Patient Health Hub with a one-time code sent to <strong>{bookingConfirmed.appointment.patient_phone}</strong> to view prescriptions and reports.
                   </p>
                 </div>
               </div>
@@ -630,14 +605,16 @@ function BookingExperience() {
                   <Sparkles className="h-4 w-4" /> Open My Prescriptions &amp; Reports (Vault)
                 </Link>
 
-                <a
-                  href={bookingConfirmed.whatsapp_notification_link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 py-3 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
-                >
-                  <Share2 className="h-4 w-4" /> Open Confirmation in WhatsApp
-                </a>
+                {confirmationWhatsappUrl ? (
+                  <a
+                    href={confirmationWhatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 py-3 text-xs font-semibold text-white shadow-apple-sm active:scale-95 transition"
+                  >
+                    <Share2 className="h-4 w-4" /> Send Confirmation on WhatsApp
+                  </a>
+                ) : null}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Link
@@ -747,6 +724,12 @@ function BookingExperience() {
 
               {/* Booking Input Form */}
               <form onSubmit={handleBooking} className="mt-6 space-y-6">
+                {bookingError && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300 flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{bookingError}</span>
+                  </div>
+                )}
                 {/* 1. Date Selection */}
                 <div>
                   <label className="text-xs font-semibold text-[#1D1D1F] dark:text-white block mb-2">
@@ -979,22 +962,18 @@ function BookingExperience() {
 
                     <button
                       type="button"
-                      onClick={() => setPaymentMethod("pay_online")}
-                      className={`rounded-2xl border p-3.5 text-left text-xs transition cursor-pointer ${
-                        paymentMethod === "pay_online"
-                          ? "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10 ring-1 ring-emerald-500"
-                          : "border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.04]"
-                      }`}
+                      disabled
+                      className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.04] p-3.5 text-left text-xs opacity-70 cursor-not-allowed"
+                      title="Online payment is not enabled yet"
                     >
                       <div className="font-semibold text-[#1D1D1F] dark:text-white flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
-                          ⚡ Pay Online Now
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-bold">Fast Track</span>
+                          ⚡ Pay Online
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">Coming soon</span>
                         </span>
-                        {paymentMethod === "pay_online" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                       </div>
                       <p className="mt-1 text-[11px] text-[#86868B]">
-                        Instant UPI / Cards. Priority token check-in, skips reception billing counter.
+                        Online gateway checkout is not enabled. Book now and pay at the clinic counter.
                       </p>
                     </button>
                   </div>

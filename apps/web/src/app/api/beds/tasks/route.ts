@@ -1,182 +1,219 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { guard, CLINICAL_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
+const clinicBedIds = async (clinicSlug: string) => {
+  const rows = await sql`SELECT id FROM clinic_beds WHERE clinic_slug = ${clinicSlug};`;
+  return rows.map((r: any) => String(r.id));
+};
+
 /**
- * Structured Inpatient Clinical Tasks, Vitals Protocol & Shift Handover API
- * Enforces:
- * 1. Auto-scheduled vitals with threshold breach alerts (SpO2 < 92%, BP > 160/100, Temp > 101°F).
- *    - Tiered Escalation Ladder: Tier 1 (Nurse PWA) -> Tier 2 (Charge Nurse SMS + Doctor Call at 60s).
- *    - Mandatory intervention log or vitals re-entry to clear breach.
- * 2. Bedside Consumable Charge Posting:
- *    - Inherits Pharmacy-grade row-locking concurrency guard.
- *    - Duplicate barcode scan guard (flags duplicate item scans within 60s).
- * 3. Shift Handover & Carry-Over Engine:
- *    - Uncompleted care tasks auto-carry-over to next shift assignee upon clock-out.
- *    - Handover summary with mandatory incoming nurse e-signature. Zero tasks dropped.
+ * Inpatient clinical tasks, vitals protocol and shift handover.
+ *
+ * Every read and write is restricted to the caller's clinic. Vitals must be
+ * supplied by the nurse recording them — this route never assumes a default.
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINICAL_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
+    const actorName = auth.auth.user.full_name;
+
     const body = await req.json();
     const {
       action = "log_vitals",
       bed_id,
       task_id,
-      // Vitals fields
-      bp = "120/80",
-      pulse = 74,
-      spo2 = 98,
-      temp = 98.4,
-      pain_scale = 1,
-      nurse_name = "Sister Sunita (Duty Nurse)",
-      // Breach acknowledgment & escalation fields
+      bp,
+      pulse,
+      spo2,
+      temp,
+      pain_scale = null,
+      nurse_name,
       acknowledged_by,
       intervention_log,
       rechecked_vitals,
-      // Bedside Consumable fields
       charge_description,
       charge_amount,
       charge_type = "consumable",
       confirm_duplicate = false,
-      // Care Task fields
-      task_type = "wound_dressing",
+      task_type,
       task_description,
-      due_time = "Next 2 hours",
-      // Shift Handover fields
+      due_time = null,
       outgoing_nurse_name,
       incoming_nurse_name,
-      shift_name = "Morning -> Evening (14:00 IST)",
-      ward_id,
+      shift_name = null,
+      ward_id = null,
       handover_notes,
-      incoming_esign
+      incoming_esign,
     } = body;
 
     const now = new Date();
+    const nurseName = String(nurse_name || actorName);
 
-    // -------------------------------------------------------------
-    // ACTION 1: SHIFT HANDOVER & TASK CARRY-OVER (Ward Level)
-    // -------------------------------------------------------------
+    // ── Shift handover ──────────────────────────────────────────────
     if (action === "shift_handover") {
       if (!incoming_nurse_name || !incoming_esign) {
-        return NextResponse.json(
-          { error: "Incoming nurse name and digital e-signature are mandatory for shift handover sign-off." },
-          { status: 400 }
+        return apiError(
+          400,
+          "incoming_nurse_name and incoming_esign are required for handover.",
+          "invalid_input"
         );
       }
 
-      // 1. Fetch all pending uncompleted care tasks across all beds
-      const pendingTasks = await sql`
-        SELECT t.*, b.bed_number 
-        FROM bed_care_tasks t
-        LEFT JOIN clinic_beds b ON b.id = t.bed_id
-        WHERE t.status = 'pending'
-        ORDER BY t.created_at ASC;
-      `;
+      const bedIds = await clinicBedIds(clinicSlug);
 
-      // 2. Fetch active breach alerts
+      const pendingTasks = bedIds.length
+        ? await sql`
+            SELECT t.*, b.bed_number
+            FROM bed_care_tasks t
+            JOIN clinic_beds b ON b.id = t.bed_id
+            WHERE t.status = 'pending'
+              AND b.clinic_slug = ${clinicSlug}
+            ORDER BY t.created_at ASC;
+          `
+        : [];
+
       const activeBreachBeds = await sql`
         SELECT id, bed_number, vitals_breach_alert, breach_tier, last_vitals_json
         FROM clinic_beds
-        WHERE vitals_breach_alert = true;
+        WHERE vitals_breach_alert = true
+          AND clinic_slug = ${clinicSlug};
       `;
 
-      // 3. Auto-carry-over all uncompleted tasks to incoming nurse
-      if (pendingTasks.length > 0) {
+      if (bedIds.length > 0 && pendingTasks.length > 0) {
         await sql`
           UPDATE bed_care_tasks
-          SET 
-            assigned_to = ${incoming_nurse_name},
+          SET
+            assigned_to = ${String(incoming_nurse_name)},
             shift_carryover_count = COALESCE(shift_carryover_count, 0) + 1,
             carried_over_from_shift = ${shift_name},
-            carried_over_to_nurse = ${incoming_nurse_name}
-          WHERE status = 'pending';
+            carried_over_to_nurse = ${String(incoming_nurse_name)}
+          WHERE status = 'pending'
+            AND bed_id = ANY(${bedIds});
         `;
       }
 
       const handoverId = randomUUID();
-      const handoverRecord = {
-        id: handoverId,
-        outgoing_nurse_name: outgoing_nurse_name || "Sister Sunita (Duty Nurse)",
-        incoming_nurse_name,
-        shift_name,
-        ward_id: ward_id || null,
-        carried_over_tasks_count: pendingTasks.length,
-        active_breach_alerts_count: activeBreachBeds.length,
-        handover_notes: handover_notes || "All pending clinical tasks carried over with zero tasks dropped.",
-        incoming_esign,
-        handed_over_at: now,
-        tasks_snapshot: JSON.stringify(pendingTasks)
-      };
+      const handoverNotes =
+        handover_notes ||
+        `${pendingTasks.length} pending task(s) and ${activeBreachBeds.length} breach alert(s) carried over.`;
 
       await sql`
         INSERT INTO bed_shift_handovers (
-          id, outgoing_nurse_name, incoming_nurse_name, shift_name,
+          id, clinic_slug, outgoing_nurse_name, incoming_nurse_name, shift_name,
           ward_id, carried_over_tasks_count, active_breach_alerts_count,
           handover_notes, incoming_esign, handed_over_at, tasks_snapshot
         ) VALUES (
-          ${handoverRecord.id},
-          ${handoverRecord.outgoing_nurse_name},
-          ${handoverRecord.incoming_nurse_name},
-          ${handoverRecord.shift_name},
-          ${handoverRecord.ward_id},
-          ${handoverRecord.carried_over_tasks_count},
-          ${handoverRecord.active_breach_alerts_count},
-          ${handoverRecord.handover_notes},
-          ${handoverRecord.incoming_esign},
-          ${handoverRecord.handed_over_at},
-          ${handoverRecord.tasks_snapshot}::jsonb
+          ${handoverId},
+          ${clinicSlug},
+          ${String(outgoing_nurse_name || actorName)},
+          ${String(incoming_nurse_name)},
+          ${shift_name},
+          ${ward_id},
+          ${pendingTasks.length},
+          ${activeBreachBeds.length},
+          ${handoverNotes},
+          ${String(incoming_esign)},
+          ${now},
+          ${JSON.stringify(pendingTasks)}::jsonb
         );
       `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "bed.shift.handover",
+        entity: "bed_shift_handover",
+        entityId: handoverId,
+        after: {
+          incoming_nurse_name,
+          carried_over_tasks: pendingTasks.length,
+        },
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
         handover_id: handoverId,
         carried_over_tasks_count: pendingTasks.length,
         active_breach_alerts_count: activeBreachBeds.length,
-        message: `Shift handover complete: ${pendingTasks.length} uncompleted task(s) seamlessly carried over to ${incoming_nurse_name}. Zero tasks dropped. Signed by ${incoming_esign}.`,
-        snapshot: pendingTasks
+        message: `Shift handover complete. ${pendingTasks.length} pending task(s) carried over to ${incoming_nurse_name}.`,
+        snapshot: pendingTasks,
       });
     }
 
-    // Validation for bed-specific actions
     if (!bed_id) {
-      return NextResponse.json({ error: "bed_id is required" }, { status: 400 });
+      return apiError(400, "bed_id is required.", "invalid_input");
     }
 
-    const bedQuery = await sql`SELECT * FROM clinic_beds WHERE id = ${bed_id} LIMIT 1;`;
+    const bedQuery = await sql`
+      SELECT * FROM clinic_beds
+      WHERE id = ${String(bed_id)}
+        AND clinic_slug = ${clinicSlug}
+      LIMIT 1;
+    `;
     if (bedQuery.length === 0) {
-      return NextResponse.json({ error: "Bed not found" }, { status: 404 });
+      return apiError(404, "Bed not found in your clinic.", "bed_not_found");
     }
     const bed = bedQuery[0];
 
-    // -------------------------------------------------------------
-    // ACTION 2: LOG VITALS & THRESHOLD BREACH ALERT ENGINE
-    // -------------------------------------------------------------
+    // ── Vitals ──────────────────────────────────────────────────────
     if (action === "log_vitals") {
+      if (
+        bp == null ||
+        pulse == null ||
+        spo2 == null ||
+        temp == null ||
+        String(bp).trim() === ""
+      ) {
+        return apiError(
+          400,
+          "bp, pulse, spo2 and temp are required to log vitals.",
+          "vitals_required"
+        );
+      }
+
       const parsedPulse = Number(pulse);
       const parsedSpo2 = Number(spo2);
       const parsedTemp = Number(temp);
+      if (
+        !Number.isFinite(parsedPulse) ||
+        !Number.isFinite(parsedSpo2) ||
+        !Number.isFinite(parsedTemp)
+      ) {
+        return apiError(400, "Vital signs must be numeric.", "invalid_vitals");
+      }
 
       const bpParts = String(bp).split("/");
-      const sbp = Number(bpParts[0] || 120);
-      const dbp = Number(bpParts[1] || 80);
+      const sbp = Number(bpParts[0]);
+      const dbp = Number(bpParts[1]);
+      if (!Number.isFinite(sbp) || !Number.isFinite(dbp)) {
+        return apiError(400, "bp must be written as systolic/diastolic.", "invalid_bp");
+      }
 
       let breach = false;
       const breachReasons: string[] = [];
 
       if (parsedSpo2 < 92) {
         breach = true;
-        breachReasons.push(`CRITICAL HYPOXIA: SpO2 ${parsedSpo2}% (< 92%)`);
+        breachReasons.push(`SpO2 ${parsedSpo2}% (< 92%)`);
       }
       if (sbp > 160 || dbp > 100) {
         breach = true;
-        breachReasons.push(`HYPERTENSIVE EMERGENCY: BP ${bp} (> 160/100)`);
+        breachReasons.push(`BP ${bp} (> 160/100)`);
       }
       if (parsedTemp > 101.0) {
         breach = true;
-        breachReasons.push(`HIGH FEBRILE SPIKE: Temp ${parsedTemp}°F (> 101.0°F)`);
+        breachReasons.push(`Temperature ${parsedTemp}F (> 101.0F)`);
       }
 
       const vitalsData = {
@@ -184,29 +221,28 @@ export async function POST(req: NextRequest) {
         pulse: parsedPulse,
         spo2: parsedSpo2,
         temp: parsedTemp,
-        pain_scale: Number(pain_scale),
+        pain_scale: pain_scale == null ? null : Number(pain_scale),
         recorded_at: now.toISOString(),
-        nurse: nurse_name,
+        nurse: nurseName,
         breach,
-        breachReasons
+        breachReasons,
       };
 
       if (breach) {
-        // Initiate Tier 1 Escalation immediately
-        const initialEscalationHistory = [
+        const escalationHistory = [
           {
             tier: 1,
-            channel: "Nurse PWA Alert",
-            target: nurse_name,
+            channel: "Nurse PWA alert",
+            target: nurseName,
             dispatched_at: now.toISOString(),
             status: "active_dispatched",
-            reasons: breachReasons
-          }
+            reasons: breachReasons,
+          },
         ];
 
         await sql`
           UPDATE clinic_beds
-          SET 
+          SET
             last_vitals_logged_at = ${now},
             last_vitals_json = ${JSON.stringify(vitalsData)},
             vitals_breach_alert = true,
@@ -216,55 +252,64 @@ export async function POST(req: NextRequest) {
             breach_acknowledged_at = NULL,
             breach_acknowledged_by = NULL,
             breach_intervention_log = NULL,
-            breach_escalation_history = ${JSON.stringify(initialEscalationHistory)}::jsonb
-          WHERE id = ${bed_id};
+            breach_escalation_history = ${JSON.stringify(escalationHistory)}::jsonb
+          WHERE id = ${String(bed_id)}
+            AND clinic_slug = ${clinicSlug};
         `;
+
+        await logAudit({
+          actorId: auth.auth.user.id,
+          actorRole: auth.auth.role,
+          clinicId,
+          action: "bed.vitals.breach",
+          entity: "clinic_bed",
+          entityId: String(bed.id),
+          after: vitalsData,
+          request: req,
+        });
 
         return NextResponse.json({
           success: true,
           vitals: vitalsData,
           breach_alert: true,
           breach_tier: 1,
-          message: `⚠️ CRITICAL BREACH ALERT on Bed ${bed.bed_number}: ${breachReasons.join("; ")}. Tier 1 Alert dispatched to assigned Nurse PWA. 60s countdown to Tier 2 Charge Nurse SMS started.`
-        });
-      } else {
-        // Normal vitals recorded
-        await sql`
-          UPDATE clinic_beds
-          SET 
-            last_vitals_logged_at = ${now},
-            last_vitals_json = ${JSON.stringify(vitalsData)},
-            vitals_breach_alert = false,
-            breach_acknowledged = true,
-            breach_acknowledged_at = ${now},
-            breach_acknowledged_by = ${nurse_name}
-          WHERE id = ${bed_id};
-        `;
-
-        return NextResponse.json({
-          success: true,
-          vitals: vitalsData,
-          breach_alert: false,
-          message: `✓ Vitals recorded within normal clinical limits for Bed ${bed.bed_number}.`
+          message: `Critical breach on bed ${bed.bed_number}: ${breachReasons.join("; ")}.`,
         });
       }
+
+      await sql`
+        UPDATE clinic_beds
+        SET
+          last_vitals_logged_at = ${now},
+          last_vitals_json = ${JSON.stringify(vitalsData)},
+          vitals_breach_alert = false,
+          breach_acknowledged = true,
+          breach_acknowledged_at = ${now},
+          breach_acknowledged_by = ${nurseName}
+        WHERE id = ${String(bed_id)}
+          AND clinic_slug = ${clinicSlug};
+      `;
+
+      return NextResponse.json({
+        success: true,
+        vitals: vitalsData,
+        breach_alert: false,
+        message: `Vitals recorded for bed ${bed.bed_number}.`,
+      });
     }
 
-    // -------------------------------------------------------------
-    // ACTION 3: ACKNOWLEDGE BREACH & LOG MANDATORY INTERVENTION
-    // -------------------------------------------------------------
+    // ── Acknowledge breach ──────────────────────────────────────────
     if (action === "acknowledge_breach") {
-      const ackBy = acknowledged_by || nurse_name;
-      const logText = (intervention_log || "").trim();
-
-      if (!logText || logText.length < 5) {
-        return NextResponse.json(
-          { error: "Mandatory intervention log (minimum 5 characters) or clinical intervention action required to clear critical threshold breach alert." },
-          { status: 400 }
+      const ackBy = String(acknowledged_by || actorName);
+      const logText = String(intervention_log || "").trim();
+      if (logText.length < 5) {
+        return apiError(
+          400,
+          "An intervention log of at least 5 characters is required.",
+          "intervention_required"
         );
       }
 
-      // Fetch current escalation history
       let currentHistory: any[] = [];
       try {
         currentHistory = Array.isArray(bed.breach_escalation_history)
@@ -276,27 +321,28 @@ export async function POST(req: NextRequest) {
 
       currentHistory.push({
         action: "acknowledged_and_cleared",
-        channel: "Bedside Intervention",
+        channel: "bedside_intervention",
         acknowledged_by: ackBy,
         intervention_log: logText,
-        cleared_at: now.toISOString()
+        cleared_at: now.toISOString(),
       });
 
-      // If rechecked vitals provided, update last_vitals_json
       let updatedVitals = bed.last_vitals_json;
       if (rechecked_vitals) {
         updatedVitals = {
-          ...(typeof bed.last_vitals_json === "string" ? JSON.parse(bed.last_vitals_json) : bed.last_vitals_json),
+          ...(typeof bed.last_vitals_json === "string"
+            ? JSON.parse(bed.last_vitals_json)
+            : bed.last_vitals_json),
           ...rechecked_vitals,
           rechecked_at: now.toISOString(),
           rechecked_by: ackBy,
-          breach: false
+          breach: false,
         };
       }
 
       await sql`
         UPDATE clinic_beds
-        SET 
+        SET
           vitals_breach_alert = false,
           breach_acknowledged = true,
           breach_acknowledged_at = ${now},
@@ -304,20 +350,30 @@ export async function POST(req: NextRequest) {
           breach_intervention_log = ${logText},
           breach_escalation_history = ${JSON.stringify(currentHistory)}::jsonb,
           last_vitals_json = ${JSON.stringify(updatedVitals)}
-        WHERE id = ${bed_id};
+        WHERE id = ${String(bed_id)}
+          AND clinic_slug = ${clinicSlug};
       `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "bed.breach.acknowledge",
+        entity: "clinic_bed",
+        entityId: String(bed.id),
+        after: { acknowledged_by: ackBy, intervention_log: logText },
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
-        message: `✓ Threshold breach alert for Bed ${bed.bed_number} acknowledged and cleared by ${ackBy}. Intervention logged: "${logText}".`,
+        message: `Breach on bed ${bed.bed_number} acknowledged by ${ackBy}.`,
         bed_number: bed.bed_number,
-        intervention_logged: logText
+        intervention_logged: logText,
       });
     }
 
-    // -------------------------------------------------------------
-    // ACTION 4: ESCALATE BREACH (60s Tier 2 Auto-Escalation)
-    // -------------------------------------------------------------
+    // ── Escalate breach ─────────────────────────────────────────────
     if (action === "escalate_breach") {
       let currentHistory: any[] = [];
       try {
@@ -328,49 +384,60 @@ export async function POST(req: NextRequest) {
         currentHistory = [];
       }
 
-      const escalationEvent = {
+      currentHistory.push({
         tier: 2,
-        channel: "Ward Charge Nurse SMS + Doctor Emergency Call",
+        channel: "Charge nurse SMS and on-call doctor call",
         dispatched_at: now.toISOString(),
-        status: "AUTO_ESCALATED_UNACKNOWLEDGED_60S",
-        target: "Ward Charge Sister & On-Call Attending Physician"
-      };
-      currentHistory.push(escalationEvent);
+        status: "auto_escalated_unacknowledged",
+      });
 
       await sql`
         UPDATE clinic_beds
-        SET 
+        SET
           breach_tier = 2,
           breach_escalation_history = ${JSON.stringify(currentHistory)}::jsonb
-        WHERE id = ${bed_id};
+        WHERE id = ${String(bed_id)}
+          AND clinic_slug = ${clinicSlug};
       `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "bed.breach.escalate",
+        entity: "clinic_bed",
+        entityId: String(bed.id),
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
         breach_tier: 2,
-        message: `🚨 TIER 2 ESCALATION FIRED: Bed ${bed.bed_number} vitals breach unacknowledged for > 60s. Auto-dispatched SMS to Ward Charge Nurse & initiated Doctor Emergency Call.`
+        message: `Tier 2 escalation fired for bed ${bed.bed_number}.`,
       });
     }
 
-    // -------------------------------------------------------------
-    // ACTION 5: BEDSIDE CONSUMABLE CHARGE WITH ROW-LOCKING & DUP GUARD
-    // -------------------------------------------------------------
+    // ── Bedside consumable charge ───────────────────────────────────
     if (action === "post_charge") {
-      if (!charge_description || !charge_amount) {
-        return NextResponse.json({ error: "charge_description and charge_amount required" }, { status: 400 });
+      const cleanDesc = String(charge_description || "").trim();
+      const amount = Number(charge_amount);
+      if (!cleanDesc) {
+        return apiError(400, "charge_description is required.", "invalid_input");
+      }
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return apiError(400, "charge_amount must be a positive number.", "invalid_amount");
       }
 
-      const amount = Number(charge_amount);
-      const cleanDesc = String(charge_description).trim();
+      await sql`
+        SELECT id FROM clinic_beds
+        WHERE id = ${String(bed_id)}
+          AND clinic_slug = ${clinicSlug}
+        FOR UPDATE;
+      `;
 
-      // Concurrency Guard: Inherit Pharmacy-Grade Row-Level Locking
-      await sql`SELECT id FROM clinic_beds WHERE id = ${bed_id} FOR UPDATE;`;
-
-      // Anti-Double-Post Protection:
-      // Flag duplicate barcode scans or identical consumable entry within 60s
       const recentDuplicates = await sql`
-        SELECT * FROM bed_billing_ledger 
-        WHERE bed_id = ${bed_id} 
+        SELECT * FROM bed_billing_ledger
+        WHERE bed_id = ${String(bed_id)}
           AND LOWER(TRIM(description)) = LOWER(${cleanDesc})
           AND posted_at >= NOW() - INTERVAL '60 seconds'
         ORDER BY posted_at DESC
@@ -380,10 +447,10 @@ export async function POST(req: NextRequest) {
       if (recentDuplicates.length > 0 && !confirm_duplicate) {
         return NextResponse.json(
           {
-            error: `POTENTIAL DOUBLE-POST DETECTED: An identical charge for "${cleanDesc}" (₹${amount}) was posted less than 60s ago (${new Date(recentDuplicates[0].posted_at).toLocaleTimeString()}). Confirm secondary unit to proceed.`,
-            code: "POTENTIAL_DOUBLE_POST",
+            detail: `An identical charge for "${cleanDesc}" was posted less than 60 seconds ago. Confirm to post a second unit.`,
+            code: "potential_double_post",
             duplicate_detected: true,
-            previous_charge: recentDuplicates[0]
+            previous_charge: recentDuplicates[0],
           },
           { status: 409 }
         );
@@ -402,49 +469,70 @@ export async function POST(req: NextRequest) {
           ${charge_type},
           ${cleanDesc},
           ${amount},
-          ${`BEDSIDE-${Date.now().toString().slice(-4)}`},
-          ${nurse_name},
+          ${`BEDSIDE-${randomUUID().slice(0, 6).toUpperCase()}`},
+          ${nurseName},
           ${now}
         );
       `;
 
-      // Update itemized charges total on bed
       await sql`
         UPDATE clinic_beds
         SET itemized_charges_total = COALESCE(itemized_charges_total, 0) + ${amount}
-        WHERE id = ${bed_id};
+        WHERE id = ${String(bed_id)}
+          AND clinic_slug = ${clinicSlug};
       `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "bed.charge.post",
+        entity: "bed_billing_ledger",
+        entityId: ledgerId,
+        after: { description: cleanDesc, amount, charge_type },
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
-        message: `₹${amount} for "${cleanDesc}" posted to immutable admission billing ledger (Row-lock concurrency verified).`,
-        charge_id: ledgerId
+        message: `${amount} for "${cleanDesc}" posted to the admission ledger.`,
+        charge_id: ledgerId,
       });
     }
 
-    // -------------------------------------------------------------
-    // ACTION 6: COMPLETE CARE TASK WITH E-SIGN
-    // -------------------------------------------------------------
+    // ── Complete task ───────────────────────────────────────────────
     if (action === "complete_task" && task_id) {
-      await sql`
+      const updated = await sql`
         UPDATE bed_care_tasks
-        SET 
+        SET
           status = 'completed',
           completed_at = ${now},
-          completed_by_esign = ${nurse_name}
-        WHERE id = ${task_id};
+          completed_by_esign = ${nurseName}
+        WHERE id = ${String(task_id)}
+          AND bed_id = ${String(bed.id)}
+        RETURNING *;
       `;
+
+      if (updated.length === 0) {
+        return apiError(404, "Task not found for this bed.", "task_not_found");
+      }
 
       return NextResponse.json({
         success: true,
-        message: "Care task marked completed with nurse digital sign-off."
+        message: "Care task completed with nurse sign-off.",
+        task: updated[0],
       });
     }
 
-    // -------------------------------------------------------------
-    // ACTION 7: CREATE NEW CLINICAL CARE TASK
-    // -------------------------------------------------------------
+    // ── Create task ─────────────────────────────────────────────────
     if (action === "create_task") {
+      if (!task_type || !task_description) {
+        return apiError(
+          400,
+          "task_type and task_description are required.",
+          "invalid_input"
+        );
+      }
       const taskId = randomUUID();
       await sql`
         INSERT INTO bed_care_tasks (
@@ -453,62 +541,80 @@ export async function POST(req: NextRequest) {
           ${taskId},
           ${bed.id},
           ${bed.admission_id},
-          ${task_type},
-          ${task_description || "Nursing Care Procedure"},
+          ${String(task_type)},
+          ${String(task_description)},
           ${due_time},
-          ${nurse_name}
+          ${nurseName}
         );
       `;
 
       return NextResponse.json({
         success: true,
-        message: "Clinical care task assigned to shift nursing roster."
+        message: "Clinical care task assigned.",
+        task_id: taskId,
       });
     }
 
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    return apiError(400, "Invalid action.", "invalid_action");
   } catch (error: any) {
     console.error("Care tasks error:", error);
-    return NextResponse.json({ error: error.message || "Failed to process task" }, { status: 500 });
+    return apiError(500, "Failed to process task.", "internal_error");
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
     const { searchParams } = new URL(req.url);
     const bedId = searchParams.get("bed_id");
     const view = searchParams.get("view");
 
-    // View: Shift Handover History
     if (view === "handovers") {
       const handovers = await sql`
-        SELECT * FROM bed_shift_handovers 
-        ORDER BY handed_over_at DESC 
+        SELECT * FROM bed_shift_handovers
+        WHERE clinic_slug = ${clinicSlug}
+        ORDER BY handed_over_at DESC
         LIMIT 20;
       `;
       return NextResponse.json({ handovers });
     }
 
-    // Default: Care Tasks List
+    if (bedId) {
+      const owned = await sql`
+        SELECT 1 FROM clinic_beds
+        WHERE id = ${String(bedId)}
+          AND clinic_slug = ${clinicSlug}
+        LIMIT 1;
+      `;
+      if (owned.length === 0) {
+        return apiError(404, "Bed not found in your clinic.", "bed_not_found");
+      }
+    }
+
     const tasks = bedId
       ? await sql`
-          SELECT t.*, b.bed_number 
+          SELECT t.*, b.bed_number
           FROM bed_care_tasks t
-          LEFT JOIN clinic_beds b ON b.id = t.bed_id
-          WHERE t.bed_id = ${bedId} 
+          JOIN clinic_beds b ON b.id = t.bed_id
+          WHERE t.bed_id = ${String(bedId)}
+            AND b.clinic_slug = ${clinicSlug}
           ORDER BY t.created_at DESC;
         `
       : await sql`
-          SELECT t.*, b.bed_number 
+          SELECT t.*, b.bed_number
           FROM bed_care_tasks t
-          LEFT JOIN clinic_beds b ON b.id = t.bed_id
-          ORDER BY t.created_at DESC 
+          JOIN clinic_beds b ON b.id = t.bed_id
+          WHERE b.clinic_slug = ${clinicSlug}
+          ORDER BY t.created_at DESC
           LIMIT 100;
         `;
 
     return NextResponse.json({ tasks });
   } catch (error: any) {
     console.error("GET care tasks error:", error);
-    return NextResponse.json({ error: error.message || "Failed to load tasks" }, { status: 500 });
+    return apiError(500, "Failed to load tasks.", "internal_error");
   }
 }

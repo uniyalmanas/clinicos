@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { guard, ADMIN_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(req.url);
-    const clinicSlug = searchParams.get("clinic_slug") || "derma-care-dehradun";
+    const clinicSlug = searchParams.get("clinic_slug") || auth.auth.clinic!.slug;
 
     // 1. Fetch Petty Cash Float status
     let floatRows = await sql`
@@ -23,7 +28,7 @@ export async function GET(req: NextRequest) {
           clinic_slug, target_float, current_balance, min_threshold, 
           last_replenished_at, last_replenished_by, status
         ) VALUES (
-          ${clinicSlug}, 2000.0, 1450.0, 800.0, NOW(), 'Dr. Rahul Sharma', 'HEALTHY'
+          ${clinicSlug}, 0, 0, 800, NOW(), null, 'DEPLETED'
         ) RETURNING *;
       `;
     }
@@ -76,19 +81,26 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, {
+      roles: ADMIN_ROLES,
+      audit: "petty_cash.update",
+      auditEntity: "petty_cash",
+    });
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const {
-      clinic_slug = "derma-care-dehradun",
       action = "replenish",
       amount,
       source_or_recipient = "Main Cash Safe Transfer",
       voucher_id,
-      recorded_by = "Pooja Verma (Front Desk)",
-      notes
+      notes,
     } = body;
+    const clinic_slug = auth.auth.clinic!.slug;
+    const recorded_by = auth.auth.user.full_name;
 
     if (!amount || Number(amount) <= 0) {
-      return NextResponse.json({ error: "Valid amount is required" }, { status: 400 });
+      return apiError(400, "Valid amount is required.", "invalid_amount");
     }
 
     const numAmount = Number(amount);
@@ -101,9 +113,9 @@ export async function POST(req: NextRequest) {
     `;
 
     const floatRecord = floatRows[0] || {
-      target_float: 2000.0,
-      current_balance: 1450.0,
-      min_threshold: 800.0
+      target_float: 0,
+      current_balance: 0,
+      min_threshold: 800.0,
     };
 
     let newBalance = Number(floatRecord.current_balance);
@@ -150,6 +162,17 @@ export async function POST(req: NextRequest) {
       )
       RETURNING *;
     `;
+
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId: auth.auth.clinic!.id,
+      action: "petty_cash.update",
+      entity: "petty_cash_ledger",
+      entityId: id,
+      after: ledgerEntry[0] || null,
+      request: req,
+    });
 
     return NextResponse.json({
       status: "success",

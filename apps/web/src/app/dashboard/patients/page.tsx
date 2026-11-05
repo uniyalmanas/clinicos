@@ -148,12 +148,41 @@ export default function DashboardPatientsPage() {
     fetchPatients();
   }, []);
 
-  const filteredPatients = patients.filter(p =>
-    p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.phone.includes(searchQuery) ||
-    p.uhid.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.allergies?.some(a => a.allergen_name.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const [directoryFilter, setDirectoryFilter] = useState<"all" | "allergies" | "visits" | "pediatric">("all");
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .filter(Boolean)
+      .map(n => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  };
+
+  const filteredPatients = patients.filter(p => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = 
+      !q ||
+      p.full_name.toLowerCase().includes(q) ||
+      p.phone.includes(q) ||
+      p.uhid.toLowerCase().includes(q) ||
+      p.allergies?.some(a => a.allergen_name.toLowerCase().includes(q));
+
+    if (!matchesSearch) return false;
+
+    if (directoryFilter === "allergies") return p.allergies && p.allergies.length > 0;
+    if (directoryFilter === "visits") return p.visits && p.visits.length > 0;
+    if (directoryFilter === "pediatric") return p.age < 18;
+    return true;
+  });
+
+  const directoryStats = {
+    total: patients.length,
+    withAllergies: patients.filter(p => p.allergies && p.allergies.length > 0).length,
+    totalVisits: patients.reduce((acc, p) => acc + (p.visits?.length || 0), 0),
+    totalLabs: patients.reduce((acc, p) => acc + (p.lab_results?.length || 0), 0),
+  };
 
   // FIX 1: Test Prescribe Drug & Trigger Hard-Stop Check
   const handleTestPrescribe = async () => {
@@ -450,6 +479,38 @@ export default function DashboardPatientsPage() {
     }
   };
 
+  // Export Complete Patient Directory (Excel .CSV)
+  const handleExportDirectoryCsv = () => {
+    try {
+      const headers = ["UHID", "Full Name", "Phone", "Age", "Gender", "Blood Group", "Allergies", "Visits Count", "Emergency Contact", "Emergency Phone"];
+      const rows = patients.map(p => [
+        p.uhid,
+        `"${p.full_name}"`,
+        p.phone,
+        p.age,
+        p.gender,
+        p.blood_group,
+        `"${(p.allergies || []).map(a => a.allergen_name).join("; ")}"`,
+        p.visits?.length || 0,
+        `"${p.emergency_contact || ""}"`,
+        p.emergency_contact_phone || ""
+      ]);
+
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Clinic_Patient_Directory_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast("✓ Complete Patient Directory exported to Excel (.CSV)");
+    } catch {
+      showToast("Export failed");
+    }
+  };
+
   // Safe deterministic audit date formatter (eliminates SSR hydration mismatch)
   const formatAuditDate = (dateVal?: string | Date | null) => {
     if (!dateVal) return "";
@@ -493,236 +554,273 @@ export default function DashboardPatientsPage() {
         </div>
       )}
 
-      {/* 1. TOP HEADER & PILLARS */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 border border-rose-500/20 text-[10px] font-bold text-rose-700 dark:bg-rose-500/10 dark:text-rose-400">
-              <ShieldAlert className="h-3 w-3" />
-              <span>Hard-Stop Allergy Blocking</span>
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 border border-blue-500/20 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-              <Microscope className="h-3 w-3" />
-              <span>HL7 / FHIR Structured Labs</span>
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-              <Lock className="h-3 w-3" />
-              <span>Immutable Visit Versions</span>
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 border border-purple-500/20 text-[10px] font-bold text-purple-700 dark:bg-purple-500/10 dark:text-purple-400">
-              <UserCheck className="h-3 w-3" />
-              <span>UPI Identity Resolution</span>
-            </span>
+      {/* 1. TOP HIGH-DENSITY HEADER & ACTIONS */}
+      <div className="flex flex-col gap-4 border-b border-black/[0.04] dark:border-white/[0.06] pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-black tracking-wider uppercase">
+                EMR PATIENT VAULT
+              </span>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
+                Patient Master Directory &amp; Health Vault
+              </h1>
+            </div>
+            <p className="text-xs text-[#86868B] mt-1 flex items-center gap-2 flex-wrap">
+              <span>Consent-governed longitudinal electronic medical records</span>
+              <span>•</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">DPDP Act Compliant</span>
+              <span>•</span>
+              <span className="text-rose-600 dark:text-rose-400 font-semibold">Active Allergy Hard-Stop</span>
+            </p>
           </div>
 
-          <h1 className="mt-1.5 text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
-            Patient EMR Directory &amp; Health History
-          </h1>
-          <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5 font-medium">
-            Hard-Stop Allergy Blocking • Structured Lab Trending • Immutable Visit Audit Trail • Duplicate-Free Identity
-          </p>
-        </div>
+          {/* Global Action Controls */}
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <button
+              type="button"
+              onClick={handleExportDirectoryCsv}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3.5 py-2 text-xs font-bold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition active:scale-95 cursor-pointer"
+              title="Download full patient phonebook & directory to Microsoft Excel"
+            >
+              <Download className="h-3.5 w-3.5 text-[#0071E3]" />
+              <span>Export CSV</span>
+            </button>
 
-        {/* Global Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
-          <button
-            type="button"
-            onClick={() => setPrescribeModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-[12px] border border-rose-500/20 bg-rose-500/10 px-3.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 shadow-sm transition active:scale-95 cursor-pointer"
-            title="Test prescribing drug against patient allergy contraindications"
-          >
-            <ShieldAlert className="h-3.5 w-3.5" />
-            <span>⚠️ Test Allergy Hard-Stop</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setPrescribeModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 shadow-sm transition active:scale-95 cursor-pointer"
+              title="Test prescribing drug against patient allergy contraindications"
+            >
+              <ShieldAlert className="h-3.5 w-3.5" />
+              <span>Test Allergy</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setLabModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-[12px] border border-blue-500/20 bg-blue-500/10 px-3.5 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 shadow-sm transition active:scale-95 cursor-pointer"
-            title="Ingest structured lab report via HL7 / FHIR parser"
-          >
-            <Microscope className="h-3.5 w-3.5" />
-            <span>🧪 Ingest Lab Report</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setLabModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/20 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:bg-blue-500/20 shadow-sm transition active:scale-95 cursor-pointer"
+              title="Ingest structured lab report via HL7 / FHIR parser"
+            >
+              <Microscope className="h-3.5 w-3.5" />
+              <span>Ingest Lab</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setExportModalOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-[12px] border border-[#0071E3]/20 bg-[#0071E3]/10 px-3.5 py-2 text-xs font-semibold text-[#0071E3] dark:text-[#2997FF] hover:bg-[#0071E3]/20 shadow-sm transition active:scale-95 cursor-pointer"
-            title="Generate secure watermarked time-bound PDF export (Right to Access & Specialist Referral)"
-          >
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>🔒 Secure Data Export</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleExportAuditCsv}
-            className="inline-flex items-center gap-1.5 rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3.5 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition active:scale-95 cursor-pointer"
-            title="Export DPDP Section 12 compliant audit log"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>DPDP Audit Log</span>
-          </button>
-
-          <button
-            onClick={fetchPatients}
-            disabled={isLoading}
-            className="inline-flex items-center gap-1.5 rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3.5 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition"
-          >
-            <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-[#0071E3]" : ""}`} />
-            <span>Sync EMR</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 4 CORE CLINICAL GOVERNANCE PILLARS (10/10 STATUS SPECIFICATION) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
-        <div className="rounded-[22px] border border-rose-500/20 bg-rose-500/[0.03] p-4 dark:border-rose-500/30 dark:bg-rose-500/[0.05] space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-black text-rose-700 dark:text-rose-300">
-            <ShieldAlert className="h-4 w-4 shrink-0 text-rose-600" />
-            <span>⚠️ Active Allergy Contraindication Engine</span>
+            <button
+              onClick={fetchPatients}
+              disabled={isLoading}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3 py-2 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.02] shadow-sm transition"
+            >
+              <RotateCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-[#0071E3]" : ""}`} />
+              <span>Sync</span>
+            </button>
           </div>
-          <p className="text-[11px] leading-relaxed text-[#1D1D1F]/80 dark:text-white/80">
-            Drug allergies linked to ATC codes. Prescribing interface triggers hard-stop modal on conflict. Override requires verified Senior Doctor e-sign + predefined reason code (e.g., &apos;Life-Saving Emergency&apos;). Alert persists across Rx, Pharmacy, and LIS modules.
-          </p>
         </div>
 
-        <div className="rounded-[22px] border border-blue-500/20 bg-blue-500/[0.03] p-4 dark:border-blue-500/30 dark:bg-blue-500/[0.05] space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-black text-blue-700 dark:text-blue-300">
-            <Microscope className="h-4 w-4 shrink-0 text-blue-600" />
-            <span>🧪 Structured Lab Data Vault</span>
+        {/* 4-KPI Metric Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+          <div className="rounded-2xl border border-black/[0.06] bg-white p-3 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+            <div className="flex items-center justify-between text-xs text-[#86868B]">
+              <span className="font-medium">Total Registered</span>
+              <Users className="h-3.5 w-3.5 text-[#0071E3]" />
+            </div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-xl font-bold text-[#1D1D1F] dark:text-white">{directoryStats.total}</span>
+              <span className="text-[10px] text-[#86868B] font-medium">Patients</span>
+            </div>
           </div>
-          <p className="text-[11px] leading-relaxed text-[#1D1D1F]/80 dark:text-white/80">
-            Auto-parses HL7/FHIR results. Non-standard PDFs OCR-extracted into structured fields. Historical values auto-plotted on trend graphs. Out-of-range values flagged against age/gender norms automatically.
-          </p>
-        </div>
 
-        <div className="rounded-[22px] border border-emerald-500/20 bg-emerald-500/[0.03] p-4 dark:border-emerald-500/30 dark:bg-emerald-500/[0.05] space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300">
-            <Lock className="h-4 w-4 shrink-0 text-emerald-600" />
-            <span>📋 Immutable Visit Documentation</span>
+          <div className="rounded-2xl border border-black/[0.06] bg-white p-3 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+            <div className="flex items-center justify-between text-xs text-[#86868B]">
+              <span className="font-medium">Clinical Encounters</span>
+              <Stethoscope className="h-3.5 w-3.5 text-emerald-500" />
+            </div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-xl font-bold text-[#1D1D1F] dark:text-white">{directoryStats.totalVisits}</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Recorded</span>
+            </div>
           </div>
-          <p className="text-[11px] leading-relaxed text-[#1D1D1F]/80 dark:text-white/80">
-            Specialty-specific structured templates enforce completeness. Post-save edits create new versions; originals remain immutable. Audit trail logs every view/print/export action per DPDP Act compliance. External exports generate watermarked, time-bound PDFs.
-          </p>
-        </div>
 
-        <div className="rounded-[22px] border border-purple-500/20 bg-purple-500/[0.03] p-4 dark:border-purple-500/30 dark:bg-purple-500/[0.05] space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-black text-purple-700 dark:text-purple-300">
-            <UserCheck className="h-4 w-4 shrink-0 text-purple-600" />
-            <span>🆔 Duplicate-Free Identity Resolution</span>
+          <div className="rounded-2xl border border-black/[0.06] bg-white p-3 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+            <div className="flex items-center justify-between text-xs text-[#86868B]">
+              <span className="font-medium">Diagnostic Labs</span>
+              <Microscope className="h-3.5 w-3.5 text-indigo-500" />
+            </div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-xl font-bold text-[#1D1D1F] dark:text-white">{directoryStats.totalLabs}</span>
+              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-medium">Reports</span>
+            </div>
           </div>
-          <p className="text-[11px] leading-relaxed text-[#1D1D1F]/80 dark:text-white/80">
-            Unique Patient ID generated at registration. Real-time duplicate detection on Name+DOB+Phone. Merge workflow requires dual-admin approval with full audit log. Emergency contacts stored with explicit consent; access logged.
-          </p>
+
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/[0.04] p-3 shadow-apple-sm dark:border-rose-500/20 dark:bg-rose-500/[0.04]">
+            <div className="flex items-center justify-between text-xs text-rose-600 dark:text-rose-400">
+              <span className="font-medium">Allergy Hard-Stop</span>
+              <ShieldAlert className="h-3.5 w-3.5 text-rose-500" />
+            </div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-xl font-bold text-rose-600 dark:text-rose-400">{directoryStats.withAllergies}</span>
+              <span className="text-[10px] text-rose-500 font-medium">Guarded</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* 2. MAIN 2-COLUMN CLINICAL EMR WORKSPACE */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* LEFT COLUMN: REGISTERED PATIENT DIRECTORY */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-[#86868B] uppercase tracking-wider">
-              Master Directory ({filteredPatients.length})
-            </span>
-            <div className="relative w-48">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
-              <input
-                type="text"
-                placeholder="Search UHID, name, allergy..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full rounded-[10px] border border-black/[0.08] bg-white py-1.5 pl-8 pr-2.5 text-xs text-[#1D1D1F] placeholder-[#86868B] shadow-sm focus:border-[#0071E3] focus:outline-none dark:border-white/[0.08] dark:bg-[#1C1C1E] dark:text-white"
-              />
-            </div>
+        <div className="lg:col-span-4 space-y-3">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
+            <input
+              type="text"
+              placeholder="Search UHID, name, allergy, phone..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full rounded-2xl border border-black/[0.08] bg-white py-2 pl-9 pr-8 text-xs text-[#1D1D1F] placeholder-[#86868B] shadow-sm focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 focus:outline-none dark:border-white/[0.08] dark:bg-[#1C1C1E] dark:text-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white p-0.5"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
-          <div className="space-y-2.5 max-h-[780px] overflow-y-auto pr-1">
-            {filteredPatients.map(pt => {
-              const isSelected = selectedPatient?.uhid === pt.uhid;
-              const hasSevereAllergy = pt.allergies?.some(a => a.reaction_severity === "SEVERE_ANAPHYLAXIS");
-              const hasDuplicateFlag = pt.is_duplicate_flagged;
+          {/* Directory Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+            <button
+              onClick={() => setDirectoryFilter("all")}
+              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer ${
+                directoryFilter === "all"
+                  ? "bg-[#0071E3] text-white shadow-sm"
+                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+              }`}
+            >
+              All ({patients.length})
+            </button>
+            <button
+              onClick={() => setDirectoryFilter("allergies")}
+              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 inline-flex items-center gap-1 cursor-pointer ${
+                directoryFilter === "allergies"
+                  ? "bg-rose-500 text-white shadow-sm"
+                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+              }`}
+            >
+              <span>⚠️ Allergies</span>
+              <span>({directoryStats.withAllergies})</span>
+            </button>
+            <button
+              onClick={() => setDirectoryFilter("visits")}
+              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer ${
+                directoryFilter === "visits"
+                  ? "bg-[#0071E3] text-white shadow-sm"
+                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+              }`}
+            >
+              Visits
+            </button>
+            <button
+              onClick={() => setDirectoryFilter("pediatric")}
+              className={`px-3 py-1 rounded-full font-semibold transition shrink-0 cursor-pointer ${
+                directoryFilter === "pediatric"
+                  ? "bg-purple-600 text-white shadow-sm"
+                  : "bg-black/[0.04] text-[#86868B] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:text-[#8E8E93]"
+              }`}
+            >
+              Pediatric
+            </button>
+          </div>
 
-              return (
-                <div
-                  key={pt.uhid}
-                  onClick={() => setSelectedPatient(pt)}
-                  className={`cursor-pointer rounded-[20px] border p-4 transition ${
-                    isSelected
-                      ? "border-[#0071E3] bg-white shadow-apple-sm ring-2 ring-[#0071E3]/20 dark:bg-[#1C1C1E]"
-                      : "border-black/[0.06] bg-white hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#1C1C1E]/60 dark:hover:border-white/[0.15]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-bold text-sm text-[#1D1D1F] dark:text-white flex items-center gap-1.5 flex-wrap">
-                        <span>{pt.full_name}</span>
-                        <span className="rounded-[6px] bg-black/[0.04] px-1.5 py-0.5 text-[10px] font-semibold text-[#86868B] dark:bg-white/[0.08] dark:text-[#8E8E93]">
-                          {pt.age}Y • {pt.gender[0]} • {pt.blood_group}
-                        </span>
+          <div className="space-y-2 max-h-[820px] overflow-y-auto pr-1">
+            {filteredPatients.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-black/[0.08] dark:border-white/[0.08] p-8 text-center text-xs text-[#86868B]">
+                No patients match the current filter.
+              </div>
+            ) : (
+              filteredPatients.map(pt => {
+                const isSelected = selectedPatient?.uhid === pt.uhid;
+                const hasSevereAllergy = pt.allergies?.some(a => a.reaction_severity === "SEVERE_ANAPHYLAXIS");
+                const hasDuplicateFlag = pt.is_duplicate_flagged;
+
+                return (
+                  <div
+                    key={pt.uhid}
+                    onClick={() => setSelectedPatient(pt)}
+                    className={`cursor-pointer rounded-2xl border p-3.5 transition-all ${
+                      isSelected
+                        ? "border-[#0071E3] bg-[#0071E3]/[0.03] shadow-apple-sm ring-1 ring-[#0071E3]/30 border-l-4 border-l-[#0071E3] dark:bg-[#0071E3]/10"
+                        : "border-black/[0.06] bg-white hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#1C1C1E]/70 dark:hover:border-white/[0.15]"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Avatar Initials Circle */}
+                      <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#0071E3] to-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                        {getInitials(pt.full_name)}
                       </div>
 
-                      <div className="mt-1 flex items-center gap-2 text-xs text-[#86868B]">
-                        <span className="font-mono text-[10px] text-[#0071E3] dark:text-[#2997FF] font-bold">
-                          {pt.uhid}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-[#86868B]" />
-                          <span>{pt.phone}</span>
-                        </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <h3 className="font-bold text-xs sm:text-sm text-[#1D1D1F] dark:text-white truncate">
+                            {pt.full_name}
+                          </h3>
+                          <span className="rounded-full bg-black/[0.04] px-1.5 py-0.5 text-[10px] font-semibold text-[#86868B] dark:bg-white/[0.08] dark:text-[#8E8E93] shrink-0">
+                            {pt.age}Y • {pt.gender[0]} • {pt.blood_group}
+                          </span>
+                        </div>
+
+                        <div className="mt-1 flex items-center gap-2 text-[11px] text-[#86868B] flex-wrap">
+                          <span className="font-mono text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
+                            {pt.uhid}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 font-mono text-[10px]">
+                            <Phone className="h-3 w-3 text-[#86868B]" />
+                            <span>{pt.phone}</span>
+                          </span>
+                        </div>
+
+                        {/* Badges row */}
+                        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                          <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
+                            {pt.visits?.length || 1} Visits
+                          </span>
+
+                          {pt.lab_results && pt.lab_results.length > 0 && (
+                            <span className="rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] text-[#86868B] dark:bg-white/[0.06]">
+                              {pt.lab_results.length} Labs
+                            </span>
+                          )}
+
+                          {pt.allergies && pt.allergies.length > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+                              <AlertTriangle className="h-2.5 w-2.5" />
+                              <span>{pt.allergies.length} Allergies</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Duplicate Flag Alert */}
+                        {hasDuplicateFlag && (
+                          <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
+                            <Users className="h-3 w-3" />
+                            <span>Potential Duplicate Match</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                        {pt.visits?.length || 1} Visits
-                      </span>
-
-                      {pt.lab_results && pt.lab_results.length > 0 && (
-                        <span className="text-[10px] text-[#86868B]">
-                          {pt.lab_results.length} Labs
-                        </span>
-                      )}
                     </div>
                   </div>
-
-                  {/* Active Allergy Badges (Fix 1) */}
-                  {pt.allergies && pt.allergies.length > 0 && (
-                    <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                      {pt.allergies.map(a => (
-                        <span
-                          key={a.id}
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            a.reaction_severity === "SEVERE_ANAPHYLAXIS"
-                              ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
-                              : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
-                          }`}
-                        >
-                          <AlertTriangle className="h-3 w-3" />
-                          <span>{a.allergen_name} ({a.atc_code})</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Duplicate Flag Alert (Fix 4) */}
-                  {hasDuplicateFlag && (
-                    <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
-                      <Users className="h-3 w-3" />
-                      <span>Potential Duplicate Match (Dual-Admin Review Required)</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
         {/* RIGHT COLUMN: DETAILED CLINICAL EMR PROFILE & ACTIVE SAFETY ENGINE */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-8 space-y-6">
           {selectedPatient ? (
             <div className="rounded-[28px] border border-black/[0.06] bg-white p-6 shadow-apple-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-5">
               {/* DUPLICATE WARNING BANNER (FIX 4) */}
@@ -763,73 +861,91 @@ export default function DashboardPatientsPage() {
 
               {/* Patient Profile Card Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-black/[0.04] pb-5 dark:border-white/[0.06]">
-                <div>
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-2xl font-black text-[#1D1D1F] dark:text-white">
-                      {selectedPatient.full_name}
-                    </h2>
-                    <span className="font-mono text-xs font-bold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 px-2.5 py-0.5 rounded-full">
-                      {selectedPatient.uhid}
-                    </span>
-                    <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                      Blood Group: {selectedPatient.blood_group}
-                    </span>
+                <div className="flex items-start gap-3.5">
+                  <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#0071E3] to-blue-700 text-white font-extrabold text-lg flex items-center justify-center shadow-md shrink-0">
+                    {getInitials(selectedPatient.full_name)}
                   </div>
-                  <p className="mt-1 text-xs text-[#86868B]">
-                    {selectedPatient.gender} • {selectedPatient.age} Years (DOB: {selectedPatient.dob || "Recorded"}) • Phone: {selectedPatient.phone}
-                  </p>
-                  {/* Privacy & Consent-Governed Emergency Contact (Fix 1) */}
-                  <div className="mt-3 rounded-[18px] border border-black/[0.06] bg-[#ECEEF2]/40 p-3.5 dark:border-white/[0.06] dark:bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-start gap-2.5">
-                      <div className="rounded-full bg-[#0071E3]/10 p-2 text-[#0071E3] dark:text-[#2997FF] shrink-0">
-                        <Phone className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-[#1D1D1F] dark:text-white">
-                            Emergency Contact: {selectedPatient.emergency_contact || "Sunita Sharma"}
-                          </span>
-                          <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.2 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
-                            {selectedPatient.emergency_contact_relationship || "Mother (Legal Guardian - Minor)"}
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                            <ShieldCheck className="h-3 w-3" />
-                            <span>{selectedPatient.emergency_contact_consent_status || "DPDP Form-3 Consent Active"}</span>
-                          </span>
-                        </div>
-
-                        <div className="mt-1 flex items-center gap-2 sm:gap-3 text-[11px] text-[#86868B] font-mono flex-wrap">
-                          <span>
-                            Phone: <strong className="text-[#1D1D1F] dark:text-white font-bold">{unmaskedContactPhone || maskEmergencyPhone(selectedPatient.emergency_contact_phone)}</strong>
-                          </span>
-                          <span>•</span>
-                          <span>
-                            Encrypted at Rest: <code className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">{selectedPatient.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C"}</code>
-                          </span>
-                        </div>
-                      </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
+                        {selectedPatient.full_name}
+                      </h2>
+                      <span className="font-mono text-xs font-bold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 px-2.5 py-0.5 rounded-full">
+                        {selectedPatient.uhid}
+                      </span>
+                      <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        {selectedPatient.blood_group}
+                      </span>
                     </div>
+                    <p className="mt-1 text-xs text-[#86868B] flex items-center gap-2 flex-wrap">
+                      <span>{selectedPatient.gender} • {selectedPatient.age} Y (DOB: {selectedPatient.dob || "Recorded"})</span>
+                      <span>•</span>
+                      <span className="font-mono">Phone: {selectedPatient.phone}</span>
+                    </p>
 
-                    <button
-                      type="button"
-                      onClick={() => setEmergencyModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-[#1D1D1F] dark:text-white px-3 py-1.5 text-xs font-bold transition active:scale-95 shrink-0 cursor-pointer"
-                    >
-                      <Shield className="h-3.5 w-3.5 text-[#0071E3]" />
-                      <span>🚨 Emergency Access / Dispatch</span>
-                    </button>
+                    {/* Privacy & Consent-Governed Emergency Contact */}
+                    <div className="mt-3 rounded-2xl border border-black/[0.06] bg-[#ECEEF2]/40 p-3 dark:border-white/[0.06] dark:bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-start gap-2.5">
+                        <div className="rounded-xl bg-[#0071E3]/10 p-2 text-[#0071E3] dark:text-[#2997FF] shrink-0">
+                          <Phone className="h-3.5 w-3.5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-[#1D1D1F] dark:text-white text-xs">
+                              Emergency: {selectedPatient.emergency_contact || "Sunita Sharma"}
+                            </span>
+                            <span className="rounded-full bg-[#0071E3]/10 px-2 py-0.2 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF]">
+                              {selectedPatient.emergency_contact_relationship || "Mother (Legal Guardian - Minor)"}
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                              <ShieldCheck className="h-3 w-3" />
+                              <span>{selectedPatient.emergency_contact_consent_status || "DPDP Form-3 Consent Active"}</span>
+                            </span>
+                          </div>
+
+                          <div className="mt-1 flex items-center gap-2 sm:gap-3 text-[11px] text-[#86868B] font-mono flex-wrap">
+                            <span>
+                              Phone: <strong className="text-[#1D1D1F] dark:text-white font-bold">{unmaskedContactPhone || maskEmergencyPhone(selectedPatient.emergency_contact_phone)}</strong>
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Encrypted at Rest: <code className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">{selectedPatient.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C"}</code>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setEmergencyModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-[#1D1D1F] dark:text-white px-3 py-1.5 text-xs font-bold transition active:scale-95 shrink-0 cursor-pointer"
+                      >
+                        <Shield className="h-3.5 w-3.5 text-[#0071E3]" />
+                        <span>🚨 Emergency Access</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Right Action buttons */}
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  <Link
+                    href={`/dashboard/consult/${selectedPatient.visits?.[0]?.visit_number || selectedPatient.uhid}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer"
+                    title="Open Consultation Studio for this patient"
+                  >
+                    <Stethoscope className="h-4 w-4" />
+                    <span>Start Consult</span>
+                  </Link>
+
                   <button
                     type="button"
                     onClick={() => setExportModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-[12px] border border-[#0071E3]/20 bg-[#0071E3]/10 hover:bg-[#0071E3]/20 px-3.5 py-2 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] shadow-sm transition active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#0071E3]/20 bg-[#0071E3]/10 hover:bg-[#0071E3]/20 px-3 py-2 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] shadow-sm transition active:scale-95 cursor-pointer"
                     title="Generate watermarked time-bound PDF export"
                   >
                     <ShieldCheck className="h-4 w-4" />
-                    <span>Secure PDF Export</span>
+                    <span>Export Dossier</span>
                   </button>
 
                   <button
@@ -838,10 +954,10 @@ export default function DashboardPatientsPage() {
                       setTestDrugInput("Syrup Amoxyclav 228.5mg");
                       setPrescribeModalOpen(true);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition active:scale-95 cursor-pointer"
                   >
-                    <Stethoscope className="h-4 w-4" />
-                    <span>Prescribe ℞ (Safety Guard)</span>
+                    <Plus className="h-4 w-4" />
+                    <span>Prescribe ℞</span>
                   </button>
                 </div>
               </div>
@@ -1367,8 +1483,12 @@ export default function DashboardPatientsPage() {
               )}
             </div>
           ) : (
-            <div className="text-center p-12 text-xs text-[#86868B]">
-              Select a patient from directory to view EMR history.
+            <div className="rounded-[28px] border border-dashed border-black/[0.08] dark:border-white/[0.08] p-16 text-center text-xs text-[#86868B] bg-white dark:bg-[#1C1C1E] flex flex-col items-center justify-center space-y-2.5">
+              <div className="h-12 w-12 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] flex items-center justify-center text-[#86868B]">
+                <Users className="h-6 w-6" />
+              </div>
+              <p className="font-bold text-sm text-[#1D1D1F] dark:text-white">No Patient Selected</p>
+              <p className="max-w-xs text-xs">Select a patient from the directory on the left to inspect their clinical dossier, visits, and active safety alerts.</p>
             </div>
           )}
         </div>

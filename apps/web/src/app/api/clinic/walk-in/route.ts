@@ -1,107 +1,145 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { authorizeClinicUser } from "@/lib/auth";
 import { randomUUID } from "crypto";
+import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
+const cleanPhone = (value: unknown) =>
+  String(value || "").replace(/[^0-9]/g, "").slice(-10);
+
+/**
+ * Register a walk-in consultation.
+ *
+ * The doctor must belong to the caller's clinic, the fee comes from the doctor
+ * record (or an explicit, validated override), and the payment mode is
+ * required. No sample doctor, fee, or clinic is substituted.
+ */
 export async function POST(req: NextRequest) {
   try {
-    // 🔐 Auth Guard — only clinic staff can register walk-ins
-    let auth;
-    try {
-      auth = await authorizeClinicUser(req, {
-        requiredRoles: ["owner", "clinic_admin", "receptionist", "staff", "superadmin"],
-      });
-    } catch (authErr: any) {
-      return NextResponse.json(
-        { error: "Unauthorized: Valid clinic staff session required to register walk-in.", detail: authErr.message },
-        { status: authErr.status || 401 }
-      );
-    }
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicId = auth.auth.clinic!.id;
+    const clinicSlug = auth.auth.clinic!.slug;
+    const clinic = auth.auth.clinic!;
 
     const body = await req.json();
     const {
       patient_name,
       patient_phone,
-      fee_amount = 600,
-      payment_mode = "upi",
-      doctor_slug = "dr-rahul-sharma",
-      clinic_slug = auth.clinic.slug,
-      symptoms_description = "Walk-in consultation",
+      doctor_slug,
+      fee_amount = null,
+      payment_mode,
+      symptoms_description = null,
     } = body;
 
     if (!patient_name || !patient_phone) {
-      return NextResponse.json({ error: "Patient name and phone are required for walk-in" }, { status: 400 });
+      return apiError(400, "patient_name and patient_phone are required.", "invalid_input");
+    }
+    if (!doctor_slug) {
+      return apiError(400, "doctor_slug is required.", "doctor_required");
+    }
+    if (!payment_mode) {
+      return apiError(400, "payment_mode is required.", "payment_mode_required");
     }
 
-    // Look up doctor
+    const phone = cleanPhone(patient_phone);
+    if (phone.length !== 10) {
+      return apiError(400, "A valid 10-digit patient phone is required.", "invalid_phone");
+    }
+
     const doctors = await sql`
-      SELECT id, full_name, consultation_fee, followup_validity_days, clinic_id, clinic_name, clinic_slug 
-      FROM doctors 
-      WHERE slug = ${doctor_slug} 
+      SELECT id, slug, full_name, consultation_fee, followup_validity_days,
+             clinic_id, clinic_name, clinic_slug
+      FROM doctors
+      WHERE slug = ${String(doctor_slug)}
+        AND (clinic_id::text = ${clinicId} OR clinic_slug = ${clinicSlug})
       LIMIT 1;
     `;
+    if (doctors.length === 0) {
+      return apiError(404, "Doctor not found in your clinic.", "doctor_not_found");
+    }
     const doc = doctors[0];
 
+    const explicitFee =
+      fee_amount === null || fee_amount === undefined || fee_amount === ""
+        ? null
+        : Number(fee_amount);
+    if (explicitFee !== null && (!Number.isFinite(explicitFee) || explicitFee < 0)) {
+      return apiError(400, "fee_amount must be a non-negative number.", "invalid_fee");
+    }
+
+    const doctorFee = doc.consultation_fee == null ? null : Number(doc.consultation_fee);
     const todayStr = new Date().toISOString().split("T")[0];
+
     let isFreeFollowup = false;
 
-    // Atomic Token Generation with PostgreSQL Advisory Lock (Zero Concurrency Collision)
     const inserted = await sql.begin(async (tx) => {
-      await tx`SELECT pg_advisory_xact_lock(hashtext(${doctor_slug} || ':' || ${todayStr}));`;
+      await tx`SELECT pg_advisory_xact_lock(hashtext(${clinicId} || ':' || ${doc.slug} || ':' || ${todayStr}));`;
 
       const tokenQuery = await tx`
-        SELECT COALESCE(MAX(token_number), 0) + 1 AS next_token 
-        FROM appointments 
-        WHERE doctor_slug = ${doctor_slug} AND appointment_date = ${todayStr};
+        SELECT COALESCE(MAX(token_number), 0) + 1 AS next_token
+        FROM appointments
+        WHERE clinic_id::text = ${clinicId}
+          AND doctor_slug = ${doc.slug}
+          AND appointment_date = ${todayStr};
       `;
       const nextToken = Number(tokenQuery[0]?.next_token || 1);
 
-      // 7-day free followup validity check
-      const validityDays = doc?.followup_validity_days || 7;
-      const pastConsultation = await tx`
-        SELECT id, created_at FROM appointments
-        WHERE doctor_slug = ${doctor_slug} 
-          AND patient_phone = ${patient_phone}
-          AND status = 'completed'
-          AND created_at >= NOW() - INTERVAL '1 day' * ${validityDays}
-        LIMIT 1;
-      `;
+      if (doc.followup_validity_days != null) {
+        const validityDays = Number(doc.followup_validity_days);
+        const pastConsultation = await tx`
+          SELECT id FROM appointments
+          WHERE clinic_id::text = ${clinicId}
+            AND doctor_slug = ${doc.slug}
+            AND patient_phone = ${phone}
+            AND status = 'completed'
+            AND created_at >= NOW() - INTERVAL '1 day' * ${validityDays}
+          LIMIT 1;
+        `;
+        isFreeFollowup = pastConsultation.length > 0;
+      }
 
-      isFreeFollowup = pastConsultation.length > 0;
-      const finalFee = isFreeFollowup ? 0 : fee_amount;
+      const resolvedFee = isFreeFollowup ? 0 : (explicitFee ?? doctorFee);
+      if (resolvedFee === null || !Number.isFinite(resolvedFee)) {
+        throw Object.assign(
+          new Error(
+            "This doctor has no consultation fee configured. Set the fee on the doctor profile before registering a walk-in."
+          ),
+          { status: 422, code: "fee_not_configured" }
+        );
+      }
 
       const dateCompact = todayStr.replace(/-/g, "").slice(2);
       const randSuffix = Math.floor(1000 + Math.random() * 9000);
-      const aptNumber = `APT-${dateCompact}-WLK-${nextToken.toString().padStart(2, "0")}-${randSuffix}`;
-      const id = randomUUID();
-
-      // Use authenticated clinic ID for tenant isolation
-      const resolvedClinicId = doc?.clinic_id || auth.clinic.id;
+      const aptNumber = `APT-${dateCompact}-WLK-${nextToken
+        .toString()
+        .padStart(2, "0")}-${randSuffix}`;
 
       return await tx`
         INSERT INTO appointments (
-          id, appointment_number, doctor_slug, clinic_id, doctor_name, 
-          clinic_name, patient_name, patient_phone, appointment_date, 
-          time_slot, token_number, status, fee_amount, payment_status, 
+          id, appointment_number, doctor_slug, clinic_id, doctor_name,
+          clinic_name, patient_name, patient_phone, appointment_date,
+          time_slot, token_number, status, fee_amount, payment_status,
           payment_mode, symptoms_description, created_at
         ) VALUES (
-          ${id},
+          ${randomUUID()},
           ${aptNumber},
-          ${doctor_slug},
-          ${resolvedClinicId},
-          ${doc?.full_name || "Doctor"},
-          ${doc?.clinic_name || auth.clinic.name},
-          ${patient_name},
-          ${patient_phone},
+          ${doc.slug},
+          ${clinicId},
+          ${doc.full_name},
+          ${doc.clinic_name || clinic.name},
+          ${String(patient_name)},
+          ${phone},
           ${todayStr},
           'Immediate Walk-In',
           ${nextToken},
           'waiting',
-          ${finalFee},
+          ${resolvedFee},
           'paid',
-          ${payment_mode},
+          ${String(payment_mode)},
           ${symptoms_description},
           NOW()
         )
@@ -109,10 +147,28 @@ export async function POST(req: NextRequest) {
       `;
     });
 
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId,
+      action: "appointment.walk_in",
+      entity: "appointment",
+      entityId: String(inserted[0].id),
+      after: {
+        appointment_number: inserted[0].appointment_number,
+        doctor_slug: doc.slug,
+        patient_phone: phone,
+        fee_amount: inserted[0].fee_amount,
+        payment_mode,
+        is_free_followup: isFreeFollowup,
+      },
+      request: req,
+    });
+
     return NextResponse.json({
       status: "admitted",
       is_free_followup: isFreeFollowup,
-      registered_by: auth.user.full_name,
+      registered_by: auth.auth.user.full_name,
       appointment: {
         appointment_number: inserted[0].appointment_number,
         token_number: inserted[0].token_number,
@@ -128,6 +184,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("POST /api/clinic/walk-in error:", error);
-    return NextResponse.json({ error: error.message || "Failed to admit walk-in" }, { status: 500 });
+    if (error?.status) {
+      return apiError(error.status, error.message, error.code || "invalid_input");
+    }
+    return apiError(500, "Failed to admit walk-in.", "internal_error");
   }
 }

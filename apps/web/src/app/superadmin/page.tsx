@@ -41,20 +41,20 @@ interface ClinicFleetRecord {
   id: string;
   name: string;
   slug: string;
-  phone: string;
-  city: string;
-  state: string;
-  address: string;
-  upi_vpa: string;
-  status: "active" | "suspended" | string;
-  subscription_plan: "starter" | "growth" | "enterprise" | "trial" | string;
-  plan_name: string;
-  monthly_fee: number;
-  subscription_status: "active" | "paid" | "trial" | "due" | "due_soon" | "suspended" | string;
-  subscription_expires_at: string;
-  days_remaining: number;
+  phone: string | null;
+  city: string | null;
+  state: string | null;
+  address: string | null;
+  upi_vpa: string | null;
+  status: "active" | "suspended" | string | null;
+  subscription_plan: "starter" | "growth" | "enterprise" | "trial" | string | null;
+  plan_name: string | null;
+  monthly_fee: number | null;
+  subscription_status: "active" | "paid" | "trial" | "due" | "due_soon" | "suspended" | string | null;
+  subscription_expires_at: string | null;
+  days_remaining: number | null;
   doctor_count: number;
-  lead_doctor: string;
+  lead_doctor: string | null;
   tokens_today: number;
   active_tokens: number;
   completed_tokens: number;
@@ -87,6 +87,7 @@ export default function SuperAdminPage() {
   // Authentication gate state
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
+  const [identifierInput, setIdentifierInput] = useState<string>("");
   const [passwordInput, setPasswordInput] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -109,20 +110,37 @@ export default function SuperAdminPage() {
   const [selectedPlan, setSelectedPlan] = useState<"starter" | "growth" | "enterprise">("growth");
   const [actionSuccessToast, setActionSuccessToast] = useState<string | null>(null);
 
-  // 1. Check if superadmin is already unlocked in this session
+  // 1. Restore an existing super-admin session by asking the guarded API.
+  // No client-side password check: the server decides who is a super admin.
   useEffect(() => {
-    try {
-      const unlocked = sessionStorage.getItem("clinicos_superadmin_unlocked");
-      if (unlocked === "true") {
-        setIsUnlocked(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem("clinicos_token");
         const stored = localStorage.getItem("clinicos_user");
-        if (stored) setCurrentUser(JSON.parse(stored));
+        if (!token || !stored) return;
+        const parsed = JSON.parse(stored);
+        if (parsed?.role !== "super_admin") return;
+
+        const res = await fetch("/api/admin/master", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok && !cancelled) {
+          setCurrentUser(parsed);
+          setIsUnlocked(true);
+        } else if (!res.ok) {
+          localStorage.removeItem("clinicos_token");
+          localStorage.removeItem("clinicos_user");
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!cancelled) setCheckingAuth(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setCheckingAuth(false);
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 2. Fetch master data once unlocked
@@ -149,64 +167,59 @@ export default function SuperAdminPage() {
     }
   }, [isUnlocked]);
 
-  // 3. Password Verification Handler
+  // 3. Sign in with a real super-admin account (verified by the server).
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
     setAuthError(null);
 
-    const entered = passwordInput.trim();
-
-    if (entered !== "Manas@12") {
-      setAuthError("Incorrect password. Please try again.");
-      setAuthLoading(false);
-      return;
-    }
-
     try {
-      // Background sign-in to authenticate session token with Supabase backend
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: "superadmin", password: entered })
+        body: JSON.stringify({
+          phone: identifierInput.trim(),
+          password: passwordInput,
+        }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        localStorage.setItem("clinicos_token", data.access_token);
-        const user = {
-          id: data.user_id,
-          phone: "superadmin",
-          full_name: data.full_name || "Super Admin (Manas)",
-          role: "super_admin"
-        };
-        localStorage.setItem("clinicos_user", JSON.stringify(user));
-        setCurrentUser(user);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || data.detail || "Sign-in failed.");
       }
-    } catch (err) {
-      console.warn("Background JWT sync non-critical warning:", err);
+      if (data.role !== "super_admin") {
+        throw new Error("This account is not a platform super admin.");
+      }
+
+      localStorage.setItem("clinicos_token", data.access_token);
+      const user = {
+        id: data.user_id,
+        phone: data.phone,
+        full_name: data.full_name,
+        role: "super_admin",
+      };
+      localStorage.setItem("clinicos_user", JSON.stringify(user));
+      setCurrentUser(user);
+      setIsUnlocked(true);
+    } catch (err: any) {
+      setAuthError(err.message || "Sign-in failed.");
+    } finally {
+      setAuthLoading(false);
     }
-
-    // Unlock session
-    try {
-      sessionStorage.setItem("clinicos_superadmin_unlocked", "true");
-    } catch (e) {}
-
-    setIsUnlocked(true);
-    setAuthLoading(false);
   };
 
   // 4. Lock / Sign Out Handler
   const handleLock = () => {
     try {
-      sessionStorage.removeItem("clinicos_superadmin_unlocked");
       localStorage.removeItem("clinicos_token");
       localStorage.removeItem("clinicos_user");
       document.cookie = "clinicos_token=; path=/; max-age=0";
     } catch (e) {}
     setIsUnlocked(false);
+    setIdentifierInput("");
     setPasswordInput("");
     setAuthError(null);
+    router.push("/login");
   };
 
   const handleRecordPayment = async (clinic: ClinicFleetRecord) => {
@@ -258,11 +271,12 @@ export default function SuperAdminPage() {
 
   // Filtered clinic fleet list
   const filteredClinics = clinics.filter(c => {
-    const matchesSearch = 
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.lead_doctor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.slug.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      c.name.toLowerCase().includes(q) ||
+      (c.city || "").toLowerCase().includes(q) ||
+      (c.lead_doctor || "").toLowerCase().includes(q) ||
+      c.slug.toLowerCase().includes(q);
     
     if (statusFilter === "all") return matchesSearch;
     if (statusFilter === "paid") return matchesSearch && (c.subscription_status === "paid" || c.subscription_status === "active");
@@ -340,7 +354,29 @@ export default function SuperAdminPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-                    <span>Enter Master Password</span>
+                    <span>Admin Username / Phone</span>
+                    <span className="text-[10px] text-slate-500 font-mono">Protected Gate</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="text"
+                      autoFocus
+                      required
+                      autoComplete="username"
+                      value={identifierInput}
+                      onChange={(e) => setIdentifierInput(e.target.value)}
+                      placeholder="super admin identifier"
+                      className="w-full rounded-2xl border border-slate-800 bg-slate-950 py-3 pl-10 pr-4 text-sm text-white placeholder-slate-600 shadow-inner focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                    <span>Password</span>
                     <span className="text-[10px] text-slate-500 font-mono">Protected Gate</span>
                   </label>
                   <div className="relative">
@@ -349,8 +385,8 @@ export default function SuperAdminPage() {
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
-                      autoFocus
                       required
+                      autoComplete="current-password"
                       value={passwordInput}
                       onChange={(e) => setPasswordInput(e.target.value)}
                       placeholder="Enter password..."
@@ -369,7 +405,7 @@ export default function SuperAdminPage() {
 
                 <button
                   type="submit"
-                  disabled={authLoading || !passwordInput}
+                  disabled={authLoading || !identifierInput || !passwordInput}
                   className="w-full rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-3 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-purple-600/30 transition active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none"
                 >
                   {authLoading ? "Verifying..." : "Unlock Super Admin Cockpit"}
@@ -441,7 +477,7 @@ export default function SuperAdminPage() {
             
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs font-medium text-purple-700 dark:text-purple-300">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Super Admin (Manas)</span>
+              <span>{currentUser?.full_name || "Super Admin"}</span>
             </div>
 
             <button
@@ -652,7 +688,7 @@ export default function SuperAdminPage() {
                             {clinic.name}
                           </div>
                           <div className="text-[11px] text-[#86868B] mt-0.5">
-                            {clinic.city}, {clinic.state} • <span className="font-mono">{clinic.slug}</span>
+                            {[clinic.city, clinic.state].filter(Boolean).join(", ") || "Location not set"} • <span className="font-mono">{clinic.slug}</span>
                           </div>
                         </td>
 
@@ -660,7 +696,7 @@ export default function SuperAdminPage() {
                         <td className="py-3 px-4">
                           <div className="font-semibold text-[#1D1D1F] dark:text-white flex items-center gap-1">
                             <Stethoscope className="h-3 w-3 text-teal-600 shrink-0" />
-                            {clinic.lead_doctor}
+                            {clinic.lead_doctor || "No doctor linked"}
                           </div>
                           <div className="text-[10px] text-[#86868B] mt-0.5">
                             {clinic.doctor_count} Doctor{clinic.doctor_count !== 1 ? "s" : ""} on duty
@@ -670,10 +706,12 @@ export default function SuperAdminPage() {
                         {/* Plan & Fee */}
                         <td className="py-3 px-4">
                           <div className="font-bold text-[#1D1D1F] dark:text-white">
-                            {clinic.plan_name}
+                            {clinic.plan_name || "No plan"}
                           </div>
                           <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                            ₹{clinic.monthly_fee.toLocaleString("en-IN")}/mo
+                            {clinic.monthly_fee == null
+                              ? "Fee not configured"
+                              : `₹${clinic.monthly_fee.toLocaleString("en-IN")}/mo`}
                           </div>
                         </td>
 
@@ -721,7 +759,9 @@ export default function SuperAdminPage() {
                           </div>
                           <div className="text-[10px] text-[#86868B] mt-1 flex items-center gap-1">
                             <Clock className="h-2.5 w-2.5" />
-                            {clinic.days_remaining}d remaining
+                            {clinic.days_remaining == null
+                              ? "No expiry set"
+                              : `${clinic.days_remaining}d remaining`}
                           </div>
                         </td>
 
@@ -851,13 +891,13 @@ export default function SuperAdminPage() {
                       <tr key={c.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                         <td className="p-3 font-bold text-[#1D1D1F] dark:text-white">
                           {c.name}
-                          <div className="text-[10px] text-[#86868B] font-mono">{c.phone}</div>
+                          <div className="text-[10px] text-[#86868B] font-mono">{c.phone || "No phone"}</div>
                         </td>
                         <td className="p-3">
-                          <span className="font-semibold">{c.plan_name}</span>
+                          <span className="font-semibold">{c.plan_name || "No plan"}</span>
                         </td>
                         <td className="p-3 font-mono font-bold text-emerald-600">
-                          ₹{c.monthly_fee}/mo
+                          {c.monthly_fee == null ? "Not configured" : `₹${c.monthly_fee}/mo`}
                         </td>
                         <td className="p-3">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
@@ -867,28 +907,40 @@ export default function SuperAdminPage() {
                               ? "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
                               : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
                           }`}>
-                            {c.subscription_status}
+                            {c.subscription_status || "unknown"}
                           </span>
                         </td>
                         <td className="p-3">
-                          <span className={`font-mono text-xs ${c.days_remaining <= 5 ? "text-red-500 font-bold" : "text-[#86868B]"}`}>
-                            {c.days_remaining} days
+                          <span className={`font-mono text-xs ${
+                            c.days_remaining != null && c.days_remaining <= 5
+                              ? "text-red-500 font-bold"
+                              : "text-[#86868B]"
+                          }`}>
+                            {c.days_remaining == null ? "—" : `${c.days_remaining} days`}
                           </span>
                         </td>
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {/* WhatsApp Dunning Button */}
-                            <a
-                              href={`https://wa.me/${c.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                                `Namaste from DocSphere ClinicOS Admin! Your ${c.plan_name} subscription for ${c.name} is currently ${c.subscription_status} (${c.days_remaining} days left). To renew or settle monthly dues (₹${c.monthly_fee}), please respond to this message or pay via UPI: ${c.upi_vpa}`
-                              )}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] transition shadow-sm"
-                            >
-                              <MessageCircle className="h-3 w-3" />
-                              WhatsApp Invoice
-                            </a>
+                            {/* WhatsApp Dunning Button — only when a phone exists */}
+                            {c.phone ? (
+                              <a
+                                href={`https://wa.me/${c.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                                  `Namaste from DocSphere ClinicOS Admin. Your ${c.plan_name || "ClinicOS"} subscription for ${c.name} is currently ${c.subscription_status || "unknown"}` +
+                                  (c.days_remaining != null ? ` (${c.days_remaining} days left)` : "") +
+                                  (c.monthly_fee != null ? `. To renew or settle monthly dues (₹${c.monthly_fee})` : ". To renew") +
+                                  (c.upi_vpa ? `, pay via UPI: ${c.upi_vpa}` : "") +
+                                  `.`
+                                )}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] transition shadow-sm"
+                              >
+                                <MessageCircle className="h-3 w-3" />
+                                WhatsApp Invoice
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-[#86868B]">Add a phone to enable dunning</span>
+                            )}
 
                             <button
                               onClick={() => {

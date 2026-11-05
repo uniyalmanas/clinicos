@@ -1,114 +1,151 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { guard, CLINICAL_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
+import { findClinicLabOrder } from "@/lib/lab-scope";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Critical Value Panic Alert & Read-Back Escalation API
- * Complies with NABL / CAP Critical Result Notification Policy:
- * 1. Dispatches urgent SMS / Phone Call notification to ordering physician.
- * 2. Mandates verbal/digital "Read-Back" confirmation before result release.
+ * Critical value notification and read-back log.
+ *
+ * This endpoint records that a clinician was alerted and that the value was
+ * read back. It does not itself send SMS or place calls; the channel is stored
+ * as a manual log so the audit trail reflects exactly what happened.
  */
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { 
-      order_id, 
-      action = "confirm_read_back", // 'notify_doctor' or 'confirm_read_back'
-      doctor_name = "Dr. Rahul Sharma",
-      doctor_phone = "+91 98765 43210",
-      read_back_nurse = "Sister Rekha (Lab Duty Nurse)",
-      read_back_notes = "Panic value read back and confirmed verbally by Dr. Rahul Sharma. STAT intervention advised."
+    const auth = await guard(req, { roles: CLINICAL_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicId = auth.auth.clinic!.id;
+    const body = await req.json();
+    const {
+      order_id,
+      action = "confirm_read_back",
+      doctor_name,
+      doctor_phone = null,
+      read_back_nurse,
+      read_back_notes,
     } = body;
 
     if (!order_id) {
-      return NextResponse.json({ error: "order_id is required" }, { status: 400 });
+      return apiError(400, "order_id is required.", "invalid_input");
     }
 
-    const orderQuery = await db`SELECT * FROM diagnostic_lab_orders WHERE id = ${order_id} LIMIT 1;`;
-    if (orderQuery.length === 0) {
-      return NextResponse.json({ error: "Lab order not found" }, { status: 404 });
+    const order = await findClinicLabOrder(clinicId, order_id);
+    if (!order) {
+      return apiError(404, "Lab order not found in your clinic.", "order_not_found");
     }
-    const order = orderQuery[0];
 
-    // ACTION 1: DISPATCH CRITICAL ALERT TO DOCTOR
     if (action === "notify_doctor") {
-      const logId = randomUUID();
-      await db`
+      const notifiedDoctor = String(doctor_name || order.doctor_name || "").trim();
+      if (!notifiedDoctor) {
+        return apiError(
+          400,
+          "doctor_name is required — the ordering doctor is not recorded on this order.",
+          "doctor_required"
+        );
+      }
+
+      await sql`
         INSERT INTO lis_critical_alert_logs (
           id, order_id, order_number, patient_name, doctor_name,
           doctor_phone, parameter_name, critical_value, channel
         ) VALUES (
-          ${logId},
+          ${randomUUID()},
           ${order.id},
           ${order.order_number},
           ${order.patient_name},
-          ${doctor_name},
+          ${notifiedDoctor},
           ${doctor_phone},
-          ${JSON.stringify(order.critical_parameters)},
+          ${JSON.stringify(order.critical_parameters || [])},
           'CRITICAL_VALUE_FLAGGED',
-          'SMS+CALL'
+          'manual_log'
         );
       `;
 
-      await db`
+      const updated = await sql`
         UPDATE diagnostic_lab_orders
-        SET 
+        SET
           doctor_notified_at = NOW(),
-          doctor_notified_name = ${doctor_name}
-        WHERE id = ${order_id};
+          doctor_notified_name = ${notifiedDoctor}
+        WHERE id = ${String(order.id)}
+        RETURNING *;
       `;
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "lab.critical.notify",
+        entity: "diagnostic_lab_order",
+        entityId: String(order.id),
+        after: { doctor_name: notifiedDoctor, doctor_phone },
+        request: req,
+      });
 
       return NextResponse.json({
         success: true,
-        message: `🚨 Emergency Critical Alert dispatched via SMS & Auto-Call to ${doctor_name} (${doctor_phone}). Awaiting mandatory clinical read-back confirmation.`
+        message: `Critical alert recorded against ${notifiedDoctor}. Read-back confirmation still pending.`,
+        order: updated[0],
       });
     }
 
-    // ACTION 2: CONFIRM VERBAL / DIGITAL READ-BACK
     if (action === "confirm_read_back") {
-      const updated = await db`
+      const nurse = String(read_back_nurse || auth.auth.user.full_name);
+      const notes = String(read_back_notes || "").trim();
+      if (!notes) {
+        return apiError(
+          400,
+          "read_back_notes are required to close a critical alert.",
+          "notes_required"
+        );
+      }
+
+      const notation = `[Critical value read-back] ${notes}`;
+      const updated = await sql`
         UPDATE diagnostic_lab_orders
-        SET 
+        SET
           doctor_read_back_confirmed = true,
           doctor_notified_at = COALESCE(doctor_notified_at, NOW()),
-          doctor_notified_name = ${doctor_name},
-          pathologist_notes = ${`${order.pathologist_notes || ''} [CRITICAL VALUE READ-BACK CONFIRMED]: Verified with ${doctor_name} by ${read_back_nurse} at ${new Date().toLocaleTimeString('en-IN')}. Notes: ${read_back_notes}`},
+          doctor_notified_name = COALESCE(${doctor_name || null}, doctor_notified_name),
+          pathologist_notes = ${notation},
           updated_at = NOW()
-        WHERE id = ${order_id}
+        WHERE id = ${String(order.id)}
         RETURNING *;
       `;
 
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "lab.critical.read_back",
+        entity: "diagnostic_lab_order",
+        entityId: String(order.id),
+        after: { read_back_nurse: nurse, read_back_notes: notes },
+        request: req,
+      });
+
       return NextResponse.json({
         success: true,
-        message: `✓ Critical value read-back verified and closed by ${read_back_nurse}. Documented in patient diagnostic record.`,
-        order: updated[0]
+        message: `Critical value read-back recorded by ${nurse}.`,
+        order: updated[0],
       });
     }
 
-    // ACTION 3: DISPATCH VIA WHATSAPP WITH SHA-256 HASH
     if (action === "dispatch_whatsapp") {
-      const updated = await db`
-        UPDATE diagnostic_lab_orders
-        SET 
-          whatsapp_dispatched = true,
-          whatsapp_dispatched_at = NOW(),
-          updated_at = NOW()
-        WHERE id = ${order_id}
-        RETURNING *;
-      `;
-
-      return NextResponse.json({
-        success: true,
-        message: `✓ NABL Diagnostic PDF Report dispatched to patient WhatsApp (+91 ${order.patient_phone}) with SHA-256 verification QR code.`,
-        order: updated[0]
-      });
+      return apiError(
+        501,
+        "Automatic WhatsApp report delivery is not implemented. Share the signed report link from the prescription screen.",
+        "not_implemented"
+      );
     }
 
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    return apiError(400, "Invalid action.", "invalid_action");
   } catch (error: any) {
     console.error("Critical alert error:", error);
-    return NextResponse.json({ error: error.message || "Failed to process critical alert" }, { status: 500 });
+    return apiError(500, "Failed to process critical alert.", "internal_error");
   }
 }

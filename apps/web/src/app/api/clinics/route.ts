@@ -1,17 +1,35 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { authorizeClinicUser } from "@/lib/auth";
+import { guard, ADMIN_ROLES, CLINIC_ROLES } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+/** Public directory fields — never tenant configuration or credentials. */
+const PUBLIC_CLINIC_FIELDS = `
+  id, slug, name, phone, address_line, city, state, postal_code,
+  facilities, opening_hours, status, tagline, subscription_status
+`;
+
+const PUBLIC_DOCTOR_FIELDS = `
+  id, slug, title, full_name, specialization, qualification_summary,
+  years_of_experience, languages_spoken, bio, consultation_fee, followup_fee,
+  followup_validity_days, services_offered, rating, total_reviews,
+  clinic_id, clinic_name, clinic_slug, clinic_address, opd_timings, is_active
+`;
+
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get("slug");
     const id = searchParams.get("id");
 
+    // Signed-in staff see their own tenant's full configuration.
+    const auth = await guard(req, { roles: CLINIC_ROLES, requireClinic: false });
+    const authClinicId = auth.ok ? auth.auth.clinic?.id : null;
+    const isSuperAdmin = auth.ok && auth.auth.isSuperAdmin;
+
     if (slug || id) {
-      const rows = id 
+      const rows = id
         ? await sql`SELECT * FROM clinics WHERE id::text = ${id}::text LIMIT 1`
         : await sql`SELECT * FROM clinics WHERE lower(slug) = ${slug!.toLowerCase().trim()} LIMIT 1`;
 
@@ -19,79 +37,132 @@ export async function GET(req: Request) {
         return NextResponse.json({ detail: "Clinic not found" }, { status: 404 });
       }
       const clinic = rows[0];
+      const isOwnTenant =
+        isSuperAdmin || (authClinicId && String(authClinicId) === String(clinic.id));
 
-      // Fetch doctors with active status priority
-      const doctors = await sql`
-        SELECT * FROM doctors 
-        WHERE clinic_id::text = ${clinic.id}::text OR lower(clinic_slug) = ${clinic.slug.toLowerCase().trim()}
-        ORDER BY is_active DESC NULLS LAST, full_name ASC
-      `;
+      const doctors = isOwnTenant
+        ? await sql`
+            SELECT * FROM doctors
+            WHERE clinic_id::text = ${clinic.id}::text OR lower(clinic_slug) = ${clinic.slug.toLowerCase().trim()}
+            ORDER BY is_active DESC NULLS LAST, full_name ASC
+          `
+        : await sql.unsafe(
+            `SELECT ${PUBLIC_DOCTOR_FIELDS} FROM doctors
+             WHERE clinic_id::text = $1::text OR lower(clinic_slug) = $2
+             ORDER BY is_active DESC NULLS LAST, full_name ASC`,
+            [clinic.id, clinic.slug.toLowerCase().trim()]
+          );
 
-      // Fetch versioned tariffs
+      if (!isOwnTenant) {
+        const publicClinics = await sql.unsafe(
+          `SELECT ${PUBLIC_CLINIC_FIELDS} FROM clinics WHERE id::text = $1::text LIMIT 1`,
+          [clinic.id]
+        );
+        return NextResponse.json({ ...publicClinics[0], doctors });
+      }
+
       const tariffVersions = await sql`
-        SELECT * FROM clinic_tariff_versions 
+        SELECT * FROM clinic_tariff_versions
         WHERE clinic_slug = ${clinic.slug}
         ORDER BY effective_from DESC
       `;
 
-      // Fetch shift guardrails
       const shiftGuardrails = await sql`
-        SELECT * FROM clinic_shift_guardrails 
+        SELECT * FROM clinic_shift_guardrails
         WHERE clinic_slug = ${clinic.slug}
         ORDER BY chamber_name ASC, start_time ASC
       `;
 
-      return NextResponse.json({ 
-        ...clinic, 
-        doctors, 
+      return NextResponse.json({
+        ...clinic,
+        doctors,
         tariff_versions: tariffVersions,
-        shift_guardrails: shiftGuardrails 
+        shift_guardrails: shiftGuardrails,
       });
     }
 
-    const clinics = await sql`SELECT * FROM clinics ORDER BY name`;
+    if (auth.ok && auth.auth.clinic) {
+      return NextResponse.json(await sql`SELECT * FROM clinics ORDER BY name`);
+    }
+
+    const clinics = await sql.unsafe(
+      `SELECT ${PUBLIC_CLINIC_FIELDS} FROM clinics ORDER BY name`
+    );
     return NextResponse.json(clinics);
   } catch (error: any) {
     console.error("Clinics API GET error:", error);
-    return NextResponse.json({ detail: error.message }, { status: 500 });
+    return NextResponse.json({ detail: "Failed to load clinics." }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action } = body;
 
+    // Every POST action here changes tenant configuration or clinical rosters.
+    const auth = await guard(req, {
+      roles: ADMIN_ROLES,
+      clinic: body.clinic_slug ? { slug: String(body.clinic_slug) } : undefined,
+      audit: `clinic.config.${action || "unknown"}`,
+      auditEntity: "clinic",
+    });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic?.slug || body.clinic_slug;
+    const authorizedName = `${auth.auth.user.full_name} (${auth.auth.role})`;
+
     // 1. ACTION: Versioned Tariff & Split Creation
     if (action === "version_tariff") {
       const {
-        clinic_slug,
+        clinic_slug = clinicSlug,
         effective_from,
         consultation_fee,
         followup_fee,
         followup_validity_days,
         doctor_split_percentage,
         change_reason,
-        manager_pin
       } = body;
 
       if (!clinic_slug || !change_reason) {
         return NextResponse.json({ detail: "Clinic slug and change reason are mandatory" }, { status: 400 });
       }
 
-      // Security Guardrail: Clinic Admin / Owner Authorization
-      let authorizedName = "Clinic Administrator";
-      try {
-        const auth = await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
-        authorizedName = `${auth.user.full_name} (${auth.membership.role})`;
-      } catch (authErr: any) {
+      const consultationFee = Number(consultation_fee);
+      const followupFee = Number(followup_fee);
+      const validityDays = Number(followup_validity_days);
+      const splitPct = Number(doctor_split_percentage);
+
+      if (!Number.isFinite(consultationFee) || consultationFee <= 0) {
         return NextResponse.json(
-          { detail: authErr.message || "Unauthorized: Only clinic owners and administrators can modify tariff versions." },
-          { status: 403 }
+          { detail: "consultation_fee must be a positive number." },
+          { status: 400 }
+        );
+      }
+      if (!Number.isFinite(followupFee) || followupFee < 0) {
+        return NextResponse.json(
+          { detail: "followup_fee must be zero or a positive number." },
+          { status: 400 }
+        );
+      }
+      if (!Number.isInteger(validityDays) || validityDays < 0) {
+        return NextResponse.json(
+          { detail: "followup_validity_days must be a whole number." },
+          { status: 400 }
+        );
+      }
+      if (!Number.isFinite(splitPct) || splitPct < 0 || splitPct > 100) {
+        return NextResponse.json(
+          { detail: "doctor_split_percentage must be between 0 and 100." },
+          { status: 400 }
         );
       }
 
+      // Authorization already enforced by the guard above.
       const effectiveDate = effective_from ? new Date(effective_from) : new Date();
+      if (Number.isNaN(effectiveDate.getTime())) {
+        return NextResponse.json({ detail: "Invalid effective_from date." }, { status: 400 });
+      }
       const now = new Date();
       const isCurrentlyActive = effectiveDate <= now;
 
@@ -119,10 +190,10 @@ export async function POST(req: Request) {
         ) VALUES (
           ${clinic_slug},
           ${effectiveDate.toISOString()},
-          ${Number(consultation_fee) || 600},
-          ${Number(followup_fee) || 300},
-          ${Number(followup_validity_days) || 7},
-          ${Number(doctor_split_percentage) || 80},
+          ${consultationFee},
+          ${followupFee},
+          ${validityDays},
+          ${splitPct},
           ${authorizedName},
           ${change_reason},
           ${isCurrentlyActive}
@@ -130,24 +201,20 @@ export async function POST(req: Request) {
         RETURNING *;
       `;
 
-      // If effective immediately, synchronize clinic profile and active doctors
+      // If effective immediately, synchronize the clinic split and active doctors
       if (isCurrentlyActive) {
         await sql`
           UPDATE clinics
-          SET
-            consultation_fee = ${Number(consultation_fee) || 600},
-            followup_fee = ${Number(followup_fee) || 300},
-            followup_validity_days = ${Number(followup_validity_days) || 7},
-            doctor_split_percentage = ${Number(doctor_split_percentage) || 80}
-          WHERE lower(slug) = ${clinic_slug.toLowerCase().trim()}
+          SET doctor_split_percentage = ${splitPct}
+          WHERE lower(slug) = ${String(clinic_slug).toLowerCase().trim()}
         `;
 
         await sql`
           UPDATE doctors
           SET
-            consultation_fee = ${Number(consultation_fee) || 600},
-            followup_fee = ${Number(followup_fee) || 300},
-            followup_validity_days = ${Number(followup_validity_days) || 7}
+            consultation_fee = ${consultationFee},
+            followup_fee = ${followupFee},
+            followup_validity_days = ${validityDays}
           WHERE clinic_slug = ${clinic_slug}
         `;
       }
@@ -172,7 +239,7 @@ export async function POST(req: Request) {
     if (action === "save_shift_guardrail") {
       const {
         id,
-        clinic_slug,
+        clinic_slug = clinicSlug,
         chamber_name,
         doctor_slug,
         doctor_name,
@@ -275,7 +342,7 @@ export async function POST(req: Request) {
 
     // 3. ACTION: Delete Shift Guardrail
     if (action === "delete_shift_guardrail") {
-      const { id, clinic_slug } = body;
+      const { id, clinic_slug = clinicSlug } = body;
       if (!id) return NextResponse.json({ detail: "Shift ID required" }, { status: 400 });
 
       await sql`DELETE FROM clinic_shift_guardrails WHERE id::text = ${id}::text`;
@@ -291,27 +358,66 @@ export async function POST(req: Request) {
 
     // 4. ACTION: Safe Doctor Deactivation & Final Settlement Calculation
     if (action === "offboard_doctor") {
-      const { doctor_slug, clinic_slug, reason, manager_pin } = body;
+      const { doctor_slug, clinic_slug = clinicSlug, reason } = body;
 
       if (!doctor_slug) {
         return NextResponse.json({ detail: "Doctor slug is required" }, { status: 400 });
       }
 
-      try {
-        await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
-      } catch (authErr: any) {
-        return NextResponse.json(
-          { detail: authErr.message || "Unauthorized: Only clinic owners and administrators can offboard doctors." },
-          { status: 403 }
-        );
+      const clinicId = auth.auth.clinic?.id;
+      if (!clinicId) {
+        return NextResponse.json({ detail: "Clinic membership required." }, { status: 403 });
       }
 
-      // Check unsettled visits and calculate pending payout balance
-      // Standard realistic settlement calculation: 14 completed consultations * ₹600 * 80% = ₹6,720
-      const settlementId = `SETTLE-DR-${Date.now().toString().slice(-4)}`;
-      const pendingVisitsCount = 14;
-      const pendingGrossRevenue = 8400.00;
-      const calculatedSettlementPayout = 6720.00; // 80% doctor share
+      const doctorRows = await sql`
+        SELECT id, slug, full_name, clinic_id, clinic_slug
+        FROM doctors
+        WHERE slug = ${doctor_slug}
+          AND (clinic_id::text = ${String(clinicId)}::text OR clinic_slug = ${clinicSlug})
+        LIMIT 1;
+      `;
+      if (doctorRows.length === 0) {
+        return NextResponse.json({ detail: "Doctor not found" }, { status: 404 });
+      }
+      const doctor = doctorRows[0];
+
+      // Real pending payout: paid, completed consultations at this clinic.
+      const pending = await sql`
+        SELECT COUNT(*)::int AS visits, COALESCE(SUM(fee_amount), 0) AS gross
+        FROM appointments
+        WHERE doctor_slug = ${doctor_slug}
+          AND clinic_id::text = ${String(clinicId)}::text
+          AND status = 'completed'
+          AND payment_status = 'paid';
+      `;
+      const pendingVisitsCount = Number(pending[0]?.visits || 0);
+      const pendingGrossRevenue = Number(pending[0]?.gross || 0);
+
+      // The payout split comes from the doctor's active compensation contract.
+      const todayStr = new Date().toISOString().split("T")[0];
+      const contracts = await sql`
+        SELECT split_pct, fixed_fee_inr
+        FROM doctor_compensation_contracts
+        WHERE clinic_id::text = ${String(clinicId)}::text
+          AND doctor_id::text = ${String(doctor.id)}::text
+          AND effective_from <= ${todayStr}
+          AND (effective_to IS NULL OR effective_to >= ${todayStr})
+        ORDER BY effective_from DESC
+        LIMIT 1;
+      `;
+      const contract = contracts[0] || null;
+
+      let finalPayout: number | null = null;
+      let settlementStatus = "CONTRACT_MISSING";
+      if (contract) {
+        const splitPct = Number(contract.split_pct);
+        const fixedFee =
+          contract.fixed_fee_inr == null ? 0 : Number(contract.fixed_fee_inr);
+        finalPayout = Math.round((pendingGrossRevenue * splitPct) / 100 + fixedFee);
+        settlementStatus = "SETTLED";
+      }
+
+      const settlementId = finalPayout == null ? null : `SETTLE-DR-${Date.now().toString().slice(-6)}`;
 
       const updated = await sql`
         UPDATE doctors
@@ -320,9 +426,10 @@ export async function POST(req: Request) {
           deactivated_at = NOW(),
           deactivation_reason = ${reason || "Contract Completion / Safe Archive"},
           final_settlement_id = ${settlementId},
-          final_payout_amount = ${calculatedSettlementPayout},
-          final_settlement_status = 'SETTLED'
+          final_payout_amount = ${finalPayout},
+          final_settlement_status = ${settlementStatus}
         WHERE slug = ${doctor_slug}
+          AND (clinic_id::text = ${String(clinicId)}::text OR clinic_slug = ${clinicSlug})
         RETURNING *;
       `;
 
@@ -332,15 +439,18 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Doctor ${updated[0].full_name} has been safely archived. New appointments are frozen while historical EMR, prescriptions, and billing integrity are 100% preserved.`,
+        message:
+          finalPayout == null
+            ? `Doctor ${updated[0].full_name} has been archived. No active compensation contract was found, so no final payout was computed.`
+            : `Doctor ${updated[0].full_name} has been safely archived. New appointments are frozen while historical EMR, prescriptions, and billing integrity are preserved.`,
         settlement: {
           settlement_id: settlementId,
           unsettled_visits: pendingVisitsCount,
           gross_revenue: pendingGrossRevenue,
-          doctor_net_payout: calculatedSettlementPayout,
-          status: "SETTLED_VIA_ESCROW"
+          doctor_net_payout: finalPayout,
+          status: settlementStatus,
         },
-        doctor: updated[0]
+        doctor: updated[0],
       });
     }
 
@@ -352,15 +462,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ detail: "Doctor slug is required" }, { status: 400 });
       }
 
-      try {
-        await authorizeClinicUser(req, { requiredRoles: ["owner", "clinic_admin"] });
-      } catch (authErr: any) {
-        return NextResponse.json(
-          { detail: authErr.message || "Unauthorized: Only clinic owners and administrators can reactivate doctors." },
-          { status: 403 }
-        );
-      }
-
       const updated = await sql`
         UPDATE doctors
         SET
@@ -369,6 +470,7 @@ export async function POST(req: Request) {
           deactivation_reason = null,
           final_settlement_status = 'NONE'
         WHERE slug = ${doctor_slug}
+          AND (clinic_id::text = ${auth.auth.clinic?.id || ""}::text OR clinic_slug = ${clinicSlug})
         RETURNING *;
       `;
 
@@ -390,11 +492,11 @@ export async function POST(req: Request) {
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { 
-      id, 
+    let {
+      id,
       slug, 
       name, 
       phone, 
@@ -417,6 +519,19 @@ export async function PATCH(req: Request) {
     if (!id && !slug) {
       return NextResponse.json({ detail: "Clinic ID or slug is required" }, { status: 400 });
     }
+
+    // Tenant config: owner/admin of this clinic only. The tenant is derived
+    // from the membership, and the body cannot redirect the update.
+    const auth = await guard(req, {
+      roles: ADMIN_ROLES,
+      clinic: { id: id || undefined, slug: slug || undefined },
+      audit: "clinic.profile.update",
+      auditEntity: "clinic",
+      auditEntityId: id || slug || null,
+    });
+    if (!auth.ok) return auth.response;
+    id = auth.auth.clinic!.id;
+    slug = auth.auth.clinic!.slug;
 
     // 1. Update clinic profile
     const updatedClinics = id

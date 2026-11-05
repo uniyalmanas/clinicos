@@ -1,28 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const doctorSlug = searchParams.get("doctor_slug") || "dr-rahul-sharma";
-    const clinicSlug = searchParams.get("clinic_slug");
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
 
-    // Fetch appointments for today or recent
-    let appointments;
-    if (clinicSlug) {
-      appointments = await sql`
-        SELECT * FROM appointments 
-        WHERE clinic_id IN (SELECT id FROM clinics WHERE slug = ${clinicSlug})
-        ORDER BY token_number ASC;
-      `;
-    } else {
-      appointments = await sql`
-        SELECT * FROM appointments 
-        ORDER BY token_number ASC;
-      `;
-    }
+    const { searchParams } = new URL(req.url);
+    const clinicSlug = searchParams.get("clinic_slug") || auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
+
+    const appointments = await sql`
+      SELECT * FROM appointments
+      WHERE clinic_id::text = ${clinicId}::text
+      ORDER BY token_number ASC;
+    `;
 
     // Map status into standard desk status: 'waiting', 'in_consultation', 'completed'
     const formattedQueue = appointments.map((apt: any) => {
@@ -72,6 +67,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("GET /api/clinic/desk-queue error:", error);
-    return NextResponse.json({ error: error.message || "Failed to load desk queue" }, { status: 500 });
+    return apiError(500, "Failed to load desk queue.", "internal_error");
   }
 }

@@ -1,86 +1,159 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
-import { authorizeClinicUser } from "@/lib/auth";
+import { guard, ADMIN_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Settle a doctor payout.
+ *
+ * A payout moves money, so it requires an owner/administrator session. The
+ * doctor must belong to the caller's clinic. The expense row records who
+ * actually authorized it; no approval flags are pre-ticked.
+ */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: ADMIN_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
+
     const body = await req.json();
     const {
-      clinic_slug = "derma-care-dehradun",
       doctor_slug,
-      doctor_name,
+      doctor_name = null,
       amount,
-      payment_mode = "upi",
-      notes = "Visiting Doctor OPD Payout",
+      payment_mode,
+      notes = null,
     } = body;
 
-    if (!doctor_name || !amount) {
-      return NextResponse.json({ error: "doctor_name and amount are required" }, { status: 400 });
+    if (!doctor_slug) {
+      return apiError(400, "doctor_slug is required.", "doctor_required");
     }
 
-    let authUser;
-    try {
-      authUser = await authorizeClinicUser(req, {
-        requiredRoles: ["owner", "clinic_admin", "staff", "receptionist"]
-      });
-    } catch (authErr: any) {
-      return NextResponse.json({ error: authErr.message || "Unauthorized: Clinic staff authorization required." }, { status: 401 });
+    const payout = Number(amount);
+    if (!Number.isFinite(payout) || payout <= 0) {
+      return apiError(400, "amount must be a positive number.", "invalid_amount");
+    }
+    if (!payment_mode) {
+      return apiError(400, "payment_mode is required.", "payment_mode_required");
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
-
-    // Check if Day-Close locks payouts
-    const closings = await sql`
-      SELECT id FROM clinic_eod_closings 
-      WHERE clinic_slug = ${clinic_slug} AND closing_date = ${todayStr}
+    const docRows = await sql`
+      SELECT id, full_name, slug FROM doctors
+      WHERE slug = ${String(doctor_slug)}
+        AND (clinic_id::text = ${clinicId} OR clinic_slug = ${clinicSlug})
       LIMIT 1;
     `;
-
-    if (closings.length > 0 && !["owner", "clinic_admin"].includes(authUser.membership.role)) {
-      return NextResponse.json({ 
-        error: "Day-Close is locked! Post-close payout disbursements require Practice Manager or Owner authorization." 
-      }, { status: 403 });
+    if (docRows.length === 0) {
+      return apiError(404, "Doctor not found in your clinic.", "doctor_not_found");
     }
+    const doctor = docRows[0];
+    const resolvedName = String(doctor_name || doctor.full_name);
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    const recordedBy = `${auth.auth.user.full_name} (${auth.auth.role})`;
 
     const id = randomUUID();
-    const recordedBy = `${authUser.user.full_name} (${authUser.membership.role})`;
-
-    // Insert into expenses table as 'Staff Salary' / 'Doctor Revenue Split'
     const inserted = await sql`
       INSERT INTO expenses (
-        id, clinic_slug, title, category, amount, 
+        id, clinic_slug, title, category, amount,
         payment_mode, recorded_by, date, created_at,
         requires_approval, approval_status, approved_by,
         manager_pin_verified, ocr_verified
       ) VALUES (
         ${id},
-        ${clinic_slug},
-        ${`Doctor Payout: ${doctor_name} (${notes})`},
+        ${clinicSlug},
+        ${`Doctor Payout: ${resolvedName}${notes ? ` (${notes})` : ""}`},
         'Staff Salary',
-        ${Number(amount)},
-        ${payment_mode},
+        ${payout},
+        ${String(payment_mode)},
         ${recordedBy},
         ${todayStr},
         NOW(),
         false,
         'APPROVED',
         ${recordedBy},
-        true,
-        true
+        false,
+        false
       )
       RETURNING *;
     `;
 
+    // Mirror the payment into the payout ledger so reconciliation does not rely
+    // on parsing expense titles.
+    const existingLedger = await sql`
+      SELECT id FROM payout_ledger
+      WHERE clinic_id::text = ${clinicId}
+        AND doctor_id::text = ${String(doctor.id)}
+        AND period_start = ${todayStr}
+        AND period_end = ${todayStr}
+      LIMIT 1;
+    `;
+    if (existingLedger.length > 0) {
+      await sql`
+        UPDATE payout_ledger
+        SET
+          net_amount = ${payout},
+          status = 'paid',
+          approved_by = ${auth.auth.user.full_name},
+          approved_at = NOW(),
+          paid_at = NOW(),
+          notes = ${notes}
+        WHERE id = ${String(existingLedger[0].id)};
+      `;
+    } else {
+      await sql`
+        INSERT INTO payout_ledger (
+          id, clinic_id, doctor_id, period_start, period_end,
+          gross_amount, deductions, net_amount, split_pct, status,
+          computed_at, approved_by, approved_at, paid_at, notes
+        ) VALUES (
+          ${randomUUID()},
+          ${clinicId},
+          ${String(doctor.id)},
+          ${todayStr},
+          ${todayStr},
+          ${payout},
+          0,
+          ${payout},
+          NULL,
+          'paid',
+          NOW(),
+          ${auth.auth.user.full_name},
+          NOW(),
+          NOW(),
+          ${notes}
+        );
+      `;
+    }
+
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId,
+      action: "payout.settle",
+      entity: "doctor_payout",
+      entityId: id,
+      after: {
+        doctor_slug: doctor.slug,
+        doctor_name: resolvedName,
+        amount: payout,
+        payment_mode,
+      },
+      request: req,
+    });
+
     return NextResponse.json({
       status: "success",
-      message: `✓ Payout of ₹${Number(amount).toLocaleString("en-IN")} settled for ${doctor_name}. Posted to ledger.`,
-      expense: inserted[0]
+      message: `Payout of ₹${payout.toLocaleString("en-IN")} settled for ${resolvedName}.`,
+      expense: inserted[0],
     });
   } catch (error: any) {
     console.error("POST /api/clinic/settle-doctor-payout error:", error);
-    return NextResponse.json({ error: error.message || "Failed to settle doctor payout" }, { status: 500 });
+    return apiError(500, "Failed to settle doctor payout.", "internal_error");
   }
 }

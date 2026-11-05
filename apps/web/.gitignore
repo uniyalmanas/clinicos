@@ -1,2 +1,5 @@
 .vercel
-.env*
+# Never commit real environment values; keep the template
+.env
+.env.*
+!.env.example

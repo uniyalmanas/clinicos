@@ -1,102 +1,124 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { guard, CLINICAL_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 /**
- * System-Enforced Inpatient Admission Gate
- * Rule: Only beds in VACANT_CLEAN state can admit patients.
- * If VACANT_DIRTY, admission is hard-blocked until dual sanitization QA passes.
+ * Inpatient admission.
+ *
+ * Only a bed in VACANT_CLEAN can be occupied; VACANT_DIRTY is hard-blocked until
+ * dual sanitization QA passes. Every row written here is scoped to the caller's
+ * clinic and every tariff comes from the ward configuration.
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINICAL_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
+    const actorName = auth.auth.user.full_name;
+
     const body = await req.json();
     const {
       bed_id,
       patient_name,
-      patient_phone,
-      assigned_doctor_name = "Dr. Rahul Sharma",
-      admission_type = "post_op_recovery",
-      admission_notes = "Clinical observation and monitoring",
-      vitals_protocol = "q4h",
-      admitted_by = "Staff Nurse (In-Charge)"
+      patient_phone = null,
+      assigned_doctor_name,
+      admission_type = null,
+      admission_notes = null,
+      vitals_protocol = null,
     } = body;
 
     if (!bed_id || !patient_name) {
-      return NextResponse.json({ error: "bed_id and patient_name are required" }, { status: 400 });
+      return apiError(400, "bed_id and patient_name are required.", "invalid_input");
+    }
+    if (!assigned_doctor_name) {
+      return apiError(
+        400,
+        "assigned_doctor_name is required for an inpatient admission.",
+        "doctor_required"
+      );
     }
 
-    // Step 1: Pre-flight state check
     const bedQuery = await sql`
-      SELECT b.*, w.daily_rate, w.hourly_rate, w.name as ward_name 
+      SELECT b.*, w.daily_rate, w.hourly_rate, w.name AS ward_name
       FROM clinic_beds b
       LEFT JOIN clinic_wards w ON w.id = b.ward_id
-      WHERE b.id = ${bed_id}
+      WHERE b.id = ${String(bed_id)}
+        AND b.clinic_slug = ${clinicSlug}
       LIMIT 1;
     `;
-
     if (bedQuery.length === 0) {
-      return NextResponse.json({ error: "Bed not found" }, { status: 404 });
+      return apiError(404, "Bed not found in your clinic.", "bed_not_found");
     }
 
     const bed = bedQuery[0];
     const currentStatus = String(bed.status || "").toUpperCase();
 
-    // Enforce State Machine Gate
     if (currentStatus === "VACANT_DIRTY") {
-      return NextResponse.json({
-        error: `ADMISSION HARD-BLOCKED: Bed ${bed.bed_number} is in VACANT_DIRTY state. Dual-verification sanitization (Housekeeping UV cycle + Nurse QA e-sign) is legally required before patient admission.`,
-        code: "BED_NOT_SANITIZED"
-      }, { status: 422 });
+      return apiError(
+        422,
+        `Bed ${bed.bed_number} is awaiting sanitization. Housekeeping and nurse QA must both sign off before admission.`,
+        "bed_not_sanitized"
+      );
     }
-
-    if (currentStatus === "OCCUPIED_ACTIVE" || currentStatus === "OCCUPIED_PENDING_DISCHARGE" || currentStatus === "OCCUPIED") {
-      return NextResponse.json({
-        error: `ADMISSION BLOCKED: Bed ${bed.bed_number} already has an active patient (${bed.current_patient_name}).`,
-        code: "BED_ALREADY_OCCUPIED"
-      }, { status: 409 });
+    if (
+      currentStatus === "OCCUPIED_ACTIVE" ||
+      currentStatus === "OCCUPIED_PENDING_DISCHARGE" ||
+      currentStatus === "OCCUPIED"
+    ) {
+      return apiError(409, `Bed ${bed.bed_number} is already occupied.`, "bed_occupied");
     }
-
     if (currentStatus === "MAINTENANCE") {
-      return NextResponse.json({
-        error: `ADMISSION BLOCKED: Bed ${bed.bed_number} is locked under MAINTENANCE for equipment inspection.`,
-        code: "BED_MAINTENANCE"
-      }, { status: 422 });
+      return apiError(422, `Bed ${bed.bed_number} is under maintenance.`, "bed_maintenance");
+    }
+    if (currentStatus !== "VACANT_CLEAN" && currentStatus !== "VACANT" && currentStatus !== "") {
+      return apiError(422, `Bed ${bed.bed_number} is not available.`, "bed_unavailable");
     }
 
-    const admissionId = `ADM-${bed.bed_number}-${Date.now().toString().slice(-6)}`;
+    const dailyRate = bed.daily_rate == null ? null : Number(bed.daily_rate);
+    if (dailyRate == null || !Number.isFinite(dailyRate) || dailyRate <= 0) {
+      return apiError(
+        422,
+        `Ward tariff for bed ${bed.bed_number} is not configured. Set a daily rate on the ward before admitting.`,
+        "tariff_not_configured"
+      );
+    }
+
+    const admissionId = `ADM-${String(bed.bed_number)}-${randomUUID().slice(0, 8)}`;
     const now = new Date();
 
-    // Step 2: Create bed_admissions record
     await sql`
       INSERT INTO bed_admissions (
         id, clinic_slug, bed_id, bed_number, patient_name, patient_phone,
         doctor_name, admission_type, admission_timestamp, daily_rate, status
       ) VALUES (
         ${admissionId},
-        ${bed.clinic_slug || "derma-care-dehradun"},
+        ${clinicSlug},
         ${bed.id},
         ${bed.bed_number},
-        ${patient_name},
-        ${patient_phone || null},
-        ${assigned_doctor_name},
+        ${String(patient_name)},
+        ${patient_phone},
+        ${String(assigned_doctor_name)},
         ${admission_type},
         ${now},
-        ${Number(bed.daily_rate || 1400)},
+        ${dailyRate},
         'active'
       );
     `;
 
-    // Step 3: Transition bed status strictly to OCCUPIED_ACTIVE
     const updated = await sql`
-      UPDATE clinic_beds 
-      SET 
+      UPDATE clinic_beds
+      SET
         status = 'OCCUPIED_ACTIVE',
         admission_id = ${admissionId},
-        current_patient_name = ${patient_name},
-        current_patient_phone = ${patient_phone || null},
-        assigned_doctor_name = ${assigned_doctor_name},
+        current_patient_name = ${String(patient_name)},
+        current_patient_phone = ${patient_phone},
+        assigned_doctor_name = ${String(assigned_doctor_name)},
         admission_notes = ${admission_notes},
         admission_timestamp = ${now},
         discharge_ordered_at = NULL,
@@ -105,13 +127,12 @@ export async function POST(req: NextRequest) {
         vitals_breach_alert = false,
         sanitization_hk_logged = false,
         sanitization_nurse_qa = false
-      WHERE id = ${bed_id}
+      WHERE id = ${String(bed_id)}
+        AND clinic_slug = ${clinicSlug}
       RETURNING *;
     `;
 
-    // Step 4: Automated Stay Billing Engine - Auto-post Day 1 Base Tariff to Immutable Ledger
     const ledgerId = randomUUID();
-    const dayTariff = Number(bed.daily_rate || 1400);
     await sql`
       INSERT INTO bed_billing_ledger (
         id, admission_id, bed_id, bed_number, charge_type,
@@ -122,51 +143,59 @@ export async function POST(req: NextRequest) {
         ${bed.id},
         ${bed.bed_number},
         'base_tariff',
-        ${`Day 1 Inpatient Bed Tariff (${bed.ward_name || "General Ward"})`},
-        ${dayTariff},
+        ${`Day 1 inpatient bed tariff (${bed.ward_name || "ward"})`},
+        ${dailyRate},
         ${admissionId},
-        ${admitted_by},
+        ${actorName},
         ${now}
       );
     `;
 
-    // Step 5: Structured Clinical Task Engine - Auto-schedule Intake Protocols
-    const task1Id = randomUUID();
-    const task2Id = randomUUID();
     await sql`
       INSERT INTO bed_care_tasks (
         id, bed_id, admission_id, task_type, description, due_time, threshold_criteria, assigned_to
-      ) VALUES 
+      ) VALUES
       (
-        ${task1Id},
+        ${randomUUID()},
         ${bed.id},
         ${admissionId},
         'vitals_check',
-        'Intake Baseline Vitals (BP, Pulse, SpO2, Temp)',
-        'Immediate (Within 15 mins)',
-        'Alert if SpO2 < 92% or Temp > 100.4°F',
-        'Duty Nurse'
+        'Intake baseline vitals (BP, pulse, SpO2, temperature)',
+        'Within 15 minutes',
+        'Alert if SpO2 < 92% or temperature > 100.4F',
+        'Duty nurse'
       ),
       (
-        ${task2Id},
+        ${randomUUID()},
         ${bed.id},
         ${admissionId},
         'medication_admin',
-        'Nursing Assessment & IV Line Check',
+        'Nursing assessment and IV line check',
         'Within 1 hour',
         'Verify patency and medication chart',
-        'Staff Nurse'
+        'Staff nurse'
       );
     `;
+
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId,
+      action: "bed.admit",
+      entity: "bed_admission",
+      entityId: admissionId,
+      after: updated[0] || null,
+      request: req,
+    });
 
     return NextResponse.json({
       status: "success",
       admission_id: admissionId,
-      message: `Patient ${patient_name} admitted to Bed ${bed.bed_number}. Billing meter running; intake vitals protocol activated.`,
-      bed: updated[0]
+      message: `Patient ${patient_name} admitted to bed ${bed.bed_number}. Billing meter started.`,
+      bed: updated[0],
     });
   } catch (error: any) {
     console.error("POST /api/beds/admit error:", error);
-    return NextResponse.json({ error: error.message || "Failed to admit patient" }, { status: 500 });
+    return apiError(500, "Failed to admit patient.", "internal_error");
   }
 }

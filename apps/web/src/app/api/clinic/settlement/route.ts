@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { createHash, randomUUID } from "crypto";
+import { guard, ADMIN_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(req.url);
-    const clinicSlug = searchParams.get("clinic_slug") || "derma-care-dehradun";
+    const clinicSlug = searchParams.get("clinic_slug") || auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
     const todayStr = new Date().toISOString().split("T")[0];
 
     // Check if day is already locked
@@ -20,21 +26,21 @@ export async function GET(req: NextRequest) {
     // Fetch today's consultations metrics
     const apts = await sql`
       SELECT * FROM appointments 
-      WHERE (clinic_id IN (SELECT id FROM clinics WHERE slug = ${clinicSlug}) OR clinic_name ILIKE '%Derma Care%')
+      WHERE clinic_id::text = ${clinicId}::text
         AND (appointment_date = ${todayStr} OR created_at::date = CURRENT_DATE);
     `;
 
     // Fetch today's pharmacy
     const pharm = await sql`
       SELECT * FROM pharmacy_dispenses 
-      WHERE (clinic_slug = ${clinicSlug} OR clinic_slug IS NULL)
+      WHERE clinic_slug = ${clinicSlug}
         AND created_at::date = CURRENT_DATE;
     `;
 
     // Fetch today's expenses
     const exp = await sql`
       SELECT * FROM expenses 
-      WHERE (clinic_slug = ${clinicSlug} OR clinic_slug IS NULL)
+      WHERE clinic_slug = ${clinicSlug}
         AND (date = ${todayStr} OR created_at::date = CURRENT_DATE);
     `;
 
@@ -89,19 +95,26 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, {
+      roles: ADMIN_ROLES,
+      audit: "eod.close",
+      auditEntity: "clinic_eod_closings",
+    });
+    if (!auth.ok) return auth.response;
+
     const body = await req.json();
     const {
-      clinic_slug = "derma-care-dehradun",
       closing_date,
-      closed_by = "Front Desk Staff",
       total_consultations = 0,
       gross_collections = 0,
       soundbox_upi = 0,
       expected_cash = 0,
       counted_cash = 0,
       cash_discrepancy = 0,
-      closing_notes = "Shift closed and verified"
+      closing_notes = "Shift closed and verified",
     } = body;
+    const clinic_slug = auth.auth.clinic!.slug;
+    const closed_by = auth.auth.user.full_name;
 
     const todayStr = closing_date || new Date().toISOString().split("T")[0];
 
@@ -140,6 +153,17 @@ export async function POST(req: NextRequest) {
       RETURNING *;
     `;
 
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId: auth.auth.clinic!.id,
+      action: "eod.close",
+      entity: "clinic_eod_closings",
+      entityId: String(inserted[0]?.id || id),
+      after: inserted[0] || null,
+      request: req,
+    });
+
     return NextResponse.json({
       status: "success",
       closing: inserted[0],
@@ -147,6 +171,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("POST /api/clinic/settlement error:", error);
-    return NextResponse.json({ error: error.message || "Failed to save EOD closing" }, { status: 500 });
+    return apiError(500, "Failed to save EOD closing.", "internal_error");
   }
 }

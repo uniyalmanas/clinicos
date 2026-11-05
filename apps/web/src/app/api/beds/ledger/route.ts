@@ -1,73 +1,116 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { guard, ADMIN_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
-
-// Authorized Supervisor PINs for Governed Billing Overrides (In production, stored in encrypted auth vault)
-const AUTHORIZED_SUPERVISOR_PINS = new Set(["7788", "ADMIN99", "SUPER2026", "9900"]);
 
 const VALID_REASON_CODES = new Set([
   "ICU_TRANSFER",
   "INSURANCE_WAIVER",
   "GOODWILL_DISCOUNT",
   "DISPUTED_HOURS",
-  "CLINICAL_TOLERANCE"
+  "CLINICAL_TOLERANCE",
 ]);
 
+const clinicBedIds = async (clinicSlug: string) => {
+  const rows = await sql`
+    SELECT id FROM clinic_beds WHERE clinic_slug = ${clinicSlug};
+  `;
+  return rows.map((r: any) => String(r.id));
+};
+
 /**
- * Inpatient Stay Billing Ledger & Governed Override API
- * 1. Provides immutable audit trail of every charge debit (Base tariff, bedside consumables, nursing fees).
- * 2. Governed Override Workflow: Tariff adjustments require Supervisor PIN + Reason Code.
- * 3. Overrides logged separately in `bed_billing_overrides` for CA audit reconciliation.
+ * Inpatient billing ledger.
+ *
+ * GET is available to any clinic member (scoped to this clinic's beds).
+ * POST is a money movement and therefore requires an owner/administrator
+ * session — there are no shared supervisor PINs stored in source.
  */
 export async function GET(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINIC_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
     const { searchParams } = new URL(req.url);
     const bedId = searchParams.get("bed_id");
     const admissionId = searchParams.get("admission_id");
 
-    let ledgerEntries = [];
-    let overridesEntries = [];
+    const bedIds = await clinicBedIds(clinicSlug);
+    if (bedIds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        ledger: [],
+        overrides: [],
+        total_debited: 0,
+        total_adjustments: 0,
+        entry_count: 0,
+        override_count: 0,
+      });
+    }
 
-    // 1. Fetch Immutable Ledger Entries
+    let ledgerEntries: any[];
+    let overridesEntries: any[];
+
     if (admissionId) {
+      const owned = await sql`
+        SELECT 1 FROM bed_admissions
+        WHERE id = ${String(admissionId)}
+          AND clinic_slug = ${clinicSlug}
+        LIMIT 1;
+      `;
+      if (owned.length === 0) {
+        return apiError(404, "Admission not found in your clinic.", "admission_not_found");
+      }
       ledgerEntries = await sql`
-        SELECT * FROM bed_billing_ledger 
-        WHERE admission_id = ${admissionId}
+        SELECT * FROM bed_billing_ledger
+        WHERE admission_id = ${String(admissionId)}
         ORDER BY posted_at ASC;
       `;
       overridesEntries = await sql`
         SELECT * FROM bed_billing_overrides
-        WHERE admission_id = ${admissionId}
+        WHERE admission_id = ${String(admissionId)}
         ORDER BY created_at DESC;
       `;
     } else if (bedId) {
+      if (!bedIds.includes(String(bedId))) {
+        return apiError(404, "Bed not found in your clinic.", "bed_not_found");
+      }
       ledgerEntries = await sql`
-        SELECT * FROM bed_billing_ledger 
-        WHERE bed_id = ${bedId}
+        SELECT * FROM bed_billing_ledger
+        WHERE bed_id = ${String(bedId)}
         ORDER BY posted_at ASC;
       `;
       overridesEntries = await sql`
         SELECT * FROM bed_billing_overrides
-        WHERE bed_id = ${bedId}
+        WHERE bed_id = ${String(bedId)}
         ORDER BY created_at DESC;
       `;
     } else {
       ledgerEntries = await sql`
-        SELECT * FROM bed_billing_ledger 
-        ORDER BY posted_at DESC 
+        SELECT * FROM bed_billing_ledger
+        WHERE bed_id = ANY(${bedIds})
+        ORDER BY posted_at DESC
         LIMIT 100;
       `;
       overridesEntries = await sql`
         SELECT * FROM bed_billing_overrides
-        ORDER BY created_at DESC 
+        WHERE bed_id = ANY(${bedIds})
+        ORDER BY created_at DESC
         LIMIT 50;
       `;
     }
 
-    const totalDebited = ledgerEntries.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-    const totalAdjustments = overridesEntries.reduce((acc, curr) => acc + Number(curr.adjustment_delta || 0), 0);
+    const totalDebited = ledgerEntries.reduce(
+      (acc, curr) => acc + Number(curr.amount || 0),
+      0
+    );
+    const totalAdjustments = overridesEntries.reduce(
+      (acc, curr) => acc + Number(curr.adjustment_delta || 0),
+      0
+    );
 
     return NextResponse.json({
       success: true,
@@ -76,84 +119,86 @@ export async function GET(req: NextRequest) {
       total_debited: totalDebited,
       total_adjustments: totalAdjustments,
       entry_count: ledgerEntries.length,
-      override_count: overridesEntries.length
+      override_count: overridesEntries.length,
     });
   } catch (error: any) {
     console.error("GET billing ledger error:", error);
-    return NextResponse.json({ error: error.message || "Failed to load billing ledger" }, { status: 500 });
+    return apiError(500, "Failed to load billing ledger.", "internal_error");
   }
 }
 
 /**
- * POST: Apply Governed Billing Override
- * Requires Supervisor PIN + Reason Code + Audit Waiver Notes
+ * Apply a governed billing adjustment.
+ *
+ * Authorization is the authenticated administrator session; the acting user is
+ * recorded on both the override row and the ledger entry for audit.
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: ADMIN_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
+    const supervisorName = auth.auth.user.full_name;
+
     const body = await req.json();
     const {
       bed_id,
-      admission_id,
-      supervisor_name = "Medical Superintendent",
-      supervisor_pin,
+      admission_id = null,
       reason_code,
       original_amount,
       adjusted_amount,
-      waiver_notes
+      waiver_notes,
     } = body;
 
     if (!bed_id) {
-      return NextResponse.json({ error: "bed_id is required" }, { status: 400 });
+      return apiError(400, "bed_id is required.", "invalid_input");
     }
 
-    // 1. Validate Supervisor PIN
-    const cleanedPin = String(supervisor_pin || "").trim();
-    if (!cleanedPin || !AUTHORIZED_SUPERVISOR_PINS.has(cleanedPin)) {
-      return NextResponse.json(
-        {
-          error: "SUPERVISOR AUTHORIZATION REJECTED: Invalid Supervisor PIN. Governed tariff overrides require an authorized Medical Director or Finance Supervisor PIN.",
-          code: "INVALID_SUPERVISOR_PIN"
-        },
-        { status: 401 }
-      );
-    }
-
-    // 2. Validate Reason Code
     const cleanReason = String(reason_code || "").trim().toUpperCase();
     if (!VALID_REASON_CODES.has(cleanReason)) {
-      return NextResponse.json(
-        {
-          error: `Invalid Reason Code "${cleanReason}". Must be one of: ICU_TRANSFER, INSURANCE_WAIVER, GOODWILL_DISCOUNT, DISPUTED_HOURS, CLINICAL_TOLERANCE.`,
-          code: "INVALID_REASON_CODE"
-        },
-        { status: 400 }
+      return apiError(
+        400,
+        `reason_code must be one of: ${Array.from(VALID_REASON_CODES).join(", ")}.`,
+        "invalid_reason_code"
       );
     }
 
-    // 3. Validate Waiver Notes
     const cleanNotes = String(waiver_notes || "").trim();
-    if (!cleanNotes || cleanNotes.length < 5) {
-      return NextResponse.json(
-        { error: "Mandatory justification note (min 5 characters) required for CA audit trail." },
-        { status: 400 }
+    if (cleanNotes.length < 5) {
+      return apiError(
+        400,
+        "A justification note of at least 5 characters is required.",
+        "notes_required"
       );
     }
 
-    // 4. Fetch Bed
-    const bedQuery = await sql`SELECT * FROM clinic_beds WHERE id = ${bed_id} LIMIT 1;`;
+    const orig = Number(original_amount);
+    const adj = Number(adjusted_amount);
+    if (!Number.isFinite(orig) || !Number.isFinite(adj)) {
+      return apiError(
+        400,
+        "original_amount and adjusted_amount must be numbers.",
+        "invalid_amount"
+      );
+    }
+    const delta = adj - orig;
+
+    const bedQuery = await sql`
+      SELECT * FROM clinic_beds
+      WHERE id = ${String(bed_id)}
+        AND clinic_slug = ${clinicSlug}
+      LIMIT 1;
+    `;
     if (bedQuery.length === 0) {
-      return NextResponse.json({ error: "Bed not found" }, { status: 404 });
+      return apiError(404, "Bed not found in your clinic.", "bed_not_found");
     }
     const bed = bedQuery[0];
-
-    const orig = Number(original_amount || 0);
-    const adj = Number(adjusted_amount || 0);
-    const delta = adj - orig; // e.g. 5000 -> 2500 => delta is -2500
 
     const overrideId = randomUUID();
     const now = new Date();
 
-    // 5. Insert into bed_billing_overrides (Separate table for CA Audit Reconciliation)
     await sql`
       INSERT INTO bed_billing_overrides (
         id, admission_id, bed_id, bed_number, supervisor_name,
@@ -164,8 +209,8 @@ export async function POST(req: NextRequest) {
         ${admission_id || bed.admission_id},
         ${bed.id},
         ${bed.bed_number},
-        ${supervisor_name},
-        true,
+        ${supervisorName},
+        false,
         ${cleanReason},
         ${orig},
         ${adj},
@@ -175,9 +220,8 @@ export async function POST(req: NextRequest) {
       );
     `;
 
-    // 6. Post compensating adjustment entry into immutable ledger
     const ledgerId = randomUUID();
-    const ledgerDesc = `[GOVERNED OVERRIDE: ${cleanReason}] Original: ₹${orig} -> Adjusted: ₹${adj}. Note: ${cleanNotes}`;
+    const ledgerDesc = `[${cleanReason}] ${orig} -> ${adj}. ${cleanNotes}`;
 
     await sql`
       INSERT INTO bed_billing_ledger (
@@ -191,36 +235,53 @@ export async function POST(req: NextRequest) {
         'supervisor_override',
         ${ledgerDesc},
         ${delta},
-        ${`AUTH-PIN-${overrideId.slice(0, 6).toUpperCase()}`},
-        ${`Supervisor: ${supervisor_name}`},
+        ${`OVERRIDE-${overrideId.slice(0, 8).toUpperCase()}`},
+        ${supervisorName},
         ${now}
       );
     `;
 
-    // 7. Update itemized charges total on bed
     await sql`
       UPDATE clinic_beds
       SET itemized_charges_total = COALESCE(itemized_charges_total, 0) + ${delta}
-      WHERE id = ${bed_id};
+      WHERE id = ${String(bed_id)}
+        AND clinic_slug = ${clinicSlug};
     `;
+
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId,
+      action: "bed.billing.override",
+      entity: "bed_billing_override",
+      entityId: overrideId,
+      after: {
+        reason_code: cleanReason,
+        original_amount: orig,
+        adjusted_amount: adj,
+        delta,
+        notes: cleanNotes,
+      },
+      request: req,
+    });
 
     return NextResponse.json({
       success: true,
       override_id: overrideId,
       adjustment_delta: delta,
       reason_code: cleanReason,
-      message: `✓ Governed Tariff Adjustment of ₹${delta} applied for Bed ${bed.bed_number} under Reason Code [${cleanReason}]. Authorized by ${supervisor_name} and recorded for CA Audit reconciliation.`,
+      message: `Adjustment of ${delta} applied to bed ${bed.bed_number} under ${cleanReason}.`,
       override: {
         id: overrideId,
         reason_code: cleanReason,
         delta,
-        supervisor: supervisor_name,
+        supervisor: supervisorName,
         notes: cleanNotes,
-        timestamp: now.toISOString()
-      }
+        timestamp: now.toISOString(),
+      },
     });
   } catch (error: any) {
     console.error("POST Governed Override error:", error);
-    return NextResponse.json({ error: error.message || "Failed to apply override" }, { status: 500 });
+    return apiError(500, "Failed to apply override.", "internal_error");
   }
 }

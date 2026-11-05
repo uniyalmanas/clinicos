@@ -1,147 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sql } from "@/lib/db";
+import { apiError } from "@/lib/api-auth";
+import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
+import { sendMessage } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
-interface TokenAlertSubscription {
-  id: string;
-  phone: string;
-  patient_name: string;
-  token_number: number;
-  clinic_slug: string;
-  clinic_name: string;
-  chamber_name: string;
-  doctor_name: string;
-  subscribed_at: string;
-  alert_sent: boolean;
-  alert_sent_at?: string;
-  delivery_channel: "whatsapp" | "sms";
-}
-
-// In-memory registry for proactive token notifications (retains active OPD session)
-const activeSubscriptions: TokenAlertSubscription[] = [];
-
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const phone = searchParams.get("phone");
-    const token = searchParams.get("token");
-
-    let results = activeSubscriptions;
-    if (phone) {
-      const clean = phone.replace(/[^0-9]/g, "");
-      results = results.filter(s => s.phone.includes(clean));
-    }
-    if (token) {
-      results = results.filter(s => s.token_number === Number(token));
-    }
-
-    return NextResponse.json({
-      subscriptions: results,
-      total_active: results.length
-    });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to retrieve subscriptions" }, { status: 500 });
-  }
-}
-
+/**
+ * Patient-facing "notify me when my token is close" request.
+ *
+ * The position is computed from the live queue in the database; nothing is
+ * cached in memory and no phone number is stored by this route.
+ */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const {
-      action = "subscribe",
-      phone,
-      patient_name = "Valued Patient",
-      token_number,
-      current_token = 1,
-      clinic_slug = "derma-care",
-      clinic_name = "Derma Care Skin & Laser Centre",
-      chamber_name = "Chamber 1",
-      doctor_name = "Dr. Rahul Sharma",
-      delivery_channel = "whatsapp"
-    } = body;
-
-    const cleanPhone = (phone || "").replace(/[^0-9]/g, "");
-    if (!cleanPhone || cleanPhone.length < 10) {
-      return NextResponse.json(
-        { error: "Valid 10-digit mobile number is required to receive proactive token alerts." },
-        { status: 400 }
-      );
+    const limit = await rateLimit(rateLimitKey(req, "token-alert"), 10, 600);
+    if (!limit.allowed) {
+      return NextResponse.json(tooManyRequests(limit.retryAfterSeconds), {
+        status: 429,
+        headers: { "Retry-After": String(limit.retryAfterSeconds) },
+      });
     }
 
-    const patientTokenNum = Number(token_number);
-    const currentTokenNum = Number(current_token);
-    const positionsAway = Math.max(0, patientTokenNum - currentTokenNum);
-    const isWithin2Tokens = positionsAway <= 2 && positionsAway >= 0;
+    const body = await req.json().catch(() => ({}));
+    const cleanPhone = String(body.phone || "").replace(/[^0-9]/g, "").slice(-10);
+    const clinicSlug = String(body.clinic_slug || "").trim();
+    const tokenNumber = Number(body.token_number);
 
-    // Standard notification message per clinical specification
-    const proactiveAlertMessage = `🔔 *ClinicOS Token Alert*\n\nNamaste ${patient_name},\nYour turn is coming up! Please proceed to Reception.\n\n📍 *Clinic:* ${clinic_name}\n🚪 *Room:* ${chamber_name} (${doctor_name})\n🎫 *Your Token:* #${patientTokenNum}\n⏳ *Now Calling:* #${currentTokenNum} (${positionsAway} patient${positionsAway === 1 ? '' : 's'} ahead)\n\nYou can track real-time progression at: https://medic-sept-2026.vercel.app/waiting-room?clinic=${clinic_slug}&token=${patientTokenNum}`;
+    if (cleanPhone.length !== 10) {
+      return apiError(400, "A valid 10-digit mobile number is required.", "invalid_phone");
+    }
+    if (!clinicSlug) {
+      return apiError(400, "clinic_slug is required.", "missing_clinic");
+    }
+    if (!Number.isFinite(tokenNumber) || tokenNumber <= 0) {
+      return apiError(400, "token_number is required.", "missing_token");
+    }
 
-    // 1. WhatsApp / SMS Dispatch via Cloud API or wa.me fallback
-    let dispatchStatus = "scheduled";
-    let waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(proactiveAlertMessage)}`;
+    const clinicRows = await sql`
+      SELECT id, slug, name, phone FROM clinics WHERE lower(slug) = ${clinicSlug.toLowerCase()} LIMIT 1;
+    `;
+    if (clinicRows.length === 0) {
+      return apiError(404, "Clinic not found.", "clinic_not_found");
+    }
+    const clinic = clinicRows[0];
 
-    const waToken = process.env.WHATSAPP_CLOUD_API_TOKEN;
-    const waPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const todayStr = new Date().toISOString().split("T")[0];
+    const currentRows = await sql`
+      SELECT COALESCE(MAX(token_number), 0) AS current_token
+      FROM appointments
+      WHERE clinic_id::text = ${String(clinic.id)}::text
+        AND appointment_date = ${todayStr}
+        AND status = 'in_consultation';
+    `;
+    const currentToken = Number(currentRows[0]?.current_token || 0);
+    const positionsAway = currentToken > 0 ? Math.max(0, tokenNumber - currentToken) : null;
 
-    if (action === "test_alert" || (action === "subscribe" && isWithin2Tokens)) {
-      if (waToken && waPhoneId) {
-        try {
-          const metaRes = await fetch(`https://graph.facebook.com/v20.0/${waPhoneId}/messages`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${waToken}`
-            },
-            body: JSON.stringify({
-              messaging_product: "whatsapp",
-              to: cleanPhone,
-              type: "text",
-              text: { body: proactiveAlertMessage }
-            })
-          });
-          if (metaRes.ok) {
-            dispatchStatus = "delivered_cloud_api";
-          }
-        } catch (e) {
-          console.warn("WhatsApp Cloud API dispatch failed:", e);
-        }
-      } else {
-        dispatchStatus = "dispatched_instant_link";
+    let dispatch = "not_sent";
+    if (positionsAway !== null && positionsAway <= 2) {
+      try {
+        await sendMessage(
+          cleanPhone,
+          `Your token #${tokenNumber} at ${clinic.name} is coming up. Please proceed to the reception.`
+        );
+        dispatch = "sent";
+      } catch (sendError) {
+        console.error("[token-alert] delivery failed", sendError);
+        dispatch = "failed";
       }
     }
 
-    const subRecord: TokenAlertSubscription = {
-      id: `SUB-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      phone: cleanPhone,
-      patient_name,
-      token_number: patientTokenNum,
-      clinic_slug,
-      clinic_name,
-      chamber_name,
-      doctor_name,
-      subscribed_at: new Date().toISOString(),
-      alert_sent: isWithin2Tokens,
-      alert_sent_at: isWithin2Tokens ? new Date().toISOString() : undefined,
-      delivery_channel
-    };
-
-    activeSubscriptions.push(subRecord);
-
     return NextResponse.json({
       success: true,
-      message: isWithin2Tokens
-        ? `✓ Proactive alert triggered! Token #${patientTokenNum} is within 2 positions of current #${currentTokenNum}. Notification dispatched.`
-        : `✓ Alert subscription active! We will notify ${cleanPhone} via WhatsApp/SMS the moment your token is 2 positions away from current.`,
-      subscription: subRecord,
+      clinic_slug: clinic.slug,
+      token_number: tokenNumber,
+      current_token: currentToken || null,
       positions_away: positionsAway,
-      is_within_2_tokens: isWithin2Tokens,
-      estimated_wait_mins: Math.max(2, positionsAway * 8),
-      alert_message_preview: proactiveAlertMessage,
-      whatsapp_direct_link: waUrl,
-      dispatch_status: dispatchStatus
+      notified: dispatch === "sent",
+      dispatch_status: dispatch,
+      message:
+        positionsAway === null
+          ? "The queue has not started yet. Please check back shortly."
+          : positionsAway <= 2
+            ? `Token #${tokenNumber} is close to your turn; check your messages.`
+            : `You have ${positionsAway} patients ahead. This page refreshes automatically.`,
     });
   } catch (error: any) {
     console.error("POST /api/clinic/token-alert error:", error);
-    return NextResponse.json({ error: error.message || "Failed to process token alert" }, { status: 500 });
+    return apiError(500, "Failed to process token alert.", "internal_error");
   }
 }

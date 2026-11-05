@@ -1,89 +1,109 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { randomUUID } from "crypto";
+import { guard, CLINICAL_ROLES, apiError } from "@/lib/api-auth";
+import { logAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 /**
- * System-Enforced Inpatient Discharge & Billing Settlement Engine
- * Requirements:
- * 1. Discharge Checklist Gates: Doctor sign-off, Pharmacy med rec, Billing settlement, Transport.
- * 2. Proration Rule: Discharge before 12:00 PM = half-day charge; After 12:00 PM = full-day charge.
- * 3. State Machine: Transitions bed strictly to VACANT_DIRTY (Auto-blocks admission until dual sanitization).
+ * Inpatient discharge and billing settlement.
+ *
+ * Checklist gates must be satisfied: doctor sign-off, pharmacy reconciliation,
+ * and billing settlement. Once discharged the bed moves to VACANT_DIRTY and
+ * cannot be reused until the dual sanitization workflow completes.
  */
 export async function POST(req: NextRequest) {
   try {
+    const auth = await guard(req, { roles: CLINICAL_ROLES });
+    if (!auth.ok) return auth.response;
+
+    const clinicSlug = auth.auth.clinic!.slug;
+    const clinicId = auth.auth.clinic!.id;
+
     const body = await req.json();
     const {
       bed_id,
-      payment_mode = "upi",
-      doctor_signoff = true,
-      pharmacy_reconciled = true,
-      billing_settled = true,
-      transport_ready = true,
-      override_gate = false
+      payment_mode = null,
+      doctor_signoff = false,
+      pharmacy_reconciled = false,
+      billing_settled = false,
+      transport_ready = false,
     } = body;
 
     if (!bed_id) {
-      return NextResponse.json({ error: "bed_id is required" }, { status: 400 });
+      return apiError(400, "bed_id is required.", "invalid_input");
     }
 
-    // Step 1: Pre-flight state check
     const bedQuery = await sql`
-      SELECT b.*, w.name as ward_name, w.hourly_rate, w.daily_rate 
+      SELECT b.*, w.name AS ward_name, w.hourly_rate, w.daily_rate
       FROM clinic_beds b
       LEFT JOIN clinic_wards w ON w.id = b.ward_id
-      WHERE b.id = ${bed_id}
+      WHERE b.id = ${String(bed_id)}
+        AND b.clinic_slug = ${clinicSlug}
       LIMIT 1;
     `;
-
     if (bedQuery.length === 0) {
-      return NextResponse.json({ error: "Bed not found" }, { status: 404 });
+      return apiError(404, "Bed not found in your clinic.", "bed_not_found");
     }
 
     const bed = bedQuery[0];
 
-    // Verify Discharge Checklist Gates per Audit Point 3
-    if (!override_gate) {
-      if (!doctor_signoff) {
-        return NextResponse.json({
-          error: "DISCHARGE GATE BLOCKED: Attending Doctor clinical sign-off is pending. Bed release halted.",
-          code: "DOCTOR_SIGNOFF_PENDING"
-        }, { status: 422 });
-      }
-      if (!pharmacy_reconciled) {
-        return NextResponse.json({
-          error: "DISCHARGE GATE BLOCKED: Pharmacy medication return and take-home reconciliation is pending.",
-          code: "PHARMACY_NOT_RECONCILED"
-        }, { status: 422 });
-      }
-      if (!billing_settled) {
-        return NextResponse.json({
-          error: "DISCHARGE GATE BLOCKED: Outstanding billing ledger balance must be settled prior to patient exit.",
-          code: "BILLING_UNSETTLED"
-        }, { status: 422 });
-      }
+    if (!doctor_signoff) {
+      return apiError(
+        422,
+        "Doctor clinical sign-off is required before discharge.",
+        "doctor_signoff_pending"
+      );
+    }
+    if (!pharmacy_reconciled) {
+      return apiError(
+        422,
+        "Pharmacy medication reconciliation is required before discharge.",
+        "pharmacy_not_reconciled"
+      );
+    }
+    if (!billing_settled) {
+      return apiError(
+        422,
+        "The billing ledger must be settled before the patient leaves.",
+        "billing_unsettled"
+      );
     }
 
-    const now = new Date();
-    const admittedAt = bed.admission_timestamp ? new Date(bed.admission_timestamp) : new Date(Date.now() - 3600000);
-    const diffHours = Math.max(0.5, Math.round(((now.getTime() - admittedAt.getTime()) / (1000 * 60 * 60)) * 10) / 10);
+    if (!bed.admission_timestamp) {
+      return apiError(
+        409,
+        "This bed has no active admission to discharge.",
+        "no_active_admission"
+      );
+    }
 
-    const hourlyRate = Number(bed.hourly_rate || 150);
-    const dailyRate = Number(bed.daily_rate || 1400);
+    const admittedAt = new Date(bed.admission_timestamp);
+    const now = new Date();
+    const diffHours = Math.max(
+      0.5,
+      Math.round(((now.getTime() - admittedAt.getTime()) / (1000 * 60 * 60)) * 10) / 10
+    );
+
+    const hourlyRate = bed.hourly_rate == null ? null : Number(bed.hourly_rate);
+    const dailyRate = bed.daily_rate == null ? null : Number(bed.daily_rate);
 
     let roomCharges = 0;
     let billingBasis = "";
     let prorationType = "standard";
 
-    // Automated Stay Billing Engine - Proration Rule:
-    // If stay <= 12 hours: hourly rate applies.
-    // If stay > 12 hours: day rate + check if discharged before 12:00 noon (half-day) or after 12:00 (full-day).
-    if (diffHours <= 12) {
+    if (diffHours <= 12 && hourlyRate != null) {
       roomCharges = Math.round(diffHours * hourlyRate);
-      billingBasis = `Hourly Stay (${diffHours}h @ ₹${hourlyRate}/h)`;
+      billingBasis = `${diffHours}h @ ${hourlyRate}/h`;
       prorationType = "hourly";
     } else {
+      if (dailyRate == null) {
+        return apiError(
+          422,
+          "Ward daily tariff is not configured, so the stay cannot be billed.",
+          "tariff_not_configured"
+        );
+      }
       const fullDays = Math.floor(diffHours / 24);
       const remainderHours = diffHours % 24;
       const dischargeHour = now.getHours();
@@ -93,24 +113,24 @@ export async function POST(req: NextRequest) {
         if (dischargeHour < 12) {
           effectiveDays += 0.5;
           prorationType = "half_day_proration";
-          billingBasis = `${fullDays} Full Day(s) + 0.5 Half-Day (Discharge before 12:00 PM @ ₹${dailyRate}/day)`;
+          billingBasis = `${fullDays} full day(s) + 0.5 half-day (before 12:00) @ ${dailyRate}/day`;
         } else {
           effectiveDays += 1;
           prorationType = "full_day_proration";
-          billingBasis = `${fullDays + 1} Day(s) (Discharge after 12:00 PM cutoff @ ₹${dailyRate}/day)`;
+          billingBasis = `${fullDays + 1} day(s) (after 12:00 cutoff) @ ${dailyRate}/day`;
         }
       } else {
         effectiveDays = Math.max(1, fullDays);
-        billingBasis = `${effectiveDays} Day(s) @ ₹${dailyRate}/day`;
+        billingBasis = `${effectiveDays} day(s) @ ${dailyRate}/day`;
       }
 
       roomCharges = Math.round(effectiveDays * dailyRate);
     }
 
-    // Step 2: Fetch and sum itemized bedside consumable ledger charges
     const ledgerRows = await sql`
-      SELECT * FROM bed_billing_ledger 
-      WHERE bed_id = ${bed.id} OR (admission_id = ${bed.admission_id} AND ${bed.admission_id} IS NOT NULL)
+      SELECT * FROM bed_billing_ledger
+      WHERE bed_id = ${String(bed.id)}
+        OR (admission_id = ${bed.admission_id} AND ${bed.admission_id} IS NOT NULL)
       ORDER BY posted_at ASC;
     `;
 
@@ -121,11 +141,9 @@ export async function POST(req: NextRequest) {
     const totalInvoiceAmount = roomCharges + consumableCharges;
     const receiptNumber = `INP-BILL-${bed.bed_number}-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    // Step 3: Transition Bed Status STRICTLY to VACANT_DIRTY
-    // Auto-blocks new admissions until dual sanitization (Housekeeping UV cycle + Nurse QA)
     await sql`
-      UPDATE clinic_beds 
-      SET 
+      UPDATE clinic_beds
+      SET
         status = 'VACANT_DIRTY',
         current_patient_name = NULL,
         current_patient_phone = NULL,
@@ -143,14 +161,14 @@ export async function POST(req: NextRequest) {
         sanitization_nurse_by = NULL,
         vitals_breach_alert = false,
         itemized_charges_total = 0
-      WHERE id = ${bed_id};
+      WHERE id = ${String(bed_id)}
+        AND clinic_slug = ${clinicSlug};
     `;
 
-    // Step 4: Close bed_admissions record
     if (bed.admission_id) {
       await sql`
         UPDATE bed_admissions
-        SET 
+        SET
           status = 'discharged',
           discharged_at = ${now},
           proration_type = ${prorationType},
@@ -161,45 +179,65 @@ export async function POST(req: NextRequest) {
             doctor_signoff: true,
             pharmacy_reconciled: true,
             billing_settled: true,
-            transport_ready: true
+            transport_ready: Boolean(transport_ready),
           })}
-        WHERE id = ${bed.admission_id};
+        WHERE id = ${String(bed.admission_id)}
+          AND clinic_slug = ${clinicSlug};
       `;
     }
 
-    const invoice = {
-      receipt_number: receiptNumber,
-      admission_id: bed.admission_id || "ADM-WALK-IN",
-      patient_name: bed.current_patient_name || "Discharged Patient",
-      patient_phone: bed.current_patient_phone || "+91 98765 00000",
-      assigned_doctor: bed.assigned_doctor_name || "Dr. Rahul Sharma",
-      bed_number: bed.bed_number,
-      ward_name: bed.ward_name || "General Ward",
-      admission_time: admittedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-      discharge_time: now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-      total_stay_hours: diffHours,
-      billing_basis: billingBasis,
-      room_charges: roomCharges,
-      consumables_charges: consumableCharges,
-      itemized_ledger_items: ledgerRows.map((r: any) => ({
-        description: r.description,
-        amount: Number(r.amount),
-        type: r.charge_type,
-        time: r.posted_at
-      })),
-      total_amount: totalInvoiceAmount,
-      payment_mode: payment_mode,
-      payment_status: "settled",
-      next_bed_state: "VACANT_DIRTY (Admission locked until sanitization QA)"
-    };
+    await logAudit({
+      actorId: auth.auth.user.id,
+      actorRole: auth.auth.role,
+      clinicId,
+      action: "bed.discharge",
+      entity: "bed_admission",
+      entityId: bed.admission_id ? String(bed.admission_id) : String(bed.id),
+      after: {
+        room_charges: roomCharges,
+        consumables_charge: consumableCharges,
+        total_bill: totalInvoiceAmount,
+      },
+      request: req,
+    });
 
     return NextResponse.json({
       status: "success",
-      message: `Patient discharged from Bed ${bed.bed_number}. Bed transitioned to VACANT_DIRTY (admission locked until dual sanitization).`,
-      invoice
+      message: `Patient discharged from bed ${bed.bed_number}. Bed moved to VACANT_DIRTY pending sanitization.`,
+      invoice: {
+        receipt_number: receiptNumber,
+        admission_id: bed.admission_id,
+        patient_name: bed.current_patient_name,
+        patient_phone: bed.current_patient_phone,
+        assigned_doctor: bed.assigned_doctor_name,
+        bed_number: bed.bed_number,
+        ward_name: bed.ward_name || null,
+        admission_time: admittedAt.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        discharge_time: now.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        total_stay_hours: diffHours,
+        billing_basis: billingBasis,
+        room_charges: roomCharges,
+        consumables_charges: consumableCharges,
+        itemized_ledger_items: ledgerRows.map((r: any) => ({
+          description: r.description,
+          amount: Number(r.amount),
+          type: r.charge_type,
+          time: r.posted_at,
+        })),
+        total_amount: totalInvoiceAmount,
+        payment_mode,
+        payment_status: "settled",
+        next_bed_state: "VACANT_DIRTY",
+      },
     });
   } catch (error: any) {
     console.error("POST /api/beds/discharge error:", error);
-    return NextResponse.json({ error: error.message || "Failed to discharge patient" }, { status: 500 });
+    return apiError(500, "Failed to discharge patient.", "internal_error");
   }
 }
