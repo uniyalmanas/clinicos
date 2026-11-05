@@ -165,6 +165,25 @@ export function AIClinicalCompanion({
   const [patientSummary, setPatientSummary] = useState<PatientVisitSummary | null>(null);
   const [patientSummaryLanguage, setPatientSummaryLanguage] = useState<ConsultationLanguage>("english");
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isManualPasteOpen, setIsManualPasteOpen] = useState(false);
+  const [manualNotesText, setManualNotesText] = useState("");
+
+  // Refs to prevent stale-closure traps during live speech recognition
+  const clinicalMemoryRef = useRef<ClinicalMemory>(clinicalMemory);
+  const transcriptRef = useRef<string>(transcript);
+  const interimTextRef = useRef<string>(interimText);
+
+  useEffect(() => {
+    clinicalMemoryRef.current = clinicalMemory;
+  }, [clinicalMemory]);
+
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
+
+  useEffect(() => {
+    interimTextRef.current = interimText;
+  }, [interimText]);
 
   // Refs for Web Audio API & MediaRecorder / Web Speech
   const recognitionRef = useRef<any>(null);
@@ -291,7 +310,7 @@ export function AIClinicalCompanion({
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognitionCtor) {
-      showToast("Browser native speech recognition unavailable. Speech simulation active.");
+      showToast("Browser speech recognition unavailable. Speech simulation & manual dictation active.");
       return;
     }
 
@@ -313,24 +332,32 @@ export function AIClinicalCompanion({
           }
         }
 
+        const currentFinal = (transcriptRef.current + " " + finalChunk).trim();
+        const fullCurrentStream = (currentFinal + " " + interimChunk).trim();
+
         if (finalChunk) {
-          setTranscript((prev) => {
-            const nextTranscript = (prev + " " + finalChunk).trim();
-            // Trigger incremental extraction
-            const { updatedMemory, clarifications: newAlerts } =
-              extractClinicalMemoryFromTranscript(nextTranscript, clinicalMemory);
-            setClinicalMemory(updatedMemory);
-            if (newAlerts.length > 0 && companionMode !== "silent") {
-              setClarifications((c) => [...c, ...newAlerts]);
-              if (companionMode === "voice_companion") {
-                speakVoice(newAlerts[0].question);
-              }
-            }
-            return nextTranscript;
-          });
+          transcriptRef.current = currentFinal;
+          setTranscript(currentFinal);
           setInterimText("");
+          interimTextRef.current = "";
         } else {
           setInterimText(interimChunk);
+          interimTextRef.current = interimChunk;
+        }
+
+        // Live dynamic extraction as soon as words are spoken
+        if (fullCurrentStream) {
+          const { updatedMemory, clarifications: newAlerts } =
+            extractClinicalMemoryFromTranscript(fullCurrentStream, clinicalMemoryRef.current);
+          clinicalMemoryRef.current = updatedMemory;
+          setClinicalMemory(updatedMemory);
+
+          if (newAlerts.length > 0 && companionMode !== "silent") {
+            setClarifications((c) => [...c, ...newAlerts]);
+            if (companionMode === "voice_companion") {
+              speakVoice(newAlerts[0].question);
+            }
+          }
         }
       };
 
@@ -343,6 +370,8 @@ export function AIClinicalCompanion({
           showToast("Microphone permission was denied.");
           setIsRecording(false);
           stopAudioMeter();
+        } else if (event.error === "network") {
+          showToast("Speech service network issue. You can use 1-Tap test or paste clinical notes.");
         }
       };
 
@@ -359,7 +388,7 @@ export function AIClinicalCompanion({
     } catch (e) {
       console.warn("Speech recognition start notice:", e);
     }
-  }, [language, clinicalMemory, companionMode, isRecording, isPaused, showToast, stopAudioMeter, speakVoice]);
+  }, [language, companionMode, isRecording, isPaused, showToast, stopAudioMeter, speakVoice]);
 
   const stopSpeechRecognition = useCallback(() => {
     if (recognitionRef.current) {
@@ -418,16 +447,18 @@ export function AIClinicalCompanion({
 
   // Quick 1-Tap Dictation Demo Simulator (for testing without speaking)
   const handleSimulateSpeech = (sampleText: string) => {
-    setTranscript((prev) => {
-      const nextTranscript = (prev + " " + sampleText).trim();
-      const { updatedMemory, clarifications: newAlerts } =
-        extractClinicalMemoryFromTranscript(nextTranscript, clinicalMemory);
-      setClinicalMemory(updatedMemory);
-      if (newAlerts.length > 0) {
-        setClarifications((c) => [...c, ...newAlerts]);
-      }
-      return nextTranscript;
-    });
+    const nextTranscript = (transcriptRef.current + " " + sampleText).trim();
+    transcriptRef.current = nextTranscript;
+    setTranscript(nextTranscript);
+
+    const { updatedMemory, clarifications: newAlerts } =
+      extractClinicalMemoryFromTranscript(nextTranscript, clinicalMemoryRef.current);
+    clinicalMemoryRef.current = updatedMemory;
+    setClinicalMemory(updatedMemory);
+
+    if (newAlerts.length > 0) {
+      setClarifications((c) => [...c, ...newAlerts]);
+    }
 
     setChatMessages((prev) => [
       ...prev,
@@ -440,10 +471,12 @@ export function AIClinicalCompanion({
       {
         id: `sim-reply-${Date.now()}`,
         sender: "companion",
-        text: "Transcribed and parsed dictation. Clinical memory and prescription draft updated.",
+        text: "Transcribed and parsed clinical dictation. Clinical memory and prescription draft updated.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
+
+    showToast("Clinical notes processed & memory updated!");
   };
 
   // Conversational Doctor Command handler (Text or Voice)
@@ -533,10 +566,20 @@ export function AIClinicalCompanion({
     stopSpeechRecognition();
     stopAudioMeter();
 
-    // 2. Synthesize Dual Reports
-    const docReport = generateDoctorClinicalReport(clinicalMemory, clinicName);
+    // 2. Ensure ALL captured words (including interim speech) are extracted into memory
+    const activeText = (transcriptRef.current + " " + interimTextRef.current).trim();
+    let memoryToUse = clinicalMemoryRef.current;
+    if (activeText) {
+      const { updatedMemory } = extractClinicalMemoryFromTranscript(activeText, memoryToUse);
+      memoryToUse = updatedMemory;
+      clinicalMemoryRef.current = updatedMemory;
+      setClinicalMemory(updatedMemory);
+    }
+
+    // 3. Synthesize Dual Reports
+    const docReport = generateDoctorClinicalReport(memoryToUse, clinicName);
     const patSummary = generatePatientVisitSummary(
-      clinicalMemory,
+      memoryToUse,
       patientSummaryLanguage,
       clinicName,
       "+91 91234 56789"
@@ -898,31 +941,87 @@ export function AIClinicalCompanion({
               </p>
             </div>
 
-            {/* 1-Tap Dictation Simulation Chips (convenient quick tests) */}
-            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/[0.04] flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">1-Tap Test:</span>
-              <button
-                type="button"
-                onClick={() =>
-                  handleSimulateSpeech(
-                    "Patient has moderate fever and sore throat for 3 days. BP is 120 over 80, pulse 84, temp 101.2. Provisional diagnosis is Acute Viral Pharyngitis. Prescribe Tab Dolo 650 twice daily after food for 3 days, Tab Pan 40 before breakfast for 5 days, and Tab Cetzine 10 at night. Advise warm water gargles and review in 3 days."
-                  )
-                }
-                className="rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200"
-              >
-                + Fever &amp; Pharyngitis Rx
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleSimulateSpeech(
-                    "Patient with severe headache for 2 days. Blood pressure 140 over 90. Prescribe Tab Paracetamol 650 SOS. Order CBC."
-                  )
-                }
-                className="rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200"
-              >
-                + Headache &amp; High BP
-              </button>
+            {/* 1-Tap Dictation Simulation Chips & Manual Paste Drawer */}
+            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-white/[0.04] space-y-2">
+              <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">1-Tap Test:</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSimulateSpeech(
+                        "Blood pressure is 120/80. Pulse is 78. Temperature is 100.4 Fahrenheit. SpO2 is 98 percent. Weight is 68 kg, height is 172 cm. Patient has high fever for 3 days, severe headache and body ache, also mild sore throat and dry cough. Throat is congested, lungs clear, per abdomen soft. Provisional diagnosis is Acute Viral Pyrexia. Prescribe Tab Pan 40 once daily empty stomach for 5 days, Tab Dolo 650 twice daily after food for 3 days, Tab Cetzine 10 at bedtime for 3 days. Order Complete Blood Count CBC and Dengue NS1. Follow up in 3 days."
+                      )
+                    }
+                    className="rounded-md bg-[#0071E3]/10 hover:bg-[#0071E3]/20 text-[#0071E3] dark:text-[#388bfd] px-2 py-0.5 text-[10px] font-semibold transition-colors"
+                  >
+                    + Full Doctor Script (Fever, Vitals, Rx)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSimulateSpeech(
+                        "Patient has moderate fever and sore throat for 3 days. BP is 120 over 80, pulse 84, temp 101.2. Provisional diagnosis is Acute Viral Pharyngitis. Prescribe Tab Dolo 650 twice daily after food for 3 days, Tab Pan 40 before breakfast for 5 days, and Tab Cetzine 10 at night. Advise warm water gargles and review in 3 days."
+                      )
+                    }
+                    className="rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200"
+                  >
+                    + Fever &amp; Pharyngitis Rx
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSimulateSpeech(
+                        "Patient with severe headache for 2 days. Blood pressure 140 over 90. Prescribe Tab Paracetamol 650 SOS. Order CBC."
+                      )
+                    }
+                    className="rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-200"
+                  >
+                    + Headache &amp; High BP
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsManualPasteOpen(!isManualPasteOpen)}
+                  className="text-[10px] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white underline underline-offset-2 flex items-center gap-1"
+                >
+                  <Edit3 className="h-3 w-3" />
+                  {isManualPasteOpen ? "Hide Direct Dictation Box" : "Paste / Type Clinical Script"}
+                </button>
+              </div>
+
+              {/* Direct Paste / Type Area */}
+              {isManualPasteOpen && (
+                <div className="pt-2 animate-in fade-in space-y-2">
+                  <textarea
+                    rows={3}
+                    value={manualNotesText}
+                    onChange={(e) => setManualNotesText(e.target.value)}
+                    placeholder="Paste or type doctor consultation script here (e.g. BP 120/80, Fever 3 days, Tab Dolo 650 twice daily)..."
+                    className="w-full text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18191c] p-2.5 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#0071E3]"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setManualNotesText("")}
+                      className="px-2.5 py-1 text-[11px] text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!manualNotesText.trim()}
+                      onClick={() => {
+                        handleSimulateSpeech(manualNotesText.trim());
+                        setManualNotesText("");
+                      }}
+                      className="rounded-md bg-[#0071E3] hover:bg-[#0077ED] text-white px-3 py-1 text-[11px] font-semibold disabled:opacity-50 transition-colors"
+                    >
+                      Process Script into Clinical Memory
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
