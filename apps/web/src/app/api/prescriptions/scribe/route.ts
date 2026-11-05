@@ -5,6 +5,8 @@ import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
+/** Groq retires models regularly; keep this overridable per deployment. */
+const GROQ_CHAT_MODEL = process.env.GROQ_CHAT_MODEL || "openai/gpt-oss-20b";
 
 const SCRIBE_SYSTEM_PROMPT = `You are an expert clinical AI Scribe and Medical Intelligence Assistant for an Indian medical clinic. 
 Your job is to extract structured prescription data and generate comprehensive clinical reports from a doctor's voice dictation or typed notes.
@@ -277,7 +279,7 @@ LANGUAGE RULE (important):
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
+          model: GROQ_CHAT_MODEL,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: `Doctor's voice dictation: "${dictation}"` },
@@ -347,7 +349,7 @@ LANGUAGE RULE (important):
 
       return NextResponse.json({
         status: "success",
-        model: "llama3-8b-8192",
+        model: GROQ_CHAT_MODEL,
         scribed_by: doctorName,
         data: result,
       });
