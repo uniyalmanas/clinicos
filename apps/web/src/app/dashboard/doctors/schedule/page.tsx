@@ -685,83 +685,10 @@ function WeeklyGrid({ doctors, schedules, blockedSlots }: WeeklyGridProps) {
 // ─────────────────────────────────────────────────────────
 
 export default function DoctorSchedulePage() {
-  const [doctors, setDoctors] = useState<Doctor[]>([
-    {
-      id: "doc-1",
-      slug: "dr-rahul-sharma",
-      full_name: "Dr. Rahul Sharma",
-      specialization: "Dermatologist & Cosmetologist",
-      consultation_fee: 600,
-      chamber_name: "Chamber 1 • Room 101",
-      room_number: "Room 101",
-    },
-    {
-      id: "doc-2",
-      slug: "dr-aditi-joshi",
-      full_name: "Dr. Aditi Joshi",
-      specialization: "Dental Surgeon & Oral Implantologist",
-      consultation_fee: 500,
-      chamber_name: "Chamber 2 • Dental Chair 1",
-      room_number: "Chair 1",
-    },
-    {
-      id: "doc-3",
-      slug: "dr-vikram-sethi",
-      full_name: "Dr. Vikram Sethi",
-      specialization: "Pediatrician & Child Health",
-      consultation_fee: 500,
-      chamber_name: "Chamber 3 • Room 103",
-      room_number: "Room 103",
-    },
-  ]);
-
-  const [schedules, setSchedules] = useState<DoctorSchedule[]>([
-    {
-      doctor_slug: "dr-rahul-sharma",
-      doctor_name: "Dr. Rahul Sharma",
-      specialization: "Dermatologist & Cosmetologist",
-      chamber_name: "Chamber 1 • Room 101",
-      working_days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"],
-      start_time: "09:00",
-      end_time: "17:00",
-      slot_duration: 15,
-      is_active: true,
-    },
-    {
-      doctor_slug: "dr-aditi-joshi",
-      doctor_name: "Dr. Aditi Joshi",
-      specialization: "Dental Surgeon",
-      chamber_name: "Chamber 2 • Dental Chair 1",
-      working_days: ["monday", "wednesday", "friday", "saturday"],
-      start_time: "10:00",
-      end_time: "16:00",
-      slot_duration: 30,
-      is_active: true,
-    },
-    {
-      doctor_slug: "dr-vikram-sethi",
-      doctor_name: "Dr. Vikram Sethi",
-      specialization: "Pediatrician",
-      chamber_name: "Chamber 3 • Room 103",
-      working_days: ["tuesday", "thursday", "saturday", "sunday"],
-      start_time: "09:30",
-      end_time: "15:30",
-      slot_duration: 20,
-      is_active: true,
-    },
-  ]);
-
-  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([
-    {
-      id: "block-1",
-      doctor_slug: "dr-aditi-joshi",
-      date: new Date().toISOString().split("T")[0],
-      start_time: "09:00",
-      end_time: "11:00",
-      reason: "Personal appointment",
-      type: "blocked",
-    },
-  ]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [schedules, setSchedules] = useState<DoctorSchedule[]>([]);
+  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [scheduleEditorOpen, setScheduleEditorOpen] = useState(false);
   const [blockDateOpen, setBlockDateOpen] = useState(false);
@@ -779,19 +706,22 @@ export default function DoctorSchedulePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setPageLoading(true);
         const [docsResp, schedResp, blockedResp] = await Promise.all([
           API.get("/api/doctors"),
           API.get("/api/doctors/schedules"),
           API.get("/api/doctors/blocked"),
         ]);
         const fetchedDocs: Doctor[] = Array.isArray(docsResp) ? docsResp : (docsResp.doctors || []);
-        if (fetchedDocs.length > 0) setDoctors(fetchedDocs);
+        setDoctors(fetchedDocs);
         const fetchedScheds: DoctorSchedule[] = Array.isArray(schedResp) ? schedResp : (schedResp.schedules || []);
-        if (fetchedScheds.length > 0) setSchedules(fetchedScheds);
+        setSchedules(fetchedScheds);
         const fetchedBlocked: BlockedSlot[] = Array.isArray(blockedResp) ? blockedResp : (blockedResp.blocked || []);
-        if (fetchedBlocked.length > 0) setBlockedSlots(fetchedBlocked);
-      } catch {
-        // Keep local mock data
+        setBlockedSlots(fetchedBlocked);
+      } catch (err) {
+        console.error("Failed to load doctor schedules:", err);
+      } finally {
+        setPageLoading(false);
       }
     };
     loadData();
@@ -845,11 +775,28 @@ export default function DoctorSchedulePage() {
           </div>
         </div>
         <button
-          onClick={() => API.get("/api/doctors").then(() => {}).catch(() => {})}
+          onClick={() => {
+            setPageLoading(true);
+            Promise.all([
+              API.get("/api/doctors"),
+              API.get("/api/doctors/schedules"),
+              API.get("/api/doctors/blocked"),
+            ])
+              .then(([docsResp, schedResp, blockedResp]) => {
+                const fetchedDocs: Doctor[] = Array.isArray(docsResp) ? docsResp : (docsResp.doctors || []);
+                setDoctors(fetchedDocs);
+                const fetchedScheds: DoctorSchedule[] = Array.isArray(schedResp) ? schedResp : (schedResp.schedules || []);
+                setSchedules(fetchedScheds);
+                const fetchedBlocked: BlockedSlot[] = Array.isArray(blockedResp) ? blockedResp : (blockedResp.blocked || []);
+                setBlockedSlots(fetchedBlocked);
+              })
+              .catch((err) => console.error(err))
+              .finally(() => setPageLoading(false));
+          }}
           className="rounded-full p-1.5 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition"
           title="Refresh"
         >
-          <RefreshCw className="h-4 w-4 text-[#86868B] dark:text-[#636366]" />
+          <RefreshCw className={`h-4 w-4 text-[#86868B] dark:text-[#636366] ${pageLoading ? "animate-spin" : ""}`} />
         </button>
       </header>
 
@@ -865,41 +812,56 @@ export default function DoctorSchedulePage() {
       )}
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        {/* ── Weekly Grid ── */}
-        <WeeklyGrid doctors={doctors} schedules={schedules} blockedSlots={blockedSlots} />
+        {pageLoading ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-slate-500">
+            <Loader2 className="h-8 w-8 animate-spin text-[#0071E3]" />
+            <p className="text-xs font-medium">Loading doctor availability & schedules...</p>
+          </div>
+        ) : doctors.length === 0 ? (
+          <div className="text-center py-16 text-[#86868B] dark:text-[#636366]">
+            <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-semibold">No doctors found</p>
+            <p className="text-xs mt-1">Add doctors to your clinic to configure working hours and blocked dates.</p>
+          </div>
+        ) : (
+          <>
+            {/* ── Weekly Grid ── */}
+            <WeeklyGrid doctors={doctors} schedules={schedules} blockedSlots={blockedSlots} />
 
-        {/* ── Doctor Schedule Cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {doctorSchedules.map(({ ...doc }) => {
-            const schedule = schedules.find((s) => s.doctor_slug === doc.slug) || null;
-            const docBlocked = blockedSlots.filter((b) => b.doctor_slug === doc.slug);
-            return (
-              <ScheduleCard
-                key={doc.slug}
-                doctor={doc}
-                schedule={schedule}
-                blockedSlots={docBlocked}
-                onEditSchedule={() => {
-                  setEditingDoctor(doc);
-                  setScheduleEditorOpen(true);
-                }}
-                onBlockDate={() => {
-                  setBlockingDoctor(doc);
-                  setBlockDateOpen(true);
-                }}
-                onToggleActive={() => {
-                  if (schedule) {
-                    const updated = { ...schedule, is_active: !schedule.is_active };
-                    setSchedules((prev) =>
-                      prev.map((s) => (s.doctor_slug === doc.slug ? updated : s))
-                    );
-                    showToast(`${doc.full_name} marked as ${updated.is_active ? "active" : "inactive"}`);
-                  }
-                }}
-              />
-            );
-          })}
-        </div>
+            {/* ── Doctor Schedule Cards ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {doctorSchedules.map(({ ...doc }) => {
+                const schedule = schedules.find((s) => s.doctor_slug === doc.slug) || null;
+                const docBlocked = blockedSlots.filter((b) => b.doctor_slug === doc.slug);
+                return (
+                  <ScheduleCard
+                    key={doc.slug}
+                    doctor={doc}
+                    schedule={schedule}
+                    blockedSlots={docBlocked}
+                    onEditSchedule={() => {
+                      setEditingDoctor(doc);
+                      setScheduleEditorOpen(true);
+                    }}
+                    onBlockDate={() => {
+                      setBlockingDoctor(doc);
+                      setBlockDateOpen(true);
+                    }}
+                    onToggleActive={() => {
+                      if (schedule) {
+                        const updated = { ...schedule, is_active: !schedule.is_active };
+                        setSchedules((prev) =>
+                          prev.map((s) => (s.doctor_slug === doc.slug ? updated : s))
+                        );
+                        showToast(`${doc.full_name} marked as ${updated.is_active ? "active" : "inactive"}`);
+                      }
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* ── Modals ── */}
         {scheduleEditorOpen && editingDoctor && (

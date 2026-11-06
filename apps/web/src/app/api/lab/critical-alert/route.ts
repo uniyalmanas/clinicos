@@ -136,11 +136,65 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "dispatch_whatsapp") {
-      return apiError(
-        501,
-        "Automatic WhatsApp report delivery is not implemented. Share the signed report link from the prescription screen.",
-        "not_implemented"
-      );
+      const recipientPhone = String(doctor_phone || order.doctor_phone || "").replace(/[^0-9]/g, "").slice(-10);
+      const recipientDoctor = String(doctor_name || order.doctor_name || "Doctor").trim();
+      const paramsList = Array.isArray(order.critical_parameters)
+        ? order.critical_parameters.join(", ")
+        : (order.critical_parameters ? String(order.critical_parameters) : "Critical flagged parameters");
+
+      const alertMessage =
+        `⚠️ *CRITICAL LAB ALERT* — Urgent clinical notification:\n\n` +
+        `Patient: *${order.patient_name}*\n` +
+        `Order Ref: #${order.order_number}\n` +
+        `Flagged: ${paramsList}\n\n` +
+        `Please review the lab portal immediately and confirm read-back.\n` +
+        `Reported by: ${auth.auth.user.full_name} (${auth.auth.clinic?.name || "Clinic Lab"})`;
+
+      const whatsappUrl = recipientPhone
+        ? `https://wa.me/91${recipientPhone}?text=${encodeURIComponent(alertMessage)}`
+        : null;
+
+      try {
+        await sql`
+          INSERT INTO lis_critical_alert_logs (
+            id, order_id, order_number, patient_name, doctor_name,
+            doctor_phone, parameter_name, critical_value, channel
+          ) VALUES (
+            ${randomUUID()},
+            ${order.id},
+            ${order.order_number},
+            ${order.patient_name},
+            ${recipientDoctor},
+            ${recipientPhone || null},
+            ${JSON.stringify(order.critical_parameters || [])},
+            'CRITICAL_VALUE_WHATSAPP_DISPATCH',
+            'whatsapp'
+          );
+        `;
+      } catch (logErr) {
+        console.warn("Failed to write to lis_critical_alert_logs:", logErr);
+      }
+
+      await logAudit({
+        actorId: auth.auth.user.id,
+        actorRole: auth.auth.role,
+        clinicId,
+        action: "lab.critical.whatsapp_dispatch",
+        entity: "diagnostic_lab_order",
+        entityId: String(order.id),
+        after: { doctor_name: recipientDoctor, doctor_phone: recipientPhone },
+        request: req,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: recipientPhone
+          ? `Critical alert prepared for WhatsApp dispatch to Dr. ${recipientDoctor}.`
+          : `Critical alert logged. No phone number recorded on order to open WhatsApp.`,
+        whatsapp_url: whatsappUrl,
+        message_text: alertMessage,
+        order,
+      });
     }
 
     return apiError(400, "Invalid action.", "invalid_action");

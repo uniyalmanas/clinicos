@@ -250,18 +250,24 @@ export default function DashboardChambersPage() {
         if (docRes.ok) {
           const fetchedDocs = await docRes.json();
           if (Array.isArray(fetchedDocs) && fetchedDocs.length > 0) {
-            docList = DEFAULT_POLYCLINIC_DOCTORS.map(defaultDoc => {
-              const apiMatch = fetchedDocs.find((d: any) => d.slug === defaultDoc.slug);
-              if (apiMatch) {
-                return {
-                  ...defaultDoc,
-                  id: apiMatch.id || defaultDoc.id,
-                  consultation_fee: Number(apiMatch.consultation_fee) || defaultDoc.consultation_fee,
-                  registration_number: apiMatch.medical_council_reg_number || defaultDoc.registration_number,
-                  council_name: apiMatch.medical_council_state || defaultDoc.council_name
-                };
-              }
-              return defaultDoc;
+            docList = fetchedDocs.map((apiDoc: any, index: number) => {
+              const defaultMatch = DEFAULT_POLYCLINIC_DOCTORS.find((d) => d.slug === apiDoc.slug);
+              return {
+                id: apiDoc.id || `doc-${index + 1}`,
+                slug: apiDoc.slug,
+                full_name: apiDoc.full_name || "Dr. Doctor",
+                specialization: apiDoc.specialization || "General Physician",
+                registration_number: apiDoc.medical_council_reg_number || defaultMatch?.registration_number || "VERIFIED",
+                council_name: apiDoc.medical_council_state || defaultMatch?.council_name || "State Medical Council",
+                consultation_fee: Number(apiDoc.consultation_fee) || defaultMatch?.consultation_fee || 500,
+                chamber_name: apiDoc.chamber_name || defaultMatch?.chamber_name || `Chamber ${index + 1}`,
+                room_number: apiDoc.room_number || defaultMatch?.room_number || `Room 10${index + 1}`,
+                token_prefix: (apiDoc.specialization || "OPD").slice(0, 4).toUpperCase(),
+                fee_split: defaultMatch?.fee_split || "Visiting Consultant 70/30",
+                doctor_share_pct: defaultMatch?.doctor_share_pct || 70,
+                clinic_share_pct: defaultMatch?.clinic_share_pct || 30,
+                is_procedure_chair: defaultMatch?.is_procedure_chair || false,
+              };
             });
           }
         }

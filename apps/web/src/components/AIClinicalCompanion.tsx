@@ -1313,29 +1313,29 @@ export function AIClinicalCompanion({
       {/* SECTION 3: END-OF-CONSULTATION DUAL REPORT REVIEW MODAL */}
       {/* ========================================================================= */}
       {isReviewOpen && doctorReport && patientSummary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto">
-          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in overflow-y-auto print:static print:p-0 print:bg-white print:block">
+          <div className="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-xl bg-white p-5 sm:p-6 shadow-2xl dark:bg-[#1C1C1E] border border-black/10 dark:border-white/10 space-y-4 my-auto print:max-h-none print:overflow-visible print:p-0 print:border-none print:shadow-none print:space-y-3 print:w-full print:max-w-none">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
+            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 dark:border-white/[0.06] print:border-black">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                  <span>Consultation Review &amp; Report Approval</span>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 print:text-black">
+                  <ShieldCheck className="h-5 w-5 text-emerald-600 print:text-black" />
+                  <span>Consultation Review &amp; Report</span>
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-500 print:hidden">
                   Review the professional clinical report and patient-friendly visit summary before final e-sign.
                 </p>
               </div>
               <button
                 onClick={() => setIsReviewOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer print:hidden"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Dual Report Tab Switcher & Language Selector */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50 dark:bg-white/[0.04] p-2 rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50 dark:bg-white/[0.04] p-2 rounded-xl print:hidden">
               <div className="flex items-center gap-1">
                 <button
                   type="button"
@@ -1635,7 +1635,7 @@ export function AIClinicalCompanion({
             )}
 
             {/* Modal Bottom Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-white/[0.06]">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-white/[0.06] print:hidden">
               <div className="text-[11px] text-slate-500 flex items-center gap-1">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 <span>Approval publishes directly to patient&apos;s personal Patient Portal.</span>

@@ -187,7 +187,7 @@ export default function PatientPrescriptionLockerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7] flex flex-col">
+    <div className="min-h-screen bg-[#ECEEF2] text-[#1D1D1F] dark:bg-[#000000] dark:text-[#F5F5F7] flex flex-col print:min-h-0 print:bg-white print:text-black">
       {/* 1. TOP APP HEADER (Hidden during printing) */}
       <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-[#ECEEF2]/80 backdrop-blur-2xl dark:border-white/[0.08] dark:bg-[#000000]/80 print:hidden">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
@@ -215,7 +215,7 @@ export default function PatientPrescriptionLockerPage() {
       )}
 
       {/* 3. MAIN PRESCRIPTION & PATIENT REPORT CONTAINER */}
-      <main className="flex-1 mx-auto max-w-4xl w-full px-4 py-6 sm:px-6 space-y-6">
+      <main className="flex-1 mx-auto max-w-4xl w-full px-4 py-6 sm:px-6 space-y-6 print:p-0 print:m-0 print:max-w-none print:w-full print:space-y-0">
         
         {/* Top Floating Document Action Bar (Print / Share) */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#1C1C1E] p-4 rounded-[20px] border border-black/[0.06] dark:border-white/[0.08] shadow-apple-sm print:hidden">
@@ -574,217 +574,240 @@ export default function PatientPrescriptionLockerPage() {
         {/* ============================================================== */}
         {/* 4. THE PRINTABLE OFFICIAL A4/A5 NMC PRESCRIPTION SHEET */}
         {/* ============================================================== */}
-        <div className={`overflow-hidden rounded-[24px] border border-black/[0.06] bg-white ${paperFormat === "a5" ? "max-w-2xl text-xs p-6 sm:p-8" : "max-w-4xl p-8 sm:p-12"} mx-auto shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] print:p-0 print:border-none print:shadow-none print:bg-white print:text-black transition-all`}>
+        <div className={`overflow-hidden rounded-[20px] border border-black/[0.06] bg-white ${paperFormat === "a5" ? "max-w-2xl text-xs p-5" : "max-w-4xl p-6 sm:p-8"} mx-auto shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] print:m-0 print:p-0 print:border-none print:shadow-none print:bg-white print:text-black print:max-w-none print:w-full print:rounded-none flex flex-col justify-between print:min-h-[268mm] transition-all`}>
 
-          {/* Clinic Header & Letterhead */}
-          <div className="border-b-2 border-[#1D1D1F] pb-6 dark:border-white print:border-black">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#0071E3] text-white print:border print:border-black">
-                    <Stethoscope className="h-4 w-4" />
+          {/* Top Letterhead & Clinical Details */}
+          <div>
+            <div className="border-b-2 border-[#1D1D1F] pb-3 dark:border-white print:border-black print:pb-2">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3 print:flex-row print:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#0071E3] text-white print:border print:border-black print:h-6 print:w-6 print:bg-black">
+                      <Stethoscope className="h-3.5 w-3.5" />
+                    </div>
+                    <h1 className="text-lg font-black text-[#1D1D1F] dark:text-white print:text-black print:text-base tracking-tight">
+                      {rx.clinic_name || "Derma Care Skin & Laser Centre"}
+                    </h1>
                   </div>
-                  <h1 className="text-xl font-black text-[#1D1D1F] dark:text-white print:text-black tracking-tight">
-                    {rx.clinic_name || "Derma Care Skin & Laser Centre"}
-                  </h1>
-                </div>
-                <p className="text-xs text-[#86868B] mt-2 flex items-center gap-1.5 print:text-gray-600">
-                  <MapPin className="h-3.5 w-3.5 text-[#0071E3]" />
-                  <span>{rx.clinic_address || "14, Rajpur Road, Dehradun"}</span>
-                </p>
-                <p className="text-xs text-[#86868B] mt-0.5 flex items-center gap-1.5 print:text-gray-600">
-                  <Phone className="h-3.5 w-3.5 text-[#0071E3]" />
-                  <span>Helpline: {rx.clinic_phone || "+91 98765 43210"}</span>
-                </p>
-              </div>
-
-              {/* Doctor Credentials & Medical Council Reg */}
-              <div className="text-left sm:text-right">
-                <div className="text-base font-extrabold text-[#1D1D1F] dark:text-white print:text-black">
-                  {rx.doctor_name || "Dr. Rahul Sharma"}
-                </div>
-                <div className="text-xs text-[#0071E3] font-semibold mt-0.5">
-                  {rx.qualification_summary || "MBBS, MD (Registered Medical Practitioner)"}
-                </div>
-                <div className="text-[11px] text-[#86868B] font-mono mt-1 print:text-gray-600">
-                  State Medical Council Reg: <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.doctor_reg_number}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Patient Metadata Grid */}
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-[16px] bg-[#ECEEF2]/60 p-4 text-xs dark:bg-white/[0.04] print:bg-gray-100 print:border print:border-gray-200">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Patient Name</span>
-                <strong className="text-sm text-[#1D1D1F] dark:text-white print:text-black">{rx.patient_name}</strong>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Age &amp; Gender</span>
-                <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.patient_age} Yrs / {rx.patient_gender || "Male"}</strong>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Date Issued</span>
-                <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.created_at || "Today"}</strong>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">Prescription ID</span>
-                <strong className="font-mono text-[#0071E3] dark:text-[#2997FF] print:text-black">{rx.prescription_number}</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Vitals & Clinical Diagnosis */}
-          <div className="mt-5 space-y-3 border-b border-black/[0.06] pb-5 dark:border-white/[0.08] print:border-gray-300 text-xs">
-            {rx.vitals && (
-              <div className="flex flex-wrap items-center gap-4 text-[#86868B] font-mono">
-                {rx.vitals.bp && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">BP:</strong> {rx.vitals.bp} mmHg</span>}
-                {rx.vitals.pulse && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Pulse:</strong> {rx.vitals.pulse} bpm</span>}
-                {rx.vitals.temp && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Temp:</strong> {rx.vitals.temp} °F</span>}
-                {rx.vitals.spo2 && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">SpO2:</strong> {rx.vitals.spo2}%</span>}
-                {rx.vitals.weight && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Weight:</strong> {rx.vitals.weight} kg</span>}
-              </div>
-            )}
-
-            <div className="pt-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] block">
-                Provisional Diagnosis &amp; Findings
-              </span>
-              <div className="text-base font-extrabold text-[#1D1D1F] dark:text-white print:text-black mt-0.5">
-                {rx.provisional_diagnosis}
-              </div>
-            </div>
-          </div>
-
-          {/* Prescribed Medications Section (NMC Generic Enforcement) */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white print:text-black flex items-center gap-1.5">
-                <span className="font-serif italic text-lg font-bold text-[#0071E3]">℞</span> Prescribed Medication Regimen
-              </h3>
-              <span className="text-[10px] font-mono text-[#86868B] uppercase">
-                (Generic formulations prioritized as per NMC regulations)
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {rx.items?.map((item: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/30 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300 print:bg-white"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-black text-[#1D1D1F] dark:text-white print:text-black">
-                        {idx + 1}. {item.medicine_name} <span className="text-xs font-semibold text-[#86868B]">({item.dosage_form || "Tablet"} • {item.strength || ""})</span>
-                      </div>
-                      <div className="text-[11px] font-mono font-bold text-[#0071E3] dark:text-[#2997FF] uppercase mt-0.5 print:text-black">
-                        GENERIC CHEMICAL: {item.generic_name}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-[8px] bg-[#0071E3]/10 px-2.5 py-1 font-mono font-bold text-[#0071E3] dark:text-[#2997FF] print:border print:border-black print:text-black">
-                        {item.dosage_frequency || item.frequency}
-                      </span>
-                      <span className="rounded-[8px] bg-black/[0.04] px-2.5 py-1 font-semibold text-[#1D1D1F] dark:bg-white/[0.08] dark:text-white print:border print:border-gray-300">
-                        {item.timing_relation || "After Food"}
-                      </span>
-                      <span className="font-bold text-[#1D1D1F] dark:text-white print:text-black">
-                        {item.duration_days || item.duration || "5"} Days
-                      </span>
-                    </div>
+                  <div className="text-[11px] text-[#86868B] mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 print:text-gray-700 print:text-[9.5pt]">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-[#0071E3] print:text-black" />
+                      <span>{rx.clinic_address || "14, Rajpur Road, Dehradun"}</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-3 w-3 text-[#0071E3] print:text-black" />
+                      <span>Tel: {rx.clinic_phone || "+91 98765 43210"}</span>
+                    </span>
                   </div>
-
-                  {item.special_instructions && (
-                    <div className="mt-2 text-[11px] text-[#86868B] italic bg-white dark:bg-[#1C1C1E] p-2 rounded-[10px] border border-black/[0.04] dark:border-white/[0.06] print:border-gray-200">
-                      💡 <strong>Instruction:</strong> {item.special_instructions}
-                    </div>
-                  )}
                 </div>
-              ))}
+
+                {/* Doctor Credentials & Medical Council Reg */}
+                <div className="text-left sm:text-right print:text-right">
+                  <div className="text-base font-black text-[#1D1D1F] dark:text-white print:text-black print:text-sm">
+                    {rx.doctor_name || "Dr. Rahul Sharma"}
+                  </div>
+                  <div className="text-xs text-[#0071E3] font-semibold mt-0.5 print:text-black print:text-[9.5pt]">
+                    {rx.qualification_summary || "MBBS, MD (Registered Medical Practitioner)"}
+                  </div>
+                  <div className="text-[11px] text-[#86868B] font-mono mt-0.5 print:text-black print:text-[9pt]">
+                    NMC / State Reg: <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.doctor_reg_number}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Patient Metadata Strip */}
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-[12px] bg-[#ECEEF2]/60 p-2.5 text-xs dark:bg-white/[0.04] print:mt-2 print:p-2 print:rounded-none print:border print:border-black print:bg-white print:grid-cols-4 print:text-[9.5pt] print:gap-1">
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Patient Name</span>
+                  <strong className="text-sm text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.patient_name}</strong>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Age &amp; Gender</span>
+                  <strong className="text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.patient_age} Yrs / {rx.patient_gender || "Male"}</strong>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Date Issued</span>
+                  <strong className="text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.created_at || "Today"}</strong>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Prescription ID</span>
+                  <strong className="font-mono text-[#0071E3] dark:text-[#2997FF] print:text-black print:text-[10pt]">{rx.prescription_number}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Vitals & Clinical Diagnosis */}
+            <div className="mt-2.5 space-y-1.5 border-b border-black/[0.08] pb-2.5 dark:border-white/[0.08] print:mt-1.5 print:pb-1.5 print:border-black text-xs print:text-[9.5pt]">
+              {rx.vitals && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[#86868B] font-mono print:text-black">
+                  {rx.vitals.bp && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">BP:</strong> {rx.vitals.bp} mmHg</span>}
+                  {rx.vitals.pulse && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Pulse:</strong> {rx.vitals.pulse} bpm</span>}
+                  {rx.vitals.temp && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Temp:</strong> {rx.vitals.temp} °F</span>}
+                  {rx.vitals.spo2 && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">SpO2:</strong> {rx.vitals.spo2}%</span>}
+                  {rx.vitals.weight && <span><strong className="text-[#1D1D1F] dark:text-white print:text-black">Weight:</strong> {rx.vitals.weight} kg</span>}
+                </div>
+              )}
+
+              <div className="flex items-baseline gap-2 pt-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-700 shrink-0">
+                  Provisional Diagnosis:
+                </span>
+                <span className="text-sm font-extrabold text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">
+                  {rx.provisional_diagnosis}
+                </span>
+              </div>
+            </div>
+
+            {/* Prescribed Medications Section (NMC Generic Table) */}
+            <div className="mt-3.5 print:mt-2">
+              <div className="flex items-center justify-between mb-2 print:mb-1.5">
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white print:text-black flex items-center gap-1.5">
+                  <span className="font-serif italic text-base font-bold text-[#0071E3] print:text-black">℞</span> Prescribed Medication Regimen
+                </h3>
+                <span className="text-[10px] font-mono text-[#86868B] uppercase print:text-gray-600">
+                  (Generic formulations prioritized per NMC regulations)
+                </span>
+              </div>
+
+              {/* Table view for dense document / print display */}
+              <div className="overflow-x-auto rounded-[12px] border border-black/[0.08] dark:border-white/[0.08] print:border-black print:rounded-none">
+                <table className="w-full border-collapse text-left text-xs print:text-[9.5pt]">
+                  <thead>
+                    <tr className="border-b border-black/[0.08] bg-[#ECEEF2]/70 dark:border-white/[0.08] dark:bg-white/[0.04] print:border-black print:bg-gray-100">
+                      <th className="py-1.5 px-2.5 font-bold text-[#86868B] uppercase text-[9px] print:text-black w-7">#</th>
+                      <th className="py-1.5 px-2.5 font-bold text-[#86868B] uppercase text-[9px] print:text-black">Medicine &amp; Generic Formulation</th>
+                      <th className="py-1.5 px-2.5 font-bold text-[#86868B] uppercase text-[9px] print:text-black">Dosage / Form</th>
+                      <th className="py-1.5 px-2.5 font-bold text-[#86868B] uppercase text-[9px] print:text-black">Frequency &amp; Timing</th>
+                      <th className="py-1.5 px-2.5 font-bold text-[#86868B] uppercase text-[9px] print:text-black w-20">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04] print:divide-gray-300">
+                    {rx.items?.map((item: any, idx: number) => (
+                      <tr key={idx} className="print-avoid-break odd:bg-transparent even:bg-[#ECEEF2]/20 dark:even:bg-white/[0.015] print:even:bg-transparent">
+                        <td className="py-2 px-2.5 font-bold text-[#86868B] print:text-black align-top text-[10px]">
+                          {idx + 1}
+                        </td>
+                        <td className="py-2 px-2.5 align-top">
+                          <div className="font-extrabold text-[#1D1D1F] dark:text-white print:text-black text-xs print:text-[9.5pt]">
+                            {item.medicine_name}
+                          </div>
+                          <div className="text-[10px] font-mono font-bold text-[#0071E3] dark:text-[#2997FF] uppercase mt-0.5 print:text-black">
+                            GENERIC: {item.generic_name}
+                          </div>
+                          {item.special_instructions && (
+                            <div className="mt-1 text-[10px] text-[#86868B] italic print:text-gray-700">
+                              ℹ️ {item.special_instructions}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-2 px-2.5 text-[#1D1D1F] dark:text-white print:text-black align-top whitespace-nowrap">
+                          <span className="font-semibold">{item.dosage_form || "Tablet"}</span>
+                          {item.strength && <span className="text-[#86868B] print:text-black ml-1">({item.strength})</span>}
+                        </td>
+                        <td className="py-2 px-2.5 align-top whitespace-nowrap">
+                          <span className="inline-block rounded-[6px] bg-[#0071E3]/10 px-2 py-0.5 font-mono font-bold text-[#0071E3] dark:text-[#2997FF] print:border print:border-black print:text-black print:bg-white print:px-1.5 print:py-0">
+                            {item.dosage_frequency || item.frequency}
+                          </span>
+                          <div className="text-[10px] text-[#86868B] mt-0.5 font-medium print:text-black">
+                            {item.timing_relation || "After Food"}
+                          </div>
+                        </td>
+                        <td className="py-2 px-2.5 font-bold text-[#1D1D1F] dark:text-white print:text-black align-top whitespace-nowrap">
+                          {item.duration_days || item.duration || "5"} Days
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Investigations & Clinical Advice (Dense 2-Column Grid) */}
+            <div className="mt-3.5 grid grid-cols-1 md:grid-cols-2 gap-3 print:grid-cols-2 print:gap-3 print:mt-2 print-avoid-break">
+              {/* Ordered Investigations */}
+              {Array.isArray(rx.lab_tests) && rx.lab_tests.length > 0 ? (
+                <div className="rounded-[12px] border border-black/[0.06] bg-[#ECEEF2]/30 p-2.5 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-black print:rounded-none print:p-2 print:bg-white">
+                  <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black flex items-center justify-between mb-1.5">
+                    <span>🔬 Ordered Lab Tests:</span>
+                    <span className="text-[9px] font-mono text-[#86868B] uppercase print:text-gray-600">Authorized Order</span>
+                  </div>
+                  <div className="space-y-1">
+                    {rx.lab_tests.map((test: any, tIdx: number) => {
+                      const testName = typeof test === "string" ? test : (test.test_name || test.name || "Diagnostic Test");
+                      const testInstructions = typeof test === "object" ? test.instructions : null;
+                      return (
+                        <div key={tIdx} className="flex items-center gap-1.5 text-[11px] print:text-[9pt]">
+                          <span className="flex h-4 w-4 items-center justify-center rounded bg-[#0071E3]/10 font-bold text-[#0071E3] text-[9px] shrink-0 print:border print:border-black print:text-black">
+                            {tIdx + 1}
+                          </span>
+                          <span className="font-semibold text-[#1D1D1F] dark:text-white print:text-black">{testName}</span>
+                          {testInstructions && <span className="text-[10px] text-[#86868B] italic">({testInstructions})</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[12px] border border-dashed border-black/[0.06] p-2.5 text-xs text-[#86868B] dark:border-white/[0.08] print:hidden">
+                  No additional lab tests ordered for this consultation.
+                </div>
+              )}
+
+              {/* Doctor's Advice & Review Date */}
+              <div className="rounded-[12px] border border-black/[0.06] bg-[#ECEEF2]/30 p-2.5 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-black print:rounded-none print:p-2 print:bg-white">
+                <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black">
+                  Clinical Advice &amp; Lifestyle Guidelines:
+                </div>
+                <p className="mt-1 text-[#86868B] leading-relaxed dark:text-[#8E8E93] print:text-black print:text-[9.5pt]">
+                  {rx.instructions || rx.diet_advice || "Regular hydration and adequate rest."}
+                </p>
+                <div className="mt-2 text-xs text-[#0071E3] dark:text-[#2997FF] font-semibold print:text-black print:text-[9.5pt]">
+                  📅 Next Review: <strong>{rx.followup_date || "Within 3 to 7 Days"}</strong>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Ordered Investigations & Lab Tests */}
-          {Array.isArray(rx.lab_tests) && rx.lab_tests.length > 0 && (
-            <div className="mt-6 rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/30 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300">
-              <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black flex items-center justify-between mb-2">
-                <span>🔬 Ordered Investigations &amp; Diagnostic Tests:</span>
-                <span className="text-[10px] font-mono text-[#86868B] uppercase">Authorized Diagnostic Order</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {rx.lab_tests.map((test: any, tIdx: number) => {
-                  const testName = typeof test === "string" ? test : (test.test_name || test.name || "Diagnostic Test");
-                  const testInstructions = typeof test === "object" ? test.instructions : null;
-                  return (
-                    <div key={tIdx} className="flex items-start gap-2 bg-white dark:bg-[#1C1C1E] p-2.5 rounded-xl border border-black/[0.04] dark:border-white/[0.06] print:border-gray-200">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#0071E3]/10 font-bold text-[#0071E3] text-[10px] shrink-0">
-                        {tIdx + 1}
-                      </span>
-                      <div>
-                        <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black">{testName}</div>
-                        {testInstructions && <div className="text-[10px] text-[#86868B] italic">{testInstructions}</div>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Doctor's Advice & Review Date */}
-          <div className="mt-6 rounded-[16px] border border-black/[0.06] bg-[#ECEEF2]/40 p-4 text-xs dark:border-white/[0.08] dark:bg-white/[0.02] print:border-gray-300">
-            <div className="font-bold text-[#1D1D1F] dark:text-white print:text-black">
-              Doctor&apos;s Clinical Advice &amp; Lifestyle Guidelines:
-            </div>
-            <p className="mt-1 text-[#86868B] leading-relaxed dark:text-[#8E8E93] print:text-gray-700">
-              {rx.instructions || rx.diet_advice}
-            </p>
-            <div className="mt-2.5 text-xs text-[#0071E3] dark:text-[#2997FF] font-semibold print:text-black">
-              📅 Next Review / Follow-up Scheduled: <strong>{rx.followup_date || "Within 3 to 7 Days"}</strong>
-            </div>
-          </div>
-
-          {/* Cryptographic SHA-256 Tamper-Proof Seal & Digital Signature */}
-          <div className="mt-8 border-t-2 border-[#1D1D1F] pt-6 dark:border-white print:border-black text-xs flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5">
-            <div className="flex items-center gap-3.5">
-              <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white p-1.5 shadow-sm shrink-0 print:border-black">
+          {/* Cryptographic SHA-256 Tamper-Proof Seal & Digital Signature (Pinned Footer) */}
+          <div className="print-footer-pin print-avoid-break mt-4 border-t-2 border-[#1D1D1F] pt-3 dark:border-white print:border-black text-xs flex flex-row justify-between items-end gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="rounded-lg border border-black/[0.08] dark:border-white/[0.1] bg-white p-1 shadow-sm shrink-0 print:border-black">
                 <QRCodeDisplay
                   value={publicPrescriptionUrl}
-                  size={76}
+                  size={58}
                   level="M"
                   fgColor="#000000"
                   bgColor="#FFFFFF"
                 />
               </div>
               <div>
-                <div className="flex items-center gap-2 font-bold text-[#34C759] dark:text-[#30D158] print:text-black">
-                  <CheckCircle2 className="h-4 w-4" />
+                <div className="flex items-center gap-1.5 font-bold text-[#34C759] dark:text-[#30D158] print:text-black text-[11px] print:text-[9pt]">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                   <span>Prescription Integrity Hash (SHA-256)</span>
                 </div>
-                <div className="font-mono text-[9px] text-[#86868B] mt-1 max-w-sm break-all">
-                  SHA-256 Seal: {rx.digital_signature_hash || "a7f3b89091c5e4d28471b3e8c991a03f441582e79601d3cb4198fa0174e50212"}
+                <div className="font-mono text-[8.5px] text-[#86868B] mt-0.5 max-w-xs break-all print:text-black">
+                  SHA-256: {rx.digital_signature_hash || "a7f3b89091c5e4d28471b3e8c991a03f441582e79601d3cb4198fa0174e50212"}
                 </div>
-                <div className="font-mono text-[10px] text-[#86868B] mt-0.5">
+                <div className="font-mono text-[9.5px] text-[#86868B] mt-0.5 print:text-black">
                   Verification Code: <strong>{rx.qr_verification_code || "VERIFY-DERMA-991204"}</strong>
                 </div>
-                <div className="text-[10px] text-[#86868B] mt-0.5">
-                  Scan QR with phone to verify authentic prescription on Clinicos
+                <div className="text-[9px] text-[#86868B] print:text-gray-700">
+                  Scan QR code with phone to verify authentic digital seal on Clinicos
                 </div>
               </div>
             </div>
 
-            <div className="text-left sm:text-right">
-              <div className="font-black text-sm text-[#1D1D1F] dark:text-white print:text-black">
+            <div className="text-right">
+              <div className="font-black text-sm text-[#1D1D1F] dark:text-white print:text-black print:text-xs">
                 {rx.doctor_name || "Dr. Rahul Sharma"}
               </div>
-              <div className="text-[11px] text-[#86868B]">
+              <div className="text-[10px] text-[#86868B] print:text-black">
                 Registered Medical Practitioner
               </div>
-              <div className="text-[10px] text-[#86868B] font-mono mt-0.5">
+              <div className="text-[10px] text-[#86868B] font-mono mt-0.5 print:text-black">
                 {rx.doctor_reg_number || "UKMC-8942-2012"}
               </div>
-              <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+              <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[8.5px] font-bold text-emerald-700 dark:text-emerald-300 uppercase print:border-black print:text-black print:bg-white">
                 ✓ Digitally Verified
               </div>
             </div>
@@ -797,7 +820,7 @@ export default function PatientPrescriptionLockerPage() {
         @media print {
           @page {
             size: ${paperFormat === "a5" ? "A5 portrait" : "A4 portrait"};
-            margin: 10mm;
+            margin: 10mm 12mm;
           }
           body {
             background-color: #ffffff !important;
@@ -805,7 +828,7 @@ export default function PatientPrescriptionLockerPage() {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          header, nav, button, a, .print\\:hidden {
+          header, nav, button, a, .print\\:hidden, [role="navigation"], .toast {
             display: none !important;
           }
         }

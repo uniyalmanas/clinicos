@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/clinic/schedule-automations/route.ts": {
-    "mtime": 1793587764.714357,
-    "seen": 1793598395.0590622,
-    "ast_hash": "a16c8d590aa0bcfa03640ca61ab7ec0b",
+    "mtime": 1793979106.035366,
+    "seen": 1793982707.6618626,
+    "ast_hash": "a60585de092f324d355c3aa383f80473",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/clinic/settle-doctor-payout/route.ts": {
@@ -222,9 +222,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/clinic/trigger-automation/[id]/route.ts": {
-    "mtime": 1793587850.2039466,
-    "seen": 1793598395.0590785,
-    "ast_hash": "71898888bfd87c06f63ec99518f6963e",
+    "mtime": 1793979108.042019,
+    "seen": 1793982707.6630254,
+    "ast_hash": "7a8275f3b5fd7b12a3e6d66a2707316b",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/clinic/walk-in/route.ts": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/lab/critical-alert/route.ts": {
-    "mtime": 1793506733.4449153,
-    "seen": 1793598395.0591,
-    "ast_hash": "3b197e155a5261060ebb4caf2d689bd6",
+    "mtime": 1793979340.7893486,
+    "seen": 1793982707.6651597,
+    "ast_hash": "060050a7a14bddf30a2eb44745a18a86",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/lab/machine-import/route.ts": {
@@ -336,9 +336,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/onboarding/extract/route.ts": {
-    "mtime": 1793609492.4595413,
-    "seen": 1793610257.4085686,
-    "ast_hash": "a1462a6a9b26eece9ee517403ebc2ec8",
+    "mtime": 1793978863.4214046,
+    "seen": 1793982707.6659472,
+    "ast_hash": "70104f02ea3b3ac8fb8d2306abd63651",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/onboarding/publish/route.ts": {
@@ -534,15 +534,15 @@
     "semantic_hash": "524f1ddd755f7f0aa6792458a8eab4bb"
   },
   "apps/web/src/app/dashboard/chambers/page.tsx": {
-    "mtime": 1793864480.2554162,
-    "seen": 1793871302.6611042,
-    "ast_hash": "d0d93c97fdfab13a60224fac1a294893",
+    "mtime": 1793979417.1619823,
+    "seen": 1793982707.6710582,
+    "ast_hash": "389b76557f88c6931d8879f3c0cab471",
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/consult/[id]/page.tsx": {
-    "mtime": 1793882788.1908925,
-    "seen": 1793882900.9904637,
-    "ast_hash": "dd56393e02c428e25cf911a593d3add4",
+    "mtime": 1793984769.5171432,
+    "seen": 1793984959.3156059,
+    "ast_hash": "62fc52755a617a311434f20373f38e7e",
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/desk/page.tsx": {
@@ -570,9 +570,9 @@
     "semantic_hash": "a26385cb476bf006384d96daad448a36"
   },
   "apps/web/src/app/dashboard/layout.tsx": {
-    "mtime": 1793872405.8166049,
-    "seen": 1793874798.3156135,
-    "ast_hash": "0eb6c27ebb7307e3255ff8ff69a0d417",
+    "mtime": 1793984587.269689,
+    "seen": 1793984959.3165207,
+    "ast_hash": "20da424c8268ea4c218ca12e814bc65d",
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/page.tsx": {
@@ -666,9 +666,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/p/[id]/page.tsx": {
-    "mtime": 1793623028.4593363,
-    "seen": 1793624514.312757,
-    "ast_hash": "8a3df2616850ba42b069001f383a25de",
+    "mtime": 1793983984.2659125,
+    "seen": 1793984959.318725,
+    "ast_hash": "f097bff289255fdddb45b1c4a12f0b31",
     "semantic_hash": ""
   },
   "apps/web/src/app/page.tsx": {
@@ -912,10 +912,10 @@
     "semantic_hash": "7fdb67e61950fbdf4a00d11e4839fc41"
   },
   "apps/web/tailwind.config.ts": {
-    "mtime": 1789625591.1380298,
-    "seen": 1790444249.7950413,
-    "ast_hash": "ffb0f3c0c78088f690f6de3a68940039",
-    "semantic_hash": "ffb0f3c0c78088f690f6de3a68940039"
+    "mtime": 1793983346.1355982,
+    "seen": 1793984959.3254566,
+    "ast_hash": "c555a7c30535760d79f51182aeb9a6b7",
+    "semantic_hash": ""
   },
   "apps/web/tsconfig.json": {
     "mtime": 1789583225.0178366,
@@ -1464,9 +1464,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/today/page.tsx": {
-    "mtime": 1793882725.5607147,
-    "seen": 1793882900.9932206,
-    "ast_hash": "ce703b3b5f5ac25a2c4fb7e6cb0e0129",
+    "mtime": 1793984557.2973344,
+    "seen": 1793984959.3172958,
+    "ast_hash": "2bfc133b8031a5e8237f082357ea6f13",
     "semantic_hash": ""
   },
   "apps/web/src/components/MedicineSchedule.tsx": {
@@ -1518,9 +1518,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/doctors/schedule/page.tsx": {
-    "mtime": 1793782966.6228871,
-    "seen": 1793787679.9230227,
-    "ast_hash": "e646f30bc8ddb6d2015a4fdf98ce2630",
+    "mtime": 1793979210.3705328,
+    "seen": 1793982707.6719925,
+    "ast_hash": "c67d57917f809c3c14a2a3b1ba369f3e",
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/reception/page.tsx": {
@@ -1572,9 +1572,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/components/AIClinicalCompanion.tsx": {
-    "mtime": 1793896461.3306658,
-    "seen": 1793896579.9045153,
-    "ast_hash": "5b13753e3ae004cd924f36b9b54b9aa1",
+    "mtime": 1793984047.556167,
+    "seen": 1793984959.3197043,
+    "ast_hash": "e249eae4219c29589d88755c73d1ee46",
     "semantic_hash": ""
   },
   "apps/web/src/lib/clinical-companion-service.ts": {
@@ -1587,6 +1587,24 @@
     "mtime": 1793878148.5871725,
     "seen": 1793882901.00232,
     "ast_hash": "046007fa0a7389cffe99c17055e90e13",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/doctors/blocked/route.ts": {
+    "mtime": 1793979110.9559045,
+    "seen": 1793982707.6639624,
+    "ast_hash": "60d1f0820491b7056277ba8be22f3e15",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/doctors/schedule/route.ts": {
+    "mtime": 1793979110.6003356,
+    "seen": 1793982707.664092,
+    "ast_hash": "87f441cd9051d86e883d78f79191e899",
+    "semantic_hash": ""
+  },
+  "apps/web/src/app/api/doctors/schedules/route.ts": {
+    "mtime": 1793979110.1252823,
+    "seen": 1793982707.664094,
+    "ast_hash": "693e6fa1b7e15cebdc5cecce8f187115",
     "semantic_hash": ""
   }
 }

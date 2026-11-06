@@ -23,6 +23,9 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        'apple-blue': "#0071E3",
+        'apple-teal': "#00A389",
+        'apple-red': "#FF3B30",
         apple: {
           bg: {
             light: "#ECEEF2",

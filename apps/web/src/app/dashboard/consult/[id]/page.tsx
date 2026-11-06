@@ -1409,39 +1409,59 @@ export default function DynamicConsultationStudioPage() {
   const cleanPhone = patient.phone.replace(/[^0-9]/g, "");
   const waShareText = `🏥 *Prescription - ${doctor.clinic_name}*\nHello ${patient.name}, Dr. Rahul Sharma has signed your prescription (#${signedPrescription?.prescription_number || "RX-2026"}).\nView & Download: http://localhost:3000/p/${signedPrescription?.prescription_number || "RX-2026-09-0014"}`;
 
+  const patientInitials = patient.name
+    ? patient.name
+        .trim()
+        .split(/\s+/)
+        .map(w => w[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "PT";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-3.5">
       {/* 1. TOP APPOINTMENT PATIENT BAR */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 sm:p-6 shadow-apple-card">
-        <div className="flex items-center gap-3.5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-[16px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 min-w-0">
           <BackButton fallbackUrl="/dashboard" label="Queue" />
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-apple-blue font-mono text-xl font-bold text-white shadow-apple-sm">
-            #{patient.token_number}
+          
+          {/* Patient Avatar Initials Fallback */}
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0071E3] font-bold text-sm text-white shadow-sm"
+            title={patient.name}
+          >
+            {patientInitials}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-[#1D1D1F] dark:text-white">{patient.name}</h1>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-xs font-bold text-[#0071E3] dark:text-[#2997FF] bg-blue-500/10 px-2 py-0.5 rounded-md">
+                #{patient.token_number}
+              </span>
+              <h1 className="text-base font-bold tracking-tight text-[#1D1D1F] dark:text-white truncate">
+                {patient.name}
+              </h1>
               {isLoadingPatient && (
                 <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300">
                   Live queue
                 </span>
               )}
-              <span className="rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-2.5 py-0.5 text-xs font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
+              <span className="rounded-full bg-black/[0.04] dark:bg-white/[0.08] px-2 py-0.5 text-[11px] font-semibold text-[#1D1D1F] dark:text-[#F5F5F7]">
                 {patient.age}Y / {patient.gender}
               </span>
-              <span className="rounded-full bg-apple-teal/10 text-apple-teal dark:text-[#30D1BE] px-2.5 py-0.5 text-[11px] font-medium">
-                Token In Consultation
-              </span>
             </div>
-            <div className="flex items-center gap-2 mt-1 text-xs text-[#86868B]">
+
+            <div className="flex items-center gap-2 mt-1 text-xs text-[#86868B] flex-wrap">
               <span>Phone: {patient.phone}</span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <span>Allergy Flag:</span>
+                <span className="text-[11px] font-semibold text-[#1D1D1F] dark:text-gray-300">Allergy:</span>
                 <select
                   value={patient.allergies}
                   onChange={e => setPatient(prev => ({ ...prev, allergies: e.target.value }))}
-                  className="rounded-lg border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] px-2 py-0.5 text-xs font-semibold text-apple-teal dark:text-[#30D1BE] focus:outline-none focus:ring-1 focus:ring-apple-teal cursor-pointer"
+                  className="rounded-md border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] px-2 py-0.5 text-[11px] font-semibold text-[#0071E3] dark:text-[#2997FF] focus:outline-none focus:ring-1 focus:ring-[#0071E3] cursor-pointer"
                 >
                   <option value="No known drug allergies reported">No known drug allergies reported</option>
                   <option value="Penicillin & Beta-Lactam Allergy">Penicillin & Beta-Lactam Allergy</option>
@@ -1454,32 +1474,32 @@ export default function DynamicConsultationStudioPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           {/* AI Clinical Companion Button */}
           <button
             onClick={() => setShowScribeModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-purple-700 active:scale-95 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-purple-700 active:scale-95 transition cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            <span>AI Clinical Companion</span>
+            <span>AI Clinical Scribe</span>
           </button>
 
           {/* Clinical Tools */}
           <button
             onClick={() => setShowDocsModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] transition active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] px-3 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] transition active:scale-95 cursor-pointer"
           >
-            <Microscope className="h-3.5 w-3.5 text-apple-teal" />
-            <span>Patient Documents & Labs</span>
+            <Microscope className="h-3.5 w-3.5 text-[#00A389]" />
+            <span>Docs &amp; Labs</span>
           </button>
 
           <button
             onClick={() => openAdmitModal()}
-            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-3.5 py-1.5 text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/30 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition active:scale-95 cursor-pointer"
             title="Admit patient to Inpatient Ward or Daycare Observation Bed"
           >
             <Bed className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span>Admit to Bed</span>
+            <span>Admit Bed</span>
           </button>
         </div>
       </div>
@@ -2667,47 +2687,49 @@ export default function DynamicConsultationStudioPage() {
       ) : (
 
         /* ================= DRAFTING CONSULTATION STUDIO ================= */
-        <div className="space-y-5">
+        <div className="space-y-3.5">
           {/* AMBIENT AI VOICE SCRIBE PROMPT BAR */}
-          <div className="rounded-[22px] border border-indigo-500/30 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 p-4 shadow-apple-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="rounded-[14px] border border-indigo-500/25 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 px-3.5 py-2 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setShowScribeModal(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm hover:scale-105 active:scale-95 transition cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-xs hover:scale-105 active:scale-95 transition cursor-pointer shrink-0"
               >
-                <Mic className="h-5 w-5" />
+                <Mic className="h-4 w-4" />
               </button>
               <div>
-                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
-                  <span>AI Clinical Scribe &amp; Voice Dictation</span>
-                  <span className="rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-bold px-2 py-0.5">
+                <div className="text-xs font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
+                  <span>AI Clinical Scribe &amp; Ambient Dictation</span>
+                  <span className="rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-bold px-1.5 py-0.2">
                     Web Speech &amp; LLM
                   </span>
                 </div>
-                <div className="text-[11px] text-[#86868B] mt-0.5">
-                  Talk to the AI to record Temperature, Pulse, SpO2, BP, diagnosis, and medicines hands-free.
+                <div className="text-[10px] text-[#86868B]">
+                  Record vitals, diagnosis, and medicines hands-free
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => {
-                  setDictationInput("Patient Manas Uniyal, 25-year-old male with moderate fever and severe body ache for 2 days. Examination findings: Temperature 101.2 Fahrenheit, pulse 88 beats per minute, SpO2 98 percent on room air, blood pressure 120 over 78. Provisional diagnosis is Acute Viral Pyrexia. Start Tab Paracetamol 650 milligram one tablet three times a day after meals for 3 days SOS, Tab Pantoprazole 40 milligram once daily before breakfast for 5 days, Tab Cetirizine 10 milligram at bedtime for 3 days. Prescribe Multivitamin Zinc syrup 10ml once daily after lunch for 5 days. Advise complete bed rest, drink 3 litres of warm fluids and ORS. Review in 3 days if fever persists.");
-                  setShowScribeModal(true);
-                }}
-                className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-[11px] font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 transition cursor-pointer flex items-center gap-1.5"
-              >
-                <Flame className="h-3 w-3 text-amber-600" />
-                <span>Simulate Manas (101.2°F Fever)</span>
-              </button>
+              {process.env.NODE_ENV !== "production" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDictationInput("Patient Manas Uniyal, 25-year-old male with moderate fever and severe body ache for 2 days. Examination findings: Temperature 101.2 Fahrenheit, pulse 88 beats per minute, SpO2 98 percent on room air, blood pressure 120 over 78. Provisional diagnosis is Acute Viral Pyrexia. Start Tab Paracetamol 650 milligram one tablet three times a day after meals for 3 days SOS, Tab Pantoprazole 40 milligram once daily before breakfast for 5 days, Tab Cetirizine 10 milligram at bedtime for 3 days. Prescribe Multivitamin Zinc syrup 10ml once daily after lunch for 5 days. Advise complete bed rest, drink 3 litres of warm fluids and ORS. Review in 3 days if fever persists.");
+                    setShowScribeModal(true);
+                  }}
+                  className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 transition cursor-pointer flex items-center gap-1"
+                >
+                  <Flame className="h-3 w-3 text-amber-600" />
+                  <span>Simulate Manas (101.2°F Fever)</span>
+                </button>
+              )}
 
               <button
                 type="button"
                 onClick={() => setShowScribeModal(true)}
-                className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition cursor-pointer flex items-center gap-1.5"
+                className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1 text-xs font-bold text-white shadow-xs hover:from-blue-700 hover:to-indigo-700 active:scale-95 transition cursor-pointer flex items-center gap-1.5"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Open Voice Scribe</span>
@@ -2829,19 +2851,19 @@ export default function DynamicConsultationStudioPage() {
           )}
           {/* DRUG ALLERGY WARNING BANNER */}
           {patient.allergies && !patient.allergies.toLowerCase().includes("no known drug") && (
-            <div className="rounded-[22px] border-2 border-red-500/50 bg-red-500/10 dark:bg-red-950/40 p-4 text-xs font-semibold text-red-700 dark:text-red-300 flex items-center justify-between shadow-apple-sm animate-in fade-in">
-              <div className="flex items-center gap-2.5">
-                <AlertOctagon className="h-5 w-5 text-red-600 flex-shrink-0 animate-pulse" />
+            <div className="rounded-[14px] border border-red-500/40 bg-red-500/10 dark:bg-red-950/40 px-3.5 py-2 text-xs font-semibold text-red-700 dark:text-red-300 flex items-center justify-between shadow-xs animate-in fade-in">
+              <div className="flex items-center gap-2">
+                <AlertOctagon className="h-4 w-4 text-red-600 flex-shrink-0 animate-pulse" />
                 <div>
-                  <div className="font-bold text-sm text-red-800 dark:text-red-200">
-                    ⚠️ CLINICAL DRUG ALLERGY RECORDED: {patient.allergies}
-                  </div>
-                  <div className="text-[11px] text-red-700/90 dark:text-red-300/80 mt-0.5">
-                    High-risk cross-sensitivity radar is active. Beta-lactams & high-risk triggers will be evaluated on sign.
-                  </div>
+                  <span className="font-bold text-red-800 dark:text-red-200">
+                    ⚠️ ALLERGY RECORDED: {patient.allergies}
+                  </span>
+                  <span className="text-[10px] text-red-700/80 dark:text-red-300/80 ml-2">
+                    (Cross-sensitivity radar active)
+                  </span>
                 </div>
               </div>
-              <span className="rounded-full bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider flex-shrink-0">
+              <span className="rounded-full bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 uppercase tracking-wider flex-shrink-0">
                 Safety Locked
               </span>
             </div>
@@ -2849,72 +2871,81 @@ export default function DynamicConsultationStudioPage() {
 
           {/* CLINICAL MEMORY: RETURNING PATIENT RECORD (HISTORY ALREADY VISIBLE) */}
           {lastClinicalVisit && (
-            <div className="rounded-[28px] border border-apple-blue/20 bg-gradient-to-r from-apple-blue/[0.06] via-indigo-500/[0.04] to-purple-500/[0.04] dark:from-apple-blue/15 dark:to-purple-950/20 p-5 shadow-apple-card space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start sm:items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-apple-blue/15 text-apple-blue dark:text-sky-300 flex-shrink-0">
-                    <History className="h-5 w-5" />
+            <div className="rounded-[14px] border border-blue-500/20 bg-blue-500/[0.04] dark:bg-blue-950/20 px-3.5 py-2.5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-[#0071E3] dark:text-[#2997FF] flex-shrink-0">
+                    <History className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold uppercase tracking-wider text-apple-blue dark:text-sky-400">
-                        🔁 Clinical Memory: Returning Patient Record
+                      <span className="text-xs font-bold text-[#0071E3] dark:text-[#2997FF]">
+                        🔁 Returning Patient
                       </span>
-                      <span className="rounded-full bg-apple-blue/10 dark:bg-apple-blue/20 text-apple-blue dark:text-sky-300 text-[10px] font-bold px-2.5 py-0.5 border border-apple-blue/20">
+                      <span className="rounded-full bg-blue-500/10 dark:bg-blue-500/20 text-[#0071E3] dark:text-[#2997FF] text-[10px] font-bold px-2 py-0.2">
                         Prior Visit: {lastClinicalVisit.visit_date}
                       </span>
-                      <span className="text-[10px] text-[#86868B]">
-                        by {lastClinicalVisit.doctor_name}
-                      </span>
+                      {lastClinicalVisit.doctor_name && (
+                        <span className="text-[10px] text-[#86868B]">
+                          by {lastClinicalVisit.doctor_name}
+                        </span>
+                      )}
                       {patientHistory?.total_visits && (
-                        <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 font-mono">
-                          {patientHistory.total_visits} Total Visits
+                        <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-1.5 py-0.2 font-mono">
+                          {patientHistory.total_visits} Visits
                         </span>
                       )}
                     </div>
-                    <div className="text-xs font-bold text-[#1D1D1F] dark:text-white mt-1">
-                      Prior Diagnosis: {lastClinicalVisit.provisional_diagnosis || "General Outpatient Assessment"}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-[#86868B] flex-wrap">
+
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-[#1D1D1F] dark:text-white flex-wrap">
+                      {lastClinicalVisit.provisional_diagnosis && (
+                        <span className="font-semibold text-xs">
+                          Prior Diagnosis: <span className="font-normal text-[#86868B] dark:text-gray-300">{lastClinicalVisit.provisional_diagnosis}</span>
+                        </span>
+                      )}
                       {lastClinicalVisit.vitals && (
-                        <span className="font-mono bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 rounded text-[10px]">
-                          Baseline: BP {lastClinicalVisit.vitals.bp || "120/80"} • Pulse {lastClinicalVisit.vitals.pulse || "76"} • Wt {lastClinicalVisit.vitals.weight || "60"}kg
+                        <span className="font-mono bg-black/[0.04] dark:bg-white/[0.06] px-1.5 py-0.2 rounded text-[10px] text-[#86868B]">
+                          BP {lastClinicalVisit.vitals.bp || "120/80"} • Pulse {lastClinicalVisit.vitals.pulse || "76"}
                         </span>
                       )}
-                      <span>Past Meds:</span>
-                      {lastClinicalVisit.medications_summary?.map((m: string, i: number) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md bg-white/70 dark:bg-white/10 font-mono text-[10px] text-[#1D1D1F] dark:text-gray-200 border border-black/[0.05] dark:border-white/[0.08]">
-                          {m}
+                      {Array.isArray(lastClinicalVisit.medications_summary) && lastClinicalVisit.medications_summary.length > 0 && (
+                        <span className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[10px] font-semibold text-[#86868B]">Past Meds:</span>
+                          {lastClinicalVisit.medications_summary.map((m: string, i: number) => (
+                            <span key={i} className="px-1.5 py-0.2 rounded bg-white/70 dark:bg-white/10 font-mono text-[10px] text-[#1D1D1F] dark:text-gray-200 border border-black/[0.05] dark:border-white/[0.08]">
+                              {m}
+                            </span>
+                          ))}
                         </span>
-                      ))}
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 flex-shrink-0 pt-1 sm:pt-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => clonePreviousRx(false)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 text-xs font-bold shadow-apple-sm transition active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white px-3 py-1 text-xs font-bold shadow-xs active:scale-95 transition cursor-pointer"
                   >
-                    <Zap className="h-3.5 w-3.5 fill-current" />
-                    <span>🔄 Reuse Previous Rx</span>
+                    <Zap className="h-3 w-3 fill-current" />
+                    <span>Reuse Previous Rx</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => clonePreviousRx(true)}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-[#2C2C2E] border border-black/[0.1] dark:border-white/[0.12] text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] px-3.5 py-2 text-xs font-semibold transition active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-full bg-white dark:bg-[#2C2C2E] border border-black/[0.1] dark:border-white/[0.12] text-[#1D1D1F] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] px-2.5 py-1 text-xs font-semibold transition active:scale-95 cursor-pointer"
                     title="Clone prescription with 30-day extended duration for chronic refill"
                   >
-                    <Calendar className="h-3.5 w-3.5 text-indigo-500" />
-                    <span>📅 Extend 30 Days</span>
+                    <Calendar className="h-3 w-3 text-indigo-500" />
+                    <span>+30 Days</span>
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-12">
+          <div className="grid gap-4 lg:grid-cols-12">
           {/* LEFT: CLINICAL INPUTS & EXAMINATIONS */}
           <div className="lg:col-span-4 space-y-6">
             {/* Vitals Recording - Upgraded Quick-Pad with Safety Radar */}
@@ -3265,15 +3296,15 @@ export default function DynamicConsultationStudioPage() {
                       key={cat}
                       type="button"
                       onClick={() => setSelectedComboFilter(cat)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition active:scale-95 flex items-center gap-1.5 ${
+                      className={`rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition active:scale-95 flex items-center gap-1.5 ${
                         isSelected
-                          ? "bg-apple-blue text-white shadow-apple-sm"
+                          ? "bg-[#0071E3] dark:bg-[#2997FF] text-white shadow-apple-sm font-bold"
                           : "bg-black/[0.04] dark:bg-white/[0.06] text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
                       }`}
                     >
                       <span>{cat === "Custom" ? "★ My Saved" : cat}</span>
                       <span className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                        isSelected ? "bg-white/20 text-white" : "bg-black/[0.06] dark:bg-white/[0.1]"
+                        isSelected ? "bg-white/20 text-white font-bold" : "bg-black/[0.06] dark:bg-white/[0.1]"
                       }`}>
                         {count}
                       </span>
@@ -3287,7 +3318,7 @@ export default function DynamicConsultationStudioPage() {
                 {filteredCombos.map(combo => (
                   <div
                     key={combo.id}
-                    className="group relative rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.03] hover:bg-white dark:hover:bg-[#2C2C2E] p-3.5 transition-all hover:shadow-apple-sm flex flex-col justify-between space-y-2.5 hover:border-apple-blue/30"
+                    className="group relative rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-black/[0.02] dark:bg-white/[0.03] hover:bg-white dark:hover:bg-[#2C2C2E] p-3 transition-all hover:shadow-apple-sm flex flex-col justify-between space-y-2 hover:border-[#0071E3]/30"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-1.5 mb-1">
@@ -3311,7 +3342,7 @@ export default function DynamicConsultationStudioPage() {
                         </div>
                       </div>
 
-                      <h4 className="font-bold text-xs text-[#1D1D1F] dark:text-white line-clamp-1 group-hover:text-apple-blue transition-colors">
+                      <h4 className="font-bold text-xs text-[#1D1D1F] dark:text-white line-clamp-2 min-h-[2rem] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors" title={combo.title}>
                         {combo.title}
                       </h4>
 
@@ -3327,7 +3358,7 @@ export default function DynamicConsultationStudioPage() {
                       <button
                         type="button"
                         onClick={() => applyRxCombo(combo)}
-                        className="inline-flex items-center gap-1 rounded-xl bg-apple-blue hover:bg-[#0077ED] text-white px-2.5 py-1 text-[11px] font-semibold shadow-apple-sm active:scale-95 transition"
+                        className="inline-flex items-center gap-1 rounded-lg bg-[#0071E3] hover:bg-[#0077ED] dark:bg-[#0071E3] dark:hover:bg-[#2997FF] text-white px-3 py-1.5 text-[11px] font-bold shadow-sm active:scale-95 transition cursor-pointer"
                       >
                         <Zap className="h-3 w-3 fill-white" />
                         <span>1-Tap Apply</span>
@@ -3338,7 +3369,7 @@ export default function DynamicConsultationStudioPage() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-7 shadow-apple-card space-y-5">
+            <div className="rounded-[20px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-5 sm:p-6 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-4 gap-3">
                 <div>
                   <h2 className="text-base font-bold tracking-tight text-[#1D1D1F] dark:text-white flex items-center gap-2">

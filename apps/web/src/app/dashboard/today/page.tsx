@@ -146,24 +146,30 @@ const API = {
 
 function StatusChip({ status }: { status: string }) {
   const variants: Record<string, string> = {
-    booked: "bg-blue-50/60 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border border-blue-100/30 dark:border-blue-800/30",
-    arrived: "bg-amber-50/60 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 border border-amber-100/30 dark:border-amber-800/30",
-    in_consultation: "bg-emerald-50/60 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100/30 dark:border-emerald-800/30 animate-pulse",
-    completed: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60",
-    no_show: "bg-rose-50/60 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300 border border-rose-100/30 dark:border-rose-800/30",
-    confirmed: "bg-blue-50/60 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border border-blue-100/30 dark:border-blue-800/30",
+    booked: "bg-blue-100 text-blue-900 dark:bg-blue-950/80 dark:text-blue-200 border border-blue-300 dark:border-blue-700 font-bold",
+    arrived: "bg-amber-100 text-amber-950 dark:bg-amber-950/80 dark:text-amber-200 border-2 border-amber-400 dark:border-amber-600 font-black",
+    in_consultation: "bg-emerald-600 text-white border-2 border-emerald-500 font-black shadow-xs animate-pulse",
+    completed: "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-bold",
+    no_show: "bg-rose-100 text-rose-900 dark:bg-rose-950/80 dark:text-rose-200 border border-rose-300 font-bold",
+    confirmed: "bg-sky-100 text-sky-900 dark:bg-sky-950/80 dark:text-sky-200 border border-sky-300 font-bold",
   };
   const labels: Record<string, string> = { booked: "Booked", arrived: "Arrived", in_consultation: "In Chamber", completed: "Completed", no_show: "No-Show", confirmed: "Confirmed" };
-  return <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${variants[status] || variants.booked}`}>{labels[status] || status}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-[10px] tracking-wide ${variants[status] || variants.booked}`}>{labels[status] || status}</span>;
 }
 
 function VitalsField({ label, value, onChange, unit, placeholder = "-" }: { label: string; value: string; onChange: (v: string) => void; unit?: string; placeholder?: string }) {
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] uppercase tracking-wider">{label}</label>
-      <div className="flex items-baseline gap-1">
-        <input type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-16 rounded-lg border bg-[#F5F6F9] px-2 py-1.5 text-sm font-mono font-bold text-[#1D1D1F] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0071E3]" />
-        {unit && <span className="text-xs text-[#86868B] dark:text-[#636366]">{unit}</span>}
+      <label className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">{label}</label>
+      <div className="flex items-center gap-1.5">
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-20 rounded-lg border-2 border-slate-300 bg-white px-2.5 py-1.5 text-sm font-mono font-extrabold text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:outline-none focus:border-[#0071E3] focus:ring-1 focus:ring-[#0071E3] shadow-xs transition"
+        />
+        {unit && <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{unit}</span>}
       </div>
     </div>
   );
@@ -215,53 +221,103 @@ function bmiCategory(bmi: number): { label: string; severity: "ok" | "low" | "me
 }
 
 function SchedulePane({ appointments, loadingAppointments, activeAptId, setActiveAptId, setVitals, setSoap, setSpeedRx, TODAY_DISPLAY }: { appointments: Appointment[]; loadingAppointments: boolean; activeAptId: string | null; setActiveAptId: (id: string | null) => void; setVitals: (v: any) => void; setSoap: (v: any) => void; setSpeedRx: (v: any) => void; TODAY_DISPLAY: string }) {
+  const [queueTab, setQueueTab] = useState<"waiting" | "all" | "completed">("waiting");
   const waitingCount = appointments.filter((a) => a.status === "arrived" || a.status === "booked" || a.status === "confirmed").length;
   const completedCount = appointments.filter((a) => a.status === "completed").length;
   const inChamber = appointments.find((a) => a.status === "in_consultation");
 
+  const displayedAppointments = appointments.filter((a) => {
+    if (queueTab === "waiting") return a.status === "arrived" || a.status === "booked" || a.status === "confirmed" || a.status === "in_consultation";
+    if (queueTab === "completed") return a.status === "completed";
+    return true;
+  });
+
   return (
-    <Card variant="elevated" className="flex flex-col h-full">
-      <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 mb-4 dark:border-white/[0.08]">
+    <Card variant="elevated" className="flex flex-col h-full border-2 border-slate-200 dark:border-white/[0.1]">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3">
         <div className="flex items-center gap-2">
           <LayoutList className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-          <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">Today's Schedule</span>
+          <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">Today's Schedule</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{waitingCount} Waiting</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-black text-emerald-800 dark:text-emerald-400">{waitingCount} Waiting</span>
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats - Bold High Contrast */}
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5 dark:border-white/[0.08] dark:bg-white/[0.02]">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">In Chamber</div>
-          <div className="text-base font-bold font-mono text-emerald-700 dark:text-emerald-400 truncate">{inChamber?.patient_name || "—"}</div>
+        <div className="rounded-xl border-2 border-emerald-500/30 bg-emerald-50/70 p-2.5 dark:border-emerald-800/40 dark:bg-emerald-950/30">
+          <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">In Chamber</div>
+          <div className="text-sm font-black font-mono text-emerald-950 dark:text-emerald-200 truncate mt-0.5">{inChamber?.patient_name || "—"}</div>
         </div>
-        <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 p-2.5 dark:border-white/[0.08] dark:bg-white/[0.02]">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Waiting</div>
-          <div className="text-base font-bold font-mono text-blue-700 dark:text-blue-400">{waitingCount}</div>
+        <div className="rounded-xl border-2 border-blue-500/30 bg-blue-50/70 p-2.5 dark:border-blue-800/40 dark:bg-blue-950/30">
+          <div className="text-[10px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-300">Waiting</div>
+          <div className="text-base font-black font-mono text-blue-950 dark:text-blue-200 mt-0.5">{waitingCount}</div>
         </div>
+      </div>
+
+      {/* Segmented Queue Filter Tabs */}
+      <div className="flex items-center gap-1 bg-slate-200/90 dark:bg-white/[0.08] p-1 rounded-xl mb-3">
+        <button
+          type="button"
+          onClick={() => setQueueTab("waiting")}
+          className={`flex-1 py-1 text-[11px] font-black rounded-lg transition text-center cursor-pointer ${
+            queueTab === "waiting"
+              ? "bg-[#0071E3] text-white shadow-xs"
+              : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          Waiting ({waitingCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setQueueTab("all")}
+          className={`flex-1 py-1 text-[11px] font-black rounded-lg transition text-center cursor-pointer ${
+            queueTab === "all"
+              ? "bg-[#0071E3] text-white shadow-xs"
+              : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          All ({appointments.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setQueueTab("completed")}
+          className={`flex-1 py-1 text-[11px] font-black rounded-lg transition text-center cursor-pointer ${
+            queueTab === "completed"
+              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs"
+              : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          Done ({completedCount})
+        </button>
       </div>
 
       {/* Patient List */}
       {loadingAppointments ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <div className="h-8 w-8 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin text-[#0071E3] mb-3"><RefreshCw className="h-4 w-4" /></div>
-          <p className="text-xs text-[#86868B] dark:text-[#636366]">Loading queue…</p>
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Loading queue…</p>
         </div>
-      ) : appointments.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-black/[0.06] p-8 text-center text-xs text-[#86868B] dark:border-white/[0.06]">
-          <Calendar className="h-8 w-8 mx-auto mb-2 text-[#86868B] dark:text-[#636366]" />
-          <p className="mb-1">No appointments scheduled for {TODAY_DISPLAY}.</p>
-          <p className="text-[10px] text-[#86868B] dark:text-[#636366]">Walk-in patients will appear here once checked in.</p>
+      ) : displayedAppointments.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/[0.1] p-6 text-center text-xs font-semibold text-slate-600 dark:text-slate-400">
+          <Calendar className="h-7 w-7 mx-auto mb-2 text-slate-500" />
+          <p className="mb-0.5">No patients in this view.</p>
+          <p className="text-[10px] text-slate-500">Scheduled patients appear here automatically.</p>
         </div>
       ) : (
-        <div className="space-y-1.5 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
-          {appointments.map((apt) => {
+        <div className="space-y-2 max-h-[calc(100vh-320px)] overflow-y-auto pr-1">
+          {displayedAppointments.map((apt) => {
             const isActive = apt.id === activeAptId;
-            const chipClass = isActive ? "bg-[#0071E3] text-white" : apt.status === "completed" ? "bg-white/[0.1] text-slate-600 dark:bg-white/[0.05] dark:text-slate-400" : "bg-[#F5F6F9] text-[#1D1D1F] dark:bg-[#121316] dark:text-white";
-            const rowClass = isActive ? "border border-[#0071E3]/30 shadow-sm bg-[#0071E3]/10" : "border-transparent hover:bg-white/[0.02] dark:hover:bg-white/[0.02]";
+            const chipClass = isActive
+              ? "bg-[#0071E3] text-white shadow-xs"
+              : apt.status === "completed"
+              ? "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+              : "bg-slate-100 text-slate-900 dark:bg-[#202227] dark:text-white border-2 border-slate-300 dark:border-slate-700";
+            const rowClass = isActive
+              ? "border-2 border-[#0071E3] bg-blue-50/90 dark:bg-blue-950/50 shadow-xs"
+              : "border-2 border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#1E2024] hover:border-slate-400 dark:hover:border-slate-600";
             return (
               <button
                 key={apt.id}
@@ -271,15 +327,23 @@ function SchedulePane({ appointments, loadingAppointments, activeAptId, setActiv
                   setSoap({ subjective: "", objective: "", assessment: "", plan: "" });
                   setSpeedRx([]);
                 }}
-                className={`w-full flex items-center justify-between rounded-xl p-2.5 transition-all ${rowClass}`}
+                className={`w-full flex items-center justify-between rounded-xl p-2.5 transition-all text-left cursor-pointer ${rowClass}`}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-mono font-bold text-xs ${chipClass}`}>#{apt.token_number}</span>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-mono font-black text-xs ${chipClass}`}>
+                    #{apt.token_number}
+                  </span>
                   <div className="min-w-0">
-                    <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white truncate">{apt.patient_name}</div>
-                    <div className="flex items-center gap-1 text-[10px] text-[#86868B] dark:text-[#636366] truncate">
+                    <div className="font-extrabold text-xs text-slate-900 dark:text-white truncate">
+                      {apt.patient_name}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
                       <span>{apt.time_slot}</span>
-                      {apt.is_walk_in && <span className="bg-blue-500/10 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded text-[9px] font-bold">Walk-in</span>}
+                      {apt.is_walk_in && (
+                        <span className="bg-blue-600 text-white px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider">
+                          Walk-in
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -293,78 +357,199 @@ function SchedulePane({ appointments, loadingAppointments, activeAptId, setActiv
   );
 }
 
-function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, speedRx, setSpeedRx, addMolecule, removeMolecule, bmi, sys, dia, hr, spo2, temp, weight, height, handleCompleteVisit, setShowHistory, showToast, doctorSlug, doctorName, onConsultationExtracted, onReportApproved }: { currentPatient: Appointment | null; vitals: any; setVitals: (v: any) => void; soap: any; setSoap: (v: any) => void; speedRx: any[]; setSpeedRx: (v: any) => void; addMolecule: (mol: any) => void; removeMolecule: (idx: number) => void; bmi: number; sys: number; dia: number; hr: number; spo2: number; temp: number; weight: number; height: number; handleCompleteVisit: () => void; setShowHistory: (v: boolean) => void; showToast: (msg: string) => void; doctorSlug?: string | null; doctorName?: string | null; onConsultationExtracted: (data: ConsultationExtraction) => void; onReportApproved: (report: any) => void }) {
+function ConsultationPane({
+  currentPatient,
+  appointments,
+  setActiveAptId,
+  vitals,
+  setVitals,
+  soap,
+  setSoap,
+  speedRx,
+  setSpeedRx,
+  addMolecule,
+  removeMolecule,
+  bmi,
+  sys,
+  dia,
+  hr,
+  spo2,
+  temp,
+  weight,
+  height,
+  handleCompleteVisit,
+  setShowHistory,
+  showToast,
+  doctorSlug,
+  doctorName,
+  onConsultationExtracted,
+  onReportApproved,
+}: {
+  currentPatient: Appointment | null;
+  appointments?: Appointment[];
+  setActiveAptId?: (id: string | null) => void;
+  vitals: any;
+  setVitals: (v: any) => void;
+  soap: any;
+  setSoap: (v: any) => void;
+  speedRx: any[];
+  setSpeedRx: (v: any) => void;
+  addMolecule: (mol: any) => void;
+  removeMolecule: (idx: number) => void;
+  bmi: number;
+  sys: number;
+  dia: number;
+  hr: number;
+  spo2: number;
+  temp: number;
+  weight: number;
+  height: number;
+  handleCompleteVisit: () => void;
+  setShowHistory: (v: boolean) => void;
+  showToast: (msg: string) => void;
+  doctorSlug?: string | null;
+  doctorName?: string | null;
+  onConsultationExtracted: (data: ConsultationExtraction) => void;
+  onReportApproved: (report: any) => void;
+}) {
   const [consultMode, setConsultMode] = useState<"ai_companion" | "speed_pad">("ai_companion");
 
   if (!currentPatient) {
+    const nextPatient = appointments?.find(
+      (a) => a.status === "arrived" || a.status === "confirmed" || a.status === "booked"
+    );
+    const waitingCount = appointments?.filter(
+      (a) => a.status === "arrived" || a.status === "confirmed" || a.status === "booked"
+    ).length || 0;
+    const completedCount = appointments?.filter((a) => a.status === "completed").length || 0;
+
     return (
-      <Card variant="default" className="flex flex-col items-center justify-center py-10 text-center">
-        <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center mb-3 text-[#0071E3] dark:text-[#2997FF]">
-          <Stethoscope className="h-6 w-6" />
+      <Card variant="elevated" className="p-4 sm:p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#0071E3]/10 dark:bg-[#0071E3]/20 flex items-center justify-center text-[#0071E3] dark:text-[#2997FF]">
+              <Stethoscope className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#1D1D1F] dark:text-white">Consultation Chamber Ready</h3>
+              <p className="text-[11px] text-[#86868B]">Select a patient from the queue or launch the next consultation</p>
+            </div>
+          </div>
+          <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-2.5 py-0.5">
+            ● Chamber Online
+          </span>
         </div>
-        <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">Select a Patient to Consult</h3>
-        <p className="text-xs text-slate-500 max-w-sm mx-auto">
-          Choose a patient from the queue on the left to begin examination, dictation, vitals entry, or Speed Rx.
-        </p>
+
+        {nextPatient ? (
+          <div className="rounded-xl border border-[#0071E3]/20 bg-blue-50/50 dark:bg-blue-950/20 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#0071E3] font-mono font-bold text-sm text-white shadow-sm">
+                #{nextPatient.token_number}
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#0071E3] dark:text-[#2997FF]">
+                    Next in Queue
+                  </span>
+                  <span className="text-[11px] text-[#86868B]">{nextPatient.time_slot}</span>
+                </div>
+                <h4 className="font-bold text-sm text-[#1D1D1F] dark:text-white">
+                  {nextPatient.patient_name}
+                </h4>
+                <p className="text-xs text-[#86868B] truncate max-w-sm">
+                  {nextPatient.symptoms_description || "Routine Consultation"}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setActiveAptId?.(nextPatient.id)}
+              className="text-xs font-bold px-4 py-2 shrink-0 cursor-pointer shadow-sm"
+            >
+              Start Consultation
+            </Button>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-black/[0.08] dark:border-white/[0.08] p-5 text-center text-xs text-[#86868B]">
+            All scheduled patients for this session have been completed.
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-2 pt-1">
+          <div className="rounded-xl border border-black/[0.04] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] p-2.5 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#86868B]">Waiting</div>
+            <div className="text-base font-black font-mono text-[#0071E3] dark:text-[#2997FF] mt-0.5">{waitingCount}</div>
+          </div>
+          <div className="rounded-xl border border-black/[0.04] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] p-2.5 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#86868B]">Completed</div>
+            <div className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">{completedCount}</div>
+          </div>
+          <div className="rounded-xl border border-black/[0.04] dark:border-white/[0.06] bg-black/[0.02] dark:bg-white/[0.02] p-2.5 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#86868B]">Total Today</div>
+            <div className="text-base font-black font-mono text-[#1D1D1F] dark:text-white mt-0.5">{appointments?.length || 0}</div>
+          </div>
+        </div>
       </Card>
     );
   }
 
   return (
     <div className="space-y-3.5">
-      {/* Patient Header */}
-      <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/40 p-3.5 dark:bg-emerald-950/20 dark:border-emerald-900/30">
-        <div className="flex items-center justify-between mb-2">
+      {/* Patient Header - Bold & High Contrast */}
+      <div className="rounded-xl border-2 border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40 p-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+            <span className="rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white uppercase tracking-wider shadow-xs">
               IN CHAMBER
             </span>
-            <span className="font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="font-mono text-lg font-black text-emerald-800 dark:text-emerald-300">
               #{currentPatient.token_number}
             </span>
-            <span className="text-base font-bold text-slate-900 dark:text-white">
+            <span className="text-base font-extrabold text-slate-900 dark:text-white">
               {currentPatient.patient_name}
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               {currentPatient.patient_phone ? `+91 ${currentPatient.patient_phone}` : "—"}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-bold text-white bg-emerald-700 dark:bg-emerald-600 px-2.5 py-1 rounded-md shadow-xs">
               ₹{currentPatient.fee_amount}
             </span>
-            <span className="font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100/60 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/40">
+            <span className="font-bold text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-300 dark:border-slate-700">
               {currentPatient.payment_mode.toUpperCase()}
             </span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
           </div>
         </div>
         <div
           onClick={() => setShowHistory(true)}
-          className="rounded-lg bg-amber-500/10 p-2 text-xs text-amber-900 dark:text-amber-200 border border-amber-500/20 flex items-center justify-between cursor-pointer hover:bg-amber-500/15 transition group"
+          className="rounded-lg bg-amber-100/90 p-2.5 text-xs text-amber-950 dark:bg-amber-950/60 dark:text-amber-100 border-2 border-amber-300 dark:border-amber-800 flex items-center justify-between cursor-pointer hover:bg-amber-200/90 transition group shadow-xs"
         >
-          <div className="flex items-center gap-1.5 truncate">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-            <span className="font-medium truncate">
+          <div className="flex items-center gap-2 truncate">
+            <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-400 shrink-0" />
+            <span className="font-bold truncate">
               Visit #{currentPatient.token_number} · {currentPatient.symptoms_description || "Routine follow-up"}
             </span>
           </div>
-          <span className="font-semibold text-[11px] text-amber-700 dark:text-amber-300 underline shrink-0 group-hover:opacity-80 ml-2">
-            History →
+          <span className="font-bold text-xs text-amber-900 dark:text-amber-200 underline shrink-0 group-hover:opacity-80 ml-2">
+            View History →
           </span>
         </div>
       </div>
 
       {/* Consultation Studio Mode Toggle */}
-      <div className="flex items-center justify-between bg-white dark:bg-[#121316] p-1.5 rounded-xl border border-slate-200/80 dark:border-white/[0.08]">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between bg-slate-200 dark:bg-[#1E2024] p-1.5 rounded-xl border border-slate-300 dark:border-white/[0.12]">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setConsultMode("ai_companion")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
               consultMode === "ai_companion"
                 ? "bg-[#0071E3] text-white shadow-xs"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold"
             }`}
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -373,18 +558,18 @@ function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, sp
           <button
             type="button"
             onClick={() => setConsultMode("speed_pad")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
               consultMode === "speed_pad"
                 ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                : "text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-bold"
             }`}
           >
             <Stethoscope className="h-3.5 w-3.5" />
             <span>Manual SOAP &amp; Speed Rx</span>
           </button>
         </div>
-        <span className="text-[11px] text-slate-400 hidden sm:inline pr-2">
-          {consultMode === "ai_companion" ? "Real-time AI listening & dual reports active" : "Classic chamber pad"}
+        <span className="text-xs font-bold text-slate-600 dark:text-slate-400 hidden sm:inline pr-2">
+          {consultMode === "ai_companion" ? "Real-time AI listening active" : "Classic chamber pad"}
         </span>
       </div>
 
@@ -435,108 +620,164 @@ function ConsultationPane({ currentPatient, vitals, setVitals, soap, setSoap, sp
             showToast={showToast}
           />
 
-      {/* Vitals */}
-      <Card variant="elevated">
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 mb-4 dark:border-white/[0.08]">
+      {/* Vitals & Safety */}
+      <Card variant="elevated" className="border-2 border-slate-200 dark:border-white/[0.1]">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3.5">
           <div className="flex items-center gap-2">
             <HeartPulse className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-            <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">Vitals & Safety</span>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">Vitals &amp; Safety Radar</span>
           </div>
-          <span className="text-[10px] text-[#86868B] dark:text-[#636366]">Enter before SOAP note</span>
+          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Enter baseline vitals</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <VitalsField label="Systolic BP" value={vitals.systolic} onChange={(v) => setVitals((p: any) => ({ ...p, systolic: v }))} unit="mmHg" />
-          <VitalsField label="Diastolic BP" value={vitals.diastolic} onChange={(v) => setVitals((p: any) => ({ ...p, diastolic: v }))} unit="mmHg" />
-          <VitalsField label="Heart Rate" value={vitals.heartRate} onChange={(v) => setVitals((p: any) => ({ ...p, heartRate: v }))} unit="bpm" />
-          <VitalsField label="SpO₂" value={vitals.spo2} onChange={(v) => setVitals((p: any) => ({ ...p, spo2: v }))} unit="%" />
-          <VitalsField label="Temperature" value={vitals.temperature} onChange={(v) => setVitals((p: any) => ({ ...p, temperature: v }))} unit="°F" />
-          <VitalsField label="Weight" value={vitals.weight} onChange={(v) => setVitals((p: any) => ({ ...p, weight: v }))} unit="kg" />
-          <VitalsField label="Height" value={vitals.height} onChange={(v) => setVitals((p: any) => ({ ...p, height: v }))} unit="cm" />
+        
+        <div className="space-y-3.5">
+          {/* Group 1: Hemodynamics */}
+          <div>
+            <div className="text-[10px] font-extrabold text-[#0071E3] dark:text-[#2997FF] uppercase tracking-wider mb-2">
+              🩺 Blood Pressure &amp; Pulse
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <VitalsField label="Systolic BP" value={vitals.systolic} onChange={(v) => setVitals((p: any) => ({ ...p, systolic: v }))} unit="mmHg" placeholder="120" />
+              <VitalsField label="Diastolic BP" value={vitals.diastolic} onChange={(v) => setVitals((p: any) => ({ ...p, diastolic: v }))} unit="mmHg" placeholder="80" />
+              <VitalsField label="Heart Rate" value={vitals.heartRate} onChange={(v) => setVitals((p: any) => ({ ...p, heartRate: v }))} unit="bpm" placeholder="72" />
+            </div>
+          </div>
+
+          {/* Group 2: Respiration & Core */}
+          <div className="pt-2 border-t border-slate-200/80 dark:border-white/[0.06]">
+            <div className="text-[10px] font-extrabold text-[#00A389] dark:text-[#30D1BE] uppercase tracking-wider mb-2">
+              🫁 Respiration &amp; Temperature
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <VitalsField label="SpO₂ Oxygen" value={vitals.spo2} onChange={(v) => setVitals((p: any) => ({ ...p, spo2: v }))} unit="%" placeholder="98" />
+              <VitalsField label="Temperature" value={vitals.temperature} onChange={(v) => setVitals((p: any) => ({ ...p, temperature: v }))} unit="°F" placeholder="98.4" />
+            </div>
+          </div>
+
+          {/* Group 3: Anthropometry */}
+          <div className="pt-2 border-t border-slate-200/80 dark:border-white/[0.06]">
+            <div className="text-[10px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-2">
+              ⚖️ Body Metrics
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <VitalsField label="Weight" value={vitals.weight} onChange={(v) => setVitals((p: any) => ({ ...p, weight: v }))} unit="kg" placeholder="68" />
+              <VitalsField label="Height" value={vitals.height} onChange={(v) => setVitals((p: any) => ({ ...p, height: v }))} unit="cm" placeholder="172" />
+            </div>
+          </div>
         </div>
+
         {height > 0 && weight > 0 && (
-          <div className="mt-3 flex items-center justify-between rounded-lg bg-[#F5F6F9] p-2.5 dark:bg-[#121316]">
-            <div className="text-[10px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] uppercase tracking-wider">BMI</div>
-            <div className="text-sm font-bold font-mono text-[#1D1D1F] dark:text-white">{bmi.toFixed(1)}</div>
+          <div className="mt-3.5 flex items-center justify-between rounded-xl bg-slate-100 p-3 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Calculated BMI</div>
+            <div className="text-base font-black font-mono text-[#0071E3] dark:text-[#2997FF]">{bmi.toFixed(1)} kg/m²</div>
           </div>
         )}
         {sys > 0 && dia > 0 && hr > 0 && spo2 > 0 && temp > 0 && weight > 0 && height > 0 && <VitalsAlert sys={sys} dia={dia} hr={hr} spo2={spo2} temp={temp} bmi={bmi} />}
       </Card>
 
       {/* SOAP Note */}
-      <Card variant="elevated" className="flex flex-col">
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 mb-4 dark:border-white/[0.08]">
+      <Card variant="elevated" className="border-2 border-slate-200 dark:border-white/[0.1]">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3.5">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-            <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">SOAP Clinical Note</span>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">SOAP Clinical Note</span>
           </div>
-          <span className="text-[10px] text-[#86868B] dark:text-[#636366]">Subjective • Objective • Assessment • Plan</span>
+          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Structured OPD Documentation</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] uppercase tracking-wider">S · Subjective (Chief Complaint)</label>
-            <textarea value={soap.subjective} onChange={(e) => setSoap((p: any) => ({ ...p, subjective: e.target.value }))} placeholder={currentPatient.symptoms_description || "e.g. Acne flare on cheeks & jawline for 2 weeks."} rows={4} className="w-full rounded-xl border bg-[#F5F6F9] px-3 py-2.5 text-sm text-[#1D1D1F] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0071E3] resize-none" />
+            <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded bg-blue-100 dark:bg-blue-900/60 font-black text-blue-700 dark:text-blue-300 text-[11px]">S</span>
+              <span>Subjective (Chief Complaint)</span>
+            </label>
+            <textarea value={soap.subjective} onChange={(e) => setSoap((p: any) => ({ ...p, subjective: e.target.value }))} placeholder={currentPatient.symptoms_description || "e.g. Acne flare on cheeks & jawline for 2 weeks."} rows={4} className="w-full rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0071E3] shadow-xs resize-none" />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[10px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] uppercase tracking-wider">O · Objective (Vitals & Findings)</label>
-            <textarea value={soap.objective} onChange={(e) => setSoap((p: any) => ({ ...p, objective: e.target.value }))} placeholder="Vitals entered above. Physical findings go here." rows={4} className="w-full rounded-xl border bg-[#F5F6F9] px-3 py-2.5 text-sm text-[#1D1D1F] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0071E3] resize-none" />
+            <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded bg-teal-100 dark:bg-teal-900/60 font-black text-teal-700 dark:text-teal-300 text-[11px]">O</span>
+              <span>Objective (Findings)</span>
+            </label>
+            <textarea value={soap.objective} onChange={(e) => setSoap((p: any) => ({ ...p, objective: e.target.value }))} placeholder="Physical examination & clinical findings" rows={4} className="w-full rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0071E3] shadow-xs resize-none" />
           </div>
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-[10px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] uppercase tracking-wider">A · Assessment (Provisional Diagnosis)</label>
-            <textarea value={soap.assessment} onChange={(e) => setSoap((p: any) => ({ ...p, assessment: e.target.value }))} placeholder="e.g. Acne Vulgaris Grade II Papulopustular — follow-up visit" rows={3} className="w-full rounded-xl border bg-[#F5F6F9] px-3 py-2.5 text-sm text-[#1D1D1F] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0071E3] resize-none" />
+            <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded bg-amber-100 dark:bg-amber-900/60 font-black text-amber-700 dark:text-amber-300 text-[11px]">A</span>
+              <span>Assessment (Provisional Diagnosis)</span>
+            </label>
+            <textarea value={soap.assessment} onChange={(e) => setSoap((p: any) => ({ ...p, assessment: e.target.value }))} placeholder="e.g. Acne Vulgaris Grade II Papulopustular" rows={2} className="w-full rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0071E3] shadow-xs resize-none" />
           </div>
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-[10px] font-semibold text-[#6E6E73] dark:text-[#A1A1A6] uppercase tracking-wider">P · Plan (Treatment & Advice)</label>
-            <textarea value={soap.plan} onChange={(e) => setSoap((p: any) => ({ ...p, plan: e.target.value }))} placeholder="e.g. Continue current Rx. Avoid comedogenic products. SPF 30 morning. Review in 2 weeks." rows={3} className="w-full rounded-xl border bg-[#F5F6F9] px-3 py-2.5 text-sm text-[#1D1D1F] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0071E3] resize-none" />
+            <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-100 dark:bg-emerald-900/60 font-black text-emerald-700 dark:text-emerald-300 text-[11px]">P</span>
+              <span>Plan (Treatment & Advice)</span>
+            </label>
+            <textarea value={soap.plan} onChange={(e) => setSoap((p: any) => ({ ...p, plan: e.target.value }))} placeholder="e.g. Continue current Rx. Review in 2 weeks." rows={2} className="w-full rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0071E3] shadow-xs resize-none" />
           </div>
         </div>
       </Card>
 
       {/* Speed Rx Pad */}
-      <Card variant="elevated">
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3 mb-4 dark:border-white/[0.08]">
+      <Card variant="elevated" className="border-2 border-slate-200 dark:border-white/[0.1]">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3.5">
           <div className="flex items-center gap-2">
             <Stethoscope className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-            <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">Speed Rx Pad (NMC Generic)</span>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">Speed Rx Pad (NMC Generic)</span>
           </div>
-          <span className="text-[10px] text-[#86868B] dark:text-[#636366]">1-tap generic molecules</span>
+          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">1-Tap generic prescriptions</span>
         </div>
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4">
           {SPEED_RX_MOLECULES.map((m, i) => {
             const isAdded = speedRx.some((r) => r.generic === m.generic);
-            const btnClass = isAdded ? "bg-emerald-600 border-emerald-600 text-white" : "border-white/[0.06] bg-[#F5F6F9] text-[#1D1D1F] hover:border-[#0071E3] hover:bg-white/[0.05] dark:border-white/[0.08] dark:bg-[#2C2C2E] dark:text-white";
-            return <button key={i} type="button" onClick={() => addMolecule(m)} disabled={isAdded} className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-all ${btnClass}`}>+ {m.brand}</button>;
+            const btnClass = isAdded
+              ? "bg-emerald-600 border-2 border-emerald-600 text-white font-extrabold shadow-xs"
+              : "border-2 border-slate-300 bg-slate-100 text-slate-900 hover:border-[#0071E3] hover:bg-white dark:border-slate-700 dark:bg-[#1E2024] dark:text-white dark:hover:border-[#2997FF] font-bold shadow-xs";
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => addMolecule(m)}
+                disabled={isAdded}
+                className={`rounded-lg px-3 py-1.5 text-xs transition-all active:scale-95 cursor-pointer ${btnClass}`}
+              >
+                {isAdded ? "✓ " : "+ "}{m.brand}
+              </button>
+            );
           })}
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {speedRx.map((item, i) => (
-            <div key={i} className="flex items-center justify-between rounded-lg bg-[#F5F6F9] p-2.5 dark:bg-[#121316] border border-black/[0.04] dark:border-white/[0.06]">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="font-bold text-sm text-[#1D1D1F] dark:text-white truncate">{item.form}. {item.generic}</span>
-                <div className="text-[10px] text-[#6E6E73] dark:text-[#A1A1A6] flex items-center gap-1">
-                  <span>Dosage: {item.dose}</span><span>•</span><span>Duration: {item.days}</span>
+            <div key={i} className="flex items-center justify-between rounded-xl bg-slate-100 p-3 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="font-extrabold text-sm text-slate-900 dark:text-white truncate">{item.form}. {item.generic}</span>
+                <div className="text-xs text-slate-700 dark:text-slate-300 font-bold flex items-center gap-1.5">
+                  <span className="bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700">{item.dose}</span>
+                  <span>•</span>
+                  <span>{item.days}</span>
                 </div>
               </div>
-              <button type="button" onClick={() => removeMolecule(i)} className="text-slate-400 hover:text-rose-500 p-1"><X className="h-3.5 w-3.5" /></button>
+              <button type="button" onClick={() => removeMolecule(i)} className="text-slate-500 hover:text-rose-600 p-1 cursor-pointer transition">
+                <X className="h-4 w-4" />
+              </button>
             </div>
           ))}
-          {speedRx.length === 0 && <div className="py-4 text-center text-xs text-[#86868B]">Tap a molecule to add.</div>}
+          {speedRx.length === 0 && <div className="py-4 text-center text-xs font-bold text-slate-600 dark:text-slate-400">Tap a molecule button above to rapidly prescribe.</div>}
         </div>
       </Card>
 
       {speedRx.length > 0 && <MedicineSchedule medicines={speedRx.map((m) => ({ generic: m.generic, form: m.form, dose: m.dose, days: m.days }))} />}
 
       {/* Action Bar */}
-      <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.08] space-y-3">
+      <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-3">
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" onClick={() => window.print()} className="text-xs py-3">
+          <Button variant="outline" onClick={() => window.print()} className="text-xs py-3 font-bold border-2 border-slate-300 dark:border-slate-700">
             <Printer className="h-3.5 w-3.5 text-blue-600" /><span className="ml-1">Print ℞ Slip</span>
           </Button>
-          <Button variant="outline" onClick={() => showToast(`Cryptographic ℞ PDF dispatched to ${currentPatient.patient_phone} via WhatsApp`)} className="text-xs py-3">
+          <Button variant="outline" onClick={() => showToast(`Cryptographic ℞ PDF dispatched to ${currentPatient.patient_phone} via WhatsApp`)} className="text-xs py-3 font-bold border-2 border-slate-300 dark:border-slate-700">
             <Send className="h-3.5 w-3.5 text-emerald-600" /><span className="ml-1">WhatsApp ℞ PDF</span>
           </Button>
         </div>
-        <Button variant="success" className="w-full py-3.5" onClick={handleCompleteVisit}>
-          <CheckCircle2 className="h-4 w-4" /><span className="ml-2">Complete Visit & Call Next →</span>
+        <Button variant="success" className="w-full py-3.5 font-black text-sm shadow-md" onClick={handleCompleteVisit}>
+          <CheckCircle2 className="h-4 w-4" /><span className="ml-2">Complete Visit &amp; Call Next →</span>
         </Button>
       </div>
         </>
@@ -737,38 +978,38 @@ export default function DashboardTodayPage() {
 
   return (
     <ClinicSyncProvider>
-      <div className="h-full flex flex-col bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7]">
-        <header className="h-14 shrink-0 flex items-center justify-between border-b border-black/[0.06] bg-white/80 dark:border-white/[0.07] dark:bg-black/80 backdrop-blur-2xl px-4 sm:px-6">
+      <div className="h-full flex flex-col bg-[#E2E6EC] dark:bg-[#0B0C0E] text-slate-900 dark:text-slate-100">
+        <header className="h-14 shrink-0 flex items-center justify-between border-b-2 border-slate-300 bg-white dark:border-slate-800 dark:bg-[#121417] shadow-xs px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="rounded-full p-1.5 hover:bg-white/[0.05] dark:hover:bg-white/[0.08] transition" title="Back to Dashboard">
-              <ChevronLeft className="h-4 w-4 text-[#86868B] dark:text-[#636366]" />
+            <Link href="/dashboard" className="rounded-full p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Back to Dashboard">
+              <ChevronLeft className="h-4 w-4 text-slate-700 dark:text-slate-300" />
             </Link>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">Chamber {doctor?.specialization ? doctor.specialization.split(" & ")[0] : "General"}</span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-900 dark:text-white">Chamber {doctor?.specialization ? doctor.specialization.split(" & ")[0] : "General"}</span>
               </div>
-              <h1 className="text-sm font-black text-[#1D1D1F] dark:text-white tracking-tight">Today's Consultations · {TODAY_DISPLAY}</h1>
-              <p className="text-[10px] text-[#86868B] dark:text-[#636366]">{doctor?.full_name || user?.full_name || "Doctor"} • {doctor?.specialization || "General Practice"} • {doctor?.medical_council_reg_number ? `NMC ${doctor.medical_council_reg_number}` : ""}</p>
+              <h1 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">Today's Consultations · {TODAY_DISPLAY}</h1>
+              <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400">{doctor?.full_name || user?.full_name || "Doctor"} • {doctor?.specialization || "General Practice"} • {doctor?.medical_council_reg_number ? `NMC ${doctor.medical_council_reg_number}` : ""}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {loadingContext ? (
               <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin text-[#0071E3]"><RefreshCw className="h-3 w-3" /></div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-black/[0.08] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#121316]">
-                <Calendar className="h-3.5 w-3.5 text-[#86868B] dark:text-[#636366]" />
-                <span className="text-xs font-semibold text-[#1D1D1F] dark:text-white">{appointments.length} Today</span>
-                <span className="w-px h-3 bg-black/[0.1] dark:bg-white/[0.1]" />
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{completedCount} Completed</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-slate-300 bg-white dark:border-slate-700 dark:bg-[#16181D]">
+                <Calendar className="h-3.5 w-3.5 text-slate-600 dark:text-slate-400" />
+                <span className="text-xs font-bold text-slate-900 dark:text-white">{appointments.length} Today</span>
+                <span className="w-px h-3 bg-slate-300 dark:bg-slate-700" />
+                <span className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400">{completedCount} Completed</span>
               </div>
             )}
             <button onClick={handleCallNext} disabled={appointments.length === 0 || loadingAppointments} className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition disabled:opacity-50" title="Call next waiting patient"><Volume2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Call Next</span></button>
-            <button onClick={() => setShowHistory(true)} className="rounded-full p-1.5 hover:bg-white/[0.05] dark:hover:bg-white/[0.08] transition" title="Patient History"><History className="h-4 w-4 text-[#86868B] dark:text-[#636366]" /></button>
+            <button onClick={() => setShowHistory(true)} className="rounded-full p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Patient History"><History className="h-4 w-4 text-slate-700 dark:text-slate-300" /></button>
           </div>
         </header>
         {toast && (
-          <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-[#1D1D1F] px-4 py-3 text-xs font-bold text-white shadow-2xl border border-white/10 animate-in fade-in"><CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /><span>{toast}</span><button onClick={() => setToast(null)} className="ml-2 text-white/60 hover:text-white"><X className="h-3.5 w-3.5" /></button></div>
+          <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-slate-900 px-4 py-3 text-xs font-bold text-white shadow-2xl border border-slate-700 animate-in fade-in"><CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /><span>{toast}</span><button onClick={() => setToast(null)} className="ml-2 text-white/60 hover:text-white"><X className="h-3.5 w-3.5" /></button></div>
         )}
         {useMockData && (
           <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-bold uppercase tracking-wider shadow-lg">
@@ -777,36 +1018,72 @@ export default function DashboardTodayPage() {
         )}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {loadingContext && !user && (
-            <div className="flex flex-col items-center justify-center py-20 text-center"><div className="h-10 w-10 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin text-[#0071E3] mb-3"><RefreshCw className="h-5 w-5" /></div><p className="text-sm text-[#86868B] dark:text-[#636366]">Loading clinic context…</p></div>
+            <div className="flex flex-col items-center justify-center py-20 text-center"><div className="h-10 w-10 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin text-[#0071E3] mb-3"><RefreshCw className="h-5 w-5" /></div><p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Loading clinic context…</p></div>
           )}
           {!loadingContext && user && appointmentsError && !appointments.length && !doctor && (
-            <Card variant="elevated" className="flex flex-col items-center justify-center py-20 text-center border-rose-500/30 bg-rose-50/30 dark:border-rose-800/30 dark:bg-rose-950/20"><AlertTriangle className="h-6 w-6 text-rose-600 dark:text-rose-400 mb-2" /><h3 className="font-bold text-[#1D1D1F] dark:text-white">Unable to load clinic</h3><p className="text-sm text-[#6E6E73] dark:text-[#A1A1A6]">{appointmentsError}</p><Button onClick={loadAppts} className="mt-4 text-xs">Retry</Button></Card>
+            <Card variant="elevated" className="flex flex-col items-center justify-center py-20 text-center border-2 border-rose-500/40 bg-rose-50/50 dark:border-rose-800/40 dark:bg-rose-950/30"><AlertTriangle className="h-6 w-6 text-rose-600 dark:text-rose-400 mb-2" /><h3 className="font-bold text-slate-900 dark:text-white">Unable to load clinic</h3><p className="text-sm font-medium text-slate-700 dark:text-slate-300">{appointmentsError}</p><Button onClick={loadAppts} className="mt-4 text-xs">Retry</Button></Card>
           )}
           {!loadingContext && user && doctor && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              <div className={currentPatient ? "lg:col-span-3" : "lg:col-span-4"}>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+              <div className={currentPatient ? "lg:col-span-3" : "lg:col-span-5"}>
                 <SchedulePane appointments={appointments} loadingAppointments={loadingAppointments} activeAptId={activeAptId} setActiveAptId={setActiveAptId} setVitals={setVitals} setSoap={setSoap} setSpeedRx={setSpeedRx} TODAY_DISPLAY={TODAY_DISPLAY} />
               </div>
-              <div className={currentPatient ? "lg:col-span-6" : "lg:col-span-8"}>
-                <ConsultationPane currentPatient={currentPatient} vitals={vitals} setVitals={setVitals} soap={soap} setSoap={setSoap} speedRx={speedRx} setSpeedRx={setSpeedRx} addMolecule={addMolecule} removeMolecule={removeMolecule} bmi={bmi} sys={sys} dia={dia} hr={hr} spo2={spo2} temp={temp} weight={weight} height={height} handleCompleteVisit={handleCompleteVisit} setShowHistory={setShowHistory} showToast={showToast} doctorSlug={doctor?.slug} doctorName={doctor?.full_name} onConsultationExtracted={handleConsultationExtracted} onReportApproved={handleReportApproved} />
+              <div className={currentPatient ? "lg:col-span-6" : "lg:col-span-7"}>
+                <ConsultationPane
+                  currentPatient={currentPatient}
+                  appointments={appointments}
+                  setActiveAptId={setActiveAptId}
+                  vitals={vitals}
+                  setVitals={setVitals}
+                  soap={soap}
+                  setSoap={setSoap}
+                  speedRx={speedRx}
+                  setSpeedRx={setSpeedRx}
+                  addMolecule={addMolecule}
+                  removeMolecule={removeMolecule}
+                  bmi={bmi}
+                  sys={sys}
+                  dia={dia}
+                  hr={hr}
+                  spo2={spo2}
+                  temp={temp}
+                  weight={weight}
+                  height={height}
+                  handleCompleteVisit={handleCompleteVisit}
+                  setShowHistory={setShowHistory}
+                  showToast={showToast}
+                  doctorSlug={doctor?.slug}
+                  doctorName={doctor?.full_name}
+                  onConsultationExtracted={handleConsultationExtracted}
+                  onReportApproved={handleReportApproved}
+                />
               </div>
               {currentPatient && (
-                <div className="lg:col-span-3 order-last lg:order-none space-y-4">
-                  <Card variant="elevated" className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                        <User className="h-5 w-5" />
+                <div className="lg:col-span-3 order-last lg:order-none space-y-3">
+                  <Card variant="elevated" className="p-3.5 border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#121417] shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-[#0071E3] flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0" title={currentPatient.patient_name}>
+                        {currentPatient.patient_name
+                          ? currentPatient.patient_name
+                              .trim()
+                              .split(/\s+/)
+                              .map((w: string) => w[0])
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()
+                          : <User className="h-4 w-4" />}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-sm text-[#1D1D1F] dark:text-white truncate">{currentPatient.patient_name}</div>
-                        <div className="text-[10px] text-[#6E6E73] dark:text-[#636366]">{currentPatient.patient_phone ? `+91 ${currentPatient.patient_phone}` : "—"}</div>
+                        <div className="font-extrabold text-sm text-slate-900 dark:text-white truncate">{currentPatient.patient_name}</div>
+                        <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">{currentPatient.patient_phone ? `+91 ${currentPatient.patient_phone}` : "—"}</div>
                       </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} fullWidth className="text-xs py-2">
+                    <div className="mt-2.5 grid grid-cols-2 gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setShowHistory(true)} fullWidth className="text-xs py-1.5 font-bold border-2 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">
                         <History className="h-3.5 w-3.5 mr-1" /> History
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => showToast(`Billing for ${currentPatient.patient_name}: ₹${currentPatient.fee_amount} (${currentPatient.payment_status})`)} fullWidth className="text-xs py-2">
+                      <Button variant="outline" size="sm" onClick={() => showToast(`Billing for ${currentPatient.patient_name}: ₹${currentPatient.fee_amount} (${currentPatient.payment_status})`)} fullWidth className="text-xs py-1.5 font-bold border-2 border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">
                         <Banknote className="h-3.5 w-3.5 mr-1" /> Billing
                       </Button>
                     </div>

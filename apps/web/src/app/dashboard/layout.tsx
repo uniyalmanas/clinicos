@@ -701,7 +701,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
 
             <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0">
-              <span className="text-slate-500 truncate max-w-[110px] sm:max-w-[160px]">{currentUser?.clinic_name || "ClinicOS"}</span>
+              <span
+                className="text-slate-600 dark:text-slate-300 font-medium truncate max-w-[160px] sm:max-w-[280px] md:max-w-[380px]"
+                title={currentUser?.clinic_name || "ClinicOS"}
+              >
+                {currentUser?.clinic_name || "ClinicOS"}
+              </span>
               <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
               <strong className="text-slate-900 dark:text-white capitalize font-semibold truncate">{pageName}</strong>
               <span className="ml-1 hidden md:inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200/60 px-2 py-0.5 text-[10px] font-medium text-[#0071E3] dark:bg-blue-950/40 dark:border-blue-900/40 dark:text-[#2997FF] shrink-0">

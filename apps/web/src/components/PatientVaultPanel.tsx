@@ -247,71 +247,71 @@ export function PatientVaultPanel({
 
   const reportTabClass =
     tab === "reports"
-      ? "flex-1 rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-      : "flex-1 rounded-lg px-3 py-1.5 text-[11px] font-bold text-[#6E6E73] dark:text-[#A1A1A6]";
+      ? "flex-1 rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-slate-900 shadow-xs dark:bg-[#20242B] dark:text-white"
+      : "flex-1 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white";
   const filesTabClass =
     tab === "files"
-      ? "flex-1 rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-      : "flex-1 rounded-lg px-3 py-1.5 text-[11px] font-bold text-[#6E6E73] dark:text-[#A1A1A6]";
+      ? "flex-1 rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-slate-900 shadow-xs dark:bg-[#20242B] dark:text-white"
+      : "flex-1 rounded-lg px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white";
 
   const activePatient = activeReport?.patient_report || {};
   const activeDoctor = activeReport?.doctor_report || {};
 
   return (
     <>
-      <div className={`rounded-2xl border border-black/[0.06] bg-white p-4 dark:border-white/[0.08] dark:bg-[#1C1C1E] ${className || ""}`}>
+      <div className={`rounded-2xl border-2 border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-[#121417] shadow-sm ${className || ""}`}>
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-2 mb-2 dark:border-white/[0.08]">
+        <div className="flex items-center justify-between border-b-2 border-slate-200 pb-2.5 mb-2.5 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-            <span className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
               Patient Vault
             </span>
           </div>
-          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+          <span className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400">
             {reports.length + documents.length} items
           </span>
         </div>
 
         {/* Tabs */}
-        <div className="mb-2 flex items-center gap-1 rounded-xl bg-[#F5F6F9] p-1 dark:bg-[#121316]">
+        <div className="mb-2.5 flex items-center gap-1 rounded-xl bg-slate-200 p-1 dark:bg-slate-900 border border-slate-300 dark:border-slate-800">
           <button type="button" onClick={() => setTab("reports")} className={reportTabClass}>
             Visit reports
-            {reports.length > 0 && <span className="ml-1 text-[9px] opacity-70">{reports.length}</span>}
+            {reports.length > 0 && <span className="ml-1 text-[9px] opacity-80">({reports.length})</span>}
           </button>
           <button type="button" onClick={() => setTab("files")} className={filesTabClass}>
             Files
-            {documents.length > 0 && <span className="ml-1 text-[9px] opacity-70">{documents.length}</span>}
+            {documents.length > 0 && <span className="ml-1 text-[9px] opacity-80">({documents.length})</span>}
           </button>
         </div>
 
         {/* Search */}
-        <div className="relative mb-2">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#86868B]" />
+        <div className="relative mb-2.5">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={tab === "reports" ? "Search visits, diagnosis…" : "Search reports, labs…"}
-            className="w-full rounded-lg border border-black/[0.08] bg-[#F5F6F9] py-1.5 pl-8 pr-2 text-xs dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0071E3]"
+            className="w-full rounded-lg border-2 border-slate-300 bg-white py-1.5 pl-8 pr-2 text-xs font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:outline-none focus:border-[#0071E3]"
           />
         </div>
 
         {loading && (
           <div className="flex h-24 flex-col items-center justify-center text-center">
             <div className="mb-2 h-6 w-6 animate-spin rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3]" />
-            <p className="text-xs text-[#86868B] dark:text-[#636366]">Loading vault…</p>
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Loading vault…</p>
           </div>
         )}
 
         {/* Visit reports */}
         {!loading && tab === "reports" && (
-          <div className="max-h-[420px] space-y-1.5 overflow-y-auto pr-1">
+          <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
             {filteredReports.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-black/[0.06] p-6 text-center text-xs text-[#86868B] dark:border-white/[0.06]">
-                <Stethoscope className="mx-auto mb-2 h-6 w-6 text-[#86868B] dark:text-[#636366]" />
-                <p>No visit summaries yet.</p>
-                <p className="mt-1 text-[10px]">Record a consultation and approve the report to start the history.</p>
+              <div className="rounded-xl border-2 border-dashed border-slate-300 p-6 text-center text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">
+                <Stethoscope className="mx-auto mb-2 h-6 w-6 text-slate-500 dark:text-slate-400" />
+                <p className="font-semibold text-slate-800 dark:text-slate-200">No visit summaries yet.</p>
+                <p className="mt-1 text-[11px]">Record a consultation and approve the report to start the history.</p>
               </div>
             ) : (
               filteredReports.map((report) => (
@@ -322,18 +322,18 @@ export function PatientVaultPanel({
                     setActiveReport(report);
                     setReportView("patient");
                   }}
-                  className="group flex w-full items-start justify-between gap-2 rounded-xl border border-black/[0.06] p-2.5 text-left transition hover:border-[#0071E3]/40 dark:border-white/[0.08] dark:hover:border-[#2997FF]/40"
+                  className="group flex w-full items-start justify-between gap-2 rounded-xl border-2 border-slate-200 p-2.5 text-left transition hover:border-[#0071E3] dark:border-slate-800 dark:hover:border-[#2997FF] bg-slate-50/60 dark:bg-slate-900/40"
                 >
                   <div className="flex min-w-0 items-start gap-2">
                     <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-300">
                       <Stethoscope className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-xs font-semibold text-[#1D1D1F] dark:text-white">
+                      <div className="truncate text-xs font-bold text-slate-900 dark:text-white">
                         {report.provisional_diagnosis || "Consultation summary"}
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-[#6E6E73] dark:text-[#A1A1A6]">
-                        <Calendar className="h-2.5 w-2.5" />
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                        <Calendar className="h-3 w-3" />
                         <span>{formatDate(report.created_at)}</span>
                         {report.doctor_name && (
                           <>
@@ -344,7 +344,7 @@ export function PatientVaultPanel({
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="mt-1 h-3 w-3 shrink-0 text-[#86868B] group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF]" />
+                  <ChevronRight className="mt-1 h-3.5 w-3.5 shrink-0 text-slate-400 group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF]" />
                 </button>
               ))
             )}
@@ -353,11 +353,11 @@ export function PatientVaultPanel({
 
         {/* Files */}
         {!loading && tab === "files" && (
-          <div className="max-h-[420px] space-y-1.5 overflow-y-auto pr-1">
+          <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
             {filteredDocuments.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-black/[0.06] p-6 text-center text-xs text-[#86868B] dark:border-white/[0.06]">
-                <Image className="mx-auto mb-2 h-6 w-6 text-[#86868B] dark:text-[#636366]" />
-                <p>No files in the vault yet.</p>
+              <div className="rounded-xl border-2 border-dashed border-slate-300 p-6 text-center text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">
+                <Image className="mx-auto mb-2 h-6 w-6 text-slate-500 dark:text-slate-400" />
+                <p className="font-semibold text-slate-800 dark:text-slate-200">No files in the vault yet.</p>
               </div>
             ) : (
               filteredDocuments.map((doc) => {
@@ -365,17 +365,17 @@ export function PatientVaultPanel({
                 return (
                   <div
                     key={doc.id}
-                    className="group flex items-center justify-between rounded-xl border border-black/[0.06] p-2.5 transition hover:border-[#0071E3]/40 dark:border-white/[0.08] dark:hover:border-[#2997FF]/40"
+                    className="group flex items-center justify-between rounded-xl border-2 border-slate-200 p-2.5 transition hover:border-[#0071E3] dark:border-slate-800 dark:hover:border-[#2997FF] bg-slate-50/60 dark:bg-slate-900/40"
                   >
                     <div className="flex min-w-0 items-center gap-2">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#2997FF]/10 dark:text-[#2997FF]">
-                        <Icon className="h-3 w-3" />
+                        <Icon className="h-3.5 w-3.5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="truncate text-xs font-semibold text-[#1D1D1F] dark:text-white">
+                        <div className="truncate text-xs font-bold text-slate-900 dark:text-white">
                           {doc.title || doc.file_name}
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-[#6E6E73] dark:text-[#A1A1A6]">
+                        <div className="flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">
                           <span>{DOC_TYPE_LABELS[doc.document_type] || doc.document_type}</span>
                           <span>·</span>
                           <span>{formatSize(doc.file_size_kb)}</span>
@@ -387,7 +387,7 @@ export function PatientVaultPanel({
                     <button
                       type="button"
                       onClick={() => getSignedUrl(doc.id)}
-                      className="flex shrink-0 items-center gap-1 rounded-lg border border-black/[0.08] bg-white px-2 py-1 text-[10px] font-bold text-[#1D1D1F] hover:bg-black/[0.02] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white"
+                      className="flex shrink-0 items-center gap-1 rounded-lg border-2 border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-xs"
                       title="Open document"
                     >
                       <Download className="h-3 w-3" />
@@ -422,12 +422,12 @@ export function PatientVaultPanel({
       >
         {activeReport && (
           <div className="max-h-[70vh] space-y-4 overflow-y-auto">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-slate-200 pb-3 dark:border-slate-800">
               <div>
-                <div className="text-sm font-bold text-[#1D1D1F] dark:text-white">
+                <div className="text-sm font-extrabold text-slate-900 dark:text-white">
                   {activeReport.provisional_diagnosis || "Consultation summary"}
                 </div>
-                <div className="text-[10px] text-[#6E6E73] dark:text-[#A1A1A6]">
+                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                   {activeReport.patient_name}
                   {activeReport.doctor_name ? ` · ${activeReport.doctor_name}` : ""}
                   {activeReport.duration_seconds
@@ -435,14 +435,14 @@ export function PatientVaultPanel({
                     : ""}
                 </div>
               </div>
-              <div className="flex items-center gap-1 rounded-lg bg-[#F5F6F9] p-1 dark:bg-[#121316]">
+              <div className="flex items-center gap-1 rounded-xl bg-slate-200 p-1 dark:bg-slate-900 border border-slate-300 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setReportView("patient")}
                   className={
                     reportView === "patient"
-                      ? "rounded-md bg-white px-2 py-1 text-[10px] font-bold text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-                      : "rounded-md px-2 py-1 text-[10px] font-bold text-[#6E6E73] dark:text-[#A1A1A6]"
+                      ? "rounded-lg bg-white px-3 py-1 text-xs font-extrabold text-slate-900 shadow-xs dark:bg-[#20242B] dark:text-white"
+                      : "rounded-lg px-3 py-1 text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                   }
                 >
                   Patient copy
@@ -452,8 +452,8 @@ export function PatientVaultPanel({
                   onClick={() => setReportView("doctor")}
                   className={
                     reportView === "doctor"
-                      ? "rounded-md bg-white px-2 py-1 text-[10px] font-bold text-[#1D1D1F] shadow-sm dark:bg-[#2C2C2E] dark:text-white"
-                      : "rounded-md px-2 py-1 text-[10px] font-bold text-[#6E6E73] dark:text-[#A1A1A6]"
+                      ? "rounded-lg bg-white px-3 py-1 text-xs font-extrabold text-slate-900 shadow-xs dark:bg-[#20242B] dark:text-white"
+                      : "rounded-lg px-3 py-1 text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                   }
                 >
                   Clinical note
@@ -462,18 +462,18 @@ export function PatientVaultPanel({
             </div>
 
             {reportView === "patient" ? (
-              <div className="space-y-3 text-[#1D1D1F] dark:text-[#F5F5F7]">
-                <div className="flex items-start gap-1.5 rounded-lg bg-violet-500/10 p-2 text-[10px] text-violet-700 dark:text-violet-300">
-                  <Languages className="mt-0.5 h-3 w-3 shrink-0" />
+              <div className="space-y-3.5 text-slate-900 dark:text-slate-100">
+                <div className="flex items-start gap-2 rounded-xl bg-violet-500/10 border-2 border-violet-500/20 p-2.5 text-xs font-bold text-violet-800 dark:text-violet-300">
+                  <Languages className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   Written in the language the patient chose: {activeReport.language}
                 </div>
 
                 {activePatient.condition_overview && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+                    <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       What we found
                     </div>
-                    <p className="rounded-xl border border-black/[0.06] p-2.5 text-xs leading-relaxed dark:border-white/[0.08]">
+                    <p className="rounded-xl border-2 border-slate-200 p-3 text-xs font-medium leading-relaxed dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                       {activePatient.condition_overview}
                     </p>
                   </div>
@@ -481,22 +481,22 @@ export function PatientVaultPanel({
 
                 {!!activePatient.medicine_schedule?.length && (
                   <div>
-                    <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
-                      <Pill className="h-3 w-3" /> Medicines
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      <Pill className="h-3.5 w-3.5 text-[#0071E3]" /> Medicines
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {activePatient.medicine_schedule.map((slot, index) => (
                         <div
                           key={index}
-                          className="rounded-lg border border-black/[0.06] p-2 text-xs dark:border-white/[0.08]"
+                          className="rounded-xl border-2 border-slate-200 p-2.5 text-xs dark:border-slate-800 bg-white dark:bg-slate-900/50"
                         >
-                          <div className="flex items-center gap-1 font-bold">
-                            <Clock className="h-3 w-3 text-[#0071E3] dark:text-[#2997FF]" />
+                          <div className="flex items-center gap-1.5 font-extrabold text-slate-900 dark:text-white">
+                            <Clock className="h-3.5 w-3.5 text-[#0071E3] dark:text-[#2997FF]" />
                             {slot.timing || "When needed"}
                           </div>
-                          <div className="mt-0.5 text-[#6E6E73] dark:text-[#A1A1A6]">{slot.medicine}</div>
+                          <div className="mt-1 font-bold text-slate-800 dark:text-slate-200">{slot.medicine}</div>
                           {slot.instructions && (
-                            <div className="mt-0.5 text-[10px] text-[#86868B] dark:text-[#636366]">
+                            <div className="mt-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-400">
                               {slot.instructions}
                             </div>
                           )}
@@ -508,10 +508,10 @@ export function PatientVaultPanel({
 
                 {activePatient.home_care_guidance && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+                    <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Home care
                     </div>
-                    <p className="rounded-xl border border-black/[0.06] p-2.5 text-xs leading-relaxed dark:border-white/[0.08]">
+                    <p className="rounded-xl border-2 border-slate-200 p-3 text-xs font-medium leading-relaxed dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                       {activePatient.home_care_guidance}
                     </p>
                   </div>
@@ -519,10 +519,10 @@ export function PatientVaultPanel({
 
                 {activePatient.emergency_warning_signs && (
                   <div>
-                    <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                      <AlertTriangle className="h-3 w-3" /> Return immediately if
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-400">
+                      <AlertTriangle className="h-3.5 w-3.5" /> Return immediately if
                     </div>
-                    <p className="rounded-xl border border-amber-500/25 bg-amber-50/50 p-2.5 text-xs leading-relaxed text-amber-900 dark:border-amber-800/30 dark:bg-amber-950/20 dark:text-amber-200">
+                    <p className="rounded-xl border-2 border-amber-500/40 bg-amber-50/70 p-3 text-xs font-semibold leading-relaxed text-amber-950 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-200">
                       {activePatient.emergency_warning_signs}
                     </p>
                   </div>
@@ -530,45 +530,45 @@ export function PatientVaultPanel({
 
                 {activePatient.followup_instruction && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+                    <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Next visit
                     </div>
-                    <p className="rounded-xl border border-black/[0.06] p-2.5 text-xs leading-relaxed dark:border-white/[0.08]">
+                    <p className="rounded-xl border-2 border-slate-200 p-3 text-xs font-medium leading-relaxed dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                       {activePatient.followup_instruction}
                     </p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="space-y-3 text-[#1D1D1F] dark:text-[#F5F5F7]">
+              <div className="space-y-3.5 text-slate-900 dark:text-slate-100">
                 <div>
-                  <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+                  <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                     Clinical summary
                   </div>
-                  <p className="rounded-xl border border-black/[0.06] p-2.5 text-xs leading-relaxed dark:border-white/[0.08]">
+                  <p className="rounded-xl border-2 border-slate-200 p-3 text-xs font-medium leading-relaxed dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                     {activeDoctor.clinical_summary || "—"}
                   </p>
                 </div>
                 {activeDoctor.vitals_assessment && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+                    <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Vitals assessment
                     </div>
-                    <p className="rounded-xl border border-black/[0.06] p-2.5 text-xs leading-relaxed dark:border-white/[0.08]">
+                    <p className="rounded-xl border-2 border-slate-200 p-3 text-xs font-medium leading-relaxed dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                       {activeDoctor.vitals_assessment}
                     </p>
                   </div>
                 )}
                 {!!activeDoctor.differential_diagnoses?.length && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+                    <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Differentials
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {activeDoctor.differential_diagnoses.map((item, index) => (
                         <span
                           key={index}
-                          className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300"
+                          className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-xs font-bold text-blue-800 dark:text-blue-300"
                         >
                           {item}
                         </span>
@@ -578,10 +578,10 @@ export function PatientVaultPanel({
                 )}
                 {!!activeDoctor.red_flags?.length && (
                   <div>
-                    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                    <div className="mb-1 text-[11px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-400">
                       Red flags
                     </div>
-                    <ul className="rounded-xl border border-amber-500/25 bg-amber-50/50 p-2.5 text-xs text-amber-900 dark:border-amber-800/30 dark:bg-amber-950/20 dark:text-amber-200">
+                    <ul className="rounded-xl border-2 border-amber-500/40 bg-amber-50/70 p-3 text-xs font-semibold text-amber-950 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-200">
                       {activeDoctor.red_flags.map((flag, index) => (
                         <li key={index}>• {flag}</li>
                       ))}
@@ -591,19 +591,19 @@ export function PatientVaultPanel({
 
                 {!!activeReport.medicines.length && (
                   <div>
-                    <div className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
-                      <Pill className="h-3 w-3" /> Prescribed generics
+                    <div className="mb-1 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      <Pill className="h-3.5 w-3.5 text-[#0071E3]" /> Prescribed generics
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {activeReport.medicines.map((medicine, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between gap-2 rounded-lg bg-[#F5F6F9] px-2 py-1.5 text-[11px] dark:bg-[#121316]"
+                          className="flex items-center justify-between gap-2 rounded-xl border-2 border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
                         >
-                          <span className="font-semibold">
+                          <span>
                             {medicine.medicine_name || medicine.generic_name || "Medicine"}
                           </span>
-                          <span className="shrink-0 font-mono text-[10px] text-[#6E6E73] dark:text-[#A1A1A6]">
+                          <span className="shrink-0 font-mono text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                             {medicine.frequency || "—"} · {medicine.duration || "—"}
                           </span>
                         </div>
@@ -612,33 +612,33 @@ export function PatientVaultPanel({
                   </div>
                 )}
 
-                <details className="rounded-lg border border-black/[0.06] p-2 dark:border-white/[0.08]">
-                  <summary className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-[#6E6E73] dark:text-[#A1A1A6]">
+                <details className="rounded-xl border-2 border-slate-200 p-2.5 dark:border-slate-800">
+                  <summary className="cursor-pointer text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                     Raw transcript (audit trail)
                   </summary>
-                  <p className="mt-1.5 whitespace-pre-wrap text-[11px] leading-relaxed text-[#6E6E73] dark:text-[#A1A1A6]">
+                  <p className="mt-2 whitespace-pre-wrap text-xs font-mono leading-relaxed text-slate-700 dark:text-slate-300">
                     {activeReport.transcript || "—"}
                   </p>
                 </details>
               </div>
             )}
 
-            <div className="flex items-center gap-2 border-t border-black/[0.06] pt-3 dark:border-white/[0.08]">
+            <div className="flex items-center gap-2 border-t-2 border-slate-200 pt-3 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => printReport(activeReport)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-black/[0.08] px-2.5 py-1.5 text-[11px] font-bold text-[#1D1D1F] dark:border-white/[0.08] dark:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white shadow-xs"
               >
                 <Printer className="h-3.5 w-3.5" /> Print
               </button>
               <button
                 type="button"
                 onClick={() => shareReport(activeReport)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-black/[0.08] px-2.5 py-1.5 text-[11px] font-bold text-[#1D1D1F] dark:border-white/[0.08] dark:text-white"
+                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-emerald-600/30 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300 shadow-xs"
               >
-                <Send className="h-3.5 w-3.5 text-emerald-600" /> Send on WhatsApp
+                <Send className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Send on WhatsApp
               </button>
-              <span className="ml-auto text-[9px] text-[#86868B] dark:text-[#636366]">
+              <span className="ml-auto text-[10px] font-bold text-slate-500 dark:text-slate-400">
                 Approved {formatDate(activeReport.approved_at || activeReport.created_at)}
               </span>
             </div>
