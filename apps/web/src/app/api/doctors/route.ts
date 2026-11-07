@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { DEHRADUN_DOCTORS } from "@/data/doctors";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,13 @@ export async function GET(req: NextRequest) {
         : await sql.unsafe(`SELECT ${PUBLIC_FIELDS} FROM doctors ORDER BY full_name`)
     );
   } catch (error: any) {
-    console.error("Doctors API error:", error);
-    return apiError(500, "Failed to load doctors.", "internal_error");
+    console.warn("Doctors API fallback triggered (DB unavailable):", error?.message);
+    const { searchParams } = new URL(req.url);
+    const slug = searchParams.get("slug");
+    if (slug) {
+      const match = DEHRADUN_DOCTORS.find((d) => d.slug.toLowerCase() === slug.toLowerCase().trim());
+      if (match) return NextResponse.json(match);
+    }
+    return NextResponse.json(DEHRADUN_DOCTORS);
   }
 }
