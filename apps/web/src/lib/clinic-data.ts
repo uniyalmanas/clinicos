@@ -1,10 +1,7 @@
 import { sql } from "@/lib/db";
-import { supabase, supabaseReady } from "@/lib/supabase";
-import { DEHRADUN_DOCTORS, DoctorProfile } from "@/data/doctors";
-import { DEHRADUN_CLINICS, ClinicProfile } from "@/data/clinics";
-
-const fallbackDoctors = DEHRADUN_DOCTORS;
-const fallbackClinics = DEHRADUN_CLINICS;
+import { demoDataAllowed, getDemoClinics, getDemoDoctors } from "@/lib/demo-data";
+import { DoctorProfile } from "@/data/doctors";
+import { ClinicProfile } from "@/data/clinics";
 
 const toString = (value: unknown, fallback = "") => {
   if (typeof value === "string" && value.trim()) return value;
@@ -105,70 +102,96 @@ const normalizeClinic = (row: any): ClinicProfile => ({
 
 export async function getDoctors(): Promise<DoctorProfile[]> {
   try {
-    const data = await sql`SELECT * FROM doctors ORDER BY full_name`;
-    if (Array.isArray(data) && data.length > 0) {
-      return data.map(normalizeDoctor);
-    }
+    const data = await sql`
+      SELECT * FROM doctors
+      WHERE COALESCE(is_active, true) = true
+        AND COALESCE(verification_status, 'verified') = 'verified'
+      ORDER BY full_name
+    `;
+    return Array.isArray(data) ? data.map(normalizeDoctor) : [];
   } catch (err) {
-    console.warn("Direct DB fetch for doctors failed, using fallback:", err);
+    console.error("Direct DB fetch for doctors failed:", err);
+    return demoDataAllowed() ? getDemoDoctors() : [];
   }
-  return fallbackDoctors;
 }
 
 export async function getDoctorBySlug(slug: string): Promise<DoctorProfile | undefined> {
   const cleanSlug = slug.toLowerCase().trim();
   try {
-    const rows = await sql`SELECT * FROM doctors WHERE lower(slug) = ${cleanSlug} LIMIT 1`;
+    const rows = await sql`
+      SELECT * FROM doctors
+      WHERE lower(slug) = ${cleanSlug}
+        AND COALESCE(is_active, true) = true
+        AND COALESCE(verification_status, 'verified') = 'verified'
+      LIMIT 1
+    `;
     if (rows && rows.length > 0) {
       return normalizeDoctor(rows[0]);
     }
+    return undefined;
   } catch (err) {
-    console.warn("Direct DB fetch for doctor by slug failed:", err);
+    console.error("Direct DB fetch for doctor by slug failed:", err);
+    if (!demoDataAllowed()) return undefined;
+    return getDemoDoctors().find((doctor) => doctor.slug.toLowerCase() === cleanSlug);
   }
-  return fallbackDoctors.find((doctor) => doctor.slug.toLowerCase() === cleanSlug);
 }
 
 export async function getClinics(): Promise<ClinicProfile[]> {
   try {
-    const clinicsData = await sql`SELECT * FROM clinics ORDER BY name`;
-    const doctorRows = await sql`SELECT * FROM doctors`;
-    if (Array.isArray(clinicsData) && clinicsData.length > 0) {
-      return clinicsData.map((clinicRow: any) => {
-        const relatedDoctors = (Array.isArray(doctorRows) ? doctorRows : [])
-          .filter((doctorRow: any) => {
-            const sameClinicSlug = toString(doctorRow?.clinic_slug, "") === toString(clinicRow?.slug, "");
-            const sameClinicId = toString(doctorRow?.clinic_id, "") === toString(clinicRow?.id, "");
-            return sameClinicSlug || sameClinicId;
-          })
-          .map((doctorRow: any) => ({
-            full_name: toString(doctorRow?.full_name, "Doctor"),
-            slug: toString(doctorRow?.slug, doctorRow?.id || "doctor-slug"),
-            specialization: toString(doctorRow?.specialization, "General Physician"),
-            qualification_summary: toString(doctorRow?.qualification_summary, "Verified specialist"),
-            consultation_fee: toNumber(doctorRow?.consultation_fee, 500)
-          }));
+    const clinicsData = await sql`
+      SELECT * FROM clinics
+      WHERE COALESCE(status, 'active') = 'active'
+        AND COALESCE(is_verified, true) = true
+      ORDER BY name
+    `;
+    const doctorRows = await sql`
+      SELECT * FROM doctors
+      WHERE COALESCE(is_active, true) = true
+        AND COALESCE(verification_status, 'verified') = 'verified'
+    `;
+    return (Array.isArray(clinicsData) ? clinicsData : []).map((clinicRow: any) => {
+      const relatedDoctors = (Array.isArray(doctorRows) ? doctorRows : [])
+        .filter((doctorRow: any) => {
+          const sameClinicSlug = toString(doctorRow?.clinic_slug, "") === toString(clinicRow?.slug, "");
+          const sameClinicId = toString(doctorRow?.clinic_id, "") === toString(clinicRow?.id, "");
+          return sameClinicSlug || sameClinicId;
+        })
+        .map((doctorRow: any) => ({
+          full_name: toString(doctorRow?.full_name, "Doctor"),
+          slug: toString(doctorRow?.slug, doctorRow?.id || "doctor-slug"),
+          specialization: toString(doctorRow?.specialization, "General Physician"),
+          qualification_summary: toString(doctorRow?.qualification_summary, "Verified specialist"),
+          consultation_fee: toNumber(doctorRow?.consultation_fee, 500)
+        }));
 
-        return {
-          ...normalizeClinic(clinicRow),
-          doctors: relatedDoctors.length > 0 ? relatedDoctors : normalizeClinic(clinicRow).doctors
-        };
-      });
-    }
+      return {
+        ...normalizeClinic(clinicRow),
+        doctors: relatedDoctors.length > 0 ? relatedDoctors : normalizeClinic(clinicRow).doctors
+      };
+    });
   } catch (err) {
-    console.warn("Direct DB fetch for clinics failed, using fallback:", err);
+    console.error("Direct DB fetch for clinics failed:", err);
+    return demoDataAllowed() ? getDemoClinics() : [];
   }
-  return fallbackClinics;
 }
 
 export async function getClinicBySlug(slug: string): Promise<ClinicProfile | undefined> {
   const cleanSlug = slug.toLowerCase().trim();
   try {
-    const rows = await sql`SELECT * FROM clinics WHERE lower(slug) = ${cleanSlug} LIMIT 1`;
+    const rows = await sql`
+      SELECT * FROM clinics
+      WHERE lower(slug) = ${cleanSlug}
+        AND COALESCE(status, 'active') = 'active'
+        AND COALESCE(is_verified, true) = true
+      LIMIT 1
+    `;
     if (rows && rows.length > 0) {
       const clinicRow = rows[0];
       const relatedDoctors = await sql`
         SELECT * FROM doctors
-        WHERE lower(clinic_slug) = ${cleanSlug} OR clinic_id = ${clinicRow.id}
+        WHERE (lower(clinic_slug) = ${cleanSlug} OR clinic_id = ${clinicRow.id})
+          AND COALESCE(is_active, true) = true
+          AND COALESCE(verification_status, 'verified') = 'verified'
       `;
       return {
         ...normalizeClinic(clinicRow),
@@ -181,8 +204,10 @@ export async function getClinicBySlug(slug: string): Promise<ClinicProfile | und
         }))
       };
     }
+    return undefined;
   } catch (err) {
-    console.warn("Direct DB fetch for clinic by slug failed:", err);
+    console.error("Direct DB fetch for clinic by slug failed:", err);
+    if (!demoDataAllowed()) return undefined;
+    return getDemoClinics().find((clinic) => clinic.slug.toLowerCase() === cleanSlug);
   }
-  return fallbackClinics.find((clinic) => clinic.slug.toLowerCase() === cleanSlug);
 }

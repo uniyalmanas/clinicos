@@ -40,6 +40,14 @@ export async function GET(req: NextRequest) {
       const isOwnTenant =
         isSuperAdmin || (authClinicId && String(authClinicId) === String(clinic.id));
 
+      // Unapproved or suspended clinics are not part of the public directory.
+      if (
+        !isOwnTenant &&
+        (String(clinic.status || "active") !== "active" || clinic.is_verified === false)
+      ) {
+        return NextResponse.json({ detail: "Clinic not found" }, { status: 404 });
+      }
+
       const doctors = isOwnTenant
         ? await sql`
             SELECT * FROM doctors
@@ -48,7 +56,9 @@ export async function GET(req: NextRequest) {
           `
         : await sql.unsafe(
             `SELECT ${PUBLIC_DOCTOR_FIELDS} FROM doctors
-             WHERE clinic_id::text = $1::text OR lower(clinic_slug) = $2
+             WHERE (clinic_id::text = $1::text OR lower(clinic_slug) = $2)
+               AND COALESCE(is_active, true) = true
+               AND COALESCE(verification_status, 'verified') = 'verified'
              ORDER BY is_active DESC NULLS LAST, full_name ASC`,
             [clinic.id, clinic.slug.toLowerCase().trim()]
           );
@@ -86,7 +96,10 @@ export async function GET(req: NextRequest) {
     }
 
     const clinics = await sql.unsafe(
-      `SELECT ${PUBLIC_CLINIC_FIELDS} FROM clinics ORDER BY name`
+      `SELECT ${PUBLIC_CLINIC_FIELDS} FROM clinics
+       WHERE COALESCE(status, 'active') = 'active'
+         AND COALESCE(is_verified, true) = true
+       ORDER BY name`
     );
     return NextResponse.json(clinics);
   } catch (error: any) {

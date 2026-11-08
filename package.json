@@ -12,8 +12,12 @@
     "build:web": "npm run build --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web",
     "typecheck": "tsc -p apps/web/tsconfig.json --noEmit",
+    "check:demo-guards": "node scripts/check-demo-guards.mjs",
+    "audit:passwords": "node scripts/audit-default-passwords.mjs",
     "migrate": "node scripts/migrate.mjs",
-    "migrate:status": "node scripts/migrate.mjs --status"
+    "migrate:status": "node scripts/migrate.mjs --status",
+    "seed": "node scripts/seed.mjs",
+    "schema:audit": "node scripts/schema-audit.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

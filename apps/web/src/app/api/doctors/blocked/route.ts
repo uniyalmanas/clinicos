@@ -10,6 +10,7 @@ let tableEnsured = false;
 async function ensureTable() {
   if (tableEnsured) return;
   try {
+    // postgres.js sends one statement per round-trip, so DDL is split.
     await sql`
       CREATE TABLE IF NOT EXISTS doctor_blocked_slots (
         id          TEXT PRIMARY KEY,
@@ -22,10 +23,10 @@ async function ensureTable() {
         reason      TEXT NOT NULL,
         type        TEXT NOT NULL DEFAULT 'blocked',
         created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS idx_dbs_clinic ON doctor_blocked_slots (clinic_id, date DESC);
-      CREATE INDEX IF NOT EXISTS idx_dbs_doctor ON doctor_blocked_slots (doctor_slug, date DESC);
+      )
     `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_dbs_clinic ON doctor_blocked_slots (clinic_id, date DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_dbs_doctor ON doctor_blocked_slots (doctor_slug, date DESC)`;
     tableEnsured = true;
   } catch (e) {
     console.warn("ensureTable doctor_blocked_slots:", e);

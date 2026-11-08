@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { databaseUnavailable } from "@/lib/require-db";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -59,8 +60,8 @@ export async function GET(req: NextRequest) {
       `
     );
   } catch (error: any) {
-    console.warn("GET /api/appointments DB unavailable, returning empty list fallback:", error?.message);
-    return NextResponse.json([]);
+    console.error("GET /api/appointments failed:", error?.message);
+    return databaseUnavailable();
   }
 }
 

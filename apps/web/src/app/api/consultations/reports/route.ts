@@ -45,6 +45,7 @@ let tableEnsured = false;
 async function ensureConsultationReportsTable() {
   if (tableEnsured) return;
   try {
+    // postgres.js sends one statement per round-trip, so DDL is split.
     await sql`
       CREATE TABLE IF NOT EXISTS consultation_reports (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -70,11 +71,11 @@ async function ensureConsultationReportsTable() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         CONSTRAINT consultation_reports_status_check CHECK (status IN ('draft', 'approved'))
-      );
-      CREATE INDEX IF NOT EXISTS idx_consultation_reports_clinic ON consultation_reports(clinic_id, created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_consultation_reports_phone ON consultation_reports(patient_phone, created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_consultation_reports_appointment ON consultation_reports(appointment_number);
+      )
     `;
+    await sql`CREATE INDEX IF NOT EXISTS idx_consultation_reports_clinic ON consultation_reports(clinic_id, created_at DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_consultation_reports_phone ON consultation_reports(patient_phone, created_at DESC)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_consultation_reports_appointment ON consultation_reports(appointment_number)`;
     tableEnsured = true;
   } catch (e) {
     console.warn("ensureConsultationReportsTable notice:", e);

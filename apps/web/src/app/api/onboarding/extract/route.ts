@@ -159,7 +159,7 @@ function regexExtract(rawText: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const limit = await rateLimit(rateLimitKey(req, "onboarding:extract"), 40, 3600);
+    const limit = await rateLimit(rateLimitKey(req, "onboarding:extract"), 10, 3600);
     if (!limit.allowed) {
       return NextResponse.json(tooManyRequests(limit.retryAfterSeconds), {
         status: 429,
@@ -174,6 +174,17 @@ export async function POST(req: NextRequest) {
       return apiError(400, "raw_text is required.", "missing_text");
     }
 
+    // Cap the input so a single request cannot burn an unbounded amount of
+    // upstream tokens or memory. 4,000 characters is more than a full profile.
+    const MAX_RAW_TEXT = 4000;
+    if (rawText.length > MAX_RAW_TEXT) {
+      return apiError(
+        413,
+        `raw_text must be ${MAX_RAW_TEXT} characters or fewer.`,
+        "text_too_large"
+      );
+    }
+
     const fallback = regexExtract(rawText);
 
     // Try Groq AI for smarter extraction — fall back to regex if unavailable
@@ -186,6 +197,7 @@ export async function POST(req: NextRequest) {
       const groqResponse = await fetch(GROQ_API_URL, {
         method: "POST",
         headers: { Authorization: `Bearer ${groqApiKey}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(15_000),
         body: JSON.stringify({
           model: GROQ_CHAT_MODEL,
           messages: [

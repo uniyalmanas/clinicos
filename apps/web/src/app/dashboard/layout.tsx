@@ -33,6 +33,10 @@ import {
   ChevronDown,
   Banknote,
   Building2,
+  FlaskConical,
+  ShieldCheck,
+  Activity,
+  Network,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────
@@ -49,6 +53,11 @@ const SOLO_NAV = [
   { label: "Prescriptions",  href: "/dashboard/consult",   icon: FileText },
   { label: "Billing",        href: "/dashboard/finance",   icon: CreditCard,    badge: "₹" },
   { label: "Finance",        href: "/clinic/settlement",   icon: Banknote },
+  { label: "Beds / IPD",     href: "/dashboard/beds",      icon: DoorOpen,      badge: "IPD" },
+  { label: "Laboratory",     href: "/dashboard/lab",       icon: FlaskConical },
+  { label: "Insurance",      href: "/dashboard/insurance", icon: ShieldCheck,   badge: "TPA" },
+  { label: "Rehab",          href: "/dashboard/rehab",     icon: Activity },
+  { label: "ABDM / ABHA",    href: "/dashboard/abdm",      icon: Network },
   { label: "Patient Portal", href: "/patient/portal",      icon: Smartphone },
   { label: "Clinic Admin",   href: "/dashboard/settings",  icon: Settings },
 ];
@@ -63,6 +72,11 @@ const CLINIC_CORE_NAV = [
   { label: "Prescriptions",  href: "/dashboard/consult",   icon: FileText },
   { label: "Billing",        href: "/dashboard/finance",   icon: CreditCard,    badge: "₹" },
   { label: "Finance",        href: "/clinic/settlement",   icon: Banknote },
+  { label: "Beds / IPD",     href: "/dashboard/beds",      icon: DoorOpen,      badge: "IPD" },
+  { label: "Laboratory",     href: "/dashboard/lab",       icon: FlaskConical },
+  { label: "Insurance",      href: "/dashboard/insurance", icon: ShieldCheck,   badge: "TPA" },
+  { label: "Rehab",          href: "/dashboard/rehab",     icon: Activity },
+  { label: "ABDM / ABHA",    href: "/dashboard/abdm",      icon: Network },
 ];
 
 const CLINIC_MGMT_NAV = [
@@ -81,24 +95,19 @@ const CLINIC_BOTTOM_NAV = [
 ];
 
 const FUTURE_MODULES = [
-  "ABDM / ABHA",
-  "Laboratory",
-  "Insurance",
-  "IPD / Beds",
-  "Rehab",
   "Marketplace",
-  "Advanced AI",
 ];
 
 // Role-based route allowlist
 const ROLE_ALLOWLIST: Record<string, string[]> = {
-  receptionist: ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/patient/portal"],
-  front_desk:   ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/patient/portal"],
-  staff:        ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/patient/portal"],
+  receptionist: ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/dashboard/beds", "/dashboard/lab", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm", "/patient/portal"],
+  front_desk:   ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/dashboard/beds", "/dashboard/lab", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm", "/patient/portal"],
+  staff:        ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/dashboard/beds", "/dashboard/lab", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm", "/patient/portal"],
   pharmacist:   ["/dashboard/pharmacy", "/dashboard/patients"],
-  lab_tech:     ["/dashboard/patients"],
+  lab_tech:     ["/dashboard/patients", "/dashboard/lab"],
   doctor:       ["/dashboard", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers",
                  "/doctor/consult", "/dashboard/consult", "/dashboard/finance", "/patient/portal",
+                 "/dashboard/beds", "/dashboard/lab", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm",
                  "/dashboard/doctors/schedule"],
 };
 

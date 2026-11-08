@@ -5,12 +5,26 @@ import postgres from "postgres";
  * Connects directly to Supabase PostgreSQL pooler with zero cold starts.
  */
 
+const BUILD_PHASE = process.env.NEXT_PHASE === "phase-production-build";
+
 const getDatabaseUrl = (): string => {
   let raw = (process.env.DATABASE_URL || "").trim();
   // Strip all internal whitespace, newlines, tabs, carriage returns, and quotes
   raw = raw.replace(/[\r\n\s\t]+/g, "").replace(/^["']|["']$/g, "");
 
   if (!raw || raw.includes("[SENSITIVE]") || (!raw.startsWith("postgres://") && !raw.startsWith("postgresql://"))) {
+    // Production must never silently point at localhost: that turns a
+    // misconfiguration into an offline demo environment serving fake data.
+    if (process.env.NODE_ENV === "production" && !BUILD_PHASE) {
+      throw new Error(
+        "FATAL: DATABASE_URL is missing or invalid. Refusing to start with a placeholder database connection in production."
+      );
+    }
+    if (!BUILD_PHASE) {
+      console.warn(
+        "[db] DATABASE_URL is missing or invalid. Falling back to localhost for development only — NOT for production."
+      );
+    }
     // Return dummy fallback during build / static analysis to prevent build-time crashes
     return "postgresql://postgres:postgres@127.0.0.1:5432/postgres";
   }
@@ -25,9 +39,13 @@ const getDatabaseUrl = (): string => {
 
 function createSqlClient() {
   const connectionString = getDatabaseUrl();
+  // Local development clusters (including the bundled .localdb) do not
+  // terminate TLS. Only disable it for loopback so remote connections stay
+  // encrypted.
+  const isLoopback = /(?:localhost|127\.0\.0\.1|\[::1\])/i.test(connectionString);
   try {
     return postgres(connectionString, {
-      ssl: { rejectUnauthorized: false },
+      ssl: isLoopback ? false : { rejectUnauthorized: false },
       max: 5,
       idle_timeout: 20,
       connect_timeout: 20,

@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
       FROM doctors
       WHERE slug = ${String(doctor_slug)}
         AND COALESCE(is_active, true) = true
+        AND COALESCE(verification_status, 'verified') = 'verified'
       LIMIT 1;
     `;
     if (doctors.length === 0) {

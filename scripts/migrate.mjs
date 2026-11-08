@@ -54,8 +54,11 @@ if (!connectionString) {
   process.exit(1);
 }
 
-const sql = postgres(connectionString.replace(/^postgres:\/\//, "postgresql://"), {
-  ssl: { rejectUnauthorized: false },
+const normalized = connectionString.replace(/^postgres:\/\//, "postgresql://");
+const isLoopback = /(?:localhost|127\.0\.0\.1|\[::1\])/i.test(normalized);
+
+const sql = postgres(normalized, {
+  ssl: isLoopback ? false : { rejectUnauthorized: false },
   max: 1,
   prepare: false,
   onnotice: () => {},
@@ -152,4 +155,12 @@ main()
     if (err.detail) console.error(err.detail);
     process.exitCode = 1;
   })
-  .finally(() => sql.end());
+  .finally(async () => {
+    // Close the pool explicitly. postgres.js keeps idle handles open otherwise,
+    // which makes `npm run migrate` appear to hang after the final log line.
+    try {
+      await sql.end({ timeout: 5 });
+    } finally {
+      process.exit(process.exitCode || 0);
+    }
+  });

@@ -127,10 +127,12 @@ export async function POST(req: NextRequest) {
       roomCharges = Math.round(effectiveDays * dailyRate);
     }
 
+    // Cast the nullable admission id to text: an untyped bind parameter used
+    // only inside "IS NOT NULL" leaves PostgreSQL unable to infer its type.
     const ledgerRows = await sql`
       SELECT * FROM bed_billing_ledger
       WHERE bed_id = ${String(bed.id)}
-        OR (admission_id = ${bed.admission_id} AND ${bed.admission_id} IS NOT NULL)
+        OR admission_id = ${bed.admission_id == null ? null : String(bed.admission_id)}
       ORDER BY posted_at ASC;
     `;
 

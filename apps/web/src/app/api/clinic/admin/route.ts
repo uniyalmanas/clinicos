@@ -230,7 +230,7 @@ export async function GET(req: NextRequest) {
       FROM appointments
       WHERE clinic_id::text = ${clinicId}::text
         AND payment_status = 'paid'
-        AND COALESCE(appointment_date, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart};
+        AND COALESCE(appointment_date::text, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart};
     `;
 
     const pharmRevenue = await sql`
@@ -249,7 +249,7 @@ export async function GET(req: NextRequest) {
         COALESCE(SUM(amount), 0) AS amount
       FROM expenses
       WHERE clinic_slug = ${clinic.slug}
-        AND COALESCE(date, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart}
+        AND COALESCE(date::text, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart}
       GROUP BY category
       ORDER BY amount DESC;
     `;
@@ -511,7 +511,7 @@ export async function POST(req: NextRequest) {
         FROM appointments
         WHERE clinic_id::text = ${clinic.id}::text
           AND payment_status = 'paid'
-          AND COALESCE(appointment_date, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart};
+          AND COALESCE(appointment_date::text, TO_CHAR(created_at, 'YYYY-MM-DD')) >= ${monthStart};
       `;
 
       const currentVolume = Number(baseline[0]?.visits || 0);

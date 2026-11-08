@@ -60,3 +60,7 @@ marley-health/
 !.env.example
 
 graphify-out/cache/
+
+# Local portable PostgreSQL cluster (development only)
+.localdb/
+

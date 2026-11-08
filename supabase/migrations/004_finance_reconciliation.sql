@@ -72,13 +72,13 @@ CREATE INDEX IF NOT EXISTS idx_invoices_clinic ON invoices (clinic_id, issued_at
 -- from array position. Clinics can override via the admin UI.
 INSERT INTO doctor_compensation_contracts (id, doctor_id, clinic_id, split_pct, created_by)
 SELECT
-    'cc-' || d.id,
-    d.id,
-    COALESCE(d.clinic_id, ''),
+    'cc-' || d.id::text,
+    d.id::text,
+    COALESCE(d.clinic_id::text, ''),
     100,
     'migration-004'
 FROM doctors d
 WHERE d.clinic_id IS NOT NULL
   AND NOT EXISTS (
-      SELECT 1 FROM doctor_compensation_contracts c WHERE c.doctor_id = d.id
+      SELECT 1 FROM doctor_compensation_contracts c WHERE c.doctor_id = d.id::text
   );

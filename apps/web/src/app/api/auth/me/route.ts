@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
     });
 
     if (!auth.ok) {
+      // Preserve a database-outage signal instead of disguising it as a bad
+      // token, so clients and monitoring can tell the two apart.
+      if (auth.response.status === 503) return auth.response;
       return NextResponse.json(
         { detail: "Authentication token missing or invalid." },
         { status: 401 }

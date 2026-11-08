@@ -3,33 +3,24 @@
 import React, { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import {
   Sparkles,
   Stethoscope,
   Building2,
-  CheckCircle2,
   ArrowRight,
   RotateCw,
   Edit3,
   Check,
   MapPin,
   Clock,
-  IndianRupee,
-  Upload,
   X,
   Camera,
   ShieldCheck,
-  Copy,
-  Users,
-  Tv,
-  ExternalLink,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import BackButton from "@/components/BackButton";
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1-Click Instant Presets for Doctors
@@ -57,7 +48,7 @@ export default function OnboardingPage() {
   ];
 
   const [rawText, setRawText] = useState(presets[0].text);
-  const [phone, setPhone] = useState("+919876543299");
+  const [phone, setPhone] = useState("");
   const [cardImagePreview, setCardImagePreview] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -66,7 +57,17 @@ export default function OnboardingPage() {
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
   const [publishedResult, setPublishedResult] = useState<any>(null);
-  const [copiedPass, setCopiedPass] = useState(false);
+
+  // Phone verification + credential state. Publishing requires a verified
+  // patient OTP session for the same phone number.
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
 
   // File upload handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,9 +165,80 @@ export default function OnboardingPage() {
     setEditableBio(extracted.ai_bio);
   };
 
-  // Publish to Database
+  const normalisePhone = (value: string) => value.replace(/[^0-9]/g, "").slice(-10);
+
+  const handleRequestOtp = async () => {
+    setFormError(null);
+    if (normalisePhone(phone).length !== 10) {
+      setFormError("Enter a valid 10-digit mobile number first.");
+      return;
+    }
+    setIsSendingOtp(true);
+    try {
+      const res = await fetch("/api/onboarding/request-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(json.error || json.detail || "Could not send a verification code.");
+        return;
+      }
+      setOtpSent(true);
+      setPhoneVerified(false);
+    } catch {
+      setFormError("Could not send a verification code. Please try again.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setFormError(null);
+    if (otp.replace(/\D/g, "").length !== 6) {
+      setFormError("Enter the 6-digit code sent to your mobile number.");
+      return;
+    }
+    setIsVerifyingOtp(true);
+    try {
+      const res = await fetch("/api/onboarding/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(json.error || json.detail || "Verification failed.");
+        return;
+      }
+      setPhoneVerified(true);
+    } catch {
+      setFormError("Verification failed. Please try again.");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  // Submit for verification. No session is issued here: a platform
+  // administrator must approve the clinic before the owner can sign in.
   const handlePublish = async () => {
     if (!extractedData) return;
+    setFormError(null);
+
+    if (!phoneVerified) {
+      setFormError("Verify your mobile number with the one-time code before submitting.");
+      return;
+    }
+    if (password.length < 12) {
+      setFormError("Choose a password of at least 12 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setFormError("Passwords do not match.");
+      return;
+    }
+
     setIsPublishing(true);
 
     try {
@@ -175,6 +247,7 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phone: phone,
+          password: password,
           practice_type: practiceType,
           doctor: extractedData.doctor,
           clinic: extractedData.clinic,
@@ -182,42 +255,17 @@ export default function OnboardingPage() {
         }),
       });
 
+      const json = await res.json().catch(() => ({}));
       if (res.ok) {
-        const json = await res.json();
-        if (json.access_token) {
-          localStorage.setItem("clinicos_token", json.access_token);
-          localStorage.setItem(
-            "clinicos_user",
-            JSON.stringify({
-              id: json.doctor_id,
-              phone: phone,
-              full_name: extractedData.doctor.full_name,
-              role: "owner",
-              clinic_id: json.clinic_id,
-              clinic_name: extractedData.clinic.name,
-              clinic_slug: json.clinic_slug,
-              practice_type: json.practice_type || practiceType,
-              plan_type: json.plan_type,
-            })
-          );
-        }
         setPublishedResult(json);
       } else {
-        const errData = await res.json().catch(() => ({}));
-        alert(errData.detail || errData.error || "Publishing failed. Please check credentials.");
+        setFormError(json.error || json.detail || "Submission failed. Please check your details.");
       }
     } catch (e: any) {
-      console.error("Onboarding publish error:", e);
-      alert(e.message || "Failed to publish profile to database.");
+      setFormError(e.message || "Failed to submit your clinic for verification.");
     } finally {
       setIsPublishing(false);
     }
-  };
-
-  const copyDefaultPassword = () => {
-    navigator.clipboard.writeText("Password@123");
-    setCopiedPass(true);
-    setTimeout(() => setCopiedPass(false), 2000);
   };
 
   return (
@@ -236,7 +284,7 @@ export default function OnboardingPage() {
                   ClinicOS
                 </span>
                 <span className="ml-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                  Instant Onboarding
+                  Verified Onboarding
                 </span>
               </div>
             </div>
@@ -269,117 +317,68 @@ export default function OnboardingPage() {
               />
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>
-                {publishedResult.practice_type === "clinic"
-                  ? "🏥 Multi-Doctor Polyclinic Activated"
-                  : "👨‍⚕️ Solo Doctor Chamber Activated"}
-              </span>
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/20 px-3.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-400">
+              <ShieldCheck className="h-4 w-4" />
+              <span>Submitted for verification</span>
             </div>
 
             <h1 className="mt-4 text-2xl sm:text-4xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
-              Your Clinic is Officially Online &amp; Bookable!
+              Your clinic is pending approval
             </h1>
 
             <p className="mt-3 text-sm text-[#6E6E73] dark:text-[#A1A1A6] max-w-xl mx-auto leading-relaxed">
-              {publishedResult.message} Your Speed Rx keyboard studio, waiting TV display, and 0% direct UPI flow are live.
+              {publishedResult.message}
             </p>
 
-            {/* Quick Access Action Grid */}
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-              <Link
-                href="/dashboard/consult/1"
-                className="rounded-2xl border border-black/[0.06] bg-[#0071E3] p-4 text-white hover:bg-[#0077ED] shadow-md transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="rounded-xl bg-white/20 p-2">
-                    <Stethoscope className="h-5 w-5" />
-                  </div>
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition" />
-                </div>
-                <h3 className="mt-3 text-sm font-bold">Launch Chamber Speed Rx</h3>
-                <p className="mt-0.5 text-xs text-white/80">30-second generic prescription pad with keyboard combos</p>
-              </Link>
-
-              <Link
-                href="/dashboard/desk"
-                className="rounded-2xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#1E2024] p-4 hover:border-emerald-500 transition group shadow-2xs"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
-                    <Users className="h-5 w-5" />
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-emerald-500 transition" />
-                </div>
-                <h3 className="mt-3 text-sm font-bold text-[#1D1D1F] dark:text-white">Counter Reception Desk</h3>
-                <p className="mt-0.5 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">Generate tokens with 1-click thermal slips &amp; acoustic chimes</p>
-              </Link>
-
-              <Link
-                href={publishedResult.doctor_url}
-                className="rounded-2xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#1E2024] p-4 hover:border-[#0071E3] transition group shadow-2xs"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="rounded-xl bg-blue-500/10 p-2 text-[#0071E3] dark:text-[#2997FF]">
-                    <ExternalLink className="h-5 w-5" />
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-[#0071E3] transition" />
-                </div>
-                <h3 className="mt-3 text-sm font-bold text-[#1D1D1F] dark:text-white">View Live Doctor Profile</h3>
-                <p className="mt-0.5 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">Your public patient booking link with council verified badge</p>
-              </Link>
-
-              <Link
-                href={publishedResult.clinic_url}
-                className="rounded-2xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#1E2024] p-4 hover:border-violet-500 transition group shadow-2xs"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="rounded-xl bg-violet-500/10 p-2 text-violet-600 dark:text-violet-400">
-                    <Building2 className="h-5 w-5" />
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-violet-500 transition" />
-                </div>
-                <h3 className="mt-3 text-sm font-bold text-[#1D1D1F] dark:text-white">Digital Clinic Page</h3>
-                <p className="mt-0.5 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">Public OPD timings, address map, and token queue standee</p>
-              </Link>
-            </div>
-
-            {/* Generated Login Credentials */}
-            <div className="mt-8 rounded-2xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 p-5 text-left">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-xs font-bold text-[#1D1D1F] dark:text-white">
-                    Your Owner Account is Ready
+            {/* Submission summary */}
+            <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 text-left dark:border-white/[0.08] dark:bg-white/[0.02]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-[10px] text-[#86868B] uppercase font-bold block">
+                    Clinic
+                  </span>
+                  <span className="font-semibold text-[#1D1D1F] dark:text-white">
+                    {extractedData?.clinic?.name}
                   </span>
                 </div>
-                <button
-                  onClick={copyDefaultPassword}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
-                >
-                  <Copy className="h-3 w-3" />
-                  <span>{copiedPass ? "Copied Password!" : "Copy Password"}</span>
-                </button>
-              </div>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div className="rounded-xl bg-white dark:bg-black/20 p-2.5 border border-emerald-500/10">
-                  <span className="text-[10px] text-[#86868B] uppercase font-bold block">Mobile / Username</span>
-                  <span className="font-mono font-bold text-[#1D1D1F] dark:text-white">{phone}</span>
+                <div>
+                  <span className="text-[10px] text-[#86868B] uppercase font-bold block">
+                    Doctor
+                  </span>
+                  <span className="font-semibold text-[#1D1D1F] dark:text-white">
+                    {extractedData?.doctor?.full_name}
+                  </span>
                 </div>
-                <div className="rounded-xl bg-white dark:bg-black/20 p-2.5 border border-emerald-500/10">
-                  <span className="text-[10px] text-[#86868B] uppercase font-bold block">Default Password</span>
-                  <span className="font-mono font-bold text-[#1D1D1F] dark:text-white">Password@123</span>
+                <div>
+                  <span className="text-[10px] text-[#86868B] uppercase font-bold block">
+                    Sign-in phone
+                  </span>
+                  <span className="font-mono font-semibold text-[#1D1D1F] dark:text-white">
+                    {phone}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#86868B] uppercase font-bold block">
+                    Status
+                  </span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-400">
+                    Awaiting platform verification
+                  </span>
                 </div>
               </div>
+              <p className="mt-4 text-[11px] leading-relaxed text-[#6E6E73] dark:text-[#A1A1A6]">
+                Your clinic is not bookable yet. A platform administrator will review your
+                registration details and approve the clinic. Once approved, sign in with the
+                phone number and password you just set.
+              </p>
             </div>
 
             <div className="mt-8 flex justify-center">
               <Link
-                href="/dashboard"
+                href="/login"
                 className="inline-flex items-center gap-2 rounded-full bg-[#1D1D1F] px-8 py-3.5 text-sm font-bold text-white shadow-lg hover:bg-black dark:bg-white dark:text-[#1D1D1F] transition active:scale-95"
               >
-                <span>Launch Doctor Console Now</span>
+                <span>Go to sign in</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -391,13 +390,13 @@ export default function OnboardingPage() {
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-50/80 px-4 py-1.5 text-xs font-bold text-[#0071E3] dark:border-blue-500/30 dark:bg-blue-950/40 dark:text-[#2997FF]">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>60-Second Instant Setup • 100% Doctor-Owned</span>
+                <span>60-Second Setup • Verified Before Going Live</span>
               </div>
               <h1 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
-                Launch Your Digital Chamber in 60 Seconds
+                Set Up Your Digital Chamber
               </h1>
               <p className="mt-3 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6] max-w-2xl mx-auto leading-relaxed">
-                Paste your clinical details, choose a 1-click test preset, or snap your visiting card. Our AI provisions your Speed Rx pad, smart token board, and verified directory listing instantly.
+                Paste your clinical details, choose a 1-click test preset, or snap your visiting card. Our AI drafts your profile, and you submit it for verification before it goes live.
               </p>
 
               {/* 1-Click Test Presets */}
@@ -494,19 +493,104 @@ export default function OnboardingPage() {
                     </span>
                   </div>
 
-                  {/* Mobile Number */}
+                  {/* Mobile Number + OTP verification */}
                   <div>
                     <label className="block text-xs font-bold text-[#1D1D1F] dark:text-white mb-1">
                       Doctor&apos;s Mobile Number (For Login &amp; OTP)
                     </label>
-                    <input
-                      type="text"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+919876543299"
-                      className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3.5 py-2.5 text-xs font-semibold focus:border-[#0071E3] focus:outline-none dark:border-white/[0.1] dark:bg-[#101114] dark:text-white"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={phone}
+                        onChange={(e) => {
+                          setPhone(e.target.value);
+                          setOtpSent(false);
+                          setPhoneVerified(false);
+                        }}
+                        placeholder="+919876543299"
+                        disabled={phoneVerified}
+                        className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3.5 py-2.5 text-xs font-semibold focus:border-[#0071E3] focus:outline-none disabled:opacity-60 dark:border-white/[0.1] dark:bg-[#101114] dark:text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRequestOtp}
+                        disabled={phoneVerified || isSendingOtp}
+                        className="shrink-0 rounded-xl bg-[#1D1D1F] px-3.5 py-2.5 text-[11px] font-bold text-white transition hover:bg-black disabled:opacity-50 dark:bg-white dark:text-[#1D1D1F]"
+                      >
+                        {phoneVerified
+                          ? "Verified"
+                          : isSendingOtp
+                            ? "Sending…"
+                            : otpSent
+                              ? "Resend code"
+                              : "Send code"}
+                      </button>
+                    </div>
+
+                    {phoneVerified ? (
+                      <p className="mt-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        ✓ Mobile number verified
+                      </p>
+                    ) : otpSent ? (
+                      <div className="mt-2 flex gap-2">
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                          placeholder="6-digit code"
+                          className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3.5 py-2.5 text-xs font-semibold tracking-widest focus:border-[#0071E3] focus:outline-none dark:border-white/[0.1] dark:bg-[#101114] dark:text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          disabled={isVerifyingOtp}
+                          className="shrink-0 rounded-xl bg-emerald-600 px-3.5 py-2.5 text-[11px] font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {isVerifyingOtp ? "Verifying…" : "Verify"}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="mt-1.5 text-[10px] text-[#86868B]">
+                        We will send a one-time code to prove this number before the clinic is submitted.
+                      </p>
+                    )}
                   </div>
+
+                  {/* Account password */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-[#1D1D1F] dark:text-white mb-1">
+                        Create password (min 12 characters)
+                      </label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                        className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3.5 py-2.5 text-xs font-semibold focus:border-[#0071E3] focus:outline-none dark:border-white/[0.1] dark:bg-[#101114] dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#1D1D1F] dark:text-white mb-1">
+                        Confirm password
+                      </label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        autoComplete="new-password"
+                        className="w-full rounded-xl border border-black/[0.08] bg-[#F5F6F9] px-3.5 py-2.5 text-xs font-semibold focus:border-[#0071E3] focus:outline-none dark:border-white/[0.1] dark:bg-[#101114] dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {formError && (
+                    <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[11px] font-semibold text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
+                      {formError}
+                    </div>
+                  )}
 
                   {/* Visiting Card Upload Zone */}
                   <div>
@@ -710,23 +794,24 @@ export default function OnboardingPage() {
                       <button
                         type="button"
                         onClick={handlePublish}
-                        disabled={isPublishing}
-                        className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 py-4 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition active:scale-98 flex items-center justify-center gap-2"
+                        disabled={isPublishing || !phoneVerified}
+                        className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 py-4 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-600/20 transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         {isPublishing ? (
                           <>
                             <RotateCw className="h-4 w-4 animate-spin" />
-                            <span>Creating Clinic Workspace &amp; Session...</span>
+                            <span>Submitting for verification...</span>
                           </>
                         ) : (
                           <>
                             <Check className="h-4 w-4" />
-                            <span>Approve &amp; Launch My Clinic Workspace (100% Free)</span>
+                            <span>Submit Clinic for Verification (Free)</span>
                           </>
                         )}
                       </button>
                       <p className="mt-2 text-center text-[10px] text-[#86868B]">
-                        Zero credit card required. Instantly provisions your Speed Rx chamber and public booking link.
+                        A platform administrator reviews every clinic before it goes live. No
+                        credit card required.
                       </p>
                     </div>
                   </div>

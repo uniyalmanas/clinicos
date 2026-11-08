@@ -48,6 +48,7 @@ export default function DocSphereAIAgent({
   const [isOpen, setIsOpen] = useState(false);
   const [inputQuery, setInputQuery] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -289,9 +290,9 @@ export default function DocSphereAIAgent({
     };
   };
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const q = (textToSend || inputQuery).trim();
-    if (!q) return;
+    if (!q || isThinking) return;
 
     if (isListening && recognitionRef.current) {
       try {
@@ -306,20 +307,51 @@ export default function DocSphereAIAgent({
       text: q
     };
 
+    const history = messages.map((m) => ({
+      role: m.sender === "user" ? "user" : "assistant",
+      content: m.text,
+    }));
+
     setMessages(prev => [...prev, userMessage]);
     setInputQuery("");
+    setIsThinking(true);
 
-    // Fast, reliable 250ms response without external API failure
-    setTimeout(() => {
-      const match = matchIntent(q);
+    try {
+      const res = await fetch("/api/ai/consultant", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: q, history }),
+      });
+
+      if (!res.ok) throw new Error(`Consultant API ${res.status}`);
+      const data = await res.json();
+      const card = data?.doctorCard;
       const botMessage: ChatMessage = {
         id: `bot-${Date.now()}`,
         sender: "bot",
-        text: match.text,
-        actionButton: match.actionButton
+        text:
+          data?.reply ||
+          "I could not generate a recommendation just now. Please try again.",
+        actionButton: card?.booking_url
+          ? { label: `Book ${card.doctor_name || "Doctor"}`, href: card.booking_url }
+          : undefined,
       };
       setMessages(prev => [...prev, botMessage]);
-    }, 250);
+    } catch {
+      // Offline / API failure: keep the assistant useful with local intent matching.
+      const match = matchIntent(q);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `bot-${Date.now()}`,
+          sender: "bot",
+          text: match.text,
+          actionButton: match.actionButton,
+        },
+      ]);
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   const handleClose = () => {
@@ -412,6 +444,13 @@ export default function DocSphereAIAgent({
                 )}
               </div>
             ))}
+            {isThinking && (
+              <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-2xs bg-[#ECEEF2] dark:bg-[#2C2C2E] px-3 py-2 w-fit">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#86868B] animate-bounce [animation-delay:-0.3s]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#86868B] animate-bounce [animation-delay:-0.15s]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-[#86868B] animate-bounce" />
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
@@ -470,7 +509,7 @@ export default function DocSphereAIAgent({
             <button
               type="button"
               onClick={() => handleSend()}
-              disabled={!inputQuery.trim()}
+              disabled={!inputQuery.trim() || isThinking}
               className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0071E3] text-white hover:bg-[#0077ED] disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
               aria-label="Send query"
             >

@@ -50,6 +50,13 @@ export async function POST(req: NextRequest) {
     const now = new Date();
 
     if (action === "housekeeping_log" || action === "hk_clean") {
+      if (bed.status !== "VACANT_DIRTY") {
+        return apiError(
+          409,
+          `Terminal cleaning can only be logged for a discharged bed. Bed ${bed.bed_number} is ${bed.status}.`,
+          "bed_not_dirty"
+        );
+      }
       const staffName = String(hk_staff_name || actorName).trim();
       const method = String(disinfection_method || "").trim();
       if (!method) {
@@ -105,6 +112,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "nurse_qa" || action === "qa_verify") {
+      if (bed.status !== "VACANT_DIRTY") {
+        return apiError(
+          409,
+          `Nurse QA can only be signed off for a discharged bed. Bed ${bed.bed_number} is ${bed.status}.`,
+          "bed_not_dirty"
+        );
+      }
       if (!bed.sanitization_hk_logged) {
         return apiError(
           422,

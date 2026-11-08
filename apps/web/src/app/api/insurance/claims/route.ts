@@ -56,10 +56,26 @@ export async function GET(req: NextRequest) {
       return value;
     };
 
+    // The checklist has existed in two shapes: an array of
+    // { label, verified } objects, and a legacy { label: verified } map.
+    // Normalise both so older rows never break the list endpoint.
+    const normalizeDocs = (value: any) => {
+      const parsed = parseJson(value, []);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed && typeof parsed === "object") {
+        return Object.entries(parsed).map(([key, verified]) => ({
+          key,
+          label: key,
+          verified: Boolean(verified),
+        }));
+      }
+      return [];
+    };
+
     const enrichedClaims = claims.map((c: any) => {
       const queryDetails = parseJson(c.tpa_query_details, {});
       const settlementDetails = parseJson(c.settlement_details, {});
-      const docsChecklist = parseJson(c.mandatory_docs_checklist, []);
+      const docsChecklist = normalizeDocs(c.mandatory_docs_checklist);
       const auditTrail = parseJson(c.audit_trail, []);
 
       const slaInfo =

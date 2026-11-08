@@ -31,6 +31,29 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
+// Test credentials are never checked in. Supply them through the environment.
+const TEST_DOCTOR_PHONE = process.env.TEST_DOCTOR_PHONE;
+const TEST_DOCTOR_PASSWORD = process.env.TEST_DOCTOR_PASSWORD;
+const TEST_SUPERADMIN_IDENTIFIER =
+  process.env.TEST_SUPERADMIN_IDENTIFIER || "superadmin";
+const TEST_SUPERADMIN_PASSWORD = process.env.TEST_SUPERADMIN_PASSWORD;
+
+const missingCredentials = Object.entries({
+  TEST_DOCTOR_PHONE,
+  TEST_DOCTOR_PASSWORD,
+  TEST_SUPERADMIN_PASSWORD,
+})
+  .filter(([, value]) => !value)
+  .map(([key]) => key);
+
+if (missingCredentials.length > 0) {
+  console.error(
+    `FATAL: missing required test credentials: ${missingCredentials.join(", ")}. ` +
+      "The suite no longer ships with default passwords."
+  );
+  process.exit(1);
+}
+
 const sql = postgres(DATABASE_URL);
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:3000";
 
@@ -207,8 +230,8 @@ async function testHttpEndpoints() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      identifier: "9876543210",
-      password: "Password@123"
+      identifier: TEST_DOCTOR_PHONE,
+      password: TEST_DOCTOR_PASSWORD
     })
   });
   assert(staffLoginRes.status === 200, "POST /api/auth/login returns 200 OK for clinic staff");
@@ -253,8 +276,8 @@ async function testHttpEndpoints() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      identifier: "superadmin",
-      password: "Password@123"
+      identifier: TEST_SUPERADMIN_IDENTIFIER,
+      password: TEST_SUPERADMIN_PASSWORD
     })
   });
   assert(superLoginRes.status === 200, "POST /api/auth/login returns 200 OK for superadmin");

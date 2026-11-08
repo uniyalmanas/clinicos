@@ -166,8 +166,9 @@ export async function guard(
   }
 
   // Live account check — revocation is immediate, not at token expiry.
+  // A database outage fails CLOSED: we never synthesise an identity from a JWT
+  // that we cannot corroborate against the account table.
   let user: any = null;
-  let isDbConnected = true;
 
   try {
     const users = await sql`
@@ -176,23 +177,17 @@ export async function guard(
       WHERE id::text = ${payload.sub}::text
       LIMIT 1;
     `;
-    if (users.length > 0) {
-      user = users[0];
-    }
+    user = users[0] ?? null;
   } catch (err: any) {
-    isDbConnected = false;
+    console.error("[auth] account lookup failed; refusing to authorize:", err?.message);
+    return deny(
+      503,
+      "Authentication is temporarily unavailable. Please retry shortly.",
+      "auth_unavailable"
+    );
   }
 
-  if (!isDbConnected) {
-    user = {
-      id: payload.sub,
-      phone: payload.phone || "9876543210",
-      email: `${payload.sub}@clinicos.in`,
-      full_name: payload.full_name || "Doctor",
-      role: payload.role || "doctor",
-      is_active: true,
-    };
-  } else if (!user || !user.is_active) {
+  if (!user || !user.is_active) {
     return deny(401, "User account not found or suspended.", "account_suspended");
   }
 
@@ -212,9 +207,19 @@ export async function guard(
 
   if (isSuperAdmin) {
     if (wantsClinic) {
-      const rows = requested.id
-        ? await sql`SELECT * FROM clinics WHERE id::text = ${requested.id}::text LIMIT 1;`
-        : await sql`SELECT * FROM clinics WHERE slug = ${requested.slug} LIMIT 1;`;
+      let rows: any[];
+      try {
+        rows = requested.id
+          ? await sql`SELECT * FROM clinics WHERE id::text = ${requested.id}::text LIMIT 1;`
+          : await sql`SELECT * FROM clinics WHERE slug = ${requested.slug} LIMIT 1;`;
+      } catch (err: any) {
+        console.error("[auth] clinic lookup failed; refusing to authorize:", err?.message);
+        return deny(
+          503,
+          "Authentication is temporarily unavailable. Please retry shortly.",
+          "auth_unavailable"
+        );
+      }
       if (rows.length === 0) {
         return deny(404, "Clinic not found.", "clinic_not_found");
       }
@@ -225,35 +230,26 @@ export async function guard(
     }
     effectiveRole = "super_admin";
   } else {
-    let memberships: any[] = [];
-    if (isDbConnected) {
-      try {
-        memberships = await sql`
-          SELECT cm.clinic_id, cm.role, c.*
-          FROM clinic_memberships cm
-          JOIN clinics c ON c.id::text = cm.clinic_id::text
-          WHERE cm.user_id::text = ${user.id}::text
-            AND cm.is_active = true
-          ORDER BY cm.created_at ASC;
-        `;
-      } catch (err) {
-        memberships = [];
-      }
+    let memberships: any[];
+    try {
+      memberships = await sql`
+        SELECT cm.clinic_id, cm.role, c.*
+        FROM clinic_memberships cm
+        JOIN clinics c ON c.id::text = cm.clinic_id::text
+        WHERE cm.user_id::text = ${user.id}::text
+          AND cm.is_active = true
+        ORDER BY cm.created_at ASC;
+      `;
+    } catch (err: any) {
+      console.error("[auth] membership lookup failed; refusing to authorize:", err?.message);
+      return deny(
+        503,
+        "Authentication is temporarily unavailable. Please retry shortly.",
+        "auth_unavailable"
+      );
     }
 
-    if (!isDbConnected) {
-      const clinicId = payload.clinic_id || "cln_derma_care";
-      clinic = {
-        id: clinicId,
-        slug: "derma-care-dehradun",
-        name: "Derma Care Skin & Laser Centre",
-        city: "Dehradun",
-        state: "Uttarakhand",
-        phone: "+91 98765 43210",
-        practice_type: "clinic",
-      };
-      membership = { clinic_id: clinicId, role: effectiveRole };
-    } else if (memberships.length === 0) {
+    if (memberships.length === 0) {
       if (opts.requireClinic === false) {
         effectiveRole = globalRole;
       } else if (opts.roles?.some((r) => normalizeRole(r) === globalRole)) {
@@ -325,31 +321,36 @@ export async function guard(
     clinic &&
     (effectiveRole === "doctor" || effectiveRole === "owner" || effectiveRole === "clinic_admin")
   ) {
-    if (isDbConnected) {
-      try {
-        const docs = await sql`
-          SELECT id, slug, full_name, specialization, medical_council_reg_number
-          FROM doctors
-          WHERE phone = ${user.phone}
-            AND (
-              clinic_id::text = ${clinic.id}::text
-              OR clinic_slug = ${clinic.slug}
-            )
-          LIMIT 1;
-        `;
-        if (docs.length > 0) doctor = docs[0] as GuardAuth["doctor"];
-      } catch (err) {
-        doctor = null;
-      }
+    try {
+      const docs = await sql`
+        SELECT id, slug, full_name, specialization, medical_council_reg_number
+        FROM doctors
+        WHERE phone = ${user.phone}
+          AND (
+            clinic_id::text = ${clinic.id}::text
+            OR clinic_slug = ${clinic.slug}
+          )
+        LIMIT 1;
+      `;
+      if (docs.length > 0) doctor = docs[0] as GuardAuth["doctor"];
+    } catch (err: any) {
+      console.error("[auth] doctor profile lookup failed; refusing to authorize:", err?.message);
+      return deny(
+        503,
+        "Authentication is temporarily unavailable. Please retry shortly.",
+        "auth_unavailable"
+      );
     }
-    if (!doctor) {
-      doctor = {
-        id: "doc_default_1",
-        slug: "dr-rohit-sureka",
-        full_name: user.full_name || "Dr Rohit Sureka",
-        specialization: "General Practice",
-        medical_council_reg_number: "UKMC-9142-2010",
-      };
+
+    // Never invent a clinical identity. A user whose effective role is
+    // "doctor" must have a real doctors row; owners and clinic admins may
+    // legitimately be non-practising and keep `doctor = null`.
+    if (!doctor && effectiveRole === "doctor") {
+      return deny(
+        403,
+        "No doctor profile is linked to this account. Ask your clinic owner to complete your profile.",
+        "doctor_profile_missing"
+      );
     }
   }
 
@@ -399,11 +400,19 @@ export interface PatientAuth {
 }
 
 function patientSecret(): string {
-  return (
-    process.env.PATIENT_JWT_SECRET ||
-    process.env.JWT_SECRET_KEY ||
-    "clinicos-dev-insecure-patient-secret"
-  );
+  const secret = process.env.PATIENT_JWT_SECRET || process.env.JWT_SECRET_KEY;
+  if (!secret) {
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.NEXT_PHASE !== "phase-production-build"
+    ) {
+      throw new Error(
+        "FATAL: PATIENT_JWT_SECRET or JWT_SECRET_KEY is required in production."
+      );
+    }
+    return "clinicos-dev-insecure-patient-secret";
+  }
+  return secret;
 }
 
 export function signPatientToken(phone: string, sessionId: string): string {
@@ -454,12 +463,25 @@ export async function guardPatient(
     return { ok: false, response: apiError(401, "Invalid or expired patient session.", "invalid_token") };
   }
 
-  const rows = await sql`
-    SELECT id, phone, expires_at, revoked_at
-    FROM patient_sessions
-    WHERE id::text = ${claims.sid}::text
-    LIMIT 1;
-  `;
+  let rows: any[];
+  try {
+    rows = await sql`
+      SELECT id, phone, expires_at, revoked_at
+      FROM patient_sessions
+      WHERE id::text = ${claims.sid}::text
+      LIMIT 1;
+    `;
+  } catch (err: any) {
+    console.error("[auth] patient session lookup failed; refusing to authorize:", err?.message);
+    return {
+      ok: false,
+      response: apiError(
+        503,
+        "Authentication is temporarily unavailable. Please retry shortly.",
+        "auth_unavailable"
+      ),
+    };
+  }
 
   if (
     rows.length === 0 ||

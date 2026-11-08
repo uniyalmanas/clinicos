@@ -2,7 +2,6 @@
 
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Stethoscope,
@@ -10,7 +9,6 @@ import {
   Lock,
   Phone,
   ArrowRight,
-  CheckCircle2,
   Eye,
   EyeOff,
   Building2,
@@ -39,37 +37,6 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Quick Demo Accounts for 1-Click login
-  const demoAccounts = [
-    {
-      label: "Dr. Rahul Sharma",
-      role: "Lead Physician",
-      identifier: "dr.rahul@clinicos.in",
-      pass: "Password@123",
-      avatar: "/images/doctors/dr-rahul-sharma.jpg",
-    },
-    {
-      label: "Dr. Aditi Joshi",
-      role: "Pediatrician",
-      identifier: "dr.aditi@clinicos.in",
-      pass: "Password@123",
-      avatar: "/images/doctors/dr-aditi-joshi.jpg",
-    },
-    {
-      label: "Pooja Verma",
-      role: "Front Desk Reception",
-      identifier: "pooja@dermacare.in",
-      pass: "Password@123",
-      avatar: "/images/doctors/pooja-reception.jpg",
-    },
-  ];
-
-  const handleQuickFill = (identifier: string, pass: string) => {
-    setPhone(identifier);
-    setPassword(pass);
-    setErrorMessage(null);
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,45 +98,8 @@ function LoginForm() {
         </p>
       </div>
 
-      {/* Quick Demo Credentials */}
-      <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 dark:border-white/[0.08] dark:bg-[#151618] shadow-xs">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Demo Credentials (1-Click Fill)
-          </span>
-          <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Verified
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {demoAccounts.map((acc, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => handleQuickFill(acc.identifier, acc.pass)}
-              className="flex items-center gap-2 rounded-lg border border-slate-200/70 bg-slate-50/60 p-2 text-left hover:border-[#0071E3] hover:bg-white dark:border-white/[0.06] dark:bg-white/[0.02] dark:hover:border-[#2997FF] dark:hover:bg-white/[0.04] transition cursor-pointer"
-            >
-              <div className="relative h-7 w-7 rounded-md overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
-                <Image
-                  src={acc.avatar}
-                  alt={acc.label}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
-                  {acc.label}
-                </div>
-                <div className="text-[9px] text-slate-500 truncate">
-                  {acc.role}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Demo credentials are intentionally not shown: production accounts must
+          never ship with a documented password. */}
 
       {/* Auth Card */}
       <form

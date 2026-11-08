@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { sql } from "@/lib/db";
 import { guard, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
         COUNT(*) FILTER (WHERE status IN ('waiting', 'in_consultation'))::int AS active_tokens,
         COALESCE(SUM(fee_amount), 0) AS total_volume
       FROM appointments
-      WHERE created_at::date = CURRENT_DATE OR appointment_date = CURRENT_DATE::text
+      WHERE created_at::date = CURRENT_DATE OR appointment_date = CURRENT_DATE
       GROUP BY clinic_id;
     `;
 
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
       SELECT
         clinic_slug,
         COUNT(*)::int AS total_beds,
-        COUNT(*) FILTER (WHERE status = 'occupied')::int AS occupied_beds
+        COUNT(*) FILTER (WHERE status = 'OCCUPIED_ACTIVE')::int AS occupied_beds
       FROM clinic_beds
       GROUP BY clinic_slug;
     `;
@@ -288,6 +289,62 @@ export async function POST(req: NextRequest) {
       `;
       actionName = "platform.clinic.access";
       message = `Clinic access ${newStatus === "suspended" ? "suspended" : "activated"}.`;
+    } else if (action === "approve_clinic") {
+      updated = await sql`
+        UPDATE clinics
+        SET
+          status = 'active',
+          is_verified = true,
+          subscription_status = CASE
+            WHEN subscription_status IS NULL OR subscription_status = 'pending' THEN 'active'
+            ELSE subscription_status
+          END
+        WHERE id::text = ${targetId}
+        RETURNING *;
+      `;
+
+      // A clinic approved by a human becomes bookable: its doctors are
+      // verified and reactivated.
+      await sql`
+        UPDATE doctors
+        SET is_active = true, verification_status = 'verified'
+        WHERE clinic_id::text = ${targetId}::text
+           OR lower(clinic_slug) = ${String(target.slug).toLowerCase()};
+      `;
+
+      // Onboarding withholds the membership until approval. Grant it now so the
+      // owner can sign in to the tenant they just registered.
+      const leadDoctor = await sql`
+        SELECT id, user_id, phone FROM doctors
+        WHERE clinic_id::text = ${targetId}::text
+           OR lower(clinic_slug) = ${String(target.slug).toLowerCase()}
+        ORDER BY created_at ASC
+        LIMIT 1;
+      `;
+
+      if (leadDoctor.length > 0) {
+        let ownerUserId = leadDoctor[0].user_id;
+        if (!ownerUserId && leadDoctor[0].phone) {
+          const owners = await sql`
+            SELECT id FROM user_accounts
+            WHERE right(regexp_replace(phone, '[^0-9]', '', 'g'), 10)
+                = right(regexp_replace(${String(leadDoctor[0].phone)}, '[^0-9]', '', 'g'), 10)
+            LIMIT 1;
+          `;
+          ownerUserId = owners[0]?.id ?? null;
+        }
+        if (ownerUserId) {
+          await sql`
+            INSERT INTO clinic_memberships (id, clinic_id, user_id, role, is_active, created_at)
+            VALUES (${randomUUID()}, ${targetId}, ${String(ownerUserId)}, 'owner', true, NOW())
+            ON CONFLICT (clinic_id, user_id)
+            DO UPDATE SET role = 'owner', is_active = true;
+          `;
+        }
+      }
+
+      actionName = "platform.clinic.approve";
+      message = "Clinic approved. Its doctors are live and the owner can sign in.";
     } else {
       return apiError(400, "Unknown action specified.", "invalid_action");
     }

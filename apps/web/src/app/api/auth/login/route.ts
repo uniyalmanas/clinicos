@@ -12,6 +12,9 @@ export const dynamic = "force-dynamic";
  * Rate limited per IP and per identifier. Unverified accounts are refused —
  * self-registration does not grant a working session until an administrator has
  * verified the account.
+ *
+ * A database outage fails CLOSED: no token is ever signed from a fallback
+ * account. Clients receive 503 and retry.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -55,7 +58,6 @@ export async function POST(req: NextRequest) {
       phoneDigits.length >= 10 ? phoneDigits.slice(-10) : identifier;
 
     let user: any = null;
-    let isDbDown = false;
 
     try {
       const users = await sql`
@@ -69,119 +71,22 @@ export async function POST(req: NextRequest) {
           )
         LIMIT 1
       `;
-      user = users[0];
+      user = users[0] ?? null;
     } catch (dbErr: any) {
-      console.warn("Database unavailable during authentication, enabling demo fallback:", dbErr?.message);
-      isDbDown = true;
-    }
-
-    // Local / Offline demo account fallback when PostgreSQL is unreachable
-    if (isDbDown) {
-      const DEMO_FALLBACK_ACCOUNTS = [
-        {
-          id: "usr_lead_doctor_1",
-          identifier: "dr.rahul@clinicos.in",
-          phone: "9876543210",
-          email: "dr.rahul@clinicos.in",
-          full_name: "Dr. Rahul Sharma",
-          role: "doctor",
-          clinic_id: "cln_derma_care",
-          clinic_name: "Derma Care Skin & Laser Centre",
-          clinic_slug: "derma-care-dehradun",
-          practice_type: "clinic",
-          subscription_plan: "pro",
-        },
-        {
-          id: "usr_pediatrician_2",
-          identifier: "dr.aditi@clinicos.in",
-          phone: "9876543211",
-          email: "dr.aditi@clinicos.in",
-          full_name: "Dr. Aditi Joshi",
-          role: "doctor",
-          clinic_id: "cln_derma_care",
-          clinic_name: "Derma Care Skin & Laser Centre",
-          clinic_slug: "derma-care-dehradun",
-          practice_type: "clinic",
-          subscription_plan: "pro",
-        },
-        {
-          id: "usr_reception_3",
-          identifier: "pooja@dermacare.in",
-          phone: "9876543212",
-          email: "pooja@dermacare.in",
-          full_name: "Pooja Verma",
-          role: "receptionist",
-          clinic_id: "cln_derma_care",
-          clinic_name: "Derma Care Skin & Laser Centre",
-          clinic_slug: "derma-care-dehradun",
-          practice_type: "clinic",
-          subscription_plan: "pro",
-        },
-        {
-          id: "usr_superadmin_0",
-          identifier: "admin@clinicos.in",
-          phone: "9999999999",
-          email: "admin@clinicos.in",
-          full_name: "Platform Super Admin",
-          role: "super_admin",
-          clinic_id: "cln_derma_care",
-          clinic_name: "Derma Care Skin & Laser Centre",
-          clinic_slug: "derma-care-dehradun",
-          practice_type: "clinic",
-          subscription_plan: "enterprise",
-        },
-      ];
-
-      const match = DEMO_FALLBACK_ACCOUNTS.find(
-        (a) =>
-          a.identifier.toLowerCase() === lowerIdentifier ||
-          a.email.toLowerCase() === lowerIdentifier ||
-          a.phone.slice(-10) === phoneMatch
+      console.error(
+        "[auth/login] database unavailable; refusing to issue a session:",
+        dbErr?.message
       );
-
-      const fallbackAccount = match || {
-        id: `usr_local_${phoneDigits.slice(-6) || "dev"}`,
-        identifier,
-        phone: phoneDigits || "9876543210",
-        email: identifier.includes("@") ? identifier : `${phoneDigits || "doctor"}@clinicos.in`,
-        full_name: identifier.includes("@") ? identifier.split("@")[0] : `Dr. ${identifier}`,
-        role: "doctor",
-        clinic_id: "cln_derma_care",
-        clinic_name: "Derma Care Skin & Laser Centre",
-        clinic_slug: "derma-care-dehradun",
-        practice_type: "clinic",
-        subscription_plan: "pro",
-      };
-
-      const token = signAccessToken({
-        sub: String(fallbackAccount.id),
-        role: fallbackAccount.role,
-        clinic_id: fallbackAccount.clinic_id,
-        phone: fallbackAccount.phone,
-        full_name: fallbackAccount.full_name,
-      });
-
-      const response = NextResponse.json({
-        access_token: token,
-        token_type: "bearer",
-        role: fallbackAccount.role,
-        user_id: String(fallbackAccount.id),
-        full_name: fallbackAccount.full_name,
-        phone: fallbackAccount.phone,
-        clinic_id: fallbackAccount.clinic_id,
-        clinic_name: fallbackAccount.clinic_name,
-        clinic_slug: fallbackAccount.clinic_slug,
-        practice_type: fallbackAccount.practice_type,
-        subscription_plan: fallbackAccount.subscription_plan,
-        organization_id: null,
-      });
-
-      response.cookies.set({
-        ...AUTH_COOKIE_OPTIONS,
-        value: token,
-      });
-
-      return response;
+      return NextResponse.json(
+        {
+          error: "Sign-in is temporarily unavailable. Please retry in a moment.",
+          code: "auth_unavailable",
+        },
+        {
+          status: 503,
+          headers: { "Cache-Control": "no-store", "Retry-After": "5" },
+        }
+      );
     }
 
     // Always run a password comparison so a missing account and a wrong
@@ -204,7 +109,7 @@ export async function POST(req: NextRequest) {
     // Reset identifier rate limit on successful authentication
     await sql`DELETE FROM rate_limits WHERE key = ${`auth:login:id:${identifier.toLowerCase().slice(0, 120)}`}`.catch(() => {});
 
-    let memberships: any[] = [];
+    let memberships: any[];
     try {
       memberships = await sql`
         SELECT cm.clinic_id, cm.role, c.name as clinic_name, c.slug as clinic_slug,
@@ -215,13 +120,28 @@ export async function POST(req: NextRequest) {
         ORDER BY cm.created_at ASC
         LIMIT 1
       `;
-    } catch (mErr) {
-      memberships = [];
+    } catch (mErr: any) {
+      // Do not fall back to a membership-less session: that silently changes
+      // the effective role and tenant of an otherwise valid login.
+      console.error(
+        "[auth/login] membership lookup failed; refusing to issue a session:",
+        mErr?.message
+      );
+      return NextResponse.json(
+        {
+          error: "Sign-in is temporarily unavailable. Please retry in a moment.",
+          code: "auth_unavailable",
+        },
+        {
+          status: 503,
+          headers: { "Cache-Control": "no-store", "Retry-After": "5" },
+        }
+      );
     }
 
     const globalRole = String(user.role || "").toLowerCase();
     const activeRole =
-      globalRole === "super_admin"
+      globalRole === "super_admin" || globalRole === "superadmin"
         ? "super_admin"
         : memberships.length > 0
           ? memberships[0].role
