@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/audit";
 import { sseBroker } from "@/lib/sse-broker";
+import { maskPatientName } from "@/lib/privacy";
 
 export const dynamic = "force-dynamic";
 
@@ -186,16 +187,13 @@ export async function POST(req: NextRequest) {
     sseBroker.broadcast(
       "walk_in_registered",
       {
-        appointment_number: inserted[0].appointment_number,
         token_number: inserted[0].token_number,
-        patient_name: inserted[0].patient_name,
+        patient_display: maskPatientName(inserted[0].patient_name),
         doctor_slug: doc.slug,
         doctor_name: doc.full_name,
         clinic_slug: clinic.slug,
         status: "waiting",
         time_slot: inserted[0].time_slot,
-        fee_amount: Number(inserted[0].fee_amount),
-        payment_status: inserted[0].payment_status,
       },
       clinic.id
     );
@@ -214,8 +212,10 @@ export async function POST(req: NextRequest) {
         payment_status: inserted[0].payment_status,
         payment_mode: inserted[0].payment_mode,
         is_walk_in: true,
+        doctor_slug: doc.slug,
         doctor_name: doc.full_name,
         clinic_name: clinic.name,
+        clinic_slug: clinic.slug,
       },
     });
   } catch (error: any) {

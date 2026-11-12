@@ -73,12 +73,12 @@ interface Doctor {
 }
 
 interface QueuePatient {
-  appointment_number: string;
   token_number: number;
-  patient_name: string;
-  patient_phone: string;
+  /** Masked name from the public queue API (e.g. "Devansh P."). */
+  patient_display: string;
   time_slot: string;
   status: "in_waiting" | "in_consultation" | "completed";
+  doctor_slug?: string;
   doctor_name?: string;
   chamber_name?: string;
   estimated_wait_mins?: number;
@@ -264,73 +264,18 @@ export default function WaitingRoomSmartDisplayPage() {
     }
   }, [clinicDoctors, chambers.length]);
 
-  // Upcoming Queue state
-  const [queue, setQueue] = useState<QueuePatient[]>([
-    {
-      appointment_number: "APT-DERMA-103",
-      token_number: 3,
-      patient_name: "Rohit Pant",
-      patient_phone: "+919123456782",
-      time_slot: "11:00 AM",
-      status: "in_waiting",
-      doctor_name: "Dr. Rahul Sharma",
-      chamber_name: "Chamber 1 - OPD Main",
-      estimated_wait_mins: 6
-    },
-    {
-      appointment_number: "APT-DERMA-104",
-      token_number: 4,
-      patient_name: "Sneha Dobhal",
-      patient_phone: "+919123456783",
-      time_slot: "11:15 AM",
-      status: "in_waiting",
-      doctor_name: "Dr. Rahul Sharma",
-      chamber_name: "Chamber 1 - OPD Main",
-      estimated_wait_mins: 14
-    },
-    {
-      appointment_number: "APT-DERMA-105",
-      token_number: 5,
-      patient_name: "Vikram Negi",
-      patient_phone: "+919123456784",
-      time_slot: "11:30 AM",
-      status: "in_waiting",
-      doctor_name: "Dr. Rahul Sharma",
-      chamber_name: "Chamber 1 - OPD Main",
-      estimated_wait_mins: 22
-    },
-    {
-      appointment_number: "APT-DERMA-106",
-      token_number: 6,
-      patient_name: "Sunita Verma",
-      patient_phone: "+919123456785",
-      time_slot: "11:45 AM",
-      status: "in_waiting",
-      doctor_name: "Dr. Rahul Sharma",
-      chamber_name: "Chamber 1 - OPD Main",
-      estimated_wait_mins: 30
-    },
-    {
-      appointment_number: "APT-DERMA-107",
-      token_number: 7,
-      patient_name: "Harshvardhan Joshi",
-      patient_phone: "+919123456786",
-      time_slot: "12:00 PM",
-      status: "in_waiting",
-      doctor_name: "Dr. Rahul Sharma",
-      chamber_name: "Chamber 1 - OPD Main",
-      estimated_wait_mins: 38
-    }
-  ]);
+  // Upcoming queue state. Populated from the clinic-scoped public API; the
+  // display never shows full names, phone numbers or payment details.
+  const [queue, setQueue] = useState<QueuePatient[]>([]);
 
   const [sseConnected, setSseConnected] = useState<boolean>(false);
   const lastAnnouncedTokenRef = useRef<number | null>(null);
 
   // Mobile Patient Token Tracker View State
   const [viewMode, setViewMode] = useState<"tv" | "patient">("tv");
-  const [patientToken, setPatientToken] = useState<number>(4);
-  const [patientPhone, setPatientPhone] = useState<string>("+919876543210");
-  const [patientName, setPatientName] = useState<string>("Sneha Dobhal");
+  const [patientToken, setPatientToken] = useState<number>(0);
+  const [patientPhone, setPatientPhone] = useState<string>("");
+  const [patientName, setPatientName] = useState<string>("");
   const [isSubscribing, setIsSubscribing] = useState<boolean>(false);
   const [alertSuccessToast, setAlertSuccessToast] = useState<string | null>(null);
   const [waDirectLink, setWaDirectLink] = useState<string | null>(null);
@@ -471,7 +416,7 @@ export default function WaitingRoomSmartDisplayPage() {
                 copy[chamberIdx] = {
                   ...copy[chamberIdx],
                   current_token: inConsult.token_number,
-                  patient_name: inConsult.patient_name,
+                  patient_name: inConsult.patient_display || null,
                   status: "consulting",
                   elapsed_seconds: 0,
                 };
@@ -483,7 +428,7 @@ export default function WaitingRoomSmartDisplayPage() {
                   doctor_name: inConsult.doctor_name || "Doctor",
                   specialty: "",
                   current_token: inConsult.token_number,
-                  patient_name: inConsult.patient_name,
+                  patient_name: inConsult.patient_display || null,
                   status: "consulting",
                   elapsed_seconds: 0,
                 });
@@ -498,7 +443,7 @@ export default function WaitingRoomSmartDisplayPage() {
               const chamberName = clinicDoctors.find(d => d.full_name === inConsult.doctor_name)?.chamber_name || "Chamber";
               triggerAudioAnnouncement(
                 inConsult.token_number,
-                inConsult.patient_name,
+                inConsult.patient_display,
                 chamberName
               );
             }
@@ -508,12 +453,11 @@ export default function WaitingRoomSmartDisplayPage() {
           // Update waiting queue
           if (waiting.length > 0) {
             const mappedWaiting: QueuePatient[] = waiting.map((w, idx) => ({
-              appointment_number: w.appointment_number,
               token_number: w.token_number,
-              patient_name: w.patient_name,
-              patient_phone: w.patient_phone,
+              patient_display: w.patient_display || "Patient",
               time_slot: w.time_slot || "Upcoming",
               status: "in_waiting",
+              doctor_slug: w.doctor_slug,
               doctor_name: w.doctor_name || "Doctor",
               chamber_name: clinicDoctors.find(d => d.full_name === w.doctor_name)?.chamber_name || "Chamber",
               estimated_wait_mins: Math.max(5, (idx + 1) * 8),
@@ -546,18 +490,19 @@ export default function WaitingRoomSmartDisplayPage() {
           if (parsed.event === "walk_in_registered" && parsed.data) {
             const d = parsed.data;
             // New patient checked in via kiosk — add to waiting queue
-            const alreadyExists = queue.some(q => q.appointment_number === d.appointment_number);
+            const alreadyExists = queue.some(
+              q => q.token_number === d.token_number && q.doctor_slug === d.doctor_slug
+            );
             if (!alreadyExists) {
               const doctor = clinicDoctors.find(dr => dr.slug === d.doctor_slug);
               setQueue(prev => [
                 ...prev,
                 {
-                  appointment_number: d.appointment_number,
                   token_number: d.token_number,
-                  patient_name: d.patient_name,
-                  patient_phone: "", // not exposed publicly
+                  patient_display: d.patient_display || "Patient",
                   time_slot: d.time_slot || "Kiosk Check-in",
                   status: "in_waiting",
+                  doctor_slug: d.doctor_slug,
                   doctor_name: d.doctor_name || doctor?.full_name || "Doctor",
                   chamber_name: doctor?.chamber_name || "Chamber",
                   estimated_wait_mins: Math.max(5, (queue.length + 1) * 8),
@@ -574,18 +519,18 @@ export default function WaitingRoomSmartDisplayPage() {
                 copy[chamberIdx] = {
                   ...copy[chamberIdx],
                   current_token: d.token_number,
-                  patient_name: d.patient_name,
+                  patient_name: d.patient_display || null,
                   status: "consulting",
                   elapsed_seconds: 0,
                 };
               } else if (doctor) {
                 copy.push({
                   chamber_id: `ch-${copy.length}`,
-                  chamber_name: doctor.chamber_name,
+                  chamber_name: d.chamber_name || doctor.chamber_name,
                   doctor_name: d.doctor_name,
                   specialty: doctor.specialization,
                   current_token: d.token_number,
-                  patient_name: d.patient_name,
+                  patient_name: d.patient_display || null,
                   status: "consulting",
                   elapsed_seconds: 0,
                 });
@@ -595,8 +540,8 @@ export default function WaitingRoomSmartDisplayPage() {
 
             triggerAudioAnnouncement(
               d.token_number,
-              d.patient_name,
-              doctor?.chamber_name || "Chamber"
+              d.patient_display,
+              d.chamber_name || doctor?.chamber_name || "Chamber"
             );
             fetchQueueFromAPI();
           } else if (parsed.event === "token_completed" && parsed.data) {
@@ -616,7 +561,15 @@ export default function WaitingRoomSmartDisplayPage() {
               return copy;
             });
             // Remove completed from queue
-            setQueue(prev => prev.filter(q => q.appointment_number !== d.appointment_number));
+            setQueue(prev =>
+              prev.filter(
+                q =>
+                  !(
+                    q.token_number === d.token_number &&
+                    (!d.doctor_slug || q.doctor_slug === d.doctor_slug)
+                  )
+              )
+            );
           }
         } catch (err) {
           console.error("SSE parse error", err);
@@ -660,7 +613,7 @@ export default function WaitingRoomSmartDisplayPage() {
       copy[activeChamberIndex] = {
         ...copy[activeChamberIndex],
         current_token: nextPatient.token_number,
-        patient_name: nextPatient.patient_name,
+        patient_name: nextPatient.patient_display,
         status: "consulting",
         elapsed_seconds: 0
       };
@@ -672,7 +625,7 @@ export default function WaitingRoomSmartDisplayPage() {
 
     triggerAudioAnnouncement(
       nextPatient.token_number,
-      nextPatient.patient_name,
+      nextPatient.patient_display,
       chambers[activeChamberIndex].chamber_name
     );
   };
@@ -947,10 +900,10 @@ export default function WaitingRoomSmartDisplayPage() {
               {/* Huge Monospace Token with Apple Accent Glow */}
               <div className="relative py-2">
                 <div className="text-7xl sm:text-8xl font-black font-mono tracking-tight text-[#0071E3] dark:text-[#2997FF] drop-shadow-sm">
-                  #{String(patientToken).padStart(2, "0")}
+                  {patientToken ? `#${String(patientToken).padStart(2, "0")}` : "#--"}
                 </div>
                 <div className="text-xs font-bold mt-1 text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  {patientName}
+                  {patientName || "Your token"}
                 </div>
               </div>
 
@@ -965,7 +918,9 @@ export default function WaitingRoomSmartDisplayPage() {
                     Currently In Room
                   </div>
                   <div className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    #{String(activeChamber.current_token || 2).padStart(2, "0")}
+                    {activeChamber.current_token
+                      ? `#${String(activeChamber.current_token).padStart(2, "0")}`
+                      : "#--"}
                   </div>
                   <div className="text-[10px] text-[#86868B] dark:text-[#8E8E93] truncate">
                     {activeChamber.patient_name || "Consulting"}
@@ -1188,7 +1143,9 @@ export default function WaitingRoomSmartDisplayPage() {
                     PATIENT TOKEN NUMBER
                   </div>
                   <div className="text-8xl sm:text-9xl lg:text-[11.5rem] font-black tracking-tighter text-[#0071E3] dark:text-[#2997FF] font-mono leading-none drop-shadow-[0_10px_30px_rgba(0,113,227,0.3)]">
-                    #{String(activeChamber.current_token || 2).padStart(2, "0")}
+                    {activeChamber.current_token
+                      ? `#${String(activeChamber.current_token).padStart(2, "0")}`
+                      : "#--"}
                   </div>
                 </div>
 
@@ -1203,7 +1160,7 @@ export default function WaitingRoomSmartDisplayPage() {
                       PATIENT NAME / मरीज
                     </div>
                     <div className={`text-2xl sm:text-3xl font-black mt-1 ${tvTheme === "dark" ? "text-white" : "text-[#1D1D1F]"}`}>
-                      {activeChamber.patient_name || "Priya Singh"}
+                      {activeChamber.patient_name || "No patient in room"}
                     </div>
                     <div className="text-xs text-emerald-500 font-semibold mt-1 flex items-center justify-start sm:justify-end gap-1">
                       <CheckCircle2 className="h-3.5 w-3.5" />
@@ -1237,17 +1194,17 @@ export default function WaitingRoomSmartDisplayPage() {
                   </div>
                   <div>
                     <div className={`font-bold ${tvTheme === "dark" ? "text-white" : "text-[#1D1D1F]"}`}>
-                      📢 &quot;Token Number {activeChamber.current_token || 2}, {activeChamber.patient_name || 'Priya Singh'}, please proceed to {activeChamber.chamber_name}.&quot;
+                      📢 &quot;Token Number {activeChamber.current_token || "—"}, {activeChamber.patient_name || "next patient"}, please proceed to {activeChamber.chamber_name}.&quot;
                     </div>
                     <div className="text-[#86868B] dark:text-[#8E8E93] text-[11px] mt-0.5">
-                      🇮🇳 &quot;टोकन नंबर {activeChamber.current_token || 2}, कृपया {activeChamber.chamber_name === "Chamber 1 - OPD Main" ? "कक्ष 1" : "कक्ष"} में आएं।&quot;
+                      🇮🇳 &quot;टोकन नंबर {activeChamber.current_token || "—"}, कृपया {activeChamber.chamber_name || "कक्ष"} में आएं।&quot;
                     </div>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => triggerAudioAnnouncement(activeChamber.current_token || 2, activeChamber.patient_name || "Priya Singh", activeChamber.chamber_name)}
+                  onClick={() => triggerAudioAnnouncement(activeChamber.current_token || 0, activeChamber.patient_name || "next patient", activeChamber.chamber_name)}
                   className={`inline-flex items-center gap-1.5 rounded-[12px] px-3.5 py-2 font-semibold text-xs transition active:scale-95 whitespace-nowrap self-start sm:self-auto border ${
                     tvTheme === "dark"
                       ? "border-white/[0.12] bg-white/[0.06] text-white hover:bg-white/[0.12]"
@@ -1299,7 +1256,7 @@ export default function WaitingRoomSmartDisplayPage() {
                 <div className="space-y-2.5">
                   {queue.slice(0, 5).map((patient, idx) => (
                     <div
-                      key={patient.appointment_number}
+                      key={`${patient.doctor_slug || "doctor"}-${patient.token_number}`}
                       className={`rounded-[18px] border p-3.5 flex items-center justify-between transition-all ${
                         idx === 0
                           ? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-white shadow-apple-sm"
@@ -1321,7 +1278,7 @@ export default function WaitingRoomSmartDisplayPage() {
 
                         <div>
                           <div className={`font-bold text-sm flex items-center gap-2 ${tvTheme === "dark" ? "text-white" : "text-[#1D1D1F]"}`}>
-                            <span>{patient.patient_name}</span>
+                            <span>{patient.patient_display}</span>
                             {idx === 0 && (
                               <span className="rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold px-2 py-0.2 uppercase">
                                 Next in Line
@@ -1329,7 +1286,7 @@ export default function WaitingRoomSmartDisplayPage() {
                             )}
                           </div>
                           <div className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                            {patient.doctor_name || "Dr. Rahul Sharma"} • {patient.time_slot}
+                            {patient.doctor_name || "Doctor"} • {patient.time_slot}
                           </div>
                         </div>
                       </div>
@@ -1414,8 +1371,8 @@ export default function WaitingRoomSmartDisplayPage() {
               🏥 <strong>Welcome to {clinic.name}:</strong> Free Patient Wi-Fi: <strong>ClinicGuest</strong> (No Password Required) &bull; 
               PMBJP Jan Aushadhi generic medicines available at the in-house pharmacy desk for up to 70% savings &bull; 
               Need urgent help or special assistance? Notify front-desk reception immediately &bull; 
-              Dr. Rahul Sharma is consulting in Chamber 1 &bull; 
-              Dr. Ananya Rawat is consulting in Chamber 2 (Laser Suite).
+              Consultations are in progress &bull; 
+              Please watch this screen and listen for your token number.
             </span>
           </div>
         </div>

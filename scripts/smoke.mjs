@@ -154,13 +154,21 @@ async function put(session, name, pathname, body) {
   return { res, text };
 }
 
+function check(name, condition, detail = "") {
+  record("CHECK", name, condition ? 200 : 599, condition ? "" : detail);
+}
+
 async function page(session, name, pathname) {
   const { res, text } = await request(session, "GET", pathname);
+  const isRedirect =
+    (res.status === 301 || res.status === 302 || res.status === 307 || res.status === 308) &&
+    Boolean(res.headers.get("location"));
   const okHtml =
-    res.status === 200 &&
-    (/<html/i.test(text) || /<!DOCTYPE html/i.test(text)) &&
-    !/Application error: a server-side exception/i.test(text);
-  const status = okHtml ? res.status : res.status === 200 ? 599 : res.status;
+    isRedirect ||
+    (res.status === 200 &&
+      (/<html/i.test(text) || /<!DOCTYPE html/i.test(text)) &&
+      !/Application error: a server-side exception/i.test(text));
+  const status = okHtml ? 200 : res.status;
   record("PAGE", name, status, okHtml ? "" : text.slice(0, 400));
 }
 
@@ -249,6 +257,39 @@ async function main() {
 
   // Public endpoints.
   await get(null, "public /check-in", `/api/check-in/public?clinic_slug=${CLINIC_SLUG}`);
+  await get(
+    null,
+    "public /check-in/lookup",
+    `/api/check-in/public/lookup?clinic_slug=${CLINIC_SLUG}&phone=${PATIENT_PHONE}`
+  );
+
+  const publicQueue = await get(
+    null,
+    "public /api/waiting-room/queue",
+    `/api/waiting-room/queue?clinic_slug=${CLINIC_SLUG}`
+  );
+  let queueJson = null;
+  try {
+    queueJson = JSON.parse(publicQueue.text);
+  } catch {
+    /* checked below */
+  }
+  const queueRow = queueJson?.queue?.[0];
+  if (queueRow) {
+    check(
+      "public queue exposes only masked identity",
+      typeof queueRow.patient_display === "string" &&
+        !("patient_name" in queueRow) &&
+        !("patient_phone" in queueRow) &&
+        !("symptoms_description" in queueRow) &&
+        !("fee_amount" in queueRow) &&
+        !("payment_status" in queueRow) &&
+        !("payment_mode" in queueRow),
+      JSON.stringify(queueRow)
+    );
+  } else {
+    check("public queue has rows for seeded day", false, publicQueue.text.slice(0, 300));
+  }
 
   // Superadmin console.
   if (sessions.superadmin) {
@@ -521,6 +562,20 @@ async function main() {
     "/waiting-room",
   ];
   for (const p of pages) await page(owner, p, p);
+
+  // Public (unauthenticated) surfaces must render without a staff session.
+  const publicPages = [
+    "/",
+    "/search",
+    "/login",
+    "/book",
+    `/check-in?clinic=${CLINIC_SLUG}`,
+    "/waiting-room",
+    "/display/waiting-room",
+    "/patient/portal",
+    "/doctors/dr-rahul-sharma",
+  ];
+  for (const p of publicPages) await page(null, p, p);
 
   if (sessions.superadmin) {
     await page(sessions.superadmin, "/superadmin", "/superadmin");

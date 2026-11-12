@@ -187,7 +187,13 @@ export async function POST(req: NextRequest) {
         Number(inserted[0].fee_amount) === 0 && validityDays != null
           ? `No fee applied — valid follow-up within ${validityDays} days.`
           : null,
-      appointment: inserted[0],
+      appointment: {
+        ...inserted[0],
+        // `appointments` has no clinic_slug column; expose the doctor's clinic
+        // slug in the response so the patient portal can subscribe to the
+        // public waiting-room stream without a second lookup.
+        clinic_slug: doc.clinic_slug || null,
+      },
     });
   } catch (error: any) {
     console.error("POST /api/appointments/book error:", error);

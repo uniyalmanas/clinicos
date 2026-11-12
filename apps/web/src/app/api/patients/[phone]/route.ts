@@ -255,7 +255,8 @@ export async function GET(
       chronic_allergies: allergies,
       known_conditions: knownConditions,
       total_visits: appointments.length,
-      primary_clinic_slug: appointments[0]?.clinic_slug || prescriptions[0]?.clinic_slug || "derma-care-dehradun",
+      primary_clinic_slug:
+        appointments[0]?.clinic_slug || prescriptions[0]?.clinic_slug || null,
       visits,
       documents,
       consultation_reports: consultationReports,

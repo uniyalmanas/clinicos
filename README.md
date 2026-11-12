@@ -3,12 +3,17 @@
 **Live Production URL:** [https://medic-sept-2026.vercel.app/](https://medic-sept-2026.vercel.app/)  
 **100% Serverless on Vercel + Supabase PostgreSQL (AWS ap-south-1)**
 
+> **Feature status:** this README describes the product vision. The
+> authoritative list of what is implemented, what is sandbox-only, and what is
+> still deferred is [`docs/FEATURE_TRUTH.md`](docs/FEATURE_TRUTH.md). Do not
+> treat roadmap wording below as a shipped guarantee.
+
 [![Live Production](https://img.shields.io/badge/Production-Live%20on%20Vercel-0071E3?style=flat-square&logo=vercel)](https://medic-sept-2026.vercel.app/)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15.1.12-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![Groq LPU](https://img.shields.io/badge/AI%20Agent-Groq%20LPU%20Engine-F55036?style=flat-square)](https://groq.com/)
 [![Supabase](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
-[![ABDM Certified](https://img.shields.io/badge/ABDM-FHIR%20R4%20M1%2FM2-orange?style=flat-square)](https://abdm.gov.in/)
+[![ABDM Sandbox](https://img.shields.io/badge/ABDM-FHIR%20R4%20sandbox-orange?style=flat-square)](docs/FEATURE_TRUTH.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 

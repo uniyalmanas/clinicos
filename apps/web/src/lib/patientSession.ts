@@ -9,6 +9,7 @@ export interface ActiveBooking {
   doctor_slug: string;
   specialization?: string;
   clinic_name: string;
+  clinic_slug?: string;
   clinic_address: string;
   time_slot: string;
   appointment_date: string;

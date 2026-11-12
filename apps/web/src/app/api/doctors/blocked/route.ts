@@ -6,33 +6,6 @@ import { randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 
-let tableEnsured = false;
-async function ensureTable() {
-  if (tableEnsured) return;
-  try {
-    // postgres.js sends one statement per round-trip, so DDL is split.
-    await sql`
-      CREATE TABLE IF NOT EXISTS doctor_blocked_slots (
-        id          TEXT PRIMARY KEY,
-        clinic_id   TEXT NOT NULL,
-        clinic_slug TEXT NOT NULL,
-        doctor_slug TEXT NOT NULL,
-        date        TEXT NOT NULL,
-        start_time  TEXT,
-        end_time    TEXT,
-        reason      TEXT NOT NULL,
-        type        TEXT NOT NULL DEFAULT 'blocked',
-        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `;
-    await sql`CREATE INDEX IF NOT EXISTS idx_dbs_clinic ON doctor_blocked_slots (clinic_id, date DESC)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_dbs_doctor ON doctor_blocked_slots (doctor_slug, date DESC)`;
-    tableEnsured = true;
-  } catch (e) {
-    console.warn("ensureTable doctor_blocked_slots:", e);
-  }
-}
-
 /** List all blocked slots for the authenticated clinic. */
 export async function GET(req: NextRequest) {
   try {
@@ -42,7 +15,6 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const doctorSlug = searchParams.get("doctor_slug");
 
-    await ensureTable();
 
     const rows = doctorSlug
       ? await sql`
@@ -83,7 +55,6 @@ export async function POST(req: NextRequest) {
     const validTypes = ["leave", "blocked", "emergency"];
     const slotType = validTypes.includes(type) ? type : "blocked";
 
-    await ensureTable();
 
     const id = randomUUID();
     const rows = await sql`
@@ -123,7 +94,6 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get("id");
     if (!id) return apiError(400, "id is required.", "invalid_input");
 
-    await ensureTable();
 
     const deleted = await sql`
       DELETE FROM doctor_blocked_slots

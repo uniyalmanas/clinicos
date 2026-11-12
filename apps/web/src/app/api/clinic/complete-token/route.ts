@@ -34,8 +34,9 @@ export async function POST(req: NextRequest) {
     sseBroker.broadcast(
       "token_completed",
       {
-        appointment_number: updated[0].appointment_number,
         token_number: updated[0].token_number,
+        doctor_slug: updated[0].doctor_slug,
+        doctor_name: updated[0].doctor_name,
       },
       clinicId
     );

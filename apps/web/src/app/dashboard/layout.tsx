@@ -31,7 +31,6 @@ import {
   Sparkles,
   Lock,
   ChevronDown,
-  Banknote,
   Building2,
   FlaskConical,
   ShieldCheck,
@@ -51,8 +50,7 @@ const SOLO_NAV = [
   { label: "Queue",          href: "/dashboard/chambers",  icon: Ticket,        badge: "OPD" },
   { label: "Consultation",   href: "/doctor/consult",      icon: Stethoscope },
   { label: "Prescriptions",  href: "/dashboard/consult",   icon: FileText },
-  { label: "Billing",        href: "/dashboard/finance",   icon: CreditCard,    badge: "₹" },
-  { label: "Finance",        href: "/clinic/settlement",   icon: Banknote },
+  { label: "Billing & Finance", href: "/dashboard/finance", icon: CreditCard,  badge: "₹" },
   { label: "Beds / IPD",     href: "/dashboard/beds",      icon: DoorOpen,      badge: "IPD" },
   { label: "Laboratory",     href: "/dashboard/lab",       icon: FlaskConical },
   { label: "Insurance",      href: "/dashboard/insurance", icon: ShieldCheck,   badge: "TPA" },
@@ -70,8 +68,7 @@ const CLINIC_CORE_NAV = [
   { label: "Queue",          href: "/dashboard/chambers",  icon: Ticket,        badge: "OPD" },
   { label: "Consultation",   href: "/doctor/consult",      icon: Stethoscope },
   { label: "Prescriptions",  href: "/dashboard/consult",   icon: FileText },
-  { label: "Billing",        href: "/dashboard/finance",   icon: CreditCard,    badge: "₹" },
-  { label: "Finance",        href: "/clinic/settlement",   icon: Banknote },
+  { label: "Billing & Finance", href: "/dashboard/finance", icon: CreditCard,  badge: "₹" },
   { label: "Beds / IPD",     href: "/dashboard/beds",      icon: DoorOpen,      badge: "IPD" },
   { label: "Laboratory",     href: "/dashboard/lab",       icon: FlaskConical },
   { label: "Insurance",      href: "/dashboard/insurance", icon: ShieldCheck,   badge: "TPA" },
@@ -85,7 +82,6 @@ const CLINIC_MGMT_NAV = [
   { label: "Staff",           href: "/dashboard/settings", icon: UserCog },
   { label: "Rooms / Chambers",href: "/dashboard/chambers", icon: DoorOpen },
   { label: "Reports",         href: "/dashboard/finance",  icon: BarChart3 },
-  { label: "Settlements",     href: "/clinic/expenses",    icon: Banknote,      badge: "EOD" },
 ];
 
 const CLINIC_BOTTOM_NAV = [
@@ -518,7 +514,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const token = localStorage.getItem("clinicos_token");
     if (!token) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
     const userStr = localStorage.getItem("clinicos_user");
@@ -671,7 +667,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen overflow-hidden bg-[#ECEEF2] text-[#1D1D1F] dark:bg-black dark:text-[#F5F5F7]">
 
       {/* ── DESKTOP SIDEBAR ── */}
-      <aside className={`hidden lg:flex flex-col border-r border-slate-200/80 bg-white dark:border-white/[0.08] dark:bg-[#111113] transition-all duration-200 ease-in-out shrink-0 ${isCollapsed ? "w-[64px]" : "w-[250px]"} shadow-xs`}>
+      <aside className={`hidden lg:flex flex-col border-r border-slate-200/80 bg-white dark:border-white/[0.08] dark:bg-[#111113] transition-all duration-200 ease-in-out shrink-0 ${isCollapsed ? "w-[64px]" : "w-[264px]"} shadow-xs`}>
         <SidebarContent {...sharedSidebarProps} />
       </aside>
 
@@ -764,7 +760,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* PAGE CONTENT */}
-        <main className="flex-1 overflow-y-auto min-w-0 p-3.5 sm:p-5 lg:p-6 bg-[#F8F9FA] dark:bg-[#0C0D0E]">
+        <main className={`flex-1 overflow-y-auto min-w-0 bg-[#F8F9FA] dark:bg-[#0C0D0E] ${pathname === "/dashboard/today" ? "p-0" : "p-3.5 sm:p-5 lg:p-6"}`}>
           {children}
         </main>
       </div>

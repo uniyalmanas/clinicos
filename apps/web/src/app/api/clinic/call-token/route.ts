@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
 import { sseBroker } from "@/lib/sse-broker";
+import { maskPatientName } from "@/lib/privacy";
 
 export const dynamic = "force-dynamic";
 
@@ -59,9 +60,9 @@ export async function POST(req: NextRequest) {
     sseBroker.broadcast(
       "token_called",
       {
-        appointment_number: currentApt.appointment_number,
         token_number: currentApt.token_number,
-        patient_name: currentApt.patient_name,
+        patient_display: maskPatientName(currentApt.patient_name),
+        doctor_slug: currentApt.doctor_slug,
         doctor_name: currentApt.doctor_name,
         chamber_name,
         trigger_chime: true,

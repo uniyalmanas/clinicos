@@ -6,36 +6,6 @@ import { randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 
-let tableEnsured = false;
-async function ensureTable() {
-  if (tableEnsured) return;
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS doctor_schedules (
-        id            TEXT PRIMARY KEY,
-        clinic_id     TEXT NOT NULL,
-        clinic_slug   TEXT NOT NULL,
-        doctor_slug   TEXT NOT NULL,
-        doctor_name   TEXT NOT NULL,
-        specialization TEXT,
-        chamber_name  TEXT,
-        working_days  JSONB NOT NULL DEFAULT '[]'::jsonb,
-        start_time    TEXT NOT NULL DEFAULT '09:00',
-        end_time      TEXT NOT NULL DEFAULT '17:00',
-        slot_duration INTEGER NOT NULL DEFAULT 15,
-        is_active     BOOLEAN NOT NULL DEFAULT true,
-        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        UNIQUE (clinic_id, doctor_slug)
-      );
-      CREATE INDEX IF NOT EXISTS idx_ds_clinic ON doctor_schedules (clinic_id);
-    `;
-    tableEnsured = true;
-  } catch (e) {
-    console.warn("ensureTable doctor_schedules:", e);
-  }
-}
-
 /**
  * POST /api/doctors/schedule — alias used by the ScheduleEditor modal.
  * Upserts a single doctor's schedule for the authenticated clinic.
@@ -61,7 +31,6 @@ export async function POST(req: NextRequest) {
       return apiError(400, "working_days must be a non-empty array.", "invalid_input");
     }
 
-    await ensureTable();
 
     const id = randomUUID();
     const rows = await sql`

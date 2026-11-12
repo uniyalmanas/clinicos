@@ -52,6 +52,7 @@ export interface MedicationMemoryItem {
   timing: "Before Food" | "After Food" | "Empty Stomach" | "At Bedtime" | "SOS";
   special_instructions?: string;
   status: ClinicalFieldStatus;
+  verification_status?: "UNVERIFIED" | "DOCTOR_VERIFIED" | "CONFLICTING" | "SUPERSEDED";
   catalogue_match_id?: string;
   contraindication_warning?: string | null;
 }
@@ -63,6 +64,18 @@ export interface PatientComplaintItem {
   severity?: "Mild" | "Moderate" | "Severe";
   notes?: string;
   status: ClinicalFieldStatus;
+  verification_status?: "UNVERIFIED" | "DOCTOR_VERIFIED" | "CONFLICTING" | "SUPERSEDED";
+}
+
+export interface PatientTimelineItem {
+  id: string;
+  item_type: "encounter" | "fact" | "source";
+  timestamp: string;
+  title: string;
+  category: string;
+  verification_status: string;
+  summary: string;
+  details?: Record<string, any>;
 }
 
 export interface ClinicalMemory {
@@ -100,6 +113,22 @@ export interface ClarificationAlert {
   resolved: boolean;
 }
 
+export interface ProvenanceCitation {
+  source_type: "current_transcript" | "verified_patient_record" | "medical_knowledge" | "missing_info";
+  citation: string;
+  quote?: string;
+}
+
+export interface TranscriptTurnItem {
+  id: string;
+  turn_index: number;
+  speaker: "doctor" | "patient" | "uncertain";
+  speaker_confidence: number;
+  speaker_manually_corrected?: boolean;
+  transcript_text: string;
+  language?: string;
+}
+
 export interface CompanionChatMessage {
   id: string;
   sender: "doctor" | "companion" | "system";
@@ -108,6 +137,7 @@ export interface CompanionChatMessage {
   audio_url?: string;
   action_type?: "clarification" | "history_lookup" | "rx_update" | "vitals_update" | "report_preview";
   data_payload?: any;
+  provenance_sources?: ProvenanceCitation[];
 }
 
 /**

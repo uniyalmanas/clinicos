@@ -183,9 +183,9 @@ export default function PatientDocumentsManager({ patientPhone, patientName, isD
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {documents.map((doc) => (
+          {documents.map((doc, idx) => (
             <div
-              key={doc.id}
+              key={`pdoc-${doc.id || idx}`}
               className="rounded-[20px] border border-black/[0.04] dark:border-white/[0.06] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/50 p-4 sm:p-5 flex flex-col justify-between space-y-3.5 hover:border-apple-teal/40 transition"
             >
               <div>

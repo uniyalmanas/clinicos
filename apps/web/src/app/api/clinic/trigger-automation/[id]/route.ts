@@ -6,33 +6,6 @@ import { randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 
-let tableEnsured = false;
-async function ensureTable() {
-  if (tableEnsured) return;
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS clinic_sent_automations (
-        id          TEXT PRIMARY KEY,
-        clinic_id   TEXT NOT NULL,
-        clinic_slug TEXT NOT NULL,
-        appointment_number TEXT,
-        patient_name TEXT,
-        patient_phone TEXT NOT NULL,
-        trigger_type TEXT NOT NULL,
-        message_text TEXT NOT NULL,
-        whatsapp_url TEXT,
-        sent_by      TEXT NOT NULL,
-        sent_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS idx_csa_clinic ON clinic_sent_automations (clinic_id, sent_at DESC);
-    `;
-    tableEnsured = true;
-  } catch (e) {
-    console.warn("ensureTable clinic_sent_automations:", e);
-  }
-}
-
 /**
  * Trigger a specific automation by its computed id (e.g. "auto-rx-APT-xxx").
  * Records the dispatch in clinic_sent_automations and returns the WhatsApp URL
@@ -66,7 +39,6 @@ export async function POST(
       return apiError(400, "patient_phone and message_text are required.", "invalid_input");
     }
 
-    await ensureTable();
 
     const rowId = randomUUID();
     await sql`

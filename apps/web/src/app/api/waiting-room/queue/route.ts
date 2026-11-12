@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
+import { rateLimit, rateLimitKey } from "@/lib/rate-limit";
+import { maskPatientName } from "@/lib/privacy";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,10 @@ export const dynamic = "force-dynamic";
  *
  * Returns today's appointments for a clinic, sorted by token number.
  * No authentication required — scoped by clinic_slug.
+ *
+ * Privacy: this endpoint is public, so it only exposes the token, doctor,
+ * status and time slot, plus a masked display name. Phone numbers, symptoms,
+ * fees, payment state and internal appointment ids never leave the server.
  *
  * Query params:
  *   clinic_slug (required) — clinic slug
@@ -53,37 +58,24 @@ export async function GET(req: NextRequest) {
     }
     const clinicId = clinics[0].id;
 
-    // Build query
-    let query = sql`
-      SELECT id, appointment_number, token_number, doctor_slug, doctor_name,
-             patient_name, patient_phone, appointment_date, time_slot,
-             status, fee_amount, payment_status, payment_mode,
-             symptoms_description, created_at
+    // Build query. Only non-identifying columns are selected; the display name
+    // is masked below before it crosses the boundary.
+    const rows = await sql`
+      SELECT token_number, doctor_slug, doctor_name, patient_name,
+             appointment_date, time_slot, status
       FROM appointments
       WHERE clinic_id::text = ${clinicId}::text
         AND appointment_date = ${todayStr}
     `;
 
-    // Note: We can't conditionally add to a tagged template easily,
-    // so we fetch all and filter in JS if doctor_slug is provided.
-    const rows = await query;
-
     let appointments = rows.map((row: any) => ({
-      id: row.id,
-      appointment_number: row.appointment_number,
       token_number: Number(row.token_number),
       doctor_slug: row.doctor_slug,
       doctor_name: row.doctor_name,
-      patient_name: row.patient_name,
-      patient_phone: row.patient_phone,
+      patient_display: maskPatientName(row.patient_name),
       appointment_date: row.appointment_date,
       time_slot: row.time_slot,
       status: row.status,
-      fee_amount: Number(row.fee_amount || 0),
-      payment_status: row.payment_status,
-      payment_mode: row.payment_mode,
-      symptoms_description: row.symptoms_description,
-      created_at: row.created_at,
     }));
 
     if (doctorSlug) {

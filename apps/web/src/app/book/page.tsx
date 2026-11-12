@@ -447,6 +447,7 @@ function BookingExperience() {
         doctor_slug: selectedDoc.slug,
         specialization: selectedDoc.specialization,
         clinic_name: selectedDoc.clinic_name,
+        clinic_slug: appointment.clinic_slug || selectedDoc.clinic_slug || undefined,
         clinic_address: selectedDoc.clinic_address,
         time_slot: appointment.time_slot || slotLabel,
         appointment_date: appointment.appointment_date || formattedDate,

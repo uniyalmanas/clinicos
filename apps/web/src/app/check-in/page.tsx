@@ -188,7 +188,7 @@ export default function CheckInKioskPage() {
   // Phone step
   const [phone, setPhone] = useState("");
   const [searchingPhone, setSearchingPhone] = useState(false);
-  const [foundPatient, setFoundPatient] = useState<any>(null);
+  const [knownPatient, setKnownPatient] = useState(false);
   const [phoneFeedback, setPhoneFeedback] = useState<string | null>(null);
 
   // Details step
@@ -231,39 +231,45 @@ export default function CheckInKioskPage() {
   }, []);
 
   // ── Phone lookup ──
+  //
+  // The kiosk is in a public lobby. The lookup endpoint only tells us whether
+  // this phone has visited this clinic before; it never returns a name or any
+  // clinical detail. The name is always collected fresh in the details step.
   const handlePhoneChange = async (value: string) => {
     setPhone(value);
     const clean = value.replace(/\D/g, "").slice(-10);
-    if (clean.length === 10) {
+    if (clean.length === 10 && clinicSlug) {
       setSearchingPhone(true);
       setPhoneFeedback("Checking your records…");
       try {
-        // Try public patient lookup (we use the same endpoint; if it requires auth,
-        // we fall back gracefully and treat as new patient)
-        const res = await fetch(`/api/patients/${encodeURIComponent(clean)}`);
+        const res = await fetch(
+          `/api/check-in/public/lookup?clinic_slug=${encodeURIComponent(
+            clinicSlug
+          )}&phone=${encodeURIComponent(clean)}`
+        );
         if (res.ok) {
           const data = await res.json();
-          const profile = data.patientProfile;
-          if (profile?.full_name) {
-            setFoundPatient(profile);
-            setName(profile.full_name || "");
-            setPhoneFeedback(`Welcome back, ${profile.full_name}!`);
+          if (data.known) {
+            setKnownPatient(true);
+            setPhoneFeedback(
+              "We found a previous visit at this clinic. Please confirm your details below."
+            );
           } else {
-            setFoundPatient(null);
+            setKnownPatient(false);
             setPhoneFeedback("New patient — please enter your details below.");
           }
         } else {
-          setFoundPatient(null);
-          setPhoneFeedback("New patient — please enter your details below.");
+          setKnownPatient(false);
+          setPhoneFeedback("Please enter your details below.");
         }
       } catch {
-        setFoundPatient(null);
-        setPhoneFeedback("New patient — please enter your details below.");
+        setKnownPatient(false);
+        setPhoneFeedback("Please enter your details below.");
       } finally {
         setSearchingPhone(false);
       }
     } else {
-      setFoundPatient(null);
+      setKnownPatient(false);
       setPhoneFeedback(null);
     }
   };
@@ -306,7 +312,7 @@ export default function CheckInKioskPage() {
     setSelectedDoctor(null);
     setPaymentMode("upi");
     setTokenResult(null);
-    setFoundPatient(null);
+    setKnownPatient(false);
     setPhoneFeedback(null);
     setCheckInError(null);
   };
@@ -465,7 +471,7 @@ export default function CheckInKioskPage() {
 
             {phoneFeedback && (
               <div className={`rounded-xl p-3 text-xs ${
-                foundPatient
+                knownPatient
                   ? "bg-emerald-50/40 border border-emerald-500/20 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/30 dark:text-emerald-300"
                   : "bg-blue-50/40 border border-blue-500/20 text-blue-700 dark:bg-blue-950/20 dark:border-blue-900/30 dark:text-blue-300"
               }`}>
@@ -485,7 +491,9 @@ export default function CheckInKioskPage() {
               <h2 className="text-2xl font-bold text-[#1D1D1F] dark:text-white">Your Details</h2>
             </div>
             <p className="text-[#6E6E73] dark:text-[#A1A1A6]">
-              {foundPatient ? "Confirm your details before check-in." : "Please enter your details for your first visit."}
+              {knownPatient
+                ? "Confirm your details before check-in."
+                : "Please enter your details for your visit."}
             </p>
 
             <div className="space-y-4">
@@ -498,7 +506,6 @@ export default function CheckInKioskPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Ramesh Kumar"
-                  defaultValue={foundPatient?.full_name || ""}
                   className="w-full rounded-xl border border-black/[0.08] bg-white px-4 py-3 text-lg text-[#1D1D1F] dark:border-white/[0.08] dark:bg-[#121316] dark:text-white focus:outline-none focus:ring-4 focus:ring-indigo-600/20"
                 />
               </div>

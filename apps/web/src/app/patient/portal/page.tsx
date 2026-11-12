@@ -170,10 +170,10 @@ function PatientPortalView() {
 
   // Live Queue Synchronization & Waiting Lounge State
   const [activeBooking, setActiveBooking] = useState<any>(null);
-  const [currentRoomToken, setCurrentRoomToken] = useState<number>(12);
-  const [currentRoomPatient, setCurrentRoomPatient] = useState<string>("Priya Singh");
+  const [currentRoomToken, setCurrentRoomToken] = useState<number | null>(null);
+  const [currentRoomPatient, setCurrentRoomPatient] = useState<string>("");
   const [calledAlert, setCalledAlert] = useState<string | null>(null);
-  const [isQueueLive, setIsQueueLive] = useState<boolean>(true);
+  const [isQueueLive, setIsQueueLive] = useState<boolean>(false);
 
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -256,42 +256,106 @@ function PatientPortalView() {
     } catch {}
   }, [authState]);
 
-  // Real-time SSE Live Queue Listener
-  useEffect(() => {
-    let evtSource: EventSource | null = null;
-    try {
-      evtSource = new EventSource(`/api/clinic/stream`);
-      evtSource.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
-          if (payload.event === "token_called") {
-            const data = payload.data;
-            setCurrentRoomToken(data.token_number);
-            setCurrentRoomPatient(data.patient_name);
-            setIsQueueLive(true);
+  // Live queue listener.
+  //
+  // The patient portal is public, so it must use the public waiting-room
+  // stream (scoped by clinic slug) rather than the authenticated staff stream.
+  // Event names are explicit SSE events; `onmessage` would never fire for them.
+  const queueClinicSlug =
+    activeBooking?.clinic_slug ||
+    record?.primary_clinic_slug ||
+    urlClinic ||
+    lastClinicSlug ||
+    null;
 
-            if (activeBooking && activeBooking.token_number === data.token_number) {
-              playTokenCallChime();
-              setCalledAlert(`🔔 YOUR TOKEN #${data.token_number} IS CALLED! Please proceed to Consultation Room 1.`);
-            } else {
-              setCalledAlert(`Doctor called Token #${data.token_number} (${data.patient_name}) into consultation room.`);
-              setTimeout(() => setCalledAlert(null), 5000);
-            }
+  useEffect(() => {
+    if (!queueClinicSlug) return;
+
+    let evtSource: EventSource | null = null;
+    let cancelled = false;
+    let pollId: ReturnType<typeof setInterval> | null = null;
+
+    const applyQueue = (payload: any) => {
+      if (cancelled) return;
+      const inConsult = payload?.active_in_consultation;
+      if (inConsult && inConsult.token_number != null) {
+        setCurrentRoomToken(Number(inConsult.token_number));
+        setCurrentRoomPatient(String(inConsult.patient_display || ""));
+      } else {
+        setCurrentRoomToken(null);
+        setCurrentRoomPatient("");
+      }
+      setIsQueueLive(true);
+    };
+
+    const refreshQueue = async () => {
+      try {
+        const res = await fetch(
+          `/api/waiting-room/queue?clinic_slug=${encodeURIComponent(queueClinicSlug)}`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        applyQueue(await res.json());
+      } catch {
+        if (!cancelled) setIsQueueLive(false);
+      }
+    };
+
+    refreshQueue();
+    pollId = setInterval(refreshQueue, 15000);
+
+    try {
+      evtSource = new EventSource(
+        `/api/waiting-room/stream?clinic_slug=${encodeURIComponent(queueClinicSlug)}`
+      );
+
+      evtSource.addEventListener("connected", () => {
+        if (!cancelled) setIsQueueLive(true);
+      });
+
+      evtSource.addEventListener("token_called", (event) => {
+        if (cancelled) return;
+        try {
+          const data = JSON.parse((event as MessageEvent).data);
+          const calledToken = Number(data.token_number);
+          setCurrentRoomToken(calledToken);
+          setCurrentRoomPatient(String(data.patient_display || ""));
+          setIsQueueLive(true);
+
+          if (activeBooking?.token_number != null && Number(activeBooking.token_number) === calledToken) {
+            playTokenCallChime();
+            setCalledAlert(
+              `🔔 YOUR TOKEN #${calledToken} IS CALLED! Please proceed to the consultation room.`
+            );
+          } else {
+            setCalledAlert(
+              `Doctor called Token #${calledToken}${
+                data.patient_display ? ` (${data.patient_display})` : ""
+              }.`
+            );
+            setTimeout(() => setCalledAlert(null), 5000);
           }
         } catch (err) {
           console.error("SSE parse error:", err);
         }
+      });
+
+      evtSource.addEventListener("token_completed", () => {
+        refreshQueue();
+      });
+
+      evtSource.onerror = () => {
+        if (!cancelled) setIsQueueLive(false);
       };
     } catch (err) {
       console.warn("SSE not available:", err);
     }
 
     return () => {
-      if (evtSource) {
-        evtSource.close();
-      }
+      cancelled = true;
+      if (pollId) clearInterval(pollId);
+      if (evtSource) evtSource.close();
     };
-  }, [activeBooking]);
+  }, [queueClinicSlug, activeBooking?.token_number]);
 
   // Resend countdown.
   useEffect(() => {
@@ -750,10 +814,12 @@ function PatientPortalView() {
                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                       </span>
                       <span className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                        LIVE CLINIC QUEUE • DERMACARE OPD
+                        {isQueueLive ? "LIVE CLINIC QUEUE" : "CLINIC QUEUE • CONNECTING"}
                       </span>
                       <span className="text-[10px] text-[#86868B] font-mono">
-                        Dr. Rahul Sharma (Room 1)
+                        {activeBooking?.clinic_name ||
+                          record?.visits?.[0]?.clinic_name ||
+                          "DocSphere clinic"}
                       </span>
                     </div>
 
@@ -778,14 +844,16 @@ function PatientPortalView() {
                       </div>
                       <div className="mt-2 flex items-baseline gap-2">
                         <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                          #{currentRoomToken}
+                          {currentRoomToken != null ? `#${currentRoomToken}` : "—"}
                         </span>
                         <span className="text-sm font-semibold text-[#1D1D1F] dark:text-white truncate">
-                          {currentRoomPatient}
+                          {currentRoomPatient || "No patient in room"}
                         </span>
                       </div>
                       <p className="mt-1 text-[11px] text-[#86868B]">
-                        Consultation in progress
+                        {currentRoomToken != null
+                          ? "Consultation in progress"
+                          : "Waiting for the clinic to call the next token"}
                       </p>
                     </div>
 
@@ -797,16 +865,25 @@ function PatientPortalView() {
                       </div>
                       <div className="mt-2 flex items-baseline gap-2">
                         <span className="text-2xl font-black font-mono text-apple-blue">
-                          {activeBooking?.token_number ? `#${activeBooking.token_number}` : "#14"}
+                          {activeBooking?.token_number ? `#${activeBooking.token_number}` : "—"}
                         </span>
                         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
-                          {activeBooking?.token_number === currentRoomToken ? "YOUR TURN" : "WAITING"}
+                          {activeBooking?.token_number == null
+                            ? "NO ACTIVE BOOKING"
+                            : activeBooking.token_number === currentRoomToken
+                              ? "YOUR TURN"
+                              : "WAITING"}
                         </span>
                       </div>
                       <p className="mt-1 text-[11px] text-[#86868B]">
-                        {activeBooking?.token_number
-                          ? `${Math.max(0, activeBooking.token_number - currentRoomToken)} patient(s) ahead in line`
-                          : "1 patient ahead in line"}
+                        {activeBooking?.token_number == null
+                          ? "Book a token to see your place in the live queue"
+                          : currentRoomToken == null
+                            ? "Waiting for the clinic queue to start"
+                            : `${Math.max(
+                                0,
+                                activeBooking.token_number - currentRoomToken
+                              )} patient(s) ahead in line`}
                       </p>
                     </div>
 
@@ -818,9 +895,13 @@ function PatientPortalView() {
                       </div>
                       <div className="mt-2 flex items-baseline gap-2">
                         <span className="text-2xl font-black font-mono text-amber-600 dark:text-amber-400">
-                          ~{activeBooking?.token_number
-                            ? Math.max(2, (activeBooking.token_number - currentRoomToken) * 7)
-                            : 12}m
+                          {activeBooking?.token_number != null &&
+                          currentRoomToken != null
+                            ? `~${Math.max(
+                                2,
+                                (activeBooking.token_number - currentRoomToken) * 7
+                              )}m`
+                            : "—"}
                         </span>
                         <span className="text-xs text-[#86868B]">
                           approx.
