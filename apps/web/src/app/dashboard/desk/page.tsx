@@ -754,8 +754,8 @@ export default function DashboardDeskPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
-              {queue.map(item => (
-                <tr key={item.token_number} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition">
+              {queue.map((item, idx) => (
+                <tr key={item.id || item.appointment_number || `token-${item.token_number}-${idx}`} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition">
                   <td className="px-4 py-2.5">
                     <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-mono font-bold text-xs">
                       #{item.token_number}

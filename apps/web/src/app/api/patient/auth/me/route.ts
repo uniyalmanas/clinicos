@@ -6,7 +6,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const auth = await guardPatient(req);
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) {
+    return NextResponse.json({ ok: false, patient: null }, { status: 200 });
+  }
 
   const phone = auth.auth.phone;
 
@@ -25,6 +27,7 @@ export async function GET(req: NextRequest) {
   `;
 
   return NextResponse.json({
+    ok: true,
     patient: patients[0]
       ? {
           uhid: patients[0].uhid,

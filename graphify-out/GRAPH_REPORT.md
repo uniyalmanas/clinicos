@@ -1,7 +1,7 @@
-# Graph Report - medic-sept-2026  (2026-11-12)
+# Graph Report - medic-sept-2026  (2026-11-13)
 
 ## Corpus Check
-- 304 files · ~442,008 words
+- 304 files · ~442,030 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: .example 2, (none) 2, .css 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c9465458`
+- Built from commit: `8f23c4d1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -509,9 +509,9 @@ Nodes (3): appBaseUrl(), dynamic, POST()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `next` connect `next` to `book/page.tsx`, `dashboard/consult/[id]/page.tsx`, `BrowseSpecialtiesSection.tsx`, `today/page.tsx`, `sql`, `clinic-data.ts`, `ThemeToggle`, `patients/route.ts`, `claims/route.ts`, `web/package.json`, `schedule/page.tsx`, `check-in/page.tsx`, `rateLimit`, `finance/page.tsx`, `react`, `machine-import/route.ts`, `middleware.ts`, `db.ts`, `AIClinicalCompanion.tsx`, `plans/route.ts`, `reception/page.tsx`, `logAudit`, `reports/route.ts`, `search/page.tsx`, `api.ts`, `display/waiting-room/page.tsx`, `apiError`, `api-auth.ts`, `guard`, `publish/route.ts`, `dashboard/layout.tsx`, `token-alert/route.ts`, `abdm/page.tsx`, `consultant/route.ts`, `CLINICAL_ROLES`, `master/route.ts`, `verify/route.ts`, `queue/route.ts`, `login/route.ts`, `doctor-payouts/route.ts`, `extract/route.ts`, `ref_crypto`, `doctors/[slug]/page.tsx`, `inventory/route.ts`, `whatsapp/route.ts`, `generate/route.ts`, `whatsapp-dispatch/route.ts`?**
-  _High betweenness centrality (0.213) - this node is a cross-community bridge._
+  _High betweenness centrality (0.214) - this node is a cross-community bridge._
 - **Why does `postgres` connect `audit-default-passwords.mjs` to `migrate.mjs`, `schema-audit.mjs`, `test_live_suite.mjs`, `web/package.json`, `seed.mjs`, `db.ts`?**
-  _High betweenness centrality (0.074) - this node is a cross-community bridge._
+  _High betweenness centrality (0.079) - this node is a cross-community bridge._
 - **Why does `sql` connect `sql` to `clinic-data.ts`, `patients/route.ts`, `claims/route.ts`, `rateLimit`, `machine-import/route.ts`, `db.ts`, `logAudit`, `reports/route.ts`, `apiError`, `api-auth.ts`, `guard`, `publish/route.ts`, `token-alert/route.ts`, `CLINICAL_ROLES`, `master/route.ts`, `verify/route.ts`, `queue/route.ts`, `login/route.ts`, `doctor-payouts/route.ts`, `ref_crypto`, `inventory/route.ts`, `whatsapp/route.ts`, `generate/route.ts`, `whatsapp-dispatch/route.ts`?**
   _High betweenness centrality (0.050) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `guard()` (e.g. with `3. Deferred / not production-ready` and `3.1 Build one guard module`) actually correct?**

@@ -397,7 +397,7 @@ export default function ForDoctorsPage() {
                     alt="Doctor autonomy 0% commission"
                     width={90}
                     height={90}
-                    className="object-contain max-h-20 hover:scale-105 transition"
+                    className="object-contain max-h-20 w-auto hover:scale-105 transition"
                   />
                 </div>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-3">
@@ -427,7 +427,7 @@ export default function ForDoctorsPage() {
                     alt="NMC generic prescription compliance records"
                     width={90}
                     height={90}
-                    className="object-contain max-h-20 hover:scale-105 transition"
+                    className="object-contain max-h-20 w-auto hover:scale-105 transition"
                   />
                 </div>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-[#0071E3] dark:text-[#2997FF] mb-3">
@@ -457,7 +457,7 @@ export default function ForDoctorsPage() {
                     alt="9 PM daily cash settlement ledger chart"
                     width={90}
                     height={90}
-                    className="object-contain max-h-20 hover:scale-105 transition"
+                    className="object-contain max-h-20 w-auto hover:scale-105 transition"
                   />
                 </div>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-3">
@@ -487,7 +487,7 @@ export default function ForDoctorsPage() {
                     alt="Fast offline-resilient speed"
                     width={90}
                     height={90}
-                    className="object-contain max-h-20 hover:scale-105 transition"
+                    className="object-contain max-h-20 w-auto hover:scale-105 transition"
                   />
                 </div>
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 mb-3">

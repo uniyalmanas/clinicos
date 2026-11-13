@@ -546,9 +546,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/desk/page.tsx": {
-    "mtime": 1793871207.0282376,
-    "seen": 1793871302.6612415,
-    "ast_hash": "57418419f6633d6b13e95c8ee8bfe17d",
+    "mtime": 1794566020.2458549,
+    "seen": 1794569006.986786,
+    "ast_hash": "c6e7909ccb1abbd9ce0870c0c798eafe",
     "semantic_hash": ""
   },
   "apps/web/src/app/dashboard/finance/page.tsx": {
@@ -642,9 +642,9 @@
     "semantic_hash": "00df30109821680f13d18623b0c18826"
   },
   "apps/web/src/app/for-doctors/page.tsx": {
-    "mtime": 1793610133.6498685,
-    "seen": 1793610257.4167461,
-    "ast_hash": "7da423c9b6cc39ebf44a0eeac0f879dc",
+    "mtime": 1794568943.3372846,
+    "seen": 1794569006.9939017,
+    "ast_hash": "e211492f022b220f8180d8b75380cb99",
     "semantic_hash": ""
   },
   "apps/web/src/app/layout.tsx": {
@@ -942,9 +942,9 @@
     "semantic_hash": ""
   },
   "apps/web/src/app/api/patient/auth/me/route.ts": {
-    "mtime": 1793504517.6434343,
-    "seen": 1793598395.0591185,
-    "ast_hash": "508165a24baf8f9612550d93e2740b85",
+    "mtime": 1794566051.4094634,
+    "seen": 1794569006.972293,
+    "ast_hash": "eb84897acefc21f8844a3d52595ca818",
     "semantic_hash": ""
   },
   "apps/web/src/app/api/patient/auth/request-otp/route.ts": {
