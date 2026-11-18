@@ -52,7 +52,7 @@ export default async function ClinicProfilePage({ params }: Props) {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full dark:bg-emerald-950 dark:text-emerald-300">
-              Verified Healthcare Facility
+              Healthcare Facility
             </span>
           </div>
         </div>

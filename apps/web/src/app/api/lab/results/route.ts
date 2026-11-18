@@ -7,7 +7,7 @@ import { findClinicLabOrder } from "@/lib/lab-scope";
 
 export const dynamic = "force-dynamic";
 
-// Critical value thresholds per NABL / clinical pathology safety standards.
+// Critical value thresholds configured in this LIS; review against your lab's own policy.
 interface CriticalRule {
   param: string;
   isCritical: (val: number) => boolean;
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
             ${order.patient_phone},
             ${criticalParams.join("; ")},
             'CRITICAL_VALUE_BREACH',
-            'NABL_SAFETY_LIMIT',
+            'CLINIC_CRITICAL_THRESHOLD',
             'manual_log'
           );
         `;

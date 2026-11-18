@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Button, Card, Badge, DESIGN_TOKENS } from "@/components/design-system";
+import { roleHome } from "@/lib/role-home";
 import {
   Stethoscope,
   LayoutDashboard,
@@ -98,7 +99,7 @@ const FUTURE_MODULES = [
 const ROLE_ALLOWLIST: Record<string, string[]> = {
   receptionist: ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/dashboard/beds", "/dashboard/lab", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm", "/patient/portal"],
   front_desk:   ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/dashboard/beds", "/dashboard/lab", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm", "/patient/portal"],
-  staff:        ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/dashboard/beds", "/dashboard/lab", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm", "/patient/portal"],
+  staff:        ["/dashboard/reception", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers", "/dashboard/beds", "/dashboard/lab", "/dashboard/pharmacy", "/dashboard/insurance", "/dashboard/rehab", "/dashboard/abdm", "/patient/portal"],
   pharmacist:   ["/dashboard/pharmacy", "/dashboard/patients"],
   lab_tech:     ["/dashboard/patients", "/dashboard/lab"],
   doctor:       ["/dashboard", "/dashboard/today", "/dashboard/patients", "/dashboard/desk", "/dashboard/chambers",
@@ -525,59 +526,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const pt = parsed.practice_type;
         if (pt === "clinic" || pt === "solo") setPracticeMode(pt);
 
-        // Redirect from generic /dashboard to role-appropriate page
+        const role = (parsed?.role || "").toLowerCase();
+        const home = roleHome(role);
+
+        // Redirect from generic /dashboard to the role-appropriate landing page.
         if (pathname === "/dashboard") {
-          const role = (parsed?.role || "").toLowerCase();
-          if (role === "doctor" || role === "owner" || role === "clinic_admin") {
-            router.replace("/dashboard/today");
-            return;
-          }
-          if (role === "receptionist" || role === "front_desk" || role === "staff") {
-            router.replace("/dashboard/reception");
-            return;
-          }
-          router.replace("/dashboard/today");
+          router.replace(home);
           return;
         }
 
-        // Role-based redirect guards
-        const role = (parsed?.role || "").toLowerCase();
-        const isDoctor = role === "doctor" || role === "owner" || role === "clinic_admin";
-        const isFrontDesk = role === "receptionist" || role === "front_desk" || role === "staff";
-
-        if (isFrontDesk) {
-          if (
-            !pathname.includes("/dashboard/reception") &&
-            !pathname.includes("/dashboard/today") &&
-            !pathname.includes("/dashboard/patients") &&
-            !pathname.includes("/dashboard/chambers") &&
-            !pathname.includes("/patient/portal")
-          ) {
-            router.replace("/dashboard/reception");
-            return;
-          }
-          if (
-            pathname.includes("/dashboard/finance") ||
-            pathname.includes("/dashboard/admin") ||
-            pathname.includes("/dashboard/settings") ||
-            pathname.includes("/clinic/settlement")
-          ) {
-            router.replace("/dashboard/reception");
-            return;
-          }
-        }
-
-        if (isDoctor) {
-          if (
-            !pathname.includes("/dashboard/today") &&
-            !pathname.includes("/dashboard/patients") &&
-            !pathname.includes("/dashboard/desk") &&
-            !pathname.includes("/dashboard/chambers") &&
-            !pathname.includes("/doctor/consult") &&
-            !pathname.includes("/dashboard/consult") &&
-            !pathname.includes("/patient/portal")
-          ) {
-            router.replace("/dashboard/today");
+        // Enforce the same allowlist the sidebar renders from, so the visible
+        // navigation and the real route access can never drift apart. This is
+        // what lets a pharmacist (stored as generic `staff`) actually open the
+        // pharmacy screen instead of being bounced back to reception.
+        const allowlist = ROLE_ALLOWLIST[role];
+        if (allowlist) {
+          const allowed = allowlist.some(
+            (href) => pathname === href || pathname.startsWith(`${href}/`)
+          );
+          if (!allowed) {
+            router.replace(home);
             return;
           }
         }

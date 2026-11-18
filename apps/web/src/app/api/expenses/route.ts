@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, CLINIC_ROLES, ADMIN_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -178,7 +179,7 @@ export async function POST(req: NextRequest) {
     }
 
     const id = randomUUID();
-    const expenseDate = date || new Date().toISOString().split("T")[0];
+    const expenseDate = date || clinicToday();
 
     // Duplicate check within past 30 days
     const duplicateCheck = await sql`
@@ -223,10 +224,10 @@ export async function POST(req: NextRequest) {
         ${approvalStatus},
         ${approvedBy},
         ${pinVerified},
-        ${receipt_url || "/receipts/sample_voucher.png"},
-        ${numAmount},
-        'Authorized Commercial Vendor',
-        true,
+        ${receipt_url || null},
+        ${null},
+        ${null},
+        false,
         ${isDuplicate}
       )
       RETURNING *;

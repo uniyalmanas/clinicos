@@ -47,12 +47,13 @@ export default function OnboardingPage() {
     },
   ];
 
-  const [rawText, setRawText] = useState(presets[0].text);
+  const [rawText, setRawText] = useState("");
   const [phone, setPhone] = useState("");
   const [cardImagePreview, setCardImagePreview] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [extractionIssues, setExtractionIssues] = useState<string[]>([]);
   const [editableBio, setEditableBio] = useState("");
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
@@ -108,6 +109,7 @@ export default function OnboardingPage() {
         const json = await res.json();
         setExtractedData(json.data);
         setEditableBio(json.data.ai_bio);
+        setExtractionIssues(json.missing_fields || []);
       } else {
         runFallbackExtraction();
       }
@@ -119,50 +121,13 @@ export default function OnboardingPage() {
   };
 
   const runFallbackExtraction = () => {
-    const isDental =
-      rawText.toLowerCase().includes("dent") ||
-      rawText.toLowerCase().includes("teeth");
-    const isPediatric =
-      rawText.toLowerCase().includes("child") ||
-      rawText.toLowerCase().includes("pediatric");
-
-    let spec = "Dermatologist";
-    if (isDental) spec = "Dentist";
-    if (isPediatric) spec = "Pediatrician";
-
-    const extracted = {
-      doctor: {
-        full_name: "Dr. Alok Mathur",
-        specialization: spec,
-        qualifications: isDental ? "BDS, MDS" : "MBBS, MD",
-        medical_council_reg_number: "UKMC-5541-2012",
-        medical_council_state: "Uttarakhand Medical Council",
-        years_of_experience: 14,
-        consultation_fee: 600,
-        followup_fee: 240,
-        services: [
-          "Clinical Consultation",
-          "Comprehensive Examination",
-          "Therapeutic Care",
-          "Follow-up Review",
-        ],
-      },
-      clinic: {
-        name: "Skin & Aesthetic Centre",
-        address_line: "Rajpur Road",
-        city: "Dehradun",
-        state: "Uttarakhand",
-        postal_code: "248001",
-        opening_hours: {
-          morning: "10:00 AM - 02:00 PM",
-          evening: "05:00 PM - 08:30 PM",
-        },
-      },
-      ai_bio: `Dr. Alok Mathur is a verified ${spec} with 14+ years experience, practicing at Skin & Aesthetic Centre on Rajpur Road, Dehradun. Known for evidence-based outpatient clinical excellence.`,
-    };
-
-    setExtractedData(extracted);
-    setEditableBio(extracted.ai_bio);
+    // Never invent a doctor identity or registration number when extraction
+    // fails. Ask the user to retry or paste more detail instead.
+    setExtractedData(null);
+    setExtractionIssues([]);
+    setFormError(
+      "Automatic extraction is unavailable right now. Nothing was filled in for you. Please try again, or paste your details again in a moment."
+    );
   };
 
   const normalisePhone = (value: string) => value.replace(/[^0-9]/g, "").slice(-10);
@@ -238,6 +203,12 @@ export default function OnboardingPage() {
       setFormError("Passwords do not match.");
       return;
     }
+    if (extractionIssues.length > 0) {
+      setFormError(
+        `Add the missing details to your text and extract again before submitting: ${extractionIssues.join(", ")}.`
+      );
+      return;
+    }
 
     setIsPublishing(true);
 
@@ -284,7 +255,7 @@ export default function OnboardingPage() {
                   ClinicOS
                 </span>
                 <span className="ml-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                  Verified Onboarding
+                  Clinic Onboarding
                 </span>
               </div>
             </div>
@@ -319,7 +290,7 @@ export default function OnboardingPage() {
 
             <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/20 px-3.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-400">
               <ShieldCheck className="h-4 w-4" />
-              <span>Submitted for verification</span>
+              <span>Submitted for review</span>
             </div>
 
             <h1 className="mt-4 text-2xl sm:text-4xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
@@ -362,7 +333,7 @@ export default function OnboardingPage() {
                     Status
                   </span>
                   <span className="font-semibold text-amber-700 dark:text-amber-400">
-                    Awaiting platform verification
+                    Awaiting platform review
                   </span>
                 </div>
               </div>
@@ -390,19 +361,19 @@ export default function OnboardingPage() {
             <div className="text-center max-w-3xl mx-auto">
               <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-50/80 px-4 py-1.5 text-xs font-bold text-[#0071E3] dark:border-blue-500/30 dark:bg-blue-950/40 dark:text-[#2997FF]">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>60-Second Setup • Verified Before Going Live</span>
+                <span>60-Second Setup • Platform Review Before Going Live</span>
               </div>
               <h1 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
                 Set Up Your Digital Chamber
               </h1>
               <p className="mt-3 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6] max-w-2xl mx-auto leading-relaxed">
-                Paste your clinical details, choose a 1-click test preset, or snap your visiting card. Our AI drafts your profile, and you submit it for verification before it goes live.
+                Paste your clinical details, choose a test preset, or snap your visiting card. Your text is turned into a draft profile you can review, then submitted for platform review before it goes live.
               </p>
 
               {/* 1-Click Test Presets */}
               <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#86868B] mr-1">
-                  Instant Presets:
+                  Instant Presets (sample data):
                 </span>
                 {presets.map((preset, idx) => (
                   <button
@@ -686,38 +657,63 @@ export default function OnboardingPage() {
                       <div className="flex items-center gap-2">
                         <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                          AI Synthesized Profile Ready
+                          Draft extracted from your text
                         </span>
                       </div>
                       <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] uppercase">
-                        {extractedData.doctor.specialization}
+                        {extractedData.doctor.specialization || "Specialty not provided"}
                       </span>
                     </div>
+
+                    {extractionIssues.length > 0 && (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+                        <strong>Missing from your text:</strong> {extractionIssues.join(", ")}.
+                        Add these details to the text and extract again before submitting.
+                      </div>
+                    )}
 
                     {/* Doctor Info */}
                     <div>
                       <h2 className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
-                        {extractedData.doctor.full_name}
+                        {extractedData.doctor.full_name || "Doctor name not provided"}
                       </h2>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6]">
                         <span className="font-semibold text-[#1D1D1F] dark:text-white">
-                          {extractedData.doctor.qualifications}
+                          {extractedData.doctor.qualifications || "Qualifications not provided"}
                         </span>
-                        <span>•</span>
-                        <span>{extractedData.doctor.years_of_experience}+ Years Experience</span>
+                        {extractedData.doctor.years_of_experience > 0 && (
+                          <>
+                            <span>•</span>
+                            <span>{extractedData.doctor.years_of_experience}+ Years Experience</span>
+                          </>
+                        )}
                       </div>
 
                       {/* Reg & Fee Badges */}
                       <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                        <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 font-bold text-emerald-700 dark:text-emerald-300">
-                          Reg: {extractedData.doctor.medical_council_reg_number}
-                        </span>
-                        <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-3 py-1 font-bold text-[#0071E3] dark:text-[#2997FF]">
-                          Consultation: ₹{extractedData.doctor.consultation_fee}
-                        </span>
-                        <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 font-bold text-amber-700 dark:text-amber-300">
-                          Follow-up: ₹{extractedData.doctor.followup_fee} (7 Days)
-                        </span>
+                        {extractedData.doctor.medical_council_reg_number ? (
+                          <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 font-bold text-emerald-700 dark:text-emerald-300">
+                            Reg: {extractedData.doctor.medical_council_reg_number}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 font-bold text-amber-700 dark:text-amber-300">
+                            Registration not provided
+                          </span>
+                        )}
+                        {extractedData.doctor.consultation_fee > 0 ? (
+                          <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-3 py-1 font-bold text-[#0071E3] dark:text-[#2997FF]">
+                            Consultation: ₹{extractedData.doctor.consultation_fee}
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 font-bold text-amber-700 dark:text-amber-300">
+                            Consultation fee not provided
+                          </span>
+                        )}
+                        {extractedData.doctor.followup_fee > 0 && (
+                          <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 font-bold text-amber-700 dark:text-amber-300">
+                            Follow-up: ₹{extractedData.doctor.followup_fee} (7 Days)
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -756,14 +752,18 @@ export default function OnboardingPage() {
                         Extracted Procedures &amp; Services
                       </span>
                       <div className="flex flex-wrap gap-1.5">
-                        {extractedData.doctor.services.map((srv: string, idx: number) => (
-                          <span
-                            key={idx}
-                            className="rounded-lg bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] dark:bg-white/10 dark:text-white"
-                          >
-                            ✓ {srv}
-                          </span>
-                        ))}
+                        {extractedData.doctor.services.length > 0 ? (
+                          extractedData.doctor.services.map((srv: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="rounded-lg bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] dark:bg-white/10 dark:text-white"
+                            >
+                              ✓ {srv}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-[11px] text-[#86868B]">No services listed in your text.</span>
+                        )}
                       </div>
                     </div>
 
@@ -771,22 +771,26 @@ export default function OnboardingPage() {
                     <div className="rounded-2xl border border-black/[0.04] bg-gray-50/50 dark:border-white/[0.06] dark:bg-[#101114] p-4">
                       <div className="flex items-center gap-2 font-bold text-xs text-[#1D1D1F] dark:text-white">
                         <Building2 className="h-4 w-4 text-[#0071E3]" />
-                        <span>{extractedData.clinic.name}</span>
+                        <span>{extractedData.clinic.name || "Clinic name not provided"}</span>
                       </div>
                       <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6] flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5 text-gray-400" />
                         <span>
-                          {extractedData.clinic.address_line}, {extractedData.clinic.city},{" "}
-                          {extractedData.clinic.state}
+                          {[extractedData.clinic.address_line, extractedData.clinic.city, extractedData.clinic.state]
+                            .filter(Boolean)
+                            .join(", ") || "Clinic address not provided"}
                         </span>
                       </p>
-                      <div className="mt-2 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6] flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-gray-400" />
-                        <span>
-                          OPD Timings: {extractedData.clinic.opening_hours.morning || "10am-2pm"} &amp;{" "}
-                          {extractedData.clinic.opening_hours.evening || "5pm-8:30pm"}
-                        </span>
-                      </div>
+                      {(extractedData.clinic.opening_hours?.morning || extractedData.clinic.opening_hours?.evening) && (
+                        <div className="mt-2 text-[11px] text-[#6E6E73] dark:text-[#A1A1A6] flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-gray-400" />
+                          <span>
+                            OPD Timings: {[extractedData.clinic.opening_hours?.morning, extractedData.clinic.opening_hours?.evening]
+                              .filter(Boolean)
+                              .join(" & ")}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Approve & Publish CTA */}
@@ -805,7 +809,7 @@ export default function OnboardingPage() {
                         ) : (
                           <>
                             <Check className="h-4 w-4" />
-                            <span>Submit Clinic for Verification (Free)</span>
+                            <span>Submit Clinic for Review (Free)</span>
                           </>
                         )}
                       </button>
@@ -831,7 +835,7 @@ export default function OnboardingPage() {
                     </h3>
                     <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] max-w-sm leading-relaxed">
                       Pick a preset on the left and tap <strong className="text-[#0071E3] dark:text-[#2997FF]">&quot;Synthesize Profile with AI&quot;</strong>. 
-                      You will see your credentials, NMC compliance tags, consultation fee, and clinic page constructed in real-time.
+                      You will see your credentials, registration details, consultation fee, and clinic page constructed in real-time.
                     </p>
                   </div>
                 )}

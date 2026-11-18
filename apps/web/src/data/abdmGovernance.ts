@@ -60,7 +60,7 @@ export const ABDM_PURPOSE_CODES = [
     code: "PHARMACY_DISPENSING_VERIFICATION", 
     label: "Prescription Verification & Safe Dispensing",
     default_validity_days: 1,
-    description: "Enables pharmacist to verify tamper-proof digital prescription and Schedule H1 drugs."
+    description: "Enables pharmacist to verify the digital prescription seal and Schedule H1 drugs."
   },
   { 
     code: "EMERGENCY_ACCESS_OVERRIDE", 

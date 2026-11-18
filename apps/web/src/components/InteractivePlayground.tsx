@@ -147,11 +147,11 @@ export default function InteractivePlayground() {
                   30-Second Prescription Studio & Active OPD Chamber
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  Dr. Rahul Sharma (MD Dermatology) • Derma Care Dehradun
+                  Illustrative preview • your clinic's live data appears inside the app
                 </p>
               </div>
               <Link
-                href="/dashboard/consult/APT-DERMA-102"
+                href="/doctor/consult"
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
               >
                 Open Full Doctor Chamber <ArrowRight className="h-3.5 w-3.5" />
@@ -167,7 +167,7 @@ export default function InteractivePlayground() {
                   </span>
                 </div>
                 <div className="mt-3 text-base font-bold text-[#1D1D1F] dark:text-white">
-                  Priya Singh (24Y / Female)
+                  Sample patient (age / sex)
                 </div>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
                   Symptoms: Itchy red rashes on forearms and neck for 3 days
@@ -194,10 +194,10 @@ export default function InteractivePlayground() {
                 </div>
                 <div className="border-t border-black/[0.05] dark:border-white/[0.06] pt-3 text-xs text-[#86868B] dark:text-[#8E8E93] space-y-1.5">
                   <div className="flex items-center gap-1.5 text-[#30D158] font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> NMC UPPERCASE Generic Compliance
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Generic-first prescription format
                   </div>
                   <div className="flex items-center gap-1.5 text-[#0071E3] dark:text-[#2997FF] font-medium">
-                    <ShieldCheck className="h-3.5 w-3.5" /> SHA-256 Tamper-Proof Cryptographic Hash
+                    <ShieldCheck className="h-3.5 w-3.5" /> Tamper-evident SHA-256 record seal
                   </div>
                 </div>
               </div>
@@ -217,7 +217,7 @@ export default function InteractivePlayground() {
                   Front-Desk PWA: Walk-In Token Dispatch & Audio Chime
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  Pooja Verma (Reception Desk) • Derma Care Skin & Laser Centre
+                  Illustrative preview • your clinic's live data appears inside the app
                 </p>
               </div>
               <Link
@@ -248,9 +248,9 @@ export default function InteractivePlayground() {
               <div className="rounded-[20px] bg-[#ECEEF2]/60 p-5 dark:bg-[#2C2C2E]/60 border border-black/[0.04] dark:border-white/[0.06]">
                 <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">10s Walk-In Fast Admission</span>
                 <div className="mt-2.5 text-xs text-[#1D1D1F] dark:text-white space-y-1">
-                  <div>Name: <strong>Kavita Joshi</strong></div>
-                  <div>Phone: <strong>+91 98765 11111</strong></div>
-                  <div>Assigned: <strong className="text-[#0071E3] dark:text-[#2997FF]">Token #4 (Walk-In)</strong></div>
+                  <div>Name: <strong>Sample walk-in</strong></div>
+                  <div>Phone: <strong>—</strong></div>
+                  <div>Assigned: <strong className="text-[#0071E3] dark:text-[#2997FF]">Next available token</strong></div>
                 </div>
               </div>
 
@@ -292,11 +292,11 @@ export default function InteractivePlayground() {
             <div className="grid gap-6 md:grid-cols-2">
               <div className="rounded-[20px] bg-[#ECEEF2]/60 p-5 dark:bg-[#2C2C2E]/60 border border-black/[0.04] dark:border-white/[0.06]">
                 <div className="flex items-center justify-between text-xs font-semibold text-[#00A389] dark:text-[#30D1BE]">
-                  <span>Prescription #RX-2026-09-0014</span>
+                  <span>Sample prescription</span>
                   <span>14, Rajpur Road</span>
                 </div>
                 <div className="mt-3 text-sm font-bold text-[#1D1D1F] dark:text-white">
-                  Dr. Rahul Sharma • Derma Care Skin & Laser
+                  Your doctor • Your clinic
                 </div>
                 <div className="mt-3 space-y-2 text-xs text-[#1D1D1F] dark:text-white">
                   <div className="p-2.5 bg-white rounded-xl border border-black/[0.06] dark:bg-[#1C1C1E] dark:border-white/[0.08]">
@@ -383,45 +383,45 @@ export default function InteractivePlayground() {
                   Founder Command Hub
                 </span>
                 <h3 className="mt-1.5 text-lg font-bold text-[#1D1D1F] dark:text-white tracking-tight">
-                  State Medical Council Verifications & SaaS MRR Engine
+                  Doctor Records & Subscription Billing
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  National Medical Commission compliance and tenant recurring billing.
+                  Registration details on file and per-tenant recurring billing controls.
                 </p>
               </div>
               <div className="flex gap-2">
                 <Link
-                  href="/admin/verifications"
+                  href="/superadmin"
                   className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3.5 py-2 text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.02] dark:border-white/[0.12] dark:bg-[#2C2C2E] dark:text-white active:scale-95 transition"
                 >
-                  <ShieldCheck className="h-3.5 w-3.5 text-[#FF3B30]" /> Verifications
+                  <ShieldCheck className="h-3.5 w-3.5 text-[#FF3B30]" /> Superadmin
                 </Link>
                 <Link
-                  href="/admin/analytics"
+                  href="/superadmin"
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#0071E3] px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#0077ED] active:scale-95 transition"
                 >
-                  <BarChart3 className="h-3.5 w-3.5" /> SaaS MRR
+                  <BarChart3 className="h-3.5 w-3.5" /> Platform Billing
                 </Link>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-[20px] bg-[#ECEEF2]/60 p-5 dark:bg-[#2C2C2E]/60 border border-black/[0.04] dark:border-white/[0.06]">
-                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">Verified Paid MRR</span>
-                <div className="mt-2 text-2xl font-bold font-mono text-[#30D158]">₹2,997 / mo</div>
-                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">ARR Run Rate: ₹35,964</div>
+                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">Tenant billing</span>
+                <div className="mt-2 text-2xl font-bold font-mono text-[#30D158]">Per clinic</div>
+                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">Recurring plans tracked per tenant</div>
               </div>
 
               <div className="rounded-[20px] bg-[#ECEEF2]/60 p-5 dark:bg-[#2C2C2E]/60 border border-black/[0.04] dark:border-white/[0.06]">
-                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">Medical Council Badge</span>
-                <div className="mt-2 text-2xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF]">100% Verified</div>
-                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">Uttarakhand Medical Council (UK-MC)</div>
+                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">Doctor registration</span>
+                <div className="mt-2 text-2xl font-bold font-mono text-[#0071E3] dark:text-[#2997FF]">On file</div>
+                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">Shown where the clinic provides it</div>
               </div>
 
               <div className="rounded-[20px] bg-[#ECEEF2]/60 p-5 dark:bg-[#2C2C2E]/60 border border-black/[0.04] dark:border-white/[0.06]">
-                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">Software Gross Margin</span>
-                <div className="mt-2 text-2xl font-bold font-mono text-[#AF52DE]">&gt; 98.5%</div>
-                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">AI compute token cost ~₹17.50</div>
+                <span className="text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">Audit trail</span>
+                <div className="mt-2 text-2xl font-bold font-mono text-[#AF52DE]">Logged</div>
+                <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93] mt-1">Actions recorded with actor and time</div>
               </div>
             </div>
           </div>

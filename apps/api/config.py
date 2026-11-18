@@ -42,11 +42,16 @@ class Settings(BaseSettings):
     # AI Keys & Models
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-    GROQ_CHAT_MODEL: str = os.getenv("GROQ_CHAT_MODEL", "llama-3.3-70b-versatile")
+    GROQ_CHAT_MODEL: str = os.getenv("GROQ_CHAT_MODEL", "openai/gpt-oss-20b")
     OPENAI_CHAT_MODEL: str = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o")
 
+    # Google Gemini (OpenAI-compatible endpoint). Preferred when configured.
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "") or os.getenv("GOOGLE_API_KEY", "")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
     # Sprint 3: Provider Abstraction & Local Fallback
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "groq")  # "groq" or "ollama"
+    # "gemini", "groq", "ollama", or "" for auto (Gemini → Groq → Ollama).
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "")
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "local")  # "local", "ollama", "openai"

@@ -5,8 +5,9 @@ import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 export const dynamic = "force-dynamic";
 
 /**
- * ABDM Milestone 2 (HIP: Health Information Provider)
- * Generates an Ayushman Bharat Digital Mission (ABDM) FHIR R4 compliant bundle.
+ * Generates a FHIR-shaped draft bundle from local clinic data for the ABDM
+ * sandbox. No NHA gateway transmission is performed, and sandbox identifiers
+ * are clearly tagged so they cannot be mistaken for a national ABHA.
  *
  * Only records belonging to the caller's clinic are exported, and the ABHA
  * identifier is read from the clinic's ABDM registry: it is never synthesised.
@@ -50,11 +51,11 @@ export async function GET(
 
     // ABHA must come from the clinic's ABDM registry for this patient.
     const abdmRows = await db`
-      SELECT abha_number, abha_address
+      SELECT abha_number, abha_address, kyc_status
       FROM abdm_patients
       WHERE clinic_slug = ${clinicSlug}
         AND patient_phone = ${appt.patient_phone}
-        AND kyc_status = 'VERIFIED'
+        AND kyc_status IN ('VERIFIED', 'PENDING_NHA_SYNC')
       ORDER BY created_at DESC
       LIMIT 1;
     `;
@@ -62,21 +63,26 @@ export async function GET(
     if (abdmRows.length === 0) {
       return apiError(
         422,
-        "This patient has no verified ABHA linked in the clinic registry. Link an ABHA before exporting an ABDM FHIR bundle.",
+        "This patient has no ABDM record linked in the clinic registry. Create or link a record before exporting a FHIR bundle.",
         "abha_not_linked"
       );
     }
 
     const abhaNumber = abdmRows[0].abha_number;
-    const abhaAddress =
-      abdmRows[0].abha_address ||
-      `${String(appt.patient_name).toLowerCase().replace(/\s+/g, "")}@abdm`;
+    const abhaAddress = abdmRows[0].abha_address || null;
+    const isSandbox =
+      abdmRows[0].kyc_status !== "VERIFIED" || String(abhaNumber).startsWith("SANDBOX-");
+    const abhaSystem = isSandbox
+      ? "https://clinicos.health/sandbox-abdm-identifier"
+      : "https://healthid.ndhm.gov.in";
     const docReg = appt.medical_council_reg_number || null;
+    const practitionerName =
+      appt.doctor_name || appt.doctor_full_name || appt.doctor_slug || "Unknown practitioner";
 
     const practitionerIdentifier = docReg
       ? [
           {
-            system: "https://nmc.org.in",
+            system: "https://clinicos.health/medical-council-registration",
             value: docReg,
           },
         ]
@@ -89,6 +95,17 @@ export async function GET(
         versionId: "1",
         lastUpdated: new Date().toISOString(),
         profile: ["https://nrces.in/ndhm/fhir/r4/StructureDefinition/DocumentBundle"],
+        ...(isSandbox
+          ? {
+              tag: [
+                {
+                  system: "https://clinicos.health/fhir/sandbox",
+                  code: "sandbox-abdm",
+                  display: "Sandbox record — not transmitted to NHA",
+                },
+              ],
+            }
+          : {}),
       },
       identifier: {
         system: "https://clinicos.health/fhir/bundle",
@@ -121,7 +138,7 @@ export async function GET(
             author: [
               {
                 reference: `Practitioner/doc-${appt.doctor_slug}`,
-                display: appt.doctor_name || appt.doctor_full_name || "Consultant",
+                display: practitionerName,
               },
             ],
             title: "Prescription & OPD Consultation Record",
@@ -147,14 +164,14 @@ export async function GET(
                     },
                   ],
                 },
-                system: "https://healthid.ndhm.gov.in",
+                system: abhaSystem,
                 value: abhaNumber,
               },
             ],
             name: [{ text: appt.patient_name }],
             telecom: [
               { system: "phone", value: appt.patient_phone },
-              { system: "other", value: abhaAddress },
+              ...(abhaAddress ? [{ system: "other", value: abhaAddress }] : []),
             ],
           },
         },
@@ -166,7 +183,7 @@ export async function GET(
             identifier: practitionerIdentifier,
             name: [
               {
-                text: appt.doctor_name || appt.doctor_full_name || "Consultant",
+                text: practitionerName,
               },
             ],
           },
@@ -177,7 +194,7 @@ export async function GET(
             resourceType: "Condition",
             id: `cond-${appt.id}`,
             code: {
-              text: appt.symptoms_description || "General OPD Medical Evaluation",
+              text: appt.symptoms_description || "Not recorded",
             },
             subject: {
               reference: `Patient/pat-${appt.id}`,
@@ -187,7 +204,11 @@ export async function GET(
       ],
     };
 
-    return NextResponse.json(fhirBundle);
+    return NextResponse.json(fhirBundle, {
+      headers: {
+        "X-ClinicOS-ABDM-Mode": isSandbox ? "sandbox" : "clinic-registry",
+      },
+    });
   } catch (error: any) {
     console.error("ABDM FHIR Export error:", error);
     return apiError(500, "Failed to generate ABDM FHIR bundle.", "internal_error");

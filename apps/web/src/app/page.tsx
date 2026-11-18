@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import SiteHeader from "@/components/SiteHeader";
@@ -62,9 +62,133 @@ function PediatricsIcon() {
   );
 }
 
+type FeaturedDoctor = {
+  slug: string;
+  full_name: string;
+  specialization?: string;
+  qualification_summary?: string;
+  rating?: number;
+  total_reviews?: number;
+  clinic_name?: string;
+  clinic_address?: string;
+  consultation_fee?: number;
+  opd_timings?: string;
+};
+
+function doctorInitials(name: string): string {
+  return name
+    .replace(/^Dr\.?\s*/i, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+}
+
+type FeaturedReview = {
+  id: string;
+  doctor_slug?: string;
+  patient_name?: string;
+  rating?: number;
+  comment?: string | null;
+  is_verified_visit?: boolean;
+};
+
+function matchesSpecialty(doctorSpecialty: string, target: string): boolean {
+  const s = (doctorSpecialty || "").toLowerCase();
+  const t = (target || "").toLowerCase();
+  if (t.includes("general physician")) {
+    return (
+      s.includes("physician") ||
+      s.includes("general medicine") ||
+      s.includes("internal medicine")
+    );
+  }
+  if (t.includes("dermatology")) return s.includes("derma");
+  if (t.includes("dentistry")) return s.includes("dent") || s.includes("oral");
+  if (t.includes("pediatrics")) {
+    return s.includes("pediatric") || s.includes("paediatric") || s.includes("child");
+  }
+  if (t.includes("orthopaedics")) return s.includes("ortho");
+  if (t.includes("gynae") || t.includes("obstetrics")) {
+    return s.includes("gyn") || s.includes("obstet");
+  }
+  if (t.includes("ent")) return s.includes("ent") || s.includes("otolaryng");
+  if (t.includes("diabetology")) return s.includes("diabet");
+  return s.includes(t);
+}
+
 export default function HomePage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [isAiAgentOpen, setIsAiAgentOpen] = useState(false);
+
+  // Live doctor roster for the featured cards and specialty counts.
+  const [directoryDoctors, setDirectoryDoctors] = useState<FeaturedDoctor[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [featuredError, setFeaturedError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/doctors", { cache: "no-store" });
+        if (!res.ok) throw new Error("Could not load doctors.");
+        const json = await res.json().catch(() => []);
+        const rows: FeaturedDoctor[] = Array.isArray(json)
+          ? json
+          : json?.doctors || [];
+        const sorted = [...rows].sort(
+          (a, b) =>
+            (Number(b.rating) || 0) - (Number(a.rating) || 0) ||
+            (Number(b.total_reviews) || 0) - (Number(a.total_reviews) || 0)
+        );
+        if (!cancelled) setDirectoryDoctors(sorted);
+      } catch (err: any) {
+        if (!cancelled) {
+          setFeaturedError(err?.message || "Could not load doctors.");
+        }
+      } finally {
+        if (!cancelled) setFeaturedLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const featuredDoctors = useMemo(
+    () => directoryDoctors.slice(0, 3),
+    [directoryDoctors]
+  );
+
+  // Live patient reviews for the social-proof section.
+  const [landingReviews, setLandingReviews] = useState<FeaturedReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/reviews", { cache: "no-store" });
+        if (!res.ok) throw new Error("Could not load patient reviews.");
+        const json = await res.json().catch(() => ({}));
+        const rows: FeaturedReview[] = Array.isArray(json?.reviews)
+          ? json.reviews
+          : [];
+        if (!cancelled) setLandingReviews(rows.slice(0, 3));
+      } catch (err: any) {
+        if (!cancelled) {
+          setReviewsError(err?.message || "Could not load patient reviews.");
+        }
+      } finally {
+        if (!cancelled) setReviewsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const topSpecialties = [
     {
@@ -72,7 +196,6 @@ export default function HomePage() {
       name: "General Physician",
       desc: "Fever, Infections, BP & Diabetes",
       icon: GeneralPhysicianIcon,
-      doctorsCount: 18,
       slug: "general-physician"
     },
     {
@@ -80,7 +203,6 @@ export default function HomePage() {
       name: "Dermatology",
       desc: "Acne, Eczema, Hair Fall, Laser",
       icon: DermatologyIcon,
-      doctorsCount: 12,
       slug: "dermatologist"
     },
     {
@@ -88,7 +210,6 @@ export default function HomePage() {
       name: "Dentistry",
       desc: "Root Canal, Tooth Pain, Braces",
       icon: DentistIcon,
-      doctorsCount: 14,
       slug: "dentist"
     },
     {
@@ -96,7 +217,6 @@ export default function HomePage() {
       name: "Pediatrics",
       desc: "Child OPD, Infant Care, Vaccines",
       icon: PediatricsIcon,
-      doctorsCount: 10,
       slug: "pediatrician"
     },
     {
@@ -104,7 +224,6 @@ export default function HomePage() {
       name: "Orthopaedics",
       desc: "Joint Pain, Spine, Fractures",
       icon: OrthopaedicsIcon,
-      doctorsCount: 15,
       slug: "orthopaedist"
     },
     {
@@ -112,7 +231,6 @@ export default function HomePage() {
       name: "Obstetrics & Gynae",
       desc: "PCOS, Pregnancy Care, Women's Health",
       icon: ObstetricsIcon,
-      doctorsCount: 11,
       slug: "gynaecologist"
     },
     {
@@ -120,7 +238,6 @@ export default function HomePage() {
       name: "ENT Specialist",
       desc: "Ear Pain, Sinus, Tonsils, Vertigo",
       icon: EntIcon,
-      doctorsCount: 9,
       slug: "ent-specialist"
     },
     {
@@ -128,7 +245,6 @@ export default function HomePage() {
       name: "Diabetology",
       desc: "Sugar Control, Thyroid, Metabolic",
       icon: DiabetologyIcon,
-      doctorsCount: 8,
       slug: "diabetologist"
     }
   ];
@@ -136,14 +252,14 @@ export default function HomePage() {
   const comparisonRows = [
     {
       feature: "Consultation Fee",
-      docsphere: "100% Direct Doctor Fee (₹0 Markup)",
+      docsphere: "Direct doctor fee (no platform markup)",
       docsphereGood: true,
-      aggregators: "15% – 25% Commission added to clinic fee",
+      aggregators: "Platform commission added to the clinic fee",
       aggregatorsGood: false
     },
     {
       feature: "Doctor Discovery",
-      docsphere: "Pure Clinical Merit & Dehradun Proximity",
+      docsphere: "Specialty and proximity search",
       docsphereGood: true,
       aggregators: "Paid 'Sponsored' Listings & Ad Placements",
       aggregatorsGood: false
@@ -157,16 +273,16 @@ export default function HomePage() {
     },
     {
       feature: "Prescription Delivery",
-      docsphere: "Tamper-proof SHA-256 PDF on WhatsApp",
+      docsphere: "SHA-256 sealed PDF on WhatsApp",
       docsphereGood: true,
-      aggregators: "Locked inside proprietary app store app",
+      aggregators: "Locked inside the aggregator's app",
       aggregatorsGood: false
     },
     {
       feature: "Patient Data Privacy",
-      docsphere: "Confidential Doctor-Patient relationship",
+      docsphere: "Direct doctor-patient relationship",
       docsphereGood: true,
-      aggregators: "Phone numbers shared with third-party vendors",
+      aggregators: "Contact details handled by a third party",
       aggregatorsGood: false
     }
   ];
@@ -174,23 +290,23 @@ export default function HomePage() {
   const faqs = [
     {
       q: "How does DocSphere offer zero-markup healthcare?",
-      a: "Traditional aggregators charge independent doctors 15% to 25% commission on every appointment, which inflates consultation fees. DocSphere charges doctors a simple flat software tool fee. Patients pay the doctor's exact consultation fee directly at the desk or via UPI with zero commission, zero booking markups, and zero convenience fees."
+      a: "Traditional aggregators charge independent doctors a commission on every appointment, which inflates consultation fees. DocSphere charges doctors a flat software tool fee. Patients pay the doctor's consultation fee directly at the desk or via UPI with no booking markup or convenience fee."
     },
     {
       q: "Do I need to download an application to book or track my token?",
-      a: "No app downloads required at all. DocSphere is 100% web-based and runs smoothly on Safari, Chrome, and Firefox on any smartphone. When you reserve a token, your live queue tracker and verified digital prescription PDF open directly in your browser and are sent straight to your WhatsApp."
+      a: "No app downloads required at all. DocSphere is 100% web-based and runs smoothly on Safari, Chrome, and Firefox on any smartphone. When you reserve a token, your live queue tracker and your signed digital prescription PDF open directly in your browser and are sent straight to your WhatsApp."
     },
     {
       q: "How does the live token queue prevent waiting room crowds?",
-      a: "DocSphere links the doctor's chamber directly to your phone. When Dr. Rahul Sharma or Dr. Aditi Joshi calls Token #2, your phone updates in real time with the live token status and estimated wait time. You can wait at home or a nearby cafe and only reach the clinic when your turn is near."
+      a: "DocSphere links the doctor's chamber directly to your phone. When your doctor calls Token #2, your phone updates in real time with the live token status and estimated wait time. You can wait at home or a nearby cafe and only reach the clinic when your turn is near."
     },
     {
-      q: "Are all doctors on DocSphere verified medical practitioners?",
-      a: "Yes. Every doctor profile displays verified State Medical Council registration credentials (e.g., NMC Reg. UKMC-8942-2012 / Uttarakhand Dental Council UDC-4120-2016) and degrees. All digital prescriptions follow NMC generic prescribing guidelines."
+      q: "How do I check a doctor's registration?",
+      a: "Each doctor profile shows the State Medical Council registration number and qualifications recorded for that doctor, where the clinic has provided them. Prescriptions are written with the generic molecule name first, in line with NMC prescribing guidance."
     },
     {
       q: "How is my medical data and personal phone number protected?",
-      a: "We strictly adhere to India's DPDP Act. We never sell or share patient contact details with third-party marketing companies, tele-pharmacies, or insurance brokers. All prescriptions are cryptographically sealed with tamper-proof SHA-256 digital signatures, visible only to you and your consulting doctor."
+      a: "We strictly adhere to India's DPDP Act. We never sell or share patient contact details with third-party marketing companies, tele-pharmacies, or insurance brokers. Signed prescriptions carry a tamper-evident SHA-256 seal and are visible only to you and your consulting doctor."
     },
     {
       q: "How do I pay for my consultation?",
@@ -209,7 +325,7 @@ export default function HomePage() {
           {/* Eyebrow Pill */}
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-4 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white">
             <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Dehradun&apos;s Verified Direct Healthcare Network</span>
+            <span>Dehradun&apos;s Direct Healthcare Network</span>
           </div>
 
           {/* Grand Headline */}
@@ -221,7 +337,7 @@ export default function HomePage() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-sm sm:text-lg text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Consult top verified doctors directly. Upfront fees, live counter token queues on your phone, and instant WhatsApp prescriptions. Zero aggregator commissions.
+            Consult registered doctors directly. Upfront fees, live counter token queues on your phone, and instant WhatsApp prescriptions. Zero aggregator commissions.
           </p>
 
           {/* Interactive Search Grid */}
@@ -260,9 +376,9 @@ export default function HomePage() {
 
           {/* Trust Value Points */}
           <div className="mt-9 flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 100% Direct Doctor Fee</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Direct Doctor Fee</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Live Counter Token Tracking</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Verified Council Credentials</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Council Registration on Profile</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Digital Rx on WhatsApp</span>
           </div>
 
@@ -304,14 +420,14 @@ export default function HomePage() {
                   </div>
                 </div>
                 <h3 className="mt-4 text-base font-bold text-[#1D1D1F] dark:text-white">
-                  Search Verified Doctors
+                  Search Registered Doctors
                 </h3>
                 <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                  Browse independent doctors across Rajpur Road, EC Road, and Chakrata Road by specialty, medical council license, and transparent fee.
+                  Browse independent doctors across Rajpur Road, EC Road, and Chakrata Road by specialty, medical council registration where listed, and transparent fee.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.04] text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-                100% Licensed Practitioners
+                Registration details shown where provided
               </div>
             </div>
 
@@ -391,7 +507,7 @@ export default function HomePage() {
                   Direct Care &amp; WhatsApp Rx
                 </h3>
                 <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                  Consult in person, pay the doctor directly via UPI or cash, and receive your tamper-proof prescription PDF instantly on WhatsApp.
+                  Consult in person, pay the doctor directly via UPI or cash, and receive your digitally sealed prescription PDF instantly on WhatsApp.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.04] text-[11px] font-semibold text-purple-600 dark:text-purple-400">
@@ -470,224 +586,121 @@ export default function HomePage() {
                 Live Clinics Powered by DocSphere
               </h2>
               <p className="mt-2 text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93]">
-                Verified practitioners with synchronized counter token numbers and genuine patient ratings.
+                Registered practitioners with synchronized counter token numbers and patient reviews.
               </p>
             </div>
             <Link 
               href="/search" 
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0071E3] hover:underline dark:text-[#2997FF] shrink-0"
             >
-              View all 20+ Dehradun doctors <ArrowRight className="h-4 w-4" />
+              View all {directoryDoctors.length > 0 ? `${directoryDoctors.length} ` : ""}doctors <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {/* Doctor 1 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
-              <div>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-sm">
-                      <Image
-                        src="/images/doctors/dr-rahul-sharma.jpg"
-                        alt="Dr. Rahul Sharma"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <span className="rounded-full bg-teal-50 dark:bg-teal-950/60 px-2.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
-                        Dermatology &amp; Laser
-                      </span>
-                      <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                        Dr. Rahul Sharma
-                      </h3>
-                      <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-                        MD (Dermatology) • UKMC-8942-2012
-                      </p>
-                    </div>
-                  </div>
-                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                    ⭐ 4.9 (142)
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-1.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 shrink-0 text-[#1D1D1F] dark:text-white" />
-                    <span>Derma Care Skin &amp; Laser Centre</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                    <span>14, Rajpur Road, Near Ashley Hall, Dehradun</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3 text-xs dark:border-white/[0.06]">
+            {featuredLoading ? (
+              <div className="md:col-span-3 rounded-[24px] border border-black/[0.06] bg-white p-10 text-center dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+                <div className="mx-auto h-9 w-9 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin" />
+                <p className="mt-3 text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">
+                  Loading doctors…
+                </p>
+              </div>
+            ) : featuredDoctors.length === 0 ? (
+              <div className="md:col-span-3 rounded-[24px] border border-black/[0.06] bg-white p-10 text-center dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+                <Stethoscope className="mx-auto h-8 w-8 text-[#86868B]" />
+                <p className="mt-3 text-sm font-bold text-[#1D1D1F] dark:text-white">
+                  No doctors listed yet
+                </p>
+                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">
+                  {featuredError ||
+                    "Doctors appear here as soon as a clinic roster is published."}
+                </p>
+              </div>
+            ) : (
+              featuredDoctors.map((doctor) => (
+                <div
+                  key={doctor.slug}
+                  className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300"
+                >
                   <div>
-                    <span className="text-[10px] uppercase text-[#86868B] block font-bold">Consultation Fee</span>
-                    <span className="font-extrabold text-[#1D1D1F] dark:text-white">₹600 (0% markup)</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase text-emerald-600 dark:text-emerald-400 block font-bold">Live Counter OPD</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">Token #2 in room</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
-                <Link
-                  href="/doctors/dr-rahul-sharma"
-                  className="flex-1 rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white"
-                >
-                  View Profile
-                </Link>
-                <Link
-                  href="/book?doctor=dr-rahul-sharma"
-                  className="flex-1 rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
-                >
-                  Book Token
-                </Link>
-              </div>
-            </div>
-
-            {/* Doctor 2 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
-              <div>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-sm">
-                      <Image
-                        src="/images/doctors/dr-aditi-joshi.jpg"
-                        alt="Dr. Aditi Joshi"
-                        fill
-                        className="object-cover"
-                      />
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3.5">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0071E3] to-[#008778] text-base font-black text-white shadow-sm">
+                          {doctorInitials(doctor.full_name)}
+                        </div>
+                        <div>
+                          <span className="rounded-full bg-teal-50 dark:bg-teal-950/60 px-2.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">
+                            {doctor.specialization || "Specialist"}
+                          </span>
+                          <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
+                            {doctor.full_name}
+                          </h3>
+                          {doctor.qualification_summary && (
+                            <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+                              {doctor.qualification_summary}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {(doctor.total_reviews ?? 0) > 0 && doctor.rating ? (
+                        <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                          {`⭐ ${Number(doctor.rating).toFixed(1)} (${doctor.total_reviews})`}
+                        </div>
+                      ) : null}
                     </div>
-                    <div>
-                      <span className="rounded-full bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">
-                        Dental &amp; Oral Surgery
-                      </span>
-                      <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                        Dr. Aditi Joshi
-                      </h3>
-                      <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-                        MDS (Endodontics) • UDC-4120-2016
-                      </p>
+
+                    <div className="mt-4 space-y-1.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="h-3.5 w-3.5 shrink-0 text-[#1D1D1F] dark:text-white" />
+                        <span>{doctor.clinic_name || "Clinic"}</span>
+                      </div>
+                      {doctor.clinic_address && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                          <span>{doctor.clinic_address}</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                    ⭐ 4.8 (98)
-                  </div>
-                </div>
 
-                <div className="mt-4 space-y-1.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 shrink-0 text-[#1D1D1F] dark:text-white" />
-                    <span>Smile Craft Dental Studio</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                    <span>42, EC Road, Near Survey Chowk, Dehradun</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3 text-xs dark:border-white/[0.06]">
-                  <div>
-                    <span className="text-[10px] uppercase text-[#86868B] block font-bold">Consultation Fee</span>
-                    <span className="font-extrabold text-[#1D1D1F] dark:text-white">₹400 (0% markup)</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase text-emerald-600 dark:text-emerald-400 block font-bold">Live Counter OPD</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">Token #1 in room</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
-                <Link
-                  href="/doctors/dr-aditi-joshi"
-                  className="flex-1 rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white"
-                >
-                  View Profile
-                </Link>
-                <Link
-                  href="/book?doctor=dr-aditi-joshi"
-                  className="flex-1 rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
-                >
-                  Book Token
-                </Link>
-              </div>
-            </div>
-
-            {/* Doctor 3 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between hover:shadow-apple-card-hover transition-all duration-300">
-              <div>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.1] shadow-sm">
-                      <Image
-                        src="/images/doctors/dr-sameer-saxena.jpg"
-                        alt="Dr. Sameer Saxena"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <span className="rounded-full bg-rose-50 dark:bg-rose-950/60 px-2.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
-                        Cardiology &amp; Heart Care
-                      </span>
-                      <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                        Dr. Sameer Saxena
-                      </h3>
-                      <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-                        DM (Cardiology) • UKMC Reg. 8681
-                      </p>
+                    <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3 text-xs dark:border-white/[0.06]">
+                      <div>
+                        <span className="text-[10px] uppercase text-[#86868B] block font-bold">
+                          Consultation Fee
+                        </span>
+                        <span className="font-extrabold text-[#1D1D1F] dark:text-white">
+                          {doctor.consultation_fee
+                            ? `₹${doctor.consultation_fee} (0% markup)`
+                            : "Fee at clinic"}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase text-emerald-600 dark:text-emerald-400 block font-bold">
+                          Direct Booking
+                        </span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          {doctor.opd_timings ? "OPD open" : "Book today's token"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
-                    ⭐ 4.95 (165)
+
+                  <div className="mt-6 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
+                    <Link
+                      href={`/doctors/${doctor.slug}`}
+                      className="flex-1 rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white"
+                    >
+                      View Profile
+                    </Link>
+                    <Link
+                      href={`/book?doctor=${doctor.slug}`}
+                      className="flex-1 rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
+                    >
+                      Book Token
+                    </Link>
                   </div>
                 </div>
-
-                <div className="mt-4 space-y-1.5 text-xs text-[#86868B] dark:text-[#8E8E93]">
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="h-3.5 w-3.5 shrink-0 text-[#1D1D1F] dark:text-white" />
-                    <span>Heart Care Clinic 868</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                    <span>88, Chakrata Road, Ballupur, Dehradun</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3 text-xs dark:border-white/[0.06]">
-                  <div>
-                    <span className="text-[10px] uppercase text-[#86868B] block font-bold">Consultation Fee</span>
-                    <span className="font-extrabold text-[#1D1D1F] dark:text-white">₹500 (0% markup)</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] uppercase text-amber-600 dark:text-amber-400 block font-bold">Morning OPD</span>
-                    <span className="font-bold text-amber-600 dark:text-amber-400">Next Slot 11:30 AM</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-2 pt-3 border-t border-black/[0.05] dark:border-white/[0.06]">
-                <Link
-                  href="/doctors/dr-sameer-saxena"
-                  className="flex-1 rounded-full border border-black/[0.08] py-2.5 text-center text-xs font-semibold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:text-white"
-                >
-                  View Profile
-                </Link>
-                <Link
-                  href="/book?doctor=dr-sameer-saxena"
-                  className="flex-1 rounded-full bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
-                >
-                  Book Token
-                </Link>
-              </div>
-            </div>
+              ))
+            )}
           </div>
 
           {/* Clinical Facilities Gallery */}
@@ -705,10 +718,10 @@ export default function HomePage() {
                 </p>
               </div>
               <Link
-                href="/clinics/derma-care-dehradun"
+                href="/clinics"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] hover:underline"
               >
-                Tour Derma Care Centre <ArrowRight className="h-4 w-4" />
+                Browse clinics <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
 
@@ -752,7 +765,7 @@ export default function HomePage() {
               <div className="group relative h-44 overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.08]">
                 <Image
                   src="/images/clinical/lab-diagnostics.jpg"
-                  alt="NABL Pathology Diagnostics"
+                  alt="Pathology diagnostics"
                   fill
                   className="object-cover group-hover:scale-105 transition duration-500"
                 />
@@ -784,7 +797,7 @@ export default function HomePage() {
               href="/specialties"
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#0071E3] hover:underline dark:text-[#2997FF] shrink-0"
             >
-              View all 24 specialties <ArrowRight className="h-4 w-4" />
+              View all specialties <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
@@ -809,7 +822,14 @@ export default function HomePage() {
                     </p>
                   </div>
                   <div className="mt-4 pt-2 border-t border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">
-                    <span>{spec.doctorsCount} Doctors</span>
+                    <span>
+                      {
+                        directoryDoctors.filter((doctor) =>
+                          matchesSpecialty(doctor.specialization || "", spec.name)
+                        ).length
+                      }{" "}
+                      Doctors
+                    </span>
                     <ArrowRight className="h-3 w-3 text-[#0071E3] opacity-0 group-hover:opacity-100 transition" />
                   </div>
                 </Link>
@@ -822,7 +842,7 @@ export default function HomePage() {
               href="/specialties"
               className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-6 py-3 text-xs font-bold text-[#1D1D1F] hover:bg-black/[0.03] dark:border-white/[0.12] dark:bg-[#1C1C1E] dark:text-white shadow-sm transition"
             >
-              <span>Explore All 24 Medical Specialties in Dehradun</span>
+              <span>Explore All Medical Specialties in Dehradun</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -840,73 +860,69 @@ export default function HomePage() {
               Real Care. Zero Aggregator Markup.
             </h2>
             <p className="mt-3 text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93]">
-              Read how local families in Dehradun skip crowded waiting rooms and consult verified doctors directly.
+              Read how local families in Dehradun skip crowded waiting rooms and consult doctors directly.
             </p>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {/* Review 1 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-amber-500 mb-3 text-sm">
-                  {"★".repeat(5)}
-                </div>
-                <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-white leading-relaxed italic">
-                  &ldquo;I booked Dr. Rahul Sharma from home, monitored the live counter on my phone, and walked in right when Token #2 was called. No sitting for 2 hours in a packed waiting room.&rdquo;
+            {reviewsLoading ? (
+              <div className="md:col-span-3 rounded-[24px] border border-black/[0.06] bg-white p-10 text-center dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+                <div className="mx-auto h-9 w-9 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin" />
+                <p className="mt-3 text-xs font-semibold text-[#86868B] dark:text-[#8E8E93]">
+                  Loading reviews…
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Priya S.</div>
-                  <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Rajpur Road • Derma Care</div>
-                </div>
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  Verified Visit
-                </span>
-              </div>
-            </div>
-
-            {/* Review 2 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-amber-500 mb-3 text-sm">
-                  {"★".repeat(5)}
-                </div>
-                <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-white leading-relaxed italic">
-                  &ldquo;Zero commission is real. The ₹500 fee went directly to the doctor via UPI. Within 30 seconds of leaving the chamber, the official digital prescription PDF was on my WhatsApp with scannable QR verification.&rdquo;
+            ) : landingReviews.length === 0 ? (
+              <div className="md:col-span-3 rounded-[24px] border border-black/[0.06] bg-white p-10 text-center dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+                <Users className="mx-auto h-8 w-8 text-[#86868B]" />
+                <p className="mt-3 text-sm font-bold text-[#1D1D1F] dark:text-white">
+                  No reviews yet
+                </p>
+                <p className="mt-1 text-xs text-[#86868B] dark:text-[#8E8E93]">
+                  {reviewsError ||
+                    "Reviews from completed visits appear here automatically."}
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Amit Rawat</div>
-                  <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">EC Road • Dental Consultation</div>
-                </div>
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  Verified Visit
-                </span>
-              </div>
-            </div>
-
-            {/* Review 3 */}
-            <div className="rounded-[24px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-amber-500 mb-3 text-sm">
-                  {"★".repeat(5)}
-                </div>
-                <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-white leading-relaxed italic">
-                  &ldquo;Took my 8-month-old daughter to Dr. Vikram Sethi. Tracking the live queue on my phone saved us from sitting in a crowded OPD with an uncomfortable baby. The follow-up within 7 days was completely free as promised.&rdquo;
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">Neha Bhatt</div>
-                  <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">Chakrata Road • Pediatrics</div>
-                </div>
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  Verified Visit
-                </span>
-              </div>
-            </div>
+            ) : (
+              landingReviews.map((review) => {
+                const doctor = directoryDoctors.find(
+                  (item) => item.slug === review.doctor_slug
+                );
+                return (
+                  <div
+                    key={review.id}
+                    className="rounded-[24px] border border-black/[0.06] bg-white p-7 shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1 text-amber-500 mb-3 text-sm">
+                        {"★".repeat(
+                          Math.max(0, Math.min(5, Number(review.rating) || 0))
+                        )}
+                      </div>
+                      <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-white leading-relaxed italic">
+                        &ldquo;{review.comment || "Rated this visit."}&rdquo;
+                      </p>
+                    </div>
+                    <div className="mt-6 pt-4 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">
+                          {review.patient_name || "Patient"}
+                        </div>
+                        <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
+                          {doctor?.full_name || review.doctor_slug || "Clinic visit"}
+                          {doctor?.specialization ? ` • ${doctor.specialization}` : ""}
+                        </div>
+                      </div>
+                      {review.is_verified_visit && (
+                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          Verified Visit
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </section>
@@ -931,9 +947,9 @@ export default function HomePage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-[#0071E3] dark:text-[#2997FF]">
                 <ShieldCheck className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">NMC Verified Doctors</h3>
+              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">Registered Doctors</h3>
               <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                Every doctor lists verified State Medical Council registration credentials and degrees. No unverified practitioners.
+                Doctors publish their State Medical Council registration number and qualifications on their profile.
               </p>
             </div>
 
@@ -961,9 +977,9 @@ export default function HomePage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <QrCode className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">SHA-256 Tamper-Proof Rx</h3>
+              <h3 className="mt-4 text-sm font-bold text-[#1D1D1F] dark:text-white">SHA-256 Sealed Rx</h3>
               <p className="mt-2 text-xs text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-                All digital prescriptions carry a cryptographic verification hash and scannable QR code resolving to your verified record.
+                Signed digital prescriptions carry a cryptographic seal and a scannable QR code resolving to the record.
               </p>
             </div>
           </div>

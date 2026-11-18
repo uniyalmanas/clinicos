@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
           match_found: true,
           action_recommended: "LINK_EXISTING_ABHA",
           patient: found,
-          message: `NHA Registry Match: Citizen already possesses verified ABHA (${found.abha_number}). Link existing identity to prevent longitudinal health record fragmentation.`,
+          message: `A local ABDM record already exists for this citizen (${found.abha_number}). Link it to avoid duplicate sandbox records.`,
         });
       }
 
@@ -125,12 +125,12 @@ export async function POST(req: NextRequest) {
         match_found: false,
         action_recommended: "PROCEED_CREATION",
         message:
-          "No existing ABHA found in national registry. Eligible for new e-KYC issuance.",
+          "No existing local ABDM record found for this clinic. A sandbox record can be created; no national registry was queried.",
       });
     }
 
     // -----------------------------------------------------------------------
-    // UIDAI-compliant identity handling & transient OTP dispatch
+    // Local sandbox identity handling; no external identity provider is contacted
     // -----------------------------------------------------------------------
     if (action === "request_otp") {
       const { aadhaar_input, patient_phone } = body;
@@ -143,13 +143,17 @@ export async function POST(req: NextRequest) {
       }
 
       const cleanAadhaar = String(aadhaar_input).replace(/\D/g, "");
-      if (cleanAadhaar.length !== 12 && cleanAadhaar.length !== 16) {
-        return apiError(400, "Aadhaar must be 12 digits or VID 16 digits.", "invalid_aadhaar");
+      if (![4, 12, 16].includes(cleanAadhaar.length)) {
+        return apiError(
+          400,
+          "Enter at least the last 4 digits, a 12-digit Aadhaar, or a 16-digit VID.",
+          "invalid_aadhaar"
+        );
       }
 
       const isVid = cleanAadhaar.length === 16;
       const masked = maskAadhaar(cleanAadhaar);
-      const txnId = `TXN-NHA-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const txnId = `TXN-SANDBOX-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       // Log the transient e-KYC request. Raw Aadhaar is never stored.
       await db`
@@ -169,10 +173,11 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
+        sandbox: true,
         txn_id: txnId,
         masked_aadhaar: masked,
         is_vid: isVid,
-        message: `UIDAI OTP dispatched to mobile linked with ${masked}. Raw Aadhaar purged from transient memory per UIDAI Section 29.`,
+        message: `Sandbox mode: a 6-digit code was generated locally for ${masked}. No UIDAI/NHA request was sent.`,
       });
     }
 
@@ -188,17 +193,18 @@ export async function POST(req: NextRequest) {
         simulate_gateway_failure = false,
       } = body;
 
-      if (!patient_name || !patient_phone || !otp_code) {
+      const otpDigits = String(otp_code || "").replace(/\D/g, "");
+      if (!patient_name || !patient_phone || otpDigits.length !== 6) {
         return apiError(
           400,
-          "patient_name, patient_phone, and otp_code are required.",
+          "patient_name, patient_phone, and a 6-digit sandbox code are required.",
           "invalid_input"
         );
       }
 
       if (simulate_gateway_failure) {
-        const fallbackAbha = `PENDING-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`;
-        const fallbackAddress = `${String(patient_name).toLowerCase().replace(/[^a-z0-9]/g, "")}${String(patient_phone).slice(-4)}@abdm`;
+        const fallbackAbha = `SANDBOX-PENDING-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const fallbackAddress = `sandbox-${randomUUID().slice(0, 8)}@abdm.invalid`;
         const id = randomUUID();
 
         const offlinePatient = await db`
@@ -217,7 +223,7 @@ export async function POST(req: NextRequest) {
             ${masked_aadhaar || "XXXX-XXXX-0000"},
             'PENDING_NHA_SYNC',
             false,
-            'Live NHA Gateway timed out (HTTP 504). Patient registered in offline queue. Automated sync will finalize upon NHA gateway recovery.',
+            'Sandbox fallback: no NHA gateway is configured, so this record stays pending real verification.',
             1,
             'OFFLINE_QUEUE_FALLBACK'
           ) RETURNING *;
@@ -239,7 +245,7 @@ export async function POST(req: NextRequest) {
           offline_fallback: true,
           patient: offlinePatient[0],
           message:
-            "NHA Gateway Timeout detected. Patient registered with PENDING_NHA_SYNC status without blocking registration desk. Background sync scheduled.",
+            "Sandbox fallback: record stored locally with PENDING status. No NHA gateway was contacted, so no real ABHA was issued.",
         });
       }
 
@@ -249,10 +255,9 @@ export async function POST(req: NextRequest) {
       const part4 = masked_aadhaar
         ? String(masked_aadhaar).slice(-4)
         : `${Math.floor(1000 + Math.random() * 9000)}`;
-      const generatedAbha = `${part1}-${part2}-${part3}-${part4}`;
+      const generatedAbha = `SANDBOX-${part1}-${part2}-${part3}-${part4}`;
 
-      const cleanName = String(patient_name).toLowerCase().replace(/[^a-z0-9]/g, "");
-      const generatedAddress = `${cleanName}${String(patient_phone).slice(-4)}@abdm`;
+      const generatedAddress = `sandbox-${randomUUID().slice(0, 8)}@abdm.invalid`;
       const id = randomUUID();
 
       const inserted = await db`
@@ -268,7 +273,7 @@ export async function POST(req: NextRequest) {
           ${patient_name},
           ${patient_phone},
           ${masked_aadhaar || "XXXX-XXXX-0000"},
-          'VERIFIED',
+          'PENDING_NHA_SYNC',
           false,
           'SANDBOX_M1_M2'
         ) RETURNING *;
@@ -287,9 +292,10 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
+        sandbox: true,
         patient: inserted[0],
         message:
-          "Aadhaar e-KYC verified via NHA M1 Milestone. 14-digit ABHA issued with zero raw data persistence.",
+          "Sandbox ABDM record created locally. No NHA gateway is configured, so the simulated identifier is not a real ABHA.",
       });
     }
 
@@ -332,7 +338,7 @@ export async function POST(req: NextRequest) {
           ${patient_name},
           ${patient_phone || null},
           ${abha_number},
-          ${abha_address || `${String(patient_name).toLowerCase().replace(/\s+/g, "")}@abdm`},
+          ${abha_address || null},
           ${auth.auth.clinic!.name},
           ${purpose.code},
           ${purpose.label},
@@ -355,7 +361,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         consent_request: inserted[0],
-        message: `Consent Request ${requestId} initiated for ${purpose.label}. Awaiting citizen authorization via ABHA mobile app/OTP.`,
+        message: `Sandbox consent request ${requestId} recorded for ${purpose.label}. No request was transmitted to the citizen or to an NHA gateway.`,
       });
     }
 
@@ -363,6 +369,9 @@ export async function POST(req: NextRequest) {
       const { consent_request_id, otp_code } = body;
       if (!consent_request_id) {
         return apiError(400, "consent_request_id is required.", "invalid_input");
+      }
+      if (String(otp_code || "").replace(/\D/g, "").length !== 6) {
+        return apiError(400, "A 6-digit sandbox consent code is required.", "invalid_input");
       }
 
       const rows = await db`
@@ -375,7 +384,7 @@ export async function POST(req: NextRequest) {
         return apiError(404, "Consent request not found in your clinic.", "consent_not_found");
       }
 
-      const caId = `CA-ART-NHA-${Math.floor(100000000 + Math.random() * 900000000)}`;
+      const caId = `CA-ART-SANDBOX-${Math.floor(100000000 + Math.random() * 900000000)}`;
       const tokenPayload = `${caId}|${rows[0].abha_number}|${rows[0].purpose_code}|${rows[0].expiry_timestamp}`;
       const tokenHash = createHash("sha256").update(tokenPayload).digest("hex");
 
@@ -385,7 +394,6 @@ export async function POST(req: NextRequest) {
           consent_artefact_id = ${caId},
           status = 'GRANTED',
           ca_token_hash = ${tokenHash},
-          otp_verified_at = NOW(),
           updated_at = NOW()
         WHERE consent_request_id = ${consent_request_id}
           AND clinic_slug = ${clinicSlug}
@@ -406,7 +414,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         consent_artefact: updated[0],
-        message: `Consent Artefact ${caId} granted by citizen. Time-bound token active until ${new Date(updated[0].expiry_timestamp).toLocaleDateString()}.`,
+        message: `Sandbox consent artefact ${caId} marked GRANTED locally. No NHA citizen OTP was verified; this artefact is not valid outside this demo.`,
       });
     }
 
@@ -447,7 +455,7 @@ export async function POST(req: NextRequest) {
         success: true,
         consent_artefact: updated[0],
         message:
-          "Consent Artefact REVOKED. Health Data Provider (HDP) access token locked immediately per DPDP Act (2023).",
+          "Sandbox consent revoked locally; the local access token is locked.",
       });
     }
 
@@ -462,16 +470,11 @@ export async function POST(req: NextRequest) {
       `;
 
       for (const p of pending) {
-        const rand4 = p.masked_aadhaar ? String(p.masked_aadhaar).slice(-4) : `${Math.floor(1000 + Math.random() * 9000)}`;
-        const realAbha = `91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${rand4}`;
-
         await db`
           UPDATE abdm_patients
           SET
-            abha_number = ${realAbha},
-            kyc_status = 'VERIFIED',
-            gateway_mode = 'SANDBOX_M1_M2',
-            conflict_details = 'Synchronized with NHA Gateway following network restoration.',
+            nha_sync_attempts = nha_sync_attempts + 1,
+            conflict_details = 'Sandbox: sync attempted locally. No NHA gateway is configured; record remains pending real verification.',
             updated_at = NOW()
           WHERE id = ${p.id}
             AND clinic_slug = ${clinicSlug};
@@ -484,14 +487,15 @@ export async function POST(req: NextRequest) {
         clinicId,
         action: "abdm.queue.sync",
         entity: "abdm_patient",
-        after: { synced_count: pending.length },
+        after: { attempted_count: pending.length, synced_count: 0 },
         request: req,
       });
 
       return NextResponse.json({
         success: true,
-        synced_count: pending.length,
-        message: `Resilient Queue processed: ${pending.length} offline registrations successfully synced to NHA Gateway.`,
+        synced_count: 0,
+        pending_count: pending.length,
+        message: `No NHA gateway is configured on this deployment. ${pending.length} sandbox record(s) remain pending real verification.`,
       });
     }
 

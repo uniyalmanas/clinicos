@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { createHash, randomUUID } from "crypto";
 import { guard, ADMIN_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     const apts = await sql`
       SELECT fee_amount, payment_mode

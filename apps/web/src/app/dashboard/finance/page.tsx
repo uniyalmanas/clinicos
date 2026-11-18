@@ -48,18 +48,20 @@ import {
   EXPENSE_APPROVAL_THRESHOLD_INR,
   PETTY_CASH_MIN_THRESHOLD_INR
 } from "@/data/financeGovernance";
+import { clinicToday } from "@/lib/clinic-date";
+import { getStoredUser } from "@/lib/current-user";
 
 export default function DashboardFinancePage() {
   const [activeTab, setActiveTab] = useState<"vouchers" | "doctors" | "shifts" | "petty_cash">("vouchers");
   const [expenses, setExpenses] = useState<any[]>([]);
   const [kpis, setKpis] = useState({
-    gross_collections: 49598,
-    appointment_collections: 1200,
-    pharmacy_collections: 398,
-    total_expenses: 6250,
-    real_net_profit: 43348,
-    profit_margin_pct: 87.4,
-    pending_approval_count: 1,
+    gross_collections: 0,
+    appointment_collections: 0,
+    pharmacy_collections: 0,
+    total_expenses: 0,
+    real_net_profit: 0,
+    profit_margin_pct: 0,
+    pending_approval_count: 0,
     flagged_duplicate_count: 0
   });
   const [categoryBreakdown, setCategoryBreakdown] = useState<Record<string, number>>({});
@@ -70,44 +72,20 @@ export default function DashboardFinancePage() {
   // Doctor Visiting Consultant Revenue Sharing State
   const [doctorPayouts, setDoctorPayouts] = useState<DoctorPayout[]>([]);
   const [doctorPayoutsSummary, setDoctorPayoutsSummary] = useState({
-    total_patients: 44,
-    total_gross_collections: 31400,
-    total_visiting_doctor_payouts: 13240,
-    total_clinic_retained: 18160,
-    total_escrow_held: 1200
+    total_patients: 0,
+    total_gross_collections: 0,
+    total_visiting_doctor_payouts: 0,
+    total_clinic_retained: 0,
+    total_escrow_held: 0
   });
   const [settlingDoctorSlug, setSettlingDoctorSlug] = useState<string | null>(null);
   const [copiedDoctorId, setCopiedDoctorId] = useState<string | null>(null);
 
-  // Executive EOD (End of Day) Cockpit State
+  // Executive EOD (End of Day) Cockpit State — hydrated from
+  // /api/clinic/eod-summary. Starts empty: showing invented takings would be
+  // worse than showing nothing while the real figures load.
   const [eodSummary, setEodSummary] = useState<any>({
-    clinic_name: "Derma Care Skin & Laser Centre",
-    date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-    patient_metrics: {
-      total_consultations: 44,
-      walk_in_patients: 36,
-      advance_bookings: 8,
-      free_follow_up_reviews: 4
-    },
-    financial_metrics: {
-      gross_collections: 31400.0,
-      soundbox_upi_inflow: 22000.0,
-      gross_cash_collected: 9400.0,
-      petty_expenses_outflow: 450.0,
-      visiting_doctor_payouts: 13240.0,
-      net_expected_cash: 8950.0,
-      actual_cash_counted: 8950.0,
-      cash_discrepancy: 0.0,
-      drawer_status: "balanced",
-      real_net_profit: 17710.0,
-      profit_margin_percentage: 56.4
-    },
-    doctor_splits: [
-      { doctor: "Dr. Rahul Sharma", patients: 24, retention: "100% In-house", amount: 14400.0 },
-      { doctor: "Dr. Neha Kapoor", patients: 14, split: "80/20", payout: 7840.0, status: "settled" },
-      { doctor: "Dr. Vikram Negi", patients: 6, split: "75/25", payout: 5400.0, status: "settled" }
-    ],
-    whatsapp_url: "https://wa.me/919876543210",
+    clinic_name: "",
     is_day_locked: false,
     audit_hash: null as string | null
   });
@@ -118,10 +96,10 @@ export default function DashboardFinancePage() {
   // Shift Handovers & POS Lock State (Fix 3)
   const [handovers, setHandovers] = useState<ShiftHandover[]>([]);
   const [currentDrawer, setCurrentDrawer] = useState({
-    opening_float: 2000,
-    cash_inflow: 14200,
-    cash_expenses: 450,
-    expected_cash: 15750,
+    opening_float: 0,
+    cash_inflow: 0,
+    cash_expenses: 0,
+    expected_cash: 0,
     is_pos_locked: false,
     locked_reason: null as string | null,
     locked_shift_id: null as string | null
@@ -129,14 +107,14 @@ export default function DashboardFinancePage() {
 
   // Petty Cash Reserve State (Fix 4)
   const [pettyFloat, setPettyFloat] = useState<PettyCashFloat>({
-    id: "float-1",
-    target_float: 2000,
-    current_balance: 1450,
-    min_threshold: 800,
-    status: "HEALTHY",
+    id: "",
+    target_float: 0,
+    current_balance: 0,
+    min_threshold: 0,
+    status: "DEPLETED",
     is_low_float: false,
-    last_replenished_at: new Date().toISOString(),
-    last_replenished_by: "Dr. Rahul Sharma (Finance Head)"
+    last_replenished_at: "",
+    last_replenished_by: ""
   });
   const [pettyLedger, setPettyLedger] = useState<any[]>([]);
 
@@ -273,9 +251,8 @@ export default function DashboardFinancePage() {
           category,
           amount: Number(amount),
           payment_mode: paymentMode,
-          recorded_by: "Pooja Verma (Front Desk)",
-          manager_pin: expenseManagerPin,
-          receipt_url: "/receipts/sample_voucher.png"
+          recorded_by: getStoredUser()?.full_name || "",
+          manager_pin: expenseManagerPin
         })
       });
 
@@ -439,8 +416,9 @@ export default function DashboardFinancePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           shift_name: new Date().getHours() < 14 ? "Morning Shift (08:00 - 14:00)" : "Evening Shift (14:00 - 21:00)",
-          cashier_name: "Pooja Verma (Front Desk Lead)",
-          next_cashier_name: "Rohit Semwal (Evening Desk)",
+          // The server records the signed-in user as the cashier; only the
+          // incoming cashier is taken from this form.
+          next_cashier_name: "",
           opening_float: currentDrawer.opening_float,
           counted_cash: countedTotal,
           variance_reason: shiftVarianceReason,
@@ -501,7 +479,7 @@ export default function DashboardFinancePage() {
           action: "replenish",
           amount: Number(replenishAmount),
           source_or_recipient: replenishSource,
-          recorded_by: "Dr. Rahul Sharma (Finance Head)"
+          recorded_by: getStoredUser()?.full_name || ""
         })
       });
 
@@ -541,10 +519,8 @@ export default function DashboardFinancePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clinic_slug: "derma-care-dehradun",
-          closed_by: "Pooja Verma (Front Desk Lead)",
-          counted_cash: currentDrawer.expected_cash || 8950.0,
-          closing_notes: "All shifts reconciled, physical cash handed over to Dr. Rahul, drawer locked."
+          counted_cash: currentDrawer.expected_cash,
+          closing_notes: "All shifts reconciled, physical cash counted and drawer locked."
         })
       });
 
@@ -553,9 +529,12 @@ export default function DashboardFinancePage() {
         setEodSummary((prev: any) => ({
           ...prev,
           is_day_locked: true,
-          audit_hash: json.audit_hash || "EOD-SEAL-9B4A8E"
+          audit_hash: json.audit_hash || prev.audit_hash || null
         }));
         showToast("Clinic Day-Book has been audited, sealed, and locked. Payouts locked against post-close alterations.");
+      } else {
+        const body = await res.json().catch(() => ({}));
+        showToast(body?.error || "Could not lock the clinic day.");
       }
     } catch (e) {
       console.error(e);
@@ -568,28 +547,39 @@ export default function DashboardFinancePage() {
   const handleExportCALedger = () => {
     setIsExportingCsv(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
-      const rows = [
-        ["Date", "Transaction Type", "Voucher/Ref #", "Category", "Description / Entity", "Payment Mode", "Approval Status", "Inflow (Cr)", "Outflow (Dr)", "Net Balance"],
-        [today, "Patient Consultations", "OPD-BATCH-TODAY", "Consultation Revenue", "OPD Footfall (44 Patients: 36 Walk-ins, 8 Booked)", "Soundbox UPI / Cash", "APPROVED", "31400.00", "0.00", "31400.00"],
-        [today, "Pharmacy Dispensary", "RX-DISP-TODAY", "Dispensary Sales", "In-clinic dispensary medicines & topical lotions", "UPI Soundbox", "APPROVED", "398.00", "0.00", "31798.00"],
-        [today, "Petty Cash Float Outflow", "VCH-0925-01", "Consumables", "Nitrile examination gloves & Spirit cotton", "Cash Drawer", "APPROVED (Admin Session)", "0.00", "1450.00", "30348.00"],
-        [today, "Doctor Revenue Split", "DOC-NEHA-80", "Consultant Share", "Dr. Neha Kapoor (14 Pediatric Consults, ₹700 refund deducted)", "UPI Direct", "APPROVED", "0.00", "7140.00", "23208.00"],
-        [today, "Doctor Revenue Split", "DOC-VIKRAM-75", "Consultant Share", "Dr. Vikram Negi (6 Cosmetic Procedures, ₹400 consumables deducted)", "UPI Direct", "APPROVED", "0.00", "5000.00", "18208.00"]
+      const today = clinicToday();
+      const rows: Array<Array<string | number>> = [
+        ["Date", "Transaction Type", "Voucher/Ref #", "Category", "Description / Entity", "Payment Mode", "Approval Status", "Inflow (Cr)", "Outflow (Dr)"]
       ];
 
+      // Real doctor payout rows from /api/clinic/doctor-payouts.
+      doctorPayouts.forEach((doc) => {
+        if (!doc || !Number(doc.net_payable)) return;
+        rows.push([
+          today,
+          "Doctor Revenue Split",
+          String(doc.id || doc.doctor_slug).slice(0, 12),
+          "Consultant Share",
+          `${doc.doctor_name} (${doc.patients_seen} consults, split ${doc.split_percentage}/${doc.clinic_percentage})`,
+          doc.payment_mode || "Bank",
+          doc.status === "settled" ? "SETTLED" : doc.status.toUpperCase(),
+          0,
+          Number(doc.net_payable || 0).toFixed(2)
+        ]);
+      });
+
+      // Real operating expenses from /api/expenses.
       expenses.forEach((exp: any) => {
         rows.push([
           exp.date || today,
           "Operating Expense",
           exp.id?.slice(0, 8) || "VCH-EXP",
           exp.category || "General",
-          `"${(exp.title || "").replace(/"/g, '""')}"`,
+          `"${(exp.title || exp.description || "").replace(/"/g, '""')}"`,
           (exp.payment_mode || "UPI").toUpperCase(),
-          exp.approval_status || "APPROVED",
-          "0.00",
-          Number(exp.amount || 0).toFixed(2),
-          "-"
+          exp.approval_status || "PENDING_APPROVAL",
+          0,
+          Number(exp.amount || 0).toFixed(2)
         ]);
       });
 
@@ -859,22 +849,34 @@ export default function DashboardFinancePage() {
                 </span>
               </div>
               <p className="mt-1 text-xs text-white/70">
-                {eodSummary?.clinic_name || "Derma Care Skin & Laser Centre"} • Single-screen audit. Eliminates manual Day-Book, petty cash registers, and Excel split sheets.
+                {eodSummary?.clinic_name || "Your clinic"} • Single-screen audit. Eliminates manual Day-Book, petty cash registers, and Excel split sheets.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
-            <a
-              href={eodSummary?.whatsapp_url || "https://wa.me/919876543210"}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white transition active:scale-95 shadow-md hover:shadow-emerald-600/30 cursor-pointer"
-              title="Send 9 PM Day-Closing WhatsApp Summary to Clinic Owner"
-            >
-              <Send className="h-3.5 w-3.5" />
-              <span>📱 Send 9 PM WhatsApp to Owner</span>
-            </a>
+            {eodSummary?.whatsapp_url ? (
+              <a
+                href={eodSummary.whatsapp_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white transition active:scale-95 shadow-md hover:shadow-emerald-600/30 cursor-pointer"
+                title="Send 9 PM Day-Closing WhatsApp Summary to Clinic Owner"
+              >
+                <Send className="h-3.5 w-3.5" />
+                <span>📱 Send 9 PM WhatsApp to Owner</span>
+              </a>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3.5 py-2 text-xs font-bold text-white/50 cursor-not-allowed"
+                title="Add the clinic owner's WhatsApp number in settings to enable this"
+              >
+                <Send className="h-3.5 w-3.5" />
+                <span>WhatsApp owner number not set</span>
+              </button>
+            )}
 
             <button
               type="button"
@@ -900,7 +902,7 @@ export default function DashboardFinancePage() {
             ) : (
               <div className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 text-xs font-mono text-emerald-400 font-bold">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>{eodSummary?.audit_hash || "EOD-SEAL-8B1F20"}</span>
+                <span>{eodSummary?.audit_hash || "Locked"}</span>
               </div>
             )}
           </div>
@@ -911,43 +913,49 @@ export default function DashboardFinancePage() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider">Patient Footfall</span>
             <div className="mt-1 text-2xl font-black text-white">
-              {eodSummary?.patient_metrics?.total_consultations || 44} OPD Patients
+              {eodSummary?.patient_metrics?.total_consultations ?? 0} OPD Patients
             </div>
             <div className="mt-1.5 flex items-center gap-2 text-[11px] text-white/65">
-              <span>{eodSummary?.patient_metrics?.walk_in_patients || 36} Walk-in</span>
+              <span>{eodSummary?.patient_metrics?.walk_in_patients ?? 0} Walk-in</span>
               <span>•</span>
-              <span>{eodSummary?.patient_metrics?.advance_bookings || 8} Booked</span>
+              <span>{eodSummary?.patient_metrics?.advance_bookings ?? 0} Booked</span>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider">Soundbox UPI (Direct Bank)</span>
             <div className="mt-1 text-2xl font-black text-emerald-400">
-              ₹{(eodSummary?.financial_metrics?.soundbox_upi_inflow || 22000).toLocaleString("en-IN")}
+              ₹{(eodSummary?.financial_metrics?.soundbox_upi_inflow ?? 0).toLocaleString("en-IN")}
             </div>
             <div className="mt-1.5 text-[11px] text-emerald-300/80 font-medium">
-              100% Settled directly into bank
+              Settled directly into bank
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider">Cash Drawer Reconciliation</span>
             <div className="mt-1 text-2xl font-black text-amber-300">
-              ₹{(currentDrawer.expected_cash || 8950).toLocaleString("en-IN")} Expected
+              ₹{(currentDrawer.expected_cash ?? 0).toLocaleString("en-IN")} Expected
             </div>
             <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-emerald-400 font-semibold">
               <CheckCircle2 className="h-3 w-3" />
-              <span>Multi-shift count: Balanced (0 Discrepancy)</span>
+              <span>
+                Cash discrepancy: ₹
+                {Math.abs(Number(eodSummary?.financial_metrics?.cash_discrepancy ?? 0)).toLocaleString("en-IN")}
+                {eodSummary?.financial_metrics?.drawer_status
+                  ? ` · ${String(eodSummary.financial_metrics.drawer_status)}`
+                  : ""}
+              </span>
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <span className="text-[10px] uppercase font-bold text-white/50 tracking-wider">Real Net Profit Today</span>
             <div className="mt-1 text-2xl font-black text-[#34C759]">
-              ₹{(eodSummary?.financial_metrics?.real_net_profit || 17710).toLocaleString("en-IN")}
+              ₹{(eodSummary?.financial_metrics?.real_net_profit ?? 0).toLocaleString("en-IN")}
             </div>
             <div className="mt-1.5 text-[11px] text-white/65">
-              {eodSummary?.financial_metrics?.profit_margin_percentage || 56.4}% Margin after doctor splits &amp; petty cash
+              {eodSummary?.financial_metrics?.profit_margin_percentage ?? 0}% Margin after doctor splits &amp; petty cash
             </div>
           </div>
         </div>

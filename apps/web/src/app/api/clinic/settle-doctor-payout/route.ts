@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, ADMIN_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
     const doctor = docRows[0];
     const resolvedName = String(doctor_name || doctor.full_name);
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
     const recordedBy = `${auth.auth.user.full_name} (${auth.auth.role})`;
 
     const id = randomUUID();

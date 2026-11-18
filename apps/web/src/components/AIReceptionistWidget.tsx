@@ -121,7 +121,7 @@ export default function AIReceptionistWidget({
       } else {
         botReply = {
           sender: "bot",
-          text: `${doctorName} is a verified ${specialization} at ${clinicName}. You can book your appointment online, call our front desk, or visit during OPD hours: ${opdTimings}.`,
+          text: `${doctorName} is a ${specialization} at ${clinicName}. You can book your appointment online, call our front desk, or visit during OPD hours: ${opdTimings}.`,
           actionButton: {
             label: "Book Appointment Now",
             href: `/book?doctor=${doctorSlug}`

@@ -31,11 +31,12 @@ export function createInitialClinicalMemory(patient: {
   medical_history?: string[];
   doctor_name?: string;
 }): ClinicalMemory {
+  const sessionId = `COMP-${Date.now().toString(36).toUpperCase()}`;
   return {
-    session_id: `COMP-${Date.now().toString(36).toUpperCase()}`,
-    patient_uhid: patient.uhid || "UHID-2026-9021",
+    session_id: sessionId,
+    patient_uhid: patient.uhid || sessionId,
     patient_name: patient.name,
-    doctor_name: patient.doctor_name || "Dr. Rahul Sharma",
+    doctor_name: patient.doctor_name || "",
     complaints: [],
     vitals: {},
     medical_history: patient.medical_history || [],
@@ -396,7 +397,7 @@ export function extractClinicalMemoryFromTranscript(
             severity: "high",
             question: allergyWarning,
             rationale: "Patient clinical safety warning against anaphylaxis or cross-allergen reaction.",
-            suggested_action: "Do not prescribe, or obtain verified NMC senior doctor override PIN.",
+            suggested_action: "Do not prescribe, or obtain a registered senior doctor override.",
             resolved: false,
           });
         }
@@ -1245,7 +1246,7 @@ export function generateDoctorClinicalReport(memory: ClinicalMemory, clinicName:
   const historyList = memory.medical_history.length > 0 ? memory.medical_history.join(", ") : "Nil significant past medical comorbidities reported.";
 
   return {
-    patient_uhid: memory.patient_uhid || "UHID-2026-9021",
+    patient_uhid: memory.patient_uhid || "",
     patient_name: memory.patient_name,
     age_gender: "Adult (Documented in Master Record)",
     consultation_date: new Date().toLocaleDateString("en-IN", {

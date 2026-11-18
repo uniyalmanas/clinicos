@@ -174,12 +174,6 @@ export const FINANCE_OVERRIDE_REASON_CODES = [
   { code: "EMERGENCY_AFTER_HOURS_SURGERY", label: "Emergency unscheduled midnight operative intervention with on-call surgical team" }
 ];
 
-export const AUTHORIZED_FINANCE_PINS = [
-  { pin: "FIN-9921", name: "Suresh Rawat", role: "Finance Head / Revenue Controller" },
-  { pin: "8842", name: "Pooja Negi", role: "Hospital Billing Director" },
-  { pin: "ADMIN-001", name: "Dr. Vikram Sethi", role: "Medical Superintendent" }
-];
-
 export const IRDAI_DEDUCTION_REASON_CODES = [
   { code: "DED_NON_PAYABLE_CONSUMABLES", label: "Non-Medical Items / Consumables (Gloves, Sanitizers, PPE, Thermometer, Syringes)", appealable: false },
   { code: "DED_ROOM_RENT_CAPPING_COPAY", label: "Proportionate Room Rent Capping Breach (Patient admitted in category exceeding policy sub-limit)", appealable: true },

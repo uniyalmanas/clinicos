@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getStoredUser } from "@/lib/current-user";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
 import { 
@@ -212,6 +213,8 @@ export default function DashboardBedsPage() {
     estimated_daily_revenue: 10000.0
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [doctorsList, setDoctorsList] = useState<Array<{ slug?: string; full_name?: string }>>([]);
   const [activeTab, setActiveTab] = useState<"matrix" | "ledger">("matrix");
   const [activeWardFilter, setActiveWardFilter] = useState("all");
   const [activeStatusFilter, setActiveStatusFilter] = useState("all");
@@ -224,7 +227,7 @@ export default function DashboardBedsPage() {
   const [admitForm, setAdmitForm] = useState({
     patient_name: "",
     patient_phone: "+91 9",
-    assigned_doctor_name: "Dr. Rahul Sharma",
+    assigned_doctor_name: "",
     admission_type: "post_op_recovery",
     admission_notes: "Post-treatment monitoring & recovery protocol",
     vitals_protocol: "q4h"
@@ -234,11 +237,11 @@ export default function DashboardBedsPage() {
   const [sanitizationBed, setSanitizationBed] = useState<BedInfo | null>(null);
   const [sanitizationStep, setSanitizationStep] = useState<"hk" | "nurse_qa">("hk");
   const [hkForm, setHkForm] = useState({
-    staff_name: "Ramesh Kumar (Housekeeping Lead)",
+    staff_name: "",
     disinfection_method: "UV-C 30-min Cycle + Sodium Hypochlorite 1% Wipe"
   });
   const [nurseQaForm, setNurseQaForm] = useState({
-    nurse_name: "Sister Sunita (Duty Sister)",
+    nurse_name: "",
     esign: "ESIGN-NURSE-QA-VERIFIED"
   });
 
@@ -258,7 +261,7 @@ export default function DashboardBedsPage() {
   const [acknowledgeModalBed, setAcknowledgeModalBed] = useState<BedInfo | null>(null);
   const [ackInterventionForm, setAckInterventionForm] = useState({
     intervention_log: "",
-    acknowledged_by: "Sister Sunita (Duty Nurse)",
+    acknowledged_by: "",
     rechecked_spo2: 98,
     rechecked_bp: "120/80",
     rechecked_pulse: 76
@@ -273,12 +276,11 @@ export default function DashboardBedsPage() {
   const [overrideModalOpen, setOverrideModalOpen] = useState(false);
   const [overrideTargetBed, setOverrideTargetBed] = useState<BedInfo | null>(null);
   const [overrideForm, setOverrideForm] = useState({
-    supervisor_name: "Dr. Meenakshi Sundaram (MS)",
-    supervisor_pin: "7788",
+    supervisor_name: "",
     reason_code: "ICU_TRANSFER",
-    original_amount: 3200,
-    adjusted_amount: 1600,
-    waiver_notes: "Emergency transfer to ICU; ward tariff prorated and capped by MS."
+    original_amount: 0,
+    adjusted_amount: 0,
+    waiver_notes: ""
   });
 
   // Fix 3: Bedside Consumable Modal with Anti-Double-Post Protection
@@ -287,7 +289,7 @@ export default function DashboardBedsPage() {
     description: "IV Cannula 20G + NS 500ml Infusion Kit",
     amount: 180,
     charge_type: "consumable",
-    nurse_name: "Duty Nurse"
+    nurse_name: ""
   });
   const [duplicateWarning, setDuplicateWarning] = useState<{
     detected: boolean;
@@ -298,11 +300,11 @@ export default function DashboardBedsPage() {
   // Fix 4: Shift Handover & Task Carry-Over Modal
   const [handoverModalOpen, setHandoverModalOpen] = useState(false);
   const [handoverForm, setHandoverForm] = useState({
-    outgoing_nurse_name: "Sister Sunita (Duty Sister - Morning)",
-    incoming_nurse_name: "Sister Priyanka (Duty Sister - Evening)",
+    outgoing_nurse_name: "",
+    incoming_nurse_name: "",
     shift_name: "Morning -> Evening (14:00 IST)",
     handover_notes: "All beds reviewed. 2 patients post-procedure, vitals stable. IV fluids continuing on DC-01.",
-    incoming_esign: "ESIGN-PRIYANKA-RN-4912"
+    incoming_esign: ""
   });
   const [allPendingTasks, setAllPendingTasks] = useState<CareTask[]>([]);
   const [handoverHistory, setHandoverHistory] = useState<ShiftHandoverRecord[]>([]);
@@ -324,6 +326,24 @@ export default function DashboardBedsPage() {
     setTimeout(() => setToastMessage(null), 5000);
   };
 
+  // Attending doctors come from the clinic roster, not a hard-coded list.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/doctors", { cache: "no-store" });
+        const json = await res.json().catch(() => ({}));
+        const list = Array.isArray(json) ? json : json?.doctors || [];
+        if (!cancelled) {
+          setDoctorsList(list.filter((d: any) => d?.is_active !== false && d?.full_name));
+        }
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Live timer for escalation countdown & elapsed duration
   useEffect(() => {
     const timer = setInterval(() => {
@@ -337,16 +357,21 @@ export default function DashboardBedsPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/beds`);
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        const data = await res.json();
         setBeds(data.beds || []);
         setWards(data.wards || []);
         setMetrics(data.metrics || metrics);
+        setLoadError(null);
       } else {
-        loadFallbackBeds();
+        setBeds([]);
+        setWards([]);
+        setLoadError(data?.error || "Could not load the inpatient bed matrix.");
       }
     } catch (err) {
-      loadFallbackBeds();
+      setBeds([]);
+      setWards([]);
+      setLoadError("Could not reach the bed service. Check your connection.");
     } finally {
       setLoading(false);
     }
@@ -389,132 +414,6 @@ export default function DashboardBedsPage() {
     fetchLedger();
     fetchTasksAndHandovers();
   }, []);
-
-  const loadFallbackBeds = () => {
-    const fallbackWards: WardInfo[] = [
-      { id: "ward-1", name: "Daycare Recovery Suite", ward_type: "daycare_recovery", daily_rate: 1400, hourly_rate: 150, total_beds: 3, occupied_beds: 1 },
-      { id: "ward-2", name: "Private Deluxe Suite", ward_type: "private_deluxe", daily_rate: 3200, hourly_rate: 300, total_beds: 2, occupied_beds: 2 },
-      { id: "ward-3", name: "General Observation Ward", ward_type: "general", daily_rate: 900, hourly_rate: 100, total_beds: 3, occupied_beds: 1 },
-      { id: "ward-4", name: "Emergency HDU & Monitoring", ward_type: "icu", daily_rate: 4500, hourly_rate: 450, total_beds: 2, occupied_beds: 1 }
-    ];
-
-    const fallbackBeds: BedInfo[] = [
-      {
-        id: "bed-01",
-        clinic_slug: "derma-care-dehradun",
-        ward_id: "ward-1",
-        ward_name: "Daycare Recovery Suite",
-        ward_type: "daycare_recovery",
-        bed_number: "DC-01",
-        status: "OCCUPIED_ACTIVE",
-        admission_id: "ADM-DC01-9481",
-        current_patient_name: "Amit Rawat",
-        current_patient_phone: "+919123456780",
-        assigned_doctor_name: "Dr. Rahul Sharma",
-        admission_notes: "Post-PRP laser therapy recovery. Monitor vitals for 4 hours.",
-        admission_timestamp: new Date(Date.now() - 3.5 * 3600 * 1000).toISOString(),
-        daily_rate: 1400,
-        hourly_rate: 150,
-        stay_hours: 3.5,
-        accrued_base_charge: 525,
-        itemized_ledger_charge: 180,
-        accrued_charge: 705,
-        active_vitals_protocol: "q4h",
-        last_vitals: { bp: "118/76", pulse: 72, spo2: 99, temp: 98.4 },
-        pending_care_tasks_count: 1,
-        completed_care_tasks_count: 2
-      },
-      {
-        id: "bed-02",
-        clinic_slug: "derma-care-dehradun",
-        ward_id: "ward-1",
-        ward_name: "Daycare Recovery Suite",
-        ward_type: "daycare_recovery",
-        bed_number: "DC-02",
-        status: "VACANT_CLEAN",
-        daily_rate: 1400,
-        hourly_rate: 150,
-        stay_hours: 0,
-        accrued_base_charge: 0,
-        itemized_ledger_charge: 0,
-        accrued_charge: 0,
-        sanitization_hk_logged: true,
-        sanitization_nurse_qa: true
-      },
-      {
-        id: "bed-03",
-        clinic_slug: "derma-care-dehradun",
-        ward_id: "ward-1",
-        ward_name: "Daycare Recovery Suite",
-        ward_type: "daycare_recovery",
-        bed_number: "DC-03",
-        status: "VACANT_DIRTY",
-        daily_rate: 1400,
-        hourly_rate: 150,
-        stay_hours: 0,
-        accrued_base_charge: 0,
-        itemized_ledger_charge: 0,
-        accrued_charge: 0,
-        sanitization_hk_logged: false,
-        sanitization_nurse_qa: false
-      },
-      {
-        id: "bed-04",
-        clinic_slug: "derma-care-dehradun",
-        ward_id: "ward-2",
-        ward_name: "Private Deluxe Suite",
-        ward_type: "private_deluxe",
-        bed_number: "DLX-101",
-        status: "OCCUPIED_ACTIVE",
-        admission_id: "ADM-DLX101-8120",
-        current_patient_name: "Sunita Joshi",
-        current_patient_phone: "+919876543299",
-        assigned_doctor_name: "Dr. Rahul Sharma",
-        admission_notes: "Admitted for severe drug-induced urticarial rash and systemic observation.",
-        admission_timestamp: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
-        daily_rate: 3200,
-        hourly_rate: 300,
-        stay_hours: 18.0,
-        accrued_base_charge: 3200,
-        itemized_ledger_charge: 450,
-        accrued_charge: 3650,
-        active_vitals_protocol: "q4h",
-        last_vitals: { bp: "124/82", pulse: 78, spo2: 98, temp: 98.6 },
-        pending_care_tasks_count: 2,
-        completed_care_tasks_count: 3
-      },
-      {
-        id: "bed-05",
-        clinic_slug: "derma-care-dehradun",
-        ward_id: "ward-2",
-        ward_name: "Private Deluxe Suite",
-        ward_type: "private_deluxe",
-        bed_number: "DLX-102",
-        status: "OCCUPIED_PENDING_DISCHARGE",
-        admission_id: "ADM-DLX102-7711",
-        current_patient_name: "Pooja Rawat",
-        current_patient_phone: "+919876511223",
-        assigned_doctor_name: "Dr. Aditi Joshi",
-        admission_notes: "Post-op jaw observation. Final discharge summary pending doctor sign-off.",
-        admission_timestamp: new Date(Date.now() - 26 * 3600 * 1000).toISOString(),
-        discharge_ordered_at: new Date(Date.now() - 2.5 * 3600 * 1000).toISOString(),
-        doctor_discharge_signed: false,
-        is_escalated: true,
-        escalation_minutes: 150,
-        daily_rate: 3200,
-        hourly_rate: 300,
-        stay_hours: 26.0,
-        accrued_base_charge: 6400,
-        itemized_ledger_charge: 600,
-        accrued_charge: 7000,
-        pending_care_tasks_count: 0,
-        completed_care_tasks_count: 4
-      }
-    ];
-
-    setWards(fallbackWards);
-    setBeds(fallbackBeds);
-  };
 
   // 1. Admission Handler
   const handleAdmitSubmit = async (e: React.FormEvent) => {
@@ -611,7 +510,7 @@ export default function DashboardBedsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bed_id: bed.id,
-          ordered_by: "Dr. Rahul Sharma",
+          ordered_by: getStoredUser()?.full_name || "",
           doctor_signoff: true
         })
       });
@@ -735,7 +634,6 @@ export default function DashboardBedsPage() {
           bed_id: overrideTargetBed.id,
           admission_id: overrideTargetBed.admission_id,
           supervisor_name: overrideForm.supervisor_name,
-          supervisor_pin: overrideForm.supervisor_pin,
           reason_code: overrideForm.reason_code,
           original_amount: overrideForm.original_amount,
           adjusted_amount: overrideForm.adjusted_amount,
@@ -848,6 +746,18 @@ export default function DashboardBedsPage() {
           <button onClick={() => setToastMessage(null)} className="ml-2 text-white/60 hover:text-white dark:text-black/60">
             <X className="h-3.5 w-3.5" />
           </button>
+        </div>
+      )}
+
+      {loadError && (
+        <div className="flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/60 dark:bg-rose-950/30">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+          <div>
+            <div className="text-xs font-bold text-rose-800 dark:text-rose-200">
+              Bed matrix unavailable
+            </div>
+            <div className="mt-0.5 text-xs text-rose-700 dark:text-rose-300">{loadError}</div>
+          </div>
         </div>
       )}
 
@@ -965,7 +875,7 @@ export default function DashboardBedsPage() {
         <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-white to-white dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-4 shadow-apple-card space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" /> Tamper-Proof Clean
+              <Sparkles className="h-3.5 w-3.5" /> Dual-Signed Clean
             </span>
             <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[10px] font-black text-amber-700 dark:text-amber-400 font-mono">
               Dual E-Sign
@@ -975,7 +885,7 @@ export default function DashboardBedsPage() {
             Dual-Verified Sanitization
           </h3>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Housekeeping scans bed QR &amp; logs UV cycle completion. Nurse completes spot-check QA e-sign within 30 minutes. Bed unlocks to <code>VACANT_CLEAN</code> only when both pass.
+            Housekeeping records the UV cycle completion at the bedside. Nurse completes spot-check QA e-sign within 30 minutes. Bed unlocks to <code>VACANT_CLEAN</code> only when both pass.
           </p>
         </div>
 
@@ -1286,7 +1196,7 @@ export default function DashboardBedsPage() {
                             setAdmitForm({
                               patient_name: "",
                               patient_phone: "+91 9",
-                              assigned_doctor_name: "Dr. Rahul Sharma",
+                              assigned_doctor_name: "",
                               admission_type: "post_op_recovery",
                               admission_notes: "Clinical monitoring & post-treatment recovery",
                               vitals_protocol: "q4h"
@@ -1634,10 +1544,12 @@ export default function DashboardBedsPage() {
                     onChange={e => setAdmitForm({ ...admitForm, assigned_doctor_name: e.target.value })}
                     className="w-full rounded-xl border border-black/[0.1] px-3 py-2 dark:bg-white/[0.06]"
                   >
-                    <option>Dr. Rahul Sharma</option>
-                    <option>Dr. Aditi Joshi</option>
-                    <option>Dr. Vikram Sethi</option>
-                    <option>Dr. Priya Bansal</option>
+                    <option value="">Select attending doctor</option>
+                    {doctorsList.map((doc) => (
+                      <option key={doc.slug || doc.full_name} value={doc.full_name || ""}>
+                        {doc.full_name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -1720,7 +1632,7 @@ export default function DashboardBedsPage() {
                   ? "border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-500/10"
                   : "border-black/[0.06] text-[#86868B]"
               }`}>
-                Step 1: Housekeeping QR
+                Step 1: Housekeeping Check
               </div>
               <div className={`p-2 rounded-xl border ${
                 sanitizationStep === "nurse_qa"
@@ -1755,7 +1667,7 @@ export default function DashboardBedsPage() {
                   />
                 </div>
                 <div className="rounded-xl bg-amber-500/10 p-2.5 text-[11px] text-amber-800 dark:text-amber-300 border border-amber-500/20">
-                  QR scan verified bed physical tag. Submitting records UV completion timestamp and begins 30-min Nurse QA window.
+                  Submitting records the UV completion timestamp and begins the 30-min Nurse QA window.
                 </div>
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
@@ -1985,7 +1897,7 @@ export default function DashboardBedsPage() {
                 <textarea
                   rows={2}
                   required
-                  placeholder="e.g. Started high-flow O2 @ 4L/min, checked airway, notified Dr. Rahul Sharma."
+                  placeholder="e.g. Started high-flow O2 @ 4L/min, checked airway, notified the attending doctor."
                   value={ackInterventionForm.intervention_log}
                   onChange={e => setAckInterventionForm({ ...ackInterventionForm, intervention_log: e.target.value })}
                   className="w-full rounded-xl border border-black/[0.1] px-3 py-2 dark:bg-white/[0.06]"
@@ -2158,29 +2070,18 @@ export default function DashboardBedsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[#86868B] block mb-1 font-semibold">Authorizing Supervisor Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={overrideForm.supervisor_name}
-                    onChange={e => setOverrideForm({ ...overrideForm, supervisor_name: e.target.value })}
-                    className="w-full rounded-xl border border-black/[0.1] px-3 py-2 dark:bg-white/[0.06]"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[#86868B] block mb-1 font-semibold">Supervisor PIN (Auth) *</label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Enter Supervisor PIN (7788)"
-                    value={overrideForm.supervisor_pin}
-                    onChange={e => setOverrideForm({ ...overrideForm, supervisor_pin: e.target.value })}
-                    className="w-full rounded-xl border border-amber-500/40 px-3 py-2 dark:bg-white/[0.06] font-mono"
-                  />
-                </div>
+              <div>
+                <label className="text-[#86868B] block mb-1 font-semibold">Authorizing Supervisor Name</label>
+                <input
+                  type="text"
+                  required
+                  value={overrideForm.supervisor_name}
+                  onChange={e => setOverrideForm({ ...overrideForm, supervisor_name: e.target.value })}
+                  className="w-full rounded-xl border border-black/[0.1] px-3 py-2 dark:bg-white/[0.06]"
+                />
+                <p className="mt-1 text-[10px] text-[#86868B]">
+                  Overrides are recorded with your name and justification. No PIN verification is performed.
+                </p>
               </div>
 
               <div>

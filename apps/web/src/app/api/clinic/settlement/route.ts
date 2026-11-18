@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { createHash, randomUUID } from "crypto";
 import { guard, ADMIN_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const clinicSlug = searchParams.get("clinic_slug") || auth.auth.clinic!.slug;
     const clinicId = auth.auth.clinic!.id;
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     // Check if day is already locked
     const existing = await sql`
@@ -116,9 +117,9 @@ export async function POST(req: NextRequest) {
     const clinic_slug = auth.auth.clinic!.slug;
     const closed_by = auth.auth.user.full_name;
 
-    const todayStr = closing_date || new Date().toISOString().split("T")[0];
+    const todayStr = closing_date || clinicToday();
 
-    // Compute cryptographic tamper-proof hash for shift audit
+    // Compute a SHA-256 hash for the shift audit
     const hashPayload = `${clinic_slug}|${todayStr}|${gross_collections}|${soundbox_upi}|${counted_cash}|${closed_by}|${new Date().toISOString()}`;
     const auditHash = createHash("sha256").update(hashPayload).digest("hex");
 

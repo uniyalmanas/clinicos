@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, ADMIN_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const clinicSlug = auth.auth.clinic!.slug;
     const clinicId = auth.auth.clinic!.id;
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     // Fetch shift handovers
     const handovers = await sql`
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
       return apiError(400, "counted_cash is required.", "counted_cash_required");
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     const aptCash = await sql`
       SELECT COALESCE(SUM(fee_amount), 0) AS total_cash

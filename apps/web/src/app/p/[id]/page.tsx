@@ -37,127 +37,118 @@ import {
 import QRCodeDisplay from "@/components/QRCodeDisplay";
 import BackButton from "@/components/BackButton";
 
-// Server fallback seeds
-const SEED_PRESCRIPTIONS: Record<string, any> = {
-  "RX-2026-09-0014": {
-    prescription_number: "RX-2026-09-0014",
-    appointment_number: "APT-DERMA-101",
-    created_at: "2026-09-16",
-    signed_at: "10:30 AM",
-    doctor_name: "Dr. Rahul Sharma",
-    doctor_reg_number: "UKMC-8942-2012",
-    qualification_summary: "MBBS, MD (Dermatology, Venereology & Leprosy)",
-    clinic_name: "Derma Care Skin & Laser Centre",
-    clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
-    clinic_phone: "+919876543210",
-    patient_name: "Amit Rawat",
-    patient_phone: "+919123456780",
-    patient_age: 26,
-    patient_gender: "Male",
-    vitals: { bp: "118/78", pulse: 74, temp: 98.4, weight: 64, spo2: 99 },
-    provisional_diagnosis: "Moderate to Severe Acne Vulgaris (Grade III)",
-    items: [
-      {
-        medicine_name: "Tab Doxy-100",
-        generic_name: "DOXYCYCLINE HYCLATE",
-        dosage_form: "Capsule",
-        strength: "100 mg",
-        dosage_frequency: "1-0-0",
-        timing_relation: "After Food",
-        duration_days: 14,
-        special_instructions: "Take with a full glass of water, do not lie down immediately"
-      },
-      {
-        medicine_name: "Epiduo Gel",
-        generic_name: "ADAPALENE + BENZOYL PEROXIDE",
-        dosage_form: "Ointment",
-        strength: "0.1% / 2.5%",
-        dosage_frequency: "0-0-1",
-        timing_relation: "At Bedtime",
-        duration_days: 30,
-        special_instructions: "Apply pea-sized amount to affected areas only after moisturizer"
-      },
-      {
-        medicine_name: "Cetaphil Gentle Cleanser",
-        generic_name: "NON-SOAP CLEANSING LOTION",
-        dosage_form: "Lotion",
-        strength: "250 ml",
-        dosage_frequency: "1-0-1",
-        timing_relation: "Before Food",
-        duration_days: 60,
-        special_instructions: "Gentle circular motion for 30 seconds then rinse with lukewarm water"
-      }
-    ],
-    instructions: "Wash face twice daily with mild cleanser. Avoid picking or squeezing lesions. Use non-comedogenic sunscreen SPF 50 during daytime.",
-    followup_date: "2026-09-30",
-    digital_signature_hash: "a7f3b89091c5e4d28471b3e8c991a03f441582e79601d3cb4198fa0174e50212",
-    qr_verification_code: "VERIFY-DERMA-991204"
-  }
-};
-
 export default function PatientPrescriptionLockerPage() {
   const params = useParams();
-  const rawId = (params?.id as string) || "RX-2026-09-0014";
+  const rawId = (params?.id as string) || "";
   
-  const [rx, setRx] = useState<any>(SEED_PRESCRIPTIONS["RX-2026-09-0014"]);
+  const [rx, setRx] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [routedChemistMsg, setRoutedChemistMsg] = useState<string | null>(null);
   const [paperFormat, setPaperFormat] = useState<"a4" | "a5">("a4");
   const [activeReportTab, setActiveReportTab] = useState<"summary" | "schedule" | "guidance">("summary");
 
   useEffect(() => {
+    let cancelled = false;
     const fetchRx = async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
-        // 1. Check client session storage for instant preview
+        const res = await fetch(`/api/prescriptions/${encodeURIComponent(rawId)}`, { cache: "no-store" });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (res.ok && data && !data.error) {
+          setRx(data);
+          return;
+        }
+        // Only an exact local copy may stand in for a network failure. Never
+        // show the most recent prescription for a different id.
         if (typeof window !== "undefined") {
           const directMatch = localStorage.getItem(`clinicos_rx_${rawId}`);
           if (directMatch) {
             try {
               const parsed = JSON.parse(directMatch);
-              setRx(parsed);
-              setLoading(false);
-              return;
-            } catch {}
-          }
-
-          const latest = localStorage.getItem("clinicos_latest_rx");
-          if (latest) {
-            try {
-              const parsed = JSON.parse(latest);
-              if (parsed.prescription_number === rawId || rawId === "latest" || rawId.startsWith("RX-")) {
+              if (parsed && parsed.prescription_number === rawId) {
                 setRx(parsed);
-                setLoading(false);
+                setLoadError("Showing the copy saved on this device — the clinic server could not be reached.");
                 return;
               }
             } catch {}
           }
         }
-
-        // 2. Fetch from backend API
-        const res = await fetch(`/api/prescriptions/${rawId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setRx(data);
-        } else if (SEED_PRESCRIPTIONS[rawId]) {
-          setRx(SEED_PRESCRIPTIONS[rawId]);
-        }
+        setRx(null);
+        setLoadError(
+          res.status === 404
+            ? "This prescription could not be found. Check the link or ask the clinic to resend it."
+            : data?.error || "Could not load this prescription right now."
+        );
       } catch {
-        if (SEED_PRESCRIPTIONS[rawId]) {
-          setRx(SEED_PRESCRIPTIONS[rawId]);
+        if (cancelled) return;
+        if (typeof window !== "undefined") {
+          const directMatch = localStorage.getItem(`clinicos_rx_${rawId}`);
+          if (directMatch) {
+            try {
+              const parsed = JSON.parse(directMatch);
+              if (parsed && parsed.prescription_number === rawId) {
+                setRx(parsed);
+                setLoadError("Showing the copy saved on this device — the clinic server could not be reached.");
+                return;
+              }
+            } catch {}
+          }
         }
+        setRx(null);
+        setLoadError("Could not reach the clinic server. Please retry in a moment.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchRx();
+    return () => {
+      cancelled = true;
+    };
   }, [rawId]);
 
-  const publicPrescriptionUrl = typeof window === "undefined"
-    ? `https://medic-sept-2026.vercel.app/p/${rx.prescription_number || rawId}`
-    : `${window.location.origin}/p/${rx.prescription_number || rawId}`;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#ECEEF2] dark:bg-[#000000] flex items-center justify-center p-6">
+        <div className="text-sm font-semibold text-[#86868B] dark:text-[#8E8E93]">Loading prescription…</div>
+      </div>
+    );
+  }
 
-  const waShareText = `🏥 *Verified Digital Prescription - ${rx.doctor_name}*\n` +
-    `Patient: ${rx.patient_name}\n` +
+  if (!rx) {
+    return (
+      <div className="min-h-screen bg-[#ECEEF2] dark:bg-[#000000] flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-[24px] border border-black/[0.06] bg-white p-8 text-center shadow-xl dark:border-white/[0.08] dark:bg-[#1C1C1E]">
+          <ShieldCheck className="mx-auto h-10 w-10 text-[#FF3B30]" />
+          <h1 className="mt-4 text-lg font-bold text-[#1D1D1F] dark:text-white">Prescription not available</h1>
+          <p className="mt-2 text-sm text-[#86868B] dark:text-[#8E8E93]">
+            {loadError || "This prescription could not be found."}
+          </p>
+          <Link
+            href="/"
+            className="mt-5 inline-flex items-center justify-center rounded-xl bg-[#0071E3] px-4 py-2 text-xs font-bold text-white hover:bg-[#0077ED]"
+          >
+            Go to ClinicOS
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    // A device-cached copy is shown, but the reader must know it is not live.
+    console.warn(loadError);
+  }
+
+  // The public endpoint deliberately redacts identity for anonymous readers.
+  const displayPatientName = rx.patient_name || rx.patient_name_masked || "Patient";
+
+  const publicPrescriptionUrl = `${typeof window === "undefined" ? "" : window.location.origin}/p/${rx.prescription_number || rawId}`;
+
+  const waShareText = `🏥 *Digital Prescription - ${rx.doctor_name}*\n` +
+    `Patient: ${displayPatientName}\n` +
     `Rx Number: #${rx.prescription_number}\n` +
     `Diagnosis: ${rx.provisional_diagnosis}\n\n` +
     `🔗 View & Download Official A4 Document: ${publicPrescriptionUrl}\n` +
@@ -198,7 +189,7 @@ export default function PatientPrescriptionLockerPage() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#34C759]/10 px-3 py-1 text-xs font-bold text-[#34C759] dark:text-[#30D158]">
-              <ShieldCheck className="h-4 w-4" /> Digitally Signed (NMC Compliant)
+              <ShieldCheck className="h-4 w-4" /> Digitally Signed
             </span>
           </div>
         </div>
@@ -266,7 +257,7 @@ export default function PatientPrescriptionLockerPage() {
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1.5 rounded-full border border-[#0071E3]/30 bg-[#0071E3]/10 px-3.5 py-1.5 text-xs font-bold text-[#0071E3] dark:text-[#2997FF] shadow-sm transition hover:bg-[#0071E3]/20 active:scale-95 cursor-pointer"
-              title="Download official NMC-signed vector PDF"
+              title="Download digitally signed vector PDF"
             >
               <Download className="h-3.5 w-3.5" />
               <span>Export PDF</span>
@@ -313,7 +304,7 @@ export default function PatientPrescriptionLockerPage() {
                 <div className="flex items-center gap-3 text-xs text-[#86868B] mt-0.5">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5 text-blue-500" />
-                    <strong>{rx.created_at || "Today"}</strong>
+                    <strong>{rx.created_at || "Not recorded"}</strong>
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
@@ -321,7 +312,7 @@ export default function PatientPrescriptionLockerPage() {
                     <strong>{rx.signed_at || "06:15 PM"}</strong>
                   </span>
                   <span>•</span>
-                  <span>Patient: <strong className="text-[#1D1D1F] dark:text-white">{rx.patient_name}</strong></span>
+                  <span>Patient: <strong className="text-[#1D1D1F] dark:text-white">{displayPatientName}</strong></span>
                 </div>
               </div>
             </div>
@@ -572,7 +563,7 @@ export default function PatientPrescriptionLockerPage() {
         </div>
 
         {/* ============================================================== */}
-        {/* 4. THE PRINTABLE OFFICIAL A4/A5 NMC PRESCRIPTION SHEET */}
+        {/* 4. THE PRINTABLE OFFICIAL A4/A5 PRESCRIPTION SHEET */}
         {/* ============================================================== */}
         <div className={`overflow-hidden rounded-[20px] border border-black/[0.06] bg-white ${paperFormat === "a5" ? "max-w-2xl text-xs p-5" : "max-w-4xl p-6 sm:p-8"} mx-auto shadow-apple-card dark:border-white/[0.08] dark:bg-[#1C1C1E] print:m-0 print:p-0 print:border-none print:shadow-none print:bg-white print:text-black print:max-w-none print:w-full print:rounded-none flex flex-col justify-between print:min-h-[268mm] transition-all`}>
 
@@ -586,31 +577,35 @@ export default function PatientPrescriptionLockerPage() {
                       <Stethoscope className="h-3.5 w-3.5" />
                     </div>
                     <h1 className="text-lg font-black text-[#1D1D1F] dark:text-white print:text-black print:text-base tracking-tight">
-                      {rx.clinic_name || "Derma Care Skin & Laser Centre"}
+                      {rx.clinic_name || ""}
                     </h1>
                   </div>
                   <div className="text-[11px] text-[#86868B] mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 print:text-gray-700 print:text-[9.5pt]">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-[#0071E3] print:text-black" />
-                      <span>{rx.clinic_address || "14, Rajpur Road, Dehradun"}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-[#0071E3] print:text-black" />
-                      <span>Tel: {rx.clinic_phone || "+91 98765 43210"}</span>
-                    </span>
+                    {rx.clinic_address && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-[#0071E3] print:text-black" />
+                        <span>{rx.clinic_address}</span>
+                      </span>
+                    )}
+                    {rx.clinic_phone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3 w-3 text-[#0071E3] print:text-black" />
+                        <span>Tel: {rx.clinic_phone}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Doctor Credentials & Medical Council Reg */}
                 <div className="text-left sm:text-right print:text-right">
                   <div className="text-base font-black text-[#1D1D1F] dark:text-white print:text-black print:text-sm">
-                    {rx.doctor_name || "Dr. Rahul Sharma"}
+                    {rx.doctor_name || "Doctor"}
                   </div>
                   <div className="text-xs text-[#0071E3] font-semibold mt-0.5 print:text-black print:text-[9.5pt]">
                     {rx.qualification_summary || "MBBS, MD (Registered Medical Practitioner)"}
                   </div>
                   <div className="text-[11px] text-[#86868B] font-mono mt-0.5 print:text-black print:text-[9pt]">
-                    NMC / State Reg: <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.doctor_reg_number}</strong>
+                    Reg: <strong className="text-[#1D1D1F] dark:text-white print:text-black">{rx.doctor_reg_number}</strong>
                   </div>
                 </div>
               </div>
@@ -619,15 +614,15 @@ export default function PatientPrescriptionLockerPage() {
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-[12px] bg-[#ECEEF2]/60 p-2.5 text-xs dark:bg-white/[0.04] print:mt-2 print:p-2 print:rounded-none print:border print:border-black print:bg-white print:grid-cols-4 print:text-[9.5pt] print:gap-1">
                 <div>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Patient Name</span>
-                  <strong className="text-sm text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.patient_name}</strong>
+                  <strong className="text-sm text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{displayPatientName}</strong>
                 </div>
                 <div>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Age &amp; Gender</span>
-                  <strong className="text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.patient_age} Yrs / {rx.patient_gender || "Male"}</strong>
+                  <strong className="text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.patient_age ? `${rx.patient_age} Yrs` : "Age not recorded"} / {rx.patient_gender || "Gender not recorded"}</strong>
                 </div>
                 <div>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Date Issued</span>
-                  <strong className="text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.created_at || "Today"}</strong>
+                  <strong className="text-[#1D1D1F] dark:text-white print:text-black print:text-[10pt]">{rx.created_at || "Not recorded"}</strong>
                 </div>
                 <div>
                   <span className="text-[9px] font-bold uppercase tracking-wider text-[#86868B] print:text-gray-600 block">Prescription ID</span>
@@ -658,14 +653,14 @@ export default function PatientPrescriptionLockerPage() {
               </div>
             </div>
 
-            {/* Prescribed Medications Section (NMC Generic Table) */}
+            {/* Prescribed Medications Section (Generic Name First) */}
             <div className="mt-3.5 print:mt-2">
               <div className="flex items-center justify-between mb-2 print:mb-1.5">
                 <h3 className="text-xs font-black uppercase tracking-wider text-[#1D1D1F] dark:text-white print:text-black flex items-center gap-1.5">
                   <span className="font-serif italic text-base font-bold text-[#0071E3] print:text-black">℞</span> Prescribed Medication Regimen
                 </h3>
                 <span className="text-[10px] font-mono text-[#86868B] uppercase print:text-gray-600">
-                  (Generic formulations prioritized per NMC regulations)
+                  (Generic formulations listed first)
                 </span>
               </div>
 
@@ -768,7 +763,7 @@ export default function PatientPrescriptionLockerPage() {
             </div>
           </div>
 
-          {/* Cryptographic SHA-256 Tamper-Proof Seal & Digital Signature (Pinned Footer) */}
+          {/* Cryptographic SHA-256 Seal & Digital Signature (Pinned Footer) */}
           <div className="print-footer-pin print-avoid-break mt-4 border-t-2 border-[#1D1D1F] pt-3 dark:border-white print:border-black text-xs flex flex-row justify-between items-end gap-4">
             <div className="flex items-center gap-2.5">
               <div className="rounded-lg border border-black/[0.08] dark:border-white/[0.1] bg-white p-1 shadow-sm shrink-0 print:border-black">
@@ -786,11 +781,15 @@ export default function PatientPrescriptionLockerPage() {
                   <span>Prescription Integrity Hash (SHA-256)</span>
                 </div>
                 <div className="font-mono text-[8.5px] text-[#86868B] mt-0.5 max-w-xs break-all print:text-black">
-                  SHA-256: {rx.digital_signature_hash || "a7f3b89091c5e4d28471b3e8c991a03f441582e79601d3cb4198fa0174e50212"}
+                  {rx.digital_signature_hash
+                    ? `SHA-256: ${rx.digital_signature_hash}`
+                    : "Signature hash not recorded on this copy"}
                 </div>
-                <div className="font-mono text-[9.5px] text-[#86868B] mt-0.5 print:text-black">
-                  Verification Code: <strong>{rx.qr_verification_code || "VERIFY-DERMA-991204"}</strong>
-                </div>
+                {rx.qr_verification_code && (
+                  <div className="font-mono text-[9.5px] text-[#86868B] mt-0.5 print:text-black">
+                    Verification Code: <strong>{rx.qr_verification_code}</strong>
+                  </div>
+                )}
                 <div className="text-[9px] text-[#86868B] print:text-gray-700">
                   Scan QR code with phone to verify authentic digital seal on Clinicos
                 </div>
@@ -799,17 +798,21 @@ export default function PatientPrescriptionLockerPage() {
 
             <div className="text-right">
               <div className="font-black text-sm text-[#1D1D1F] dark:text-white print:text-black print:text-xs">
-                {rx.doctor_name || "Dr. Rahul Sharma"}
+                {rx.doctor_name || "Doctor"}
               </div>
               <div className="text-[10px] text-[#86868B] print:text-black">
                 Registered Medical Practitioner
               </div>
-              <div className="text-[10px] text-[#86868B] font-mono mt-0.5 print:text-black">
-                {rx.doctor_reg_number || "UKMC-8942-2012"}
-              </div>
-              <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[8.5px] font-bold text-emerald-700 dark:text-emerald-300 uppercase print:border-black print:text-black print:bg-white">
-                ✓ Digitally Verified
-              </div>
+              {rx.doctor_reg_number && (
+                <div className="text-[10px] text-[#86868B] font-mono mt-0.5 print:text-black">
+                  {rx.doctor_reg_number}
+                </div>
+              )}
+              {rx.digital_signature_hash && (
+                <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[8.5px] font-bold text-emerald-700 dark:text-emerald-300 uppercase print:border-black print:text-black print:bg-white">
+                  ✓ Integrity Seal Recorded
+                </div>
+              )}
             </div>
           </div>
         </div>

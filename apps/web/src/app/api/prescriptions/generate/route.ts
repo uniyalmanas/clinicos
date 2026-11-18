@@ -113,6 +113,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // An appointment belongs to exactly one doctor. Refuse to sign another
+    // clinician's visit, otherwise the prescription, token and audit trail
+    // would be attributed to the wrong doctor. Legacy rows without a
+    // doctor_slug are allowed through for backfill compatibility.
+    const appointmentDoctorSlug = String(appointment.doctor_slug || "").trim();
+    if (appointmentDoctorSlug && appointmentDoctorSlug !== String(doctorRow.slug)) {
+      return apiError(
+        409,
+        `This appointment belongs to ${appointment.doctor_name || "another doctor"}, not to you.`,
+        "doctor_mismatch"
+      );
+    }
+
     const doctorRegNumber = String(doctorRow.medical_council_reg_number || "").trim();
     if (!doctorRegNumber) {
       return apiError(
@@ -181,9 +194,9 @@ export async function POST(req: NextRequest) {
     const inserted = await sql`
       INSERT INTO prescriptions (
         id, prescription_number, appointment_number, clinic_id, doctor_name,
-        doctor_reg_number, clinic_name, clinic_address, patient_name,
-        patient_phone, patient_age, patient_gender, vitals, symptoms,
-        provisional_diagnosis, items, instructions, followup_date,
+        doctor_reg_number, doctor_slug, signed_by, clinic_name, clinic_address,
+        patient_name, patient_phone, patient_age, patient_gender, vitals,
+        symptoms, provisional_diagnosis, items, instructions, followup_date,
         digital_signature_hash, qr_verification_code, lab_tests,
         procedures, clinical_notes, diet_advice, created_at
       ) VALUES (
@@ -193,6 +206,8 @@ export async function POST(req: NextRequest) {
         ${clinicId},
         ${doctorRow.full_name},
         ${doctorRegNumber},
+        ${doctorRow.slug},
+        ${doctorRow.full_name},
         ${clinic.name},
         ${clinicAddress},
         ${String(patient_name)},
@@ -223,6 +238,55 @@ export async function POST(req: NextRequest) {
         AND clinic_id::text = ${clinicId}::text;
     `;
 
+    // Hand the doctor's ordered tests to the lab worklist. Without this, a test
+    // written on the prescription never reaches the diagnostics desk and the
+    // patient has to ask for it to be re-entered. A failure here must not lose
+    // the signed prescription, so it is recorded and reported separately.
+    const orderedTests: string[] = (Array.isArray(lab_tests) ? lab_tests : [])
+      .map((t: any) =>
+        typeof t === "string" ? t : String(t?.test_name || t?.name || "").trim()
+      )
+      .filter(Boolean);
+
+    let labOrdersCreated = 0;
+    if (orderedTests.length > 0) {
+      try {
+        for (let i = 0; i < orderedTests.length; i += 1) {
+          const testName = orderedTests[i];
+          const orderNumber = `LAB-${year}-${String(
+            Math.floor(100000 + Math.random() * 900000)
+          )}-${i + 1}`;
+          await sql`
+            INSERT INTO diagnostic_lab_orders (
+              id, clinic_slug, order_number, appointment_id, prescription_id,
+              sample_barcode, patient_name, patient_phone, patient_age,
+              patient_gender, doctor_name, test_name, status
+            ) VALUES (
+              ${randomUUID()},
+              ${clinic.slug},
+              ${orderNumber},
+              ${String(appointment.id)},
+              ${id},
+              ${`BC-${Math.floor(100000 + Math.random() * 900000)}`},
+              ${String(patient_name)},
+              ${patientPhone},
+              ${ageNum},
+              ${patient_gender || null},
+              ${doctorRow.full_name},
+              ${testName},
+              'ordered'
+            );
+          `;
+          labOrdersCreated += 1;
+        }
+      } catch (labError: any) {
+        console.error(
+          "POST /api/prescriptions/generate lab order hand-off failed:",
+          labError
+        );
+      }
+    }
+
     await logAudit({
       actorId: auth.auth.user.id,
       actorRole: auth.auth.role,
@@ -247,6 +311,7 @@ export async function POST(req: NextRequest) {
         integrity_hash: integrityHash,
         integrity_seal_label: "Prescription Integrity Hash (SHA-256)",
         items: standardizedItems,
+        lab_orders_created: labOrdersCreated,
         vitals: typeof inserted[0].vitals === "string" ? JSON.parse(inserted[0].vitals) : inserted[0].vitals,
         symptoms:
           typeof inserted[0].symptoms === "string"

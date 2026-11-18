@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/api";
+import { clinicToday } from "@/lib/clinic-date";
 import { 
   Pill, 
   Microscope, 
@@ -199,7 +200,7 @@ export default function DashboardPharmacyPage() {
   const [recalledBatches, setRecalledBatches] = useState<any[]>([]);
   const [showRecallModal, setShowRecallModal] = useState(false);
   const [recallBatchInput, setRecallBatchInput] = useState("");
-  const [recallReasonInput, setRecallReasonInput] = useState("CDSCO Quality Notification #49/2026");
+  const [recallReasonInput, setRecallReasonInput] = useState("");
   const [isSubmittingRecall, setIsSubmittingRecall] = useState(false);
 
   // Schedule H1 Logs
@@ -265,33 +266,9 @@ export default function DashboardPharmacyPage() {
     schedule_type: "Regular"
   });
 
-  // Partner Orders (Delivery Hub)
-  const [partnerOrders, setPartnerOrders] = useState([
-    {
-      order_id: "ORD-PHARM-881",
-      prescription_number: "RX-2026-09-0014",
-      patient_name: "Amit Rawat",
-      patient_phone: "+91 91234 56780",
-      partner_name: "City Care Pharmacy (Rajpur Road Hub)",
-      type: "pharmacy",
-      items_summary: "DOXYCYCLINE 100MG (10 caps), TRETINOIN 0.05% CREAM (1 tube)",
-      order_status: "ready_for_pickup",
-      time: "10:40 AM Today",
-      amount_est: 340
-    },
-    {
-      order_id: "ORD-PHARM-882",
-      prescription_number: "RX-2026-09-0021",
-      patient_name: "Priya Singh",
-      patient_phone: "+91 91234 56781",
-      partner_name: "Sanjeevani Medicos (EC Road)",
-      type: "pharmacy",
-      items_summary: "CETIRIZINE 10MG (1 strip), MOMETASONE 0.1% CREAM",
-      order_status: "dispatched",
-      time: "11:15 AM Today",
-      amount_est: 185
-    }
-  ]);
+  // Partner Orders (Delivery Hub). Populated from partner fulfilment records;
+  // until one exists the tab shows a real empty state rather than demo orders.
+  const [partnerOrders, setPartnerOrders] = useState<any[]>([]);
 
   // Toast Helper
   const showToast = (msg: string) => {
@@ -313,10 +290,14 @@ export default function DashboardPharmacyPage() {
         setInventory(json.items || []);
         setSummary(json.summary || {});
       } else {
-        runFallbackInventory();
+        setInventory([]);
+        setSummary({});
+        showToast("Could not load pharmacy inventory from the server.");
       }
     } catch {
-      runFallbackInventory();
+      setInventory([]);
+      setSummary({});
+      showToast("Could not load pharmacy inventory from the server.");
     } finally {
       setIsLoadingInventory(false);
     }
@@ -400,116 +381,15 @@ export default function DashboardPharmacyPage() {
     fetchRecalls();
     fetchScheduleH1();
     fetchTransfers();
+    // A prescription issued by the doctor must appear without the pharmacist
+    // manually refreshing. Poll the two views that change during the day.
+    const iv = setInterval(() => {
+      fetchQueueAndBills();
+      fetchInventory();
+    }, 15000);
+    return () => clearInterval(iv);
   }, [inventoryFilter]);
 
-  const runFallbackInventory = () => {
-    const fallback: PharmacyBatchItem[] = [
-      {
-        id: "1",
-        clinic_slug: "derma-care-dehradun",
-        brand_name: "Doxy-100 L",
-        generic_name: "DOXYCYCLINE 100MG + LACTOBACILLUS",
-        dosage_form: "Capsule",
-        strength: "100mg",
-        batch_number: "DX-2026-91",
-        expiry_date: "2026-10-30",
-        days_to_expiry: 42,
-        is_expiring_soon: true,
-        is_expired: false,
-        supplier_name: "Doon Medical Distributors",
-        supplier_id: "SUPP-01",
-        supplier_return_window_days: 60,
-        days_to_return_deadline: -18,
-        is_return_window_active: false,
-        is_return_eligibility_expired: true,
-        is_recalled: false,
-        schedule_type: "Schedule H1",
-        current_stock: 30,
-        reorder_level: 15,
-        is_low_stock: false,
-        purchase_price: 28,
-        mrp: 65,
-        selling_price: 58,
-        gst_rate: 12,
-        hsn_code: "3004",
-        rack_location: "Rack A-01",
-        manufacturer: "Dr. Reddy's Lab"
-      },
-      {
-        id: "2",
-        clinic_slug: "derma-care-dehradun",
-        brand_name: "Retino-A 0.05%",
-        generic_name: "TRETINOIN 0.05% W/W GEL",
-        dosage_form: "Ointment",
-        strength: "0.05%",
-        batch_number: "TR-2027-14",
-        expiry_date: "2027-10-15",
-        days_to_expiry: 380,
-        is_expiring_soon: false,
-        is_expired: false,
-        supplier_name: "Uttarakhand Pharma Agencies",
-        supplier_id: "SUPP-02",
-        supplier_return_window_days: 90,
-        days_to_return_deadline: 290,
-        is_return_window_active: false,
-        is_return_eligibility_expired: false,
-        is_recalled: false,
-        schedule_type: "Schedule H",
-        current_stock: 4,
-        reorder_level: 10,
-        is_low_stock: true,
-        purchase_price: 110,
-        mrp: 220,
-        selling_price: 195,
-        gst_rate: 12,
-        hsn_code: "3004",
-        rack_location: "Rack A-04",
-        manufacturer: "Janssen India"
-      },
-      {
-        id: "3",
-        clinic_slug: "derma-care-dehradun",
-        brand_name: "Momate Cream",
-        generic_name: "MOMETASONE FUROATE 0.1% W/W",
-        dosage_form: "Ointment",
-        strength: "0.1%",
-        batch_number: "MF-2026-19",
-        expiry_date: "2026-10-05",
-        days_to_expiry: 18,
-        is_expiring_soon: true,
-        is_expired: false,
-        supplier_name: "Rajpur Road Drug House",
-        supplier_id: "SUPP-03",
-        supplier_return_window_days: 30,
-        days_to_return_deadline: 12,
-        is_return_window_active: true,
-        is_return_eligibility_expired: false,
-        is_recalled: false,
-        schedule_type: "Regular",
-        current_stock: 6,
-        reorder_level: 10,
-        is_low_stock: true,
-        purchase_price: 85,
-        mrp: 175,
-        selling_price: 150,
-        gst_rate: 12,
-        hsn_code: "3004",
-        rack_location: "Rack A-08",
-        manufacturer: "Glenmark"
-      }
-    ];
-    setInventory(fallback);
-    setSummary({
-      total_skus: 3,
-      total_stock_units: 40,
-      total_inventory_mrp: 3880,
-      low_stock_count: 2,
-      expiring_soon_count: 2,
-      return_eligible_count: 1,
-      recalled_count: 0,
-      schedule_h1_count: 1
-    });
-  };
 
   // Add Batch Handler
   const handleCreateBatch = async (e: React.FormEvent) => {
@@ -597,7 +477,7 @@ export default function DashboardPharmacyPage() {
         body: JSON.stringify({
           batch_number: batchNumber,
           is_recalled: isRecalled,
-          recall_reason: reason || "CDSCO Regulatory Safety Notice"
+          recall_reason: reason || "Batch recall recorded by clinic"
         })
       });
 
@@ -747,7 +627,7 @@ export default function DashboardPharmacyPage() {
     // Block if any item is recalled
     const hasRecalled = dispenseItems.some(i => i.is_recalled);
     if (hasRecalled) {
-      setDispenseError("DISPENSE HARD-BLOCKED: One or more selected items are flagged under CDSCO Regulatory Recall.");
+      setDispenseError("DISPENSE HARD-BLOCKED: One or more selected items are flagged in this clinic's recall register.");
       setIsDispensing(false);
       return;
     }
@@ -758,13 +638,9 @@ export default function DashboardPharmacyPage() {
       const tot = Math.max(0, sub + gst - discountAmount);
 
       const payload = {
-        clinic_slug: "derma-care-dehradun",
         prescription_number: selectedRxForDispense.prescription_number,
         patient_name: selectedRxForDispense.patient_name,
         patient_phone: selectedRxForDispense.patient_phone,
-        patient_address: "12, Rajpur Road, Dehradun",
-        doctor_name: selectedRxForDispense.doctor_name || "Dr. Rahul Sharma",
-        doctor_reg_number: "UKMC-8942-2012",
         items: dispenseItems,
         subtotal: sub,
         discount: Number(discountAmount),
@@ -825,11 +701,11 @@ export default function DashboardPharmacyPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Schedule_H1_Register_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Schedule_H1_Register_${clinicToday()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast("Schedule H1 Register CSV downloaded for CDSCO inspection.");
+    showToast("Schedule H1 Register CSV downloaded for inspection.");
   };
 
   // Filter inventory by query
@@ -870,7 +746,7 @@ export default function DashboardPharmacyPage() {
             {/* Regulatory Safeguard Badge */}
             <div className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 border border-blue-500/20 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
               <ShieldCheck className="h-3 w-3" />
-              <span>CDSCO &amp; Drugs Rule 65 Compliant</span>
+              <span>Schedule H1 register &amp; recall controls</span>
             </div>
           </div>
 
@@ -922,7 +798,7 @@ export default function DashboardPharmacyPage() {
             }`}
           >
             <Ban className="h-3.5 w-3.5 text-rose-500" />
-            <span>CDSCO Recall</span>
+            <span>Recall register</span>
             {summary.recalled_count > 0 && (
               <span className="ml-1 rounded-full bg-rose-600 px-1.5 py-0.2 text-[10px] font-bold text-white">
                 {summary.recalled_count}
@@ -968,11 +844,11 @@ export default function DashboardPharmacyPage() {
         </div>
       </div>
 
-      {/* COMPATIBLE HARDWARE SPECIFICATION BAR */}
+      {/* COMPATIBLE HARDWARE REFERENCE BAR */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/[0.06] bg-[#F5F5F7] px-4 py-2 text-[11px] text-[#86868B] dark:border-white/[0.08] dark:bg-[#1C1C1E]">
         <div className="flex flex-wrap items-center gap-4">
           <span className="font-bold text-[#1D1D1F] dark:text-white flex items-center gap-1.5">
-            <Cpu className="h-3.5 w-3.5 text-[#0071E3]" /> Compatible Hardware Certified:
+            <Cpu className="h-3.5 w-3.5 text-[#0071E3]" /> Compatible hardware examples:
           </span>
           <span>🏷️ <strong>Scanners:</strong> Honeywell Voyager, Zebra DS2208, TVS BS-L100 (USB HID)</span>
           <span>🖨️ <strong>Printers:</strong> 58/80mm ESC/POS, Epson TM-T82, TVS RP-3160</span>
@@ -1051,10 +927,10 @@ export default function DashboardPharmacyPage() {
             </span>
           </div>
           <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
-            Verified HSN &amp; Chime Fallback
+            HSN Confirmation &amp; Manual Fallback
           </h3>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Interactive HSN confirmation prevents invalid tax rates. If Soundbox API times out during peak hours, 1-click Offline Manual Pay keeps queues moving.
+            HSN codes are captured per item. If a payment device is unavailable, record the payment manually at the counter.
           </p>
         </div>
       </div>
@@ -1126,7 +1002,7 @@ export default function DashboardPharmacyPage() {
               </div>
             </div>
 
-            {/* CDSCO Frozen / Recalled */}
+            {/* Recall Frozen / Recalled */}
             <div 
               onClick={() => setInventoryFilter(inventoryFilter === "recalled" ? "all" : "recalled")}
               className={`cursor-pointer rounded-[20px] border p-5 shadow-sm transition ${
@@ -1136,7 +1012,7 @@ export default function DashboardPharmacyPage() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-rose-600 dark:text-rose-400">CDSCO Frozen</span>
+                <span className="text-xs font-bold text-rose-600 dark:text-rose-400">Recall frozen</span>
                 <span className="rounded-full bg-rose-500/10 p-2 text-rose-600">
                   <Ban className="h-4 w-4" />
                 </span>
@@ -1177,7 +1053,7 @@ export default function DashboardPharmacyPage() {
                 className="flex items-center gap-1.5 rounded-[12px] bg-rose-50 border border-rose-500/20 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 transition"
               >
                 <Ban className="h-3.5 w-3.5" />
-                <span>CDSCO Recall Freeze</span>
+                <span>Recall Freeze</span>
               </button>
             </div>
           </div>
@@ -1279,7 +1155,7 @@ export default function DashboardPharmacyPage() {
                             </div>
                             {item.is_recalled ? (
                               <span className="inline-block mt-0.5 rounded px-1.5 py-0.2 text-[9px] font-black bg-rose-500/15 text-rose-700 dark:text-rose-400">
-                                CDSCO Recall Freeze
+                                Recall Freeze
                               </span>
                             ) : isReturnUrgent ? (
                               <span className="inline-block mt-0.5 rounded px-1.5 py-0.2 text-[9px] font-black bg-amber-500/15 text-amber-800 dark:text-amber-400 animate-pulse">
@@ -1489,17 +1365,17 @@ export default function DashboardPharmacyPage() {
         </div>
       )}
 
-      {/* TAB 3: CDSCO DRUG RECALL & FREEZE CONTROL */}
+      {/* TAB 3: DRUG RECALL & FREEZE REGISTER */}
       {activeTab === "recall" && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent p-5 dark:border-rose-500/30">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h2 className="text-base font-black text-rose-700 dark:text-rose-400 flex items-center gap-2">
-                  <Ban className="h-4 w-4" /> CDSCO Central Drug Recall Management
+                  <Ban className="h-4 w-4" /> Drug Recall &amp; Freeze Register
                 </h2>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-1">
-                  Instantly hard-block dispensing across all counters when CDSCO issues a regulatory recall or safety alert.
+                  Hard-block dispensing across all counters when the clinic records a recall or safety alert for a batch.
                 </p>
               </div>
               <button
@@ -1507,7 +1383,7 @@ export default function DashboardPharmacyPage() {
                 className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 transition"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Flag New CDSCO Recall</span>
+                <span>Flag Batch Recall</span>
               </button>
             </div>
           </div>
@@ -1521,7 +1397,7 @@ export default function DashboardPharmacyPage() {
               <div className="py-8 text-center text-[#86868B]">
                 <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-emerald-500" />
                 <p className="text-sm font-bold text-[#1D1D1F] dark:text-white">Zero Active Drug Recalls</p>
-                <p className="text-xs mt-0.5">All inventory batches are verified compliant with CDSCO safety standards.</p>
+                <p className="text-xs mt-0.5">No batches are currently flagged in this clinic&apos;s recall list.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -1532,7 +1408,7 @@ export default function DashboardPharmacyPage() {
                       <th className="px-3 py-2.5">Batch Number</th>
                       <th className="px-3 py-2.5">Frozen Units</th>
                       <th className="px-3 py-2.5">Manufacturer</th>
-                      <th className="px-3 py-2.5">CDSCO Notice / Reason</th>
+                      <th className="px-3 py-2.5">Recall Notice / Reason</th>
                       <th className="px-3 py-2.5 text-right">Emergency Action</th>
                     </tr>
                   </thead>
@@ -1543,7 +1419,7 @@ export default function DashboardPharmacyPage() {
                         <td className="px-3 py-2.5 font-mono font-bold text-rose-600">{rb.batch_number}</td>
                         <td className="px-3 py-2.5 font-bold text-rose-700">{rb.current_stock} Units Locked</td>
                         <td className="px-3 py-2.5">{rb.manufacturer}</td>
-                        <td className="px-3 py-2.5 text-xs text-rose-700 dark:text-rose-400">{rb.recall_reason || "CDSCO Safety Notice"}</td>
+                        <td className="px-3 py-2.5 text-xs text-rose-700 dark:text-rose-400">{rb.recall_reason || "Safety notice"}</td>
                         <td className="px-3 py-2.5 text-right">
                           <button
                             onClick={() => handleToggleRecall(rb.batch_number, false)}
@@ -1589,7 +1465,7 @@ export default function DashboardPharmacyPage() {
               <div className="py-12 text-center text-[#86868B]">
                 <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm font-bold text-[#1D1D1F] dark:text-white">No Schedule H1 Dispenses Logged Today</p>
-                <p className="text-xs mt-0.5">When medicines marked "Schedule H1" are dispensed at POS, they are auto-logged here with Prescriber NMC details.</p>
+                <p className="text-xs mt-0.5">When medicines marked "Schedule H1" are dispensed at POS, they are auto-logged here with the prescriber registration details on file.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -1598,7 +1474,7 @@ export default function DashboardPharmacyPage() {
                     <tr>
                       <th className="px-3 py-2.5">Date &amp; Bill #</th>
                       <th className="px-3 py-2.5">Patient Name &amp; Address</th>
-                      <th className="px-3 py-2.5">Prescriber &amp; NMC Reg</th>
+                      <th className="px-3 py-2.5">Prescriber Reg</th>
                       <th className="px-3 py-2.5">Drug &amp; Batch</th>
                       <th className="px-3 py-2.5">Quantity</th>
                       <th className="px-3 py-2.5">Pharmacist Sign-Off</th>
@@ -1801,12 +1677,16 @@ export default function DashboardPharmacyPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-[#1D1D1F] dark:text-white">External Delivery Partners</h2>
-              <p className="text-xs text-[#86868B]">Fulfilled via verified local retail pharmacies and diagnostic partner labs</p>
+              <p className="text-xs text-[#86868B]">Fulfilled via local retail pharmacies and diagnostic labs recorded by the clinic</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {partnerOrders.map(o => (
+            {partnerOrders.length === 0 ? (
+              <div className="md:col-span-2 rounded-2xl border border-dashed border-black/[0.08] dark:border-white/[0.12] bg-white/60 dark:bg-[#1C1C1E]/60 p-8 text-center text-xs text-[#86868B]">
+                No external partner orders yet. Orders routed to a delivery partner will appear here.
+              </div>
+            ) : partnerOrders.map(o => (
               <div key={o.order_id} className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-sm dark:border-white/[0.08] dark:bg-[#1C1C1E] space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-bold text-[#0071E3]">{o.order_id}</span>
@@ -1891,7 +1771,7 @@ export default function DashboardPharmacyPage() {
                   className="w-full rounded-xl border border-black/[0.1] px-3 py-2 dark:bg-white/[0.06] dark:text-white text-xs"
                 >
                   <option value="near_expiry">Near-Expiry (&lt;30/60 Days Before Credit Cutoff)</option>
-                  <option value="cdsco_recalled">CDSCO Regulatory Safety Recall</option>
+                  <option value="cdsco_recalled">Regulatory Safety Recall</option>
                   <option value="damaged_batch">Damaged Packaging / Broken Ampoule</option>
                   <option value="slow_moving">Slow-Moving SKU Rebalancing</option>
                 </select>
@@ -1929,7 +1809,7 @@ export default function DashboardPharmacyPage() {
         </div>
       )}
 
-      {/* MODAL 2: CDSCO RECALL FREEZE */}
+      {/* MODAL 2: BATCH RECALL FREEZE */}
       {showRecallModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl dark:bg-[#1C1C1E] space-y-4">
@@ -1937,7 +1817,7 @@ export default function DashboardPharmacyPage() {
               <div className="flex items-center gap-2 text-rose-600">
                 <Ban className="h-5 w-5" />
                 <h3 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                  CDSCO Regulatory Drug Freeze
+                  Drug Batch Freeze
                 </h3>
               </div>
               <button onClick={() => setShowRecallModal(false)} className="text-[#86868B] hover:text-[#1D1D1F]">
@@ -1946,7 +1826,7 @@ export default function DashboardPharmacyPage() {
             </div>
 
             <p className="text-xs text-[#86868B]">
-              Enter the batch number notified by CDSCO. This will <strong>immediately hard-block POS checkout</strong> across all counter terminals.
+              Enter the batch number and reason. This will <strong>immediately hard-block POS checkout</strong> across all counter terminals.
             </p>
 
             <div className="space-y-3 text-xs">
@@ -2407,7 +2287,7 @@ export default function DashboardPharmacyPage() {
                 Tax Invoice / Dispensary Cash Memo
               </h3>
               <p className="text-xs text-[#86868B]">
-                DocSphere ClinicOS • GSTIN: 05AAACH8419L1Z5
+                ClinicOS Pharmacy Receipt
               </p>
               <p className="font-mono text-xs font-bold text-[#0071E3] mt-1">
                 {activeReceipt.bill_number}
@@ -2416,7 +2296,7 @@ export default function DashboardPharmacyPage() {
 
             <div className="text-xs space-y-1">
               <p>Patient: <strong>{activeReceipt.patient_name}</strong></p>
-              <p>Doctor: {activeReceipt.doctor_name || "Dr. Rahul Sharma"}</p>
+              <p>Doctor: {activeReceipt.doctor_name || "—"}</p>
               <p>Payment: <strong className="uppercase">{activeReceipt.payment_mode}</strong> {activeReceipt.is_offline_reconciliation ? "(Offline Reconciled)" : ""}</p>
             </div>
 

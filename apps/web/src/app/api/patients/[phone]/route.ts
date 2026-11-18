@@ -151,6 +151,46 @@ export async function GET(
       }));
     }
 
+    // Signed diagnostic reports. Only a report the pathologist has verified is
+    // released; an order still awaiting a result stays on the lab worklist.
+    const labReports = scopeClinicId
+      ? await sql`
+          SELECT o.order_number, o.test_name, o.category, o.results,
+                 o.verified_at, o.verified_by, o.pathologist_reg_no,
+                 o.critical_value_alert, o.critical_parameters, o.report_sha256,
+                 o.doctor_name, o.appointment_id, o.prescription_id
+          FROM diagnostic_lab_orders o
+          WHERE RIGHT(REGEXP_REPLACE(o.patient_phone, '[^0-9]', '', 'g'), 10) = ${cleanPhone}
+            AND o.status = 'completed'
+            AND o.verified_at IS NOT NULL
+            AND (
+              EXISTS (
+                SELECT 1 FROM appointments a
+                WHERE a.id::text = o.appointment_id::text
+                  AND a.clinic_id::text = ${scopeClinicId}::text
+              )
+              OR EXISTS (
+                SELECT 1 FROM prescriptions p
+                WHERE p.id::text = o.prescription_id::text
+                  AND p.clinic_id::text = ${scopeClinicId}::text
+              )
+            )
+          ORDER BY o.verified_at DESC
+          LIMIT 50;
+        `
+      : await sql`
+          SELECT o.order_number, o.test_name, o.category, o.results,
+                 o.verified_at, o.verified_by, o.pathologist_reg_no,
+                 o.critical_value_alert, o.critical_parameters, o.report_sha256,
+                 o.doctor_name, o.appointment_id, o.prescription_id
+          FROM diagnostic_lab_orders o
+          WHERE RIGHT(REGEXP_REPLACE(o.patient_phone, '[^0-9]', '', 'g'), 10) = ${cleanPhone}
+            AND o.status = 'completed'
+            AND o.verified_at IS NOT NULL
+          ORDER BY o.verified_at DESC
+          LIMIT 50;
+        `;
+
     // A clinic member may only see a patient who actually has a record there.
     if (
       scopeClinicId &&
@@ -260,6 +300,21 @@ export async function GET(
       visits,
       documents,
       consultation_reports: consultationReports,
+      lab_reports: labReports.map((report: any) => ({
+        order_number: report.order_number,
+        test_name: report.test_name,
+        category: report.category || null,
+        results: parseJson(report.results) || [],
+        verified_at: report.verified_at || null,
+        verified_by: report.verified_by || null,
+        pathologist_reg_no: report.pathologist_reg_no || null,
+        critical_value_alert: Boolean(report.critical_value_alert),
+        critical_parameters: parseJson(report.critical_parameters) || [],
+        report_sha256: report.report_sha256 || null,
+        doctor_name: report.doctor_name || null,
+        appointment_id: report.appointment_id || null,
+        prescription_id: report.prescription_id || null,
+      })),
     };
 
     await logAudit({

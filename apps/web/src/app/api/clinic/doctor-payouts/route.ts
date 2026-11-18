@@ -3,10 +3,11 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, CLINIC_ROLES, ADMIN_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
-const todayIso = () => new Date().toISOString().split("T")[0];
+const todayIso = () => clinicToday();
 
 /**
  * Doctor payout preview.

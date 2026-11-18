@@ -8,6 +8,18 @@ import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
+/** Build a neutral profile line from supplied facts only. */
+function buildDoctorBio(
+  doctorName: string,
+  specialization: string,
+  clinicName: string,
+  city: string
+) {
+  const parts = [`${doctorName}${specialization ? ` — ${specialization}` : ""}.`];
+  parts.push(`Practises at ${clinicName}${city ? `, ${city}` : ""}.`);
+  return parts.join(" ");
+}
+
 /**
  * Doctor & clinic onboarding — request stage.
  *
@@ -63,32 +75,30 @@ export async function POST(req: NextRequest) {
     const planPrice = practiceType === "clinic" ? 1299.0 : 599.0;
     const maxDoctors = practiceType === "clinic" ? 10 : 1;
 
-    // Support flat payload as well as nested payload
+    // Support flat payload as well as nested payload. Missing values are kept
+    // empty and rejected by the validation below instead of being invented.
     if (!doctor) {
       doctor = {
         full_name: body.doctor_name || body.full_name || "",
-        specialization: body.specialization || "General Medicine",
-        qualifications: body.qualifications || "MBBS, MD",
-        medical_council_reg_number: body.medical_council_reg_number || null,
-        medical_council_state: body.medical_council_state || "State Medical Council",
-        years_of_experience: Number(body.years_of_experience) || 10,
-        consultation_fee: Number(body.consultation_fee) || 500,
-        followup_fee: Number(body.followup_fee) || 200,
-        services: Array.isArray(body.services) ? body.services : ["General Consultation"],
+        specialization: body.specialization || "",
+        qualifications: body.qualifications || "",
+        medical_council_reg_number: body.medical_council_reg_number || "",
+        medical_council_state: body.medical_council_state || "",
+        years_of_experience: Number(body.years_of_experience) || 0,
+        consultation_fee: Number(body.consultation_fee) || 0,
+        followup_fee: Number(body.followup_fee) || 0,
+        services: Array.isArray(body.services) ? body.services : [],
       };
     }
 
     if (!clinic) {
       clinic = {
         name: body.clinic_name || "",
-        address_line: body.address_line || "Main Road",
-        city: body.city || "Dehradun",
-        state: body.state || "Uttarakhand",
-        postal_code: body.postal_code || "248001",
-        opening_hours: body.opening_hours || {
-          morning: "10:00 AM - 02:00 PM",
-          evening: "05:00 PM - 08:30 PM",
-        },
+        address_line: body.address_line || "",
+        city: body.city || "",
+        state: body.state || "",
+        postal_code: body.postal_code || "",
+        opening_hours: body.opening_hours || {},
       };
     }
 
@@ -99,6 +109,23 @@ export async function POST(req: NextRequest) {
     }
     if (!clinicName) {
       return apiError(400, "Clinic name is required.", "missing_clinic_name");
+    }
+    if (!String(doctor.specialization || "").trim()) {
+      return apiError(400, "Doctor specialization is required.", "missing_specialization");
+    }
+    if (!String(doctor.medical_council_reg_number || "").trim()) {
+      return apiError(
+        400,
+        "Medical council registration number is required.",
+        "missing_registration"
+      );
+    }
+    if (!String(clinic.city || "").trim() || !String(clinic.state || "").trim()) {
+      return apiError(400, "Clinic city and state are required.", "missing_location");
+    }
+    const requestedFee = Number(doctor.consultation_fee);
+    if (!Number.isFinite(requestedFee) || requestedFee <= 0) {
+      return apiError(400, "Consultation fee is required.", "missing_consultation_fee");
     }
 
     // 2. Enforce a real password. No default, no server-generated credential.
@@ -179,17 +206,8 @@ export async function POST(req: NextRequest) {
       throw insertErr;
     }
 
-    const facilities = [
-      "Full AC",
-      "Waiting Lounge",
-      "WiFi",
-      "Wheelchair Accessible",
-      "Digital Prescriptions",
-    ];
-    const openingHours = clinic.opening_hours || {
-      "Monday - Saturday": "10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM",
-      Sunday: "Closed",
-    };
+    const facilities: string[] = [];
+    const openingHours = clinic.opening_hours || {};
 
     await sql`
       INSERT INTO organizations (
@@ -212,16 +230,23 @@ export async function POST(req: NextRequest) {
         subscription_status, subscription_plan, created_at
       ) VALUES (
         ${clinicId}, ${orgId}, ${clinicSlug}, ${clinicName}, ${practiceType}, ${storedPhone},
-        ${clinic.address_line || "Main Road"}, ${clinic.city || "Dehradun"},
-        ${clinic.state || "Uttarakhand"}, ${clinic.postal_code || "248001"},
+        ${clinic.address_line || ""}, ${clinic.city},
+        ${clinic.state}, ${clinic.postal_code || null},
         ${JSON.stringify(facilities)}, ${JSON.stringify(openingHours)},
         'pending', false, 'pending', ${planType}, NOW()
       )
     `;
 
-    const consultationFee = Number(doctor.consultation_fee) || 500;
-    const followupFee = Number(doctor.followup_fee) || Math.round(consultationFee * 0.4);
-    const services = Array.isArray(doctor.services) ? doctor.services : ["General Consultation"];
+    const consultationFee = Number(doctor.consultation_fee);
+    const followupFee = Number(doctor.followup_fee) || 0;
+    const services = Array.isArray(doctor.services) ? doctor.services : [];
+
+    const openingHourText = openingHours && typeof openingHours === "object"
+      ? Object.entries(openingHours)
+          .filter(([, value]) => Boolean(value))
+          .map(([day, value]) => `${day}: ${value}`)
+          .join(", ")
+      : "";
 
     await sql`
       INSERT INTO doctors (
@@ -233,17 +258,17 @@ export async function POST(req: NextRequest) {
         opd_timings, phone, bio, user_id, is_active, created_at
       ) VALUES (
         ${doctorId}, ${docSlug}, 'Dr.', ${doctorName},
-        ${doctor.specialization || "General Medicine"},
-        ${doctor.qualifications || "MBBS, MD"},
-        ${doctor.medical_council_reg_number || null},
-        ${doctor.medical_council_state || "Uttarakhand Medical Council"},
-        ${Number(doctor.years_of_experience) || 5},
+        ${doctor.specialization},
+        ${doctor.qualifications || ""},
+        ${doctor.medical_council_reg_number},
+        ${doctor.medical_council_state || ""},
+        ${Number(doctor.years_of_experience) || 0},
         ${consultationFee}, ${followupFee}, 7,
         ${JSON.stringify(services)}, 'pending', 0, 0,
         ${clinicId}, ${clinicName}, ${clinicSlug},
-        ${clinic.address_line || "Main Road, Dehradun"},
-        'Mon - Sat: 10:00 AM - 02:00 PM, 05:00 PM - 08:30 PM',
-        ${storedPhone}, ${ai_bio || `${doctorName} is a specialist in ${clinic.city || "Dehradun"}.`},
+        ${clinic.address_line || ""},
+        ${openingHourText || null},
+        ${storedPhone}, ${ai_bio || buildDoctorBio(doctorName, doctor.specialization, clinicName, clinic.city)},
         ${userId}, false, NOW()
       )
     `;

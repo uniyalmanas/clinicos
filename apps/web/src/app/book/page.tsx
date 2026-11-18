@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
+import { clinicToday, clinicDatePlusDays } from "@/lib/clinic-date";
 import { 
   Stethoscope, 
   Clock, 
@@ -33,12 +34,10 @@ import {
 import { API_BASE_URL } from "@/lib/api";
 import BackButton from "@/components/BackButton";
 import { getDoctors } from "@/lib/clinic-data";
-import { 
-  DEHRADUN_DOCTORS, 
-  DOCTORS_MAP, 
-  DoctorProfile, 
-  SPECIALTY_CATEGORIES, 
-  DEHRADUN_LOCALITIES 
+import {
+  DoctorProfile,
+  SPECIALTY_CATEGORIES,
+  DEHRADUN_LOCALITIES
 } from "@/data/doctors";
 import { usePatientSession, updateActiveBooking } from "@/lib/patientSession";
 
@@ -157,8 +156,11 @@ function BookingExperience() {
   const urlClinic = searchParams.get("clinic");
   const urlMode = searchParams.get("mode");
 
-  // Catalog state - initialized with verified Dehradun doctors
-  const [doctorsList, setDoctorsList] = useState<DoctorProfile[]>(DEHRADUN_DOCTORS);
+  // Catalog state is populated from the live directory only. Static fixtures
+  // are never shown to a patient as bookable doctors.
+  const [doctorsList, setDoctorsList] = useState<DoctorProfile[]>([]);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<DoctorProfile | null>(null);
 
   // Search & Filter state for Doctor Selection
@@ -198,11 +200,13 @@ function BookingExperience() {
     }
   }, [session]);
 
-  // Live queue status for selected doctor
+  // Live queue status for selected doctor. `null` means the queue could not be
+  // loaded; we never substitute invented token numbers or wait times.
   const [liveQueue, setLiveQueue] = useState<{
-    current_active_token: number;
+    current_active_token: number | null;
     next_token_available: number;
     wait_minutes: number;
+    waiting_patient_count: number;
   } | null>(null);
   const [isLoadingQueue, setIsLoadingQueue] = useState(false);
 
@@ -211,24 +215,26 @@ function BookingExperience() {
   const [bookingConfirmed, setBookingConfirmed] = useState<any>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
-  // 1. On mount, optionally merge latest doctors from API
+  // 1. Load the live doctor directory. Fail closed: no fixture or mock data.
   useEffect(() => {
     let isMounted = true;
+    setIsLoadingCatalog(true);
     async function fetchApiDoctors() {
       try {
         const liveDoctors = await getDoctors();
-        if (Array.isArray(liveDoctors) && liveDoctors.length > 0 && isMounted) {
-          const slugMap = new Map<string, DoctorProfile>();
-          DEHRADUN_DOCTORS.forEach(d => slugMap.set(d.slug, d));
-
-          liveDoctors.forEach((doctor: DoctorProfile) => {
-            slugMap.set(doctor.slug, { ...slugMap.get(doctor.slug)!, ...doctor });
-          });
-
-          setDoctorsList(Array.from(slugMap.values()));
+        if (!isMounted) return;
+        if (Array.isArray(liveDoctors) && liveDoctors.length > 0) {
+          setDoctorsList(liveDoctors);
+          setCatalogError(null);
+        } else {
+          setCatalogError("The doctor directory is unavailable right now. Please try again shortly.");
         }
       } catch (e) {
-        // Fallback silently to DEHRADUN_DOCTORS
+        if (isMounted) {
+          setCatalogError("The doctor directory is unavailable right now. Please try again shortly.");
+        }
+      } finally {
+        if (isMounted) setIsLoadingCatalog(false);
       }
     }
     fetchApiDoctors();
@@ -277,26 +283,21 @@ function BookingExperience() {
         if (res.ok && isMounted) {
           const data = await res.json();
           setLiveQueue({
-            current_active_token: data.current_active_token || 2,
-            next_token_available: data.next_token_available || selectedDoc?.next_token || 4,
-            wait_minutes: (data.estimated_wait_minutes_per_patient || 12) * Math.max(1, (data.next_token_available || 4) - (data.current_active_token || 2))
+            current_active_token:
+              data.current_active_token === null || data.current_active_token === undefined
+                ? null
+                : Number(data.current_active_token),
+            next_token_available: Number(data.next_token_available ?? 0),
+            wait_minutes: Number(data.estimated_wait_minutes ?? 0),
+            waiting_patient_count: Number(data.waiting_patient_count ?? 0)
           });
         } else if (isMounted) {
-          // Default sensible calculation
-          setLiveQueue({
-            current_active_token: 2,
-            next_token_available: selectedDoc?.next_token || 4,
-            wait_minutes: 15
-          });
+          // The queue is genuinely unavailable; show that instead of inventing
+          // a token number or wait time.
+          setLiveQueue(null);
         }
       } catch (e) {
-        if (isMounted) {
-          setLiveQueue({
-            current_active_token: 2,
-            next_token_available: selectedDoc?.next_token || 4,
-            wait_minutes: 15
-          });
-        }
+        if (isMounted) setLiveQueue(null);
       } finally {
         if (isMounted) setIsLoadingQueue(false);
       }
@@ -407,11 +408,11 @@ function BookingExperience() {
         : "Evening OPD Shift (05:00 PM - 08:30 PM)";
 
     const formattedDate = appointmentDate === "today"
-      ? new Date().toISOString().split("T")[0]
+      ? clinicToday()
       : appointmentDate === "tomorrow"
-      ? new Date(Date.now() + 86400000).toISOString().split("T")[0]
+      ? clinicDatePlusDays(1)
       : appointmentDate === "day_after"
-      ? new Date(Date.now() + 2 * 86400000).toISOString().split("T")[0]
+      ? clinicDatePlusDays(2)
       : appointmentDate;
 
     try {
@@ -538,10 +539,12 @@ function BookingExperience() {
                   <div className="mt-1 text-5xl sm:text-6xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
                     #{bookingConfirmed.appointment.token_number}
                   </div>
-                  <div className="mt-2 text-xs text-[#86868B] flex items-center justify-center sm:justify-start gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-apple-amber" />
-                    Estimated wait time: <strong className="text-[#1D1D1F] dark:text-white font-semibold">~{liveQueue?.wait_minutes || 15} minutes</strong>
-                  </div>
+                  {liveQueue && liveQueue.wait_minutes > 0 && (
+                    <div className="mt-2 text-xs text-[#86868B] flex items-center justify-center sm:justify-start gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-apple-amber" />
+                      Estimated wait at booking: <strong className="text-[#1D1D1F] dark:text-white font-semibold">~{liveQueue.wait_minutes} minutes</strong>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -702,24 +705,40 @@ function BookingExperience() {
               {/* Live OPD Chamber Status Bar */}
               <div className="mt-5 rounded-[20px] border border-apple-amber/20 bg-apple-amber/10 p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-apple-amber opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-apple-amber"></span>
-                    </span>
-                    <span className="text-[#1D1D1F] dark:text-[#F5F5F7] font-medium">
-                      In Chamber Right Now: <strong className="font-mono text-apple-amber">Token #{liveQueue?.current_active_token || Math.max(1, (selectedDoc.next_token || 4) - 2)}</strong>
-                    </span>
-                  </div>
+                  {isLoadingQueue ? (
+                    <span className="text-[#86868B]">Loading the live queue…</span>
+                  ) : liveQueue ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-apple-amber opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-apple-amber"></span>
+                        </span>
+                        <span className="text-[#1D1D1F] dark:text-[#F5F5F7] font-medium">
+                          {liveQueue.current_active_token !== null
+                            ? <>In Chamber Right Now: <strong className="font-mono text-apple-amber">Token #{liveQueue.current_active_token}</strong></>
+                            : "No patient in consultation right now"}
+                        </span>
+                      </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="text-apple-amber font-semibold font-mono">
-                      Your Walk-in Token: #{liveQueue?.next_token_available || selectedDoc.next_token || 4}
+                      <div className="flex items-center gap-3">
+                        {liveQueue.next_token_available > 0 && (
+                          <span className="text-apple-amber font-semibold font-mono">
+                            Next Token: #{liveQueue.next_token_available}
+                          </span>
+                        )}
+                        <span className="text-[11px] text-[#86868B]">
+                          {liveQueue.waiting_patient_count > 0
+                            ? `(${liveQueue.waiting_patient_count} waiting${liveQueue.wait_minutes > 0 ? `, ~${liveQueue.wait_minutes}m` : ""})`
+                            : "(queue clear)"}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-[#86868B]">
+                      Live queue is unavailable right now — your token is assigned when you book.
                     </span>
-                    <span className="text-[11px] text-[#86868B]">
-                      (~{liveQueue?.wait_minutes || 15}m wait)
-                    </span>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -1007,14 +1026,14 @@ function BookingExperience() {
                   {isSubmitting ? (
                     <>
                       <RotateCw className="h-4 w-4 animate-spin" /> 
-                      Reserving Live Token #{liveQueue?.next_token_available || selectedDoc.next_token || 4}...
+                      Confirming your booking…
                     </>
                   ) : (
                     <>
                       <Check className="h-4 w-4" /> 
                       {paymentMethod === "pay_online"
-                        ? `Pay ₹${selectedDoc.consultation_fee} Online & Confirm Token #${liveQueue?.next_token_available || selectedDoc.next_token || 4}`
-                        : `Confirm Token #${liveQueue?.next_token_available || selectedDoc.next_token || 4} & Receive WhatsApp Pass`}
+                        ? `Pay ₹${selectedDoc.consultation_fee} Online & Confirm Booking`
+                        : `Confirm Booking & Receive WhatsApp Pass`}
                     </>
                   )}
                 </button>
@@ -1035,7 +1054,7 @@ function BookingExperience() {
                 Select a Doctor to Book Appointment
               </h1>
               <p className="text-xs sm:text-sm text-[#86868B] dark:text-[#8E8E93]">
-                Choose your specialist to get an instant live OPD queue token or advance appointment with verified Dehradun doctors.
+                Choose your specialist to get an instant live OPD queue token or advance appointment with doctors practising in Dehradun.
               </p>
             </div>
 
@@ -1111,13 +1130,28 @@ function BookingExperience() {
                 </div>
 
                 <div className="text-xs font-medium text-[#86868B]">
-                  Showing <strong className="text-[#1D1D1F] dark:text-white">{filteredDoctors.length}</strong> verified specialists
+                  Showing <strong className="text-[#1D1D1F] dark:text-white">{filteredDoctors.length}</strong> registered specialists
                 </div>
               </div>
             </div>
 
             {/* Doctors Grid */}
-            {filteredDoctors.length === 0 ? (
+            {isLoadingCatalog ? (
+              <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-12 text-center">
+                <div className="mx-auto h-9 w-9 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin" />
+                <p className="mt-3 text-xs font-semibold text-[#86868B]">Loading doctors…</p>
+              </div>
+            ) : catalogError ? (
+              <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-12 text-center space-y-3">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-apple-amber/10 text-apple-amber">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white">
+                  Doctor directory is unavailable
+                </h3>
+                <p className="text-xs text-[#86868B] max-w-sm mx-auto">{catalogError}</p>
+              </div>
+            ) : filteredDoctors.length === 0 ? (
               <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-12 text-center space-y-3">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-apple-amber/10 text-apple-amber">
                   <AlertCircle className="h-6 w-6" />
@@ -1160,10 +1194,12 @@ function BookingExperience() {
                             <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white group-hover:text-apple-blue transition truncate">
                               {doc.full_name}
                             </h3>
-                            <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded shrink-0">
-                              <Star className="h-3 w-3 fill-emerald-600 text-emerald-600" />
-                              {doc.rating}
-                            </span>
+                            {doc.total_reviews > 0 && (
+                              <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded shrink-0">
+                                <Star className="h-3 w-3 fill-emerald-600 text-emerald-600" />
+                                {doc.rating}
+                              </span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-1.5 text-xs text-apple-blue dark:text-sky-400 font-semibold mt-0.5">
@@ -1174,15 +1210,19 @@ function BookingExperience() {
                             </span>
                           </div>
 
-                          <div className="mt-1 flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                            <Building2 className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{doc.clinic_name}</span>
-                          </div>
+                          {doc.clinic_name && (
+                            <div className="mt-1 flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                              <Building2 className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{doc.clinic_name}</span>
+                            </div>
+                          )}
 
-                          <div className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 truncate">
-                            <MapPin className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{doc.locality || doc.clinic_address}</span>
-                          </div>
+                          {(doc.locality || doc.clinic_address) && (
+                            <div className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 truncate">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{doc.locality || doc.clinic_address}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1190,10 +1230,10 @@ function BookingExperience() {
                       <div className="mt-3.5 rounded-xl border border-black/[0.04] dark:border-white/[0.06] bg-[#ECEEF2]/50 dark:bg-[#2C2C2E]/40 px-3 py-2 text-[11px] flex items-center justify-between text-gray-600 dark:text-gray-300">
                         <span className="flex items-center gap-1.5 font-medium">
                           <Clock className="h-3 w-3 text-apple-amber" />
-                          <span>Now: <strong className="font-mono text-[#1D1D1F] dark:text-white">Token #2</strong></span>
+                          <span>Live OPD queue</span>
                         </span>
                         <span className="text-apple-teal font-semibold font-mono">
-                          Next Available: #{doc.next_token || 4}
+                          {doc.next_token > 0 ? `Next Available: #${doc.next_token}` : "Token at counter"}
                         </span>
                       </div>
                     </div>
@@ -1203,7 +1243,7 @@ function BookingExperience() {
                       <div>
                         <span className="text-[10px] text-[#86868B] block">Consultation Fee</span>
                         <span className="text-sm font-bold text-[#1D1D1F] dark:text-white font-mono">
-                          ₹{doc.consultation_fee}
+                          {doc.consultation_fee > 0 ? `₹${doc.consultation_fee}` : "Fee at clinic"}
                         </span>
                       </div>
 

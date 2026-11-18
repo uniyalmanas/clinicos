@@ -27,6 +27,7 @@ import {
   Zap
 } from "lucide-react";
 import { API_BASE_URL } from "@/lib/api";
+import { clinicToday } from "@/lib/clinic-date";
 
 interface DoctorChamber {
   id: string;
@@ -61,77 +62,11 @@ interface AppointmentItem {
   symptoms_description?: string;
 }
 
-const DEFAULT_POLYCLINIC_DOCTORS: DoctorChamber[] = [
-  {
-    id: "doc-1",
-    slug: "dr-rahul-sharma",
-    full_name: "Dr. Rahul Sharma",
-    specialization: "Dermatologist & Cosmetologist",
-    registration_number: "UKMC-8942-2012",
-    council_name: "Uttarakhand Medical Council",
-    consultation_fee: 600,
-    chamber_name: "Chamber 1 • Dermatology & Skin",
-    room_number: "Room 101",
-    token_prefix: "DERM",
-    fee_split: "Visiting Consultant 70/30 auto-calculated",
-    doctor_share_pct: 70,
-    clinic_share_pct: 30,
-    is_procedure_chair: false
-  },
-  {
-    id: "doc-2",
-    slug: "dr-aditi-joshi",
-    full_name: "Dr. Aditi Joshi",
-    specialization: "Dentist & Oral Implantologist",
-    registration_number: "UDC-4120-2016",
-    council_name: "Uttarakhand Dental Council",
-    consultation_fee: 500,
-    chamber_name: "Chamber 2 • Dental Procedure Chair 1",
-    room_number: "Chair 1",
-    token_prefix: "DENTAL",
-    fee_split: "Visiting Specialist 70/30 auto-calculated",
-    doctor_share_pct: 70,
-    clinic_share_pct: 30,
-    is_procedure_chair: true
-  },
-  {
-    id: "doc-3",
-    slug: "dr-vikram-sethi",
-    full_name: "Dr. Vikram Sethi",
-    specialization: "Pediatrician & Child Health Specialist",
-    registration_number: "UKMC-6214-2009",
-    council_name: "Uttarakhand Medical Council",
-    consultation_fee: 500,
-    chamber_name: "Chamber 3 • Pediatrics & Child Wellness",
-    room_number: "Room 103",
-    token_prefix: "PED",
-    fee_split: "Visiting Consultant 70/30 auto-calculated",
-    doctor_share_pct: 70,
-    clinic_share_pct: 30,
-    is_procedure_chair: false
-  },
-  {
-    id: "doc-4",
-    slug: "dr-arvind-rawat",
-    full_name: "Dr. Arvind Rawat",
-    specialization: "General Physician & Internal Medicine",
-    registration_number: "UKMC-4819-2008",
-    council_name: "Uttarakhand Medical Council",
-    consultation_fee: 500,
-    chamber_name: "Chamber 4 • General Medicine OPD",
-    room_number: "Room 104",
-    token_prefix: "GP",
-    fee_split: "Primary In-House 60/40 auto-calculated",
-    doctor_share_pct: 60,
-    clinic_share_pct: 40,
-    is_procedure_chair: false
-  }
-];
 
 export default function DashboardChambersPage() {
   const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
   const [isUpgradingPlan, setIsUpgradingPlan] = useState(false);
-  const [doctors, setDoctors] = useState<DoctorChamber[]>(DEFAULT_POLYCLINIC_DOCTORS);
+  const [doctors, setDoctors] = useState<DoctorChamber[]>([]);
   const [appointmentsByDoc, setAppointmentsByDoc] = useState<Record<string, AppointmentItem[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -240,364 +175,68 @@ export default function DashboardChambersPage() {
   // Fetch doctors and appointments
   const fetchData = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsRefreshing(true);
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("clinicos_token") : null;
+    const headers: Record<string, string> = token
+      ? { Authorization: `Bearer ${token}` }
+      : {};
 
     try {
-      // 1. Fetch doctors from API or fallback
-      let docList = DEFAULT_POLYCLINIC_DOCTORS;
-      try {
-        const docRes = await fetch(`/api/doctors`);
-        if (docRes.ok) {
-          const fetchedDocs = await docRes.json();
-          if (Array.isArray(fetchedDocs) && fetchedDocs.length > 0) {
-            docList = fetchedDocs.map((apiDoc: any, index: number) => {
-              const defaultMatch = DEFAULT_POLYCLINIC_DOCTORS.find((d) => d.slug === apiDoc.slug);
-              return {
-                id: apiDoc.id || `doc-${index + 1}`,
-                slug: apiDoc.slug,
-                full_name: apiDoc.full_name || "Dr. Doctor",
-                specialization: apiDoc.specialization || "General Physician",
-                registration_number: apiDoc.medical_council_reg_number || defaultMatch?.registration_number || "VERIFIED",
-                council_name: apiDoc.medical_council_state || defaultMatch?.council_name || "State Medical Council",
-                consultation_fee: Number(apiDoc.consultation_fee) || defaultMatch?.consultation_fee || 500,
-                chamber_name: apiDoc.chamber_name || defaultMatch?.chamber_name || `Chamber ${index + 1}`,
-                room_number: apiDoc.room_number || defaultMatch?.room_number || `Room 10${index + 1}`,
-                token_prefix: (apiDoc.specialization || "OPD").slice(0, 4).toUpperCase(),
-                fee_split: defaultMatch?.fee_split || "Visiting Consultant 70/30",
-                doctor_share_pct: defaultMatch?.doctor_share_pct || 70,
-                clinic_share_pct: defaultMatch?.clinic_share_pct || 30,
-                is_procedure_chair: defaultMatch?.is_procedure_chair || false,
-              };
-            });
-          }
-        }
-      } catch (err) {
-        console.warn("Using offline verified polyclinic roster:", err);
+      // 1. The roster is the clinic's real doctor directory. No sample roster:
+      //    a fabricated chamber would show a doctor who is not in this clinic
+      //    and hide the ones who are.
+      let docList: DoctorChamber[] = [];
+      const docRes = await fetch(`/api/doctors`, { headers });
+      if (docRes.ok) {
+        const fetchedDocs = await docRes.json();
+        const rows: any[] = Array.isArray(fetchedDocs)
+          ? fetchedDocs
+          : fetchedDocs.doctors || [];
+        docList = rows.map((apiDoc: any, index: number) => {
+          const doctorShare = Number(apiDoc.doctor_split_percentage);
+          const share = Number.isFinite(doctorShare) && doctorShare > 0 ? doctorShare : 70;
+          return {
+            id: apiDoc.id || `doc-${index + 1}`,
+            slug: apiDoc.slug,
+            full_name: apiDoc.full_name,
+            specialization: apiDoc.specialization || "Consultant",
+            registration_number: apiDoc.medical_council_reg_number || "—",
+            council_name: apiDoc.medical_council_state || "State Medical Council",
+            consultation_fee: Number(apiDoc.consultation_fee) || 0,
+            chamber_name: apiDoc.chamber_name || `Chamber ${index + 1}`,
+            room_number: "",
+            token_prefix: (apiDoc.specialization || "OPD").slice(0, 4).toUpperCase(),
+            fee_split: `${share}/${100 - share} from doctor compensation contract`,
+            doctor_share_pct: share,
+            clinic_share_pct: 100 - share,
+            is_procedure_chair: false,
+          };
+        });
       }
 
       setDoctors(docList);
 
-      // 2. Fetch appointments for each doctor
+      // 2. Fetch appointments for each doctor. An empty day is a valid answer;
+      //    do not substitute sample patients.
       const aptsMap: Record<string, AppointmentItem[]> = {};
 
       await Promise.all(
         docList.map(async (doc) => {
           try {
-            const aptRes = await fetch(`/api/appointments?doctor_slug=${doc.slug}&date=${todayStr}`);
+            const aptRes = await fetch(
+              `/api/appointments?doctor_slug=${encodeURIComponent(doc.slug)}&date=${todayStr}`,
+              { headers }
+            );
             if (aptRes.ok) {
               const apts = await aptRes.json();
-              if (Array.isArray(apts) && apts.length > 0) {
-                aptsMap[doc.slug] = apts;
-              }
+              aptsMap[doc.slug] = Array.isArray(apts) ? apts : [];
             }
           } catch (e) {
             console.error(`Failed to load appointments for ${doc.slug}:`, e);
           }
         })
       );
-
-      // Default realistic appointments per chamber ensuring independent rosters & exact live states
-      const DEFAULT_CHAMBER_APPOINTMENTS: Record<string, AppointmentItem[]> = {
-        "dr-rahul-sharma": [
-          {
-            id: "apt-derm-11",
-            appointment_number: "APT-DERM-101",
-            token_number: 11,
-            doctor_slug: "dr-rahul-sharma",
-            patient_name: "Amit Rawat",
-            patient_phone: "+91 91234 56780",
-            appointment_date: todayStr,
-            time_slot: "10:15 AM",
-            status: "completed",
-            fee_amount: 600,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Acne Follow-up & Cleanser review"
-          },
-          {
-            id: "apt-derm-12",
-            appointment_number: "APT-DERM-102",
-            token_number: 12,
-            doctor_slug: "dr-rahul-sharma",
-            patient_name: "Priya S.",
-            patient_phone: "+91 91234 56781",
-            appointment_date: todayStr,
-            time_slot: "10:30 AM",
-            status: "in_consultation",
-            fee_amount: 600,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Acne Follow-up • 3rd Visit • Last Rx: Itraconazole"
-          },
-          {
-            id: "apt-derm-13",
-            appointment_number: "APT-DERM-103",
-            token_number: 13,
-            doctor_slug: "dr-rahul-sharma",
-            patient_name: "Rohit V.",
-            patient_phone: "+91 91234 56782",
-            appointment_date: todayStr,
-            time_slot: "10:45 AM",
-            status: "waiting",
-            fee_amount: 600,
-            payment_status: "pending",
-            payment_mode: "cash",
-            symptoms_description: "Contact Dermatitis & skin dryness"
-          },
-          {
-            id: "apt-derm-14",
-            appointment_number: "APT-DERM-104",
-            token_number: 14,
-            doctor_slug: "dr-rahul-sharma",
-            patient_name: "Anjali K.",
-            patient_phone: "+91 98765 11111",
-            appointment_date: todayStr,
-            time_slot: "11:00 AM",
-            status: "waiting",
-            fee_amount: 600,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Laser follow-up & Sunscreen advice"
-          },
-          {
-            id: "apt-derm-15",
-            appointment_number: "APT-DERM-105",
-            token_number: 15,
-            doctor_slug: "dr-rahul-sharma",
-            patient_name: "Vikram P.",
-            patient_phone: "+91 98765 22222",
-            appointment_date: todayStr,
-            time_slot: "11:15 AM",
-            status: "waiting",
-            fee_amount: 600,
-            payment_status: "pending",
-            payment_mode: "cash",
-            symptoms_description: "Psoriasis plaque evaluation"
-          }
-        ],
-        "dr-aditi-joshi": [
-          {
-            id: "apt-dent-4",
-            appointment_number: "APT-DENT-104",
-            token_number: 4,
-            doctor_slug: "dr-aditi-joshi",
-            patient_name: "Deepak Negi",
-            patient_phone: "+91 98765 33331",
-            appointment_date: todayStr,
-            time_slot: "10:15 AM",
-            status: "completed",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Teeth cleaning & tartar removal"
-          },
-          {
-            id: "apt-dent-5",
-            appointment_number: "APT-DENT-105",
-            token_number: 5,
-            doctor_slug: "dr-aditi-joshi",
-            patient_name: "Kavita Joshi",
-            patient_phone: "+91 98765 33332",
-            appointment_date: todayStr,
-            time_slot: "10:45 AM",
-            status: "in_consultation",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Root Canal Therapy (RCT) • Lower Molar #36"
-          },
-          {
-            id: "apt-dent-6",
-            appointment_number: "APT-DENT-106",
-            token_number: 6,
-            doctor_slug: "dr-aditi-joshi",
-            patient_name: "Sunil Bisht",
-            patient_phone: "+91 98765 33333",
-            appointment_date: todayStr,
-            time_slot: "11:15 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "pending",
-            payment_mode: "cash",
-            symptoms_description: "Crown placement check"
-          },
-          {
-            id: "apt-dent-7",
-            appointment_number: "APT-DENT-107",
-            token_number: 7,
-            doctor_slug: "dr-aditi-joshi",
-            patient_name: "Meera Negi",
-            patient_phone: "+91 98765 33334",
-            appointment_date: todayStr,
-            time_slot: "11:45 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Cavity filling & X-ray review"
-          }
-        ],
-        "dr-vikram-sethi": [
-          {
-            id: "apt-ped-7",
-            appointment_number: "APT-PED-107",
-            token_number: 7,
-            doctor_slug: "dr-vikram-sethi",
-            patient_name: "Master Anshul",
-            patient_phone: "+91 98765 44440",
-            appointment_date: todayStr,
-            time_slot: "10:00 AM",
-            status: "completed",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Growth charts & nutrition advice"
-          },
-          {
-            id: "apt-ped-8",
-            appointment_number: "APT-PED-108",
-            token_number: 8,
-            doctor_slug: "dr-vikram-sethi",
-            patient_name: "Baby Aarav (Mother: Sneha)",
-            patient_phone: "+91 98765 44441",
-            appointment_date: todayStr,
-            time_slot: "10:30 AM",
-            status: "in_consultation",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Fever for 2 days & chest congestion"
-          },
-          {
-            id: "apt-ped-9",
-            appointment_number: "APT-PED-109",
-            token_number: 9,
-            doctor_slug: "dr-vikram-sethi",
-            patient_name: "Master Reyansh",
-            patient_phone: "+91 98765 44442",
-            appointment_date: todayStr,
-            time_slot: "10:50 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "6-Month DPT + Polio Vaccination"
-          },
-          {
-            id: "apt-ped-10",
-            appointment_number: "APT-PED-110",
-            token_number: 10,
-            doctor_slug: "dr-vikram-sethi",
-            patient_name: "Baby Ananya",
-            patient_phone: "+91 98765 44443",
-            appointment_date: todayStr,
-            time_slot: "11:10 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "pending",
-            payment_mode: "cash",
-            symptoms_description: "Infant colic & vomiting post feeding"
-          },
-          {
-            id: "apt-ped-11",
-            appointment_number: "APT-PED-111",
-            token_number: 11,
-            doctor_slug: "dr-vikram-sethi",
-            patient_name: "Master Vihaan",
-            patient_phone: "+91 98765 44444",
-            appointment_date: todayStr,
-            time_slot: "11:30 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Asthma wheezing & nebulization check"
-          },
-          {
-            id: "apt-ped-12",
-            appointment_number: "APT-PED-112",
-            token_number: 12,
-            doctor_slug: "dr-vikram-sethi",
-            patient_name: "Baby Kabir",
-            patient_phone: "+91 98765 44445",
-            appointment_date: todayStr,
-            time_slot: "11:50 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "pending",
-            payment_mode: "cash",
-            symptoms_description: "Development milestone & teething"
-          }
-        ],
-        "dr-arvind-rawat": [
-          {
-            id: "apt-gp-13",
-            appointment_number: "APT-GP-113",
-            token_number: 13,
-            doctor_slug: "dr-arvind-rawat",
-            patient_name: "Mohan Lal",
-            patient_phone: "+91 98765 55550",
-            appointment_date: todayStr,
-            time_slot: "10:15 AM",
-            status: "completed",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "cash",
-            symptoms_description: "Annual health check report review"
-          },
-          {
-            id: "apt-gp-14",
-            appointment_number: "APT-GP-114",
-            token_number: 14,
-            doctor_slug: "dr-arvind-rawat",
-            patient_name: "Harish Rawat",
-            patient_phone: "+91 98765 55551",
-            appointment_date: todayStr,
-            time_slot: "10:40 AM",
-            status: "in_consultation",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Type 2 Diabetes • Fasting Blood Sugar 184 mg/dL"
-          },
-          {
-            id: "apt-gp-15",
-            appointment_number: "APT-GP-115",
-            token_number: 15,
-            doctor_slug: "dr-arvind-rawat",
-            patient_name: "Smt. Kamla Devi",
-            patient_phone: "+91 98765 55552",
-            appointment_date: todayStr,
-            time_slot: "11:05 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "pending",
-            payment_mode: "cash",
-            symptoms_description: "Hypertension (BP 150/95) & knee joint stiffness"
-          },
-          {
-            id: "apt-gp-16",
-            appointment_number: "APT-GP-116",
-            token_number: 16,
-            doctor_slug: "dr-arvind-rawat",
-            patient_name: "Suresh Bhatt",
-            patient_phone: "+91 98765 55553",
-            appointment_date: todayStr,
-            time_slot: "11:30 AM",
-            status: "waiting",
-            fee_amount: 500,
-            payment_status: "paid",
-            payment_mode: "upi",
-            symptoms_description: "Viral fever, chills & body ache (Day 3)"
-          }
-        ]
-      };
-
-      docList.forEach(doc => {
-        if (!aptsMap[doc.slug] || aptsMap[doc.slug].length === 0) {
-          aptsMap[doc.slug] = DEFAULT_CHAMBER_APPOINTMENTS[doc.slug] || [];
-        }
-      });
 
       setAppointmentsByDoc(aptsMap);
     } catch (err) {
@@ -639,7 +278,7 @@ export default function DashboardChambersPage() {
     playChimeForChamber(doc.chamber_name, doc.token_prefix, nextPt.token_number);
 
     try {
-      await fetch(`/api/clinic/call-token`, {
+      const res = await fetch(`/api/clinic/call-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -647,8 +286,16 @@ export default function DashboardChambersPage() {
           chamber_name: doc.chamber_name
         })
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body?.error || "Could not call this token.");
+      }
     } catch (err) {
       console.error("Error calling token on server:", err);
+      alert("Could not call this token. Check the network and retry.");
+    } finally {
+      // Re-read the server queue so the card cannot stay optimistically wrong.
+      fetchData(true);
     }
   };
 
@@ -656,19 +303,26 @@ export default function DashboardChambersPage() {
   const handleCompleteConsultation = async (docSlug: string, appointmentNumber: string) => {
     setAppointmentsByDoc(prev => ({
       ...prev,
-      [docSlug]: prev[docSlug].map(p =>
+      [docSlug]: (prev[docSlug] || []).map(p =>
         p.appointment_number === appointmentNumber ? { ...p, status: "completed" } : p
       )
     }));
 
     try {
-      await fetch(`/api/clinic/complete-token`, {
+      const res = await fetch(`/api/clinic/complete-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appointment_number: appointmentNumber })
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body?.error || "Could not complete this visit.");
+      }
     } catch (err) {
       console.error("Error completing consultation:", err);
+      alert("Could not complete this visit. Check the network and retry.");
+    } finally {
+      fetchData(true);
     }
   };
 
@@ -685,8 +339,6 @@ export default function DashboardChambersPage() {
 
     setIsSubmittingWalkin(true);
     const selectedDoc = doctors.find(d => d.slug === walkinDocSlug);
-    const existingQueue = appointmentsByDoc[walkinDocSlug] || [];
-    const nextTokenNum = Math.max(...existingQueue.map(q => q.token_number), 0) + 1;
 
     try {
       const res = await fetch(`/api/clinic/walk-in`, {
@@ -696,7 +348,7 @@ export default function DashboardChambersPage() {
           patient_name: walkinName.trim(),
           patient_phone: `+91${cleanPhone.slice(-10)}`,
           doctor_slug: walkinDocSlug,
-          fee_amount: selectedDoc?.consultation_fee || 500,
+          fee_amount: selectedDoc?.consultation_fee || undefined,
           payment_mode: "upi"
         })
       });
@@ -707,54 +359,13 @@ export default function DashboardChambersPage() {
         setWalkinPhone("+91 ");
         fetchData();
       } else {
-        // Local fallback
-        const newApt: AppointmentItem = {
-          id: `walkin-${Date.now()}`,
-          appointment_number: `APT-${selectedDoc?.token_prefix || "WALK"}-${100 + nextTokenNum}`,
-          token_number: nextTokenNum,
-          doctor_slug: walkinDocSlug,
-          patient_name: walkinName.trim(),
-          patient_phone: `+91 ${cleanPhone.slice(-10)}`,
-          appointment_date: new Date().toISOString().split("T")[0],
-          time_slot: "Immediate Walk-In",
-          status: "waiting",
-          fee_amount: selectedDoc?.consultation_fee || 500,
-          payment_status: "paid",
-          payment_mode: "upi",
-          symptoms_description: "Admitted via Multi-Chamber Walk-in"
-        };
-        setAppointmentsByDoc(prev => ({
-          ...prev,
-          [walkinDocSlug]: [...(prev[walkinDocSlug] || []), newApt]
-        }));
-        setWalkinDocSlug(null);
-        setWalkinName("");
-        setWalkinPhone("+91 ");
+        const body = await res.json().catch(() => ({}));
+        // A locally invented token is invisible to the doctor and pharmacy.
+        alert(body?.error || "Walk-in registration failed. Please retry.");
       }
     } catch (err) {
       console.error("Walkin error:", err);
-      const newApt: AppointmentItem = {
-        id: `walkin-${Date.now()}`,
-        appointment_number: `APT-${selectedDoc?.token_prefix || "WALK"}-${100 + nextTokenNum}`,
-        token_number: nextTokenNum,
-        doctor_slug: walkinDocSlug,
-        patient_name: walkinName.trim(),
-        patient_phone: `+91 ${cleanPhone.slice(-10)}`,
-        appointment_date: new Date().toISOString().split("T")[0],
-        time_slot: "Immediate Walk-In",
-        status: "waiting",
-        fee_amount: selectedDoc?.consultation_fee || 500,
-        payment_status: "paid",
-        payment_mode: "upi",
-        symptoms_description: "Admitted via Multi-Chamber Walk-in"
-      };
-      setAppointmentsByDoc(prev => ({
-        ...prev,
-        [walkinDocSlug]: [...(prev[walkinDocSlug] || []), newApt]
-      }));
-      setWalkinDocSlug(null);
-      setWalkinName("");
-      setWalkinPhone("+91 ");
+      alert("Walk-in registration failed. Check the network and retry.");
     } finally {
       setIsSubmittingWalkin(false);
     }
@@ -984,7 +595,7 @@ export default function DashboardChambersPage() {
                           ({doc.council_name})
                         </span>
                         <span className="rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.2 text-[10px] font-bold">
-                          {doc.is_procedure_chair ? "Dental Council Verified ✅" : "NMC Verified ✅"}
+                          {doc.is_procedure_chair ? "Council registration on file" : "Registration on file"}
                         </span>
                       </div>
                     </div>

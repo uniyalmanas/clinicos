@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { clinicToday } from "@/lib/clinic-date";
 import {
   Calendar,
   Stethoscope,
@@ -30,6 +31,7 @@ import { ConsultationRecorder, type ConsultationExtraction } from "@/components/
 import { AIClinicalCompanion } from "@/components/AIClinicalCompanion";
 import { PatientVaultPanel } from "@/components/PatientVaultPanel";
 import { Button, Card, Badge, DESIGN_TOKENS } from "@/components/design-system";
+import { resolveSignedInDoctor } from "@/lib/doctor-identity";
 
 type Appointment = {
   id: string;
@@ -53,6 +55,8 @@ type Doctor = {
   specialization: string;
   medical_council_reg_number?: string | null;
   chamber_name?: string | null;
+  user_id?: string | null;
+  phone?: string | null;
 };
 type UserContext = {
   id: string;
@@ -74,51 +78,6 @@ const SPEED_RX_MOLECULES = [
   { brand: "Itracol 200", generic: "ITRACONAZOLE 200MG", form: "Cap", dose: "1-0-1", days: "14 Days" },
 ];
 
-const MOCK_APPOINTMENTS: Appointment[] = [
-  {
-    id: "apt-001",
-    appointment_number: "APT-1001",
-    token_number: 101,
-    doctor_slug: "dr-001",
-    patient_name: "Ramesh Kumar",
-    patient_phone: "9876543210",
-    time_slot: "09:30 AM",
-    status: "arrived",
-    fee_amount: 600,
-    payment_status: "paid",
-    payment_mode: "upi",
-    symptoms_description: "Acne flare on cheeks & jawline for 2 weeks",
-    is_walk_in: false,
-  },
-  {
-    id: "apt-002",
-    appointment_number: "APT-1002",
-    token_number: 102,
-    doctor_slug: "dr-001",
-    patient_name: "Priya Sharma",
-    patient_phone: "9876543211",
-    time_slot: "10:00 AM",
-    status: "booked",
-    fee_amount: 600,
-    payment_status: "pending",
-    payment_mode: "cash",
-    symptoms_description: "Routine follow-up - skin check",
-  },
-  {
-    id: "apt-003",
-    appointment_number: "APT-1003",
-    token_number: 103,
-    doctor_slug: "dr-001",
-    patient_name: "Amit Patel",
-    patient_phone: "9876543212",
-    time_slot: "10:30 AM",
-    status: "confirmed",
-    fee_amount: 800,
-    payment_status: "pending",
-    payment_mode: "upi",
-    symptoms_description: "Hair fall and scalp itching",
-  },
-];
 
 const API = {
   get: async (path: string) => {
@@ -576,8 +535,8 @@ function ConsultationPane({
             token_number: currentPatient.token_number,
             symptoms_description: currentPatient.symptoms_description,
           }}
-          doctorName={doctorName || "Dr. Rahul Sharma"}
-          doctorSlug={doctorSlug || "dr-rahul-sharma"}
+          doctorName={doctorName || ""}
+          doctorSlug={doctorSlug || ""}
           onConsultationCompleted={(report) => {
             onReportApproved(report);
             if (report.provisional_diagnosis) {
@@ -649,7 +608,7 @@ function ConsultationPane({
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-3.5">
                 <div className="flex items-center gap-2">
                   <Stethoscope className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">Speed Rx Pad (NMC Generic)</span>
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-slate-900 dark:text-white">Speed Rx Pad (Generic First)</span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">1-Tap generic prescriptions</span>
               </div>
@@ -799,13 +758,12 @@ export default function DashboardTodayPage() {
   const [vitals, setVitals] = useState({ systolic: "", diastolic: "", heartRate: "", spo2: "", temperature: "", weight: "", height: "" });
   const [soap, setSoap] = useState({ subjective: "", objective: "", assessment: "", plan: "" });
   const [speedRx, setSpeedRx] = useState<any[]>([]);
-  const [useMockData, setUseMockData] = useState(false);
   const [showQueueDrawer, setShowQueueDrawer] = useState(false);
   const [showVaultDrawer, setShowVaultDrawer] = useState(false);
   // Bumped after a report is approved so the vault panel reloads immediately.
   const [vaultRefreshKey, setVaultRefreshKey] = useState(0);
 
-  const TODAY_STR = new Date().toISOString().split("T")[0];
+  const TODAY_STR = clinicToday();
   const TODAY_DISPLAY = new Date().toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
   const currentPatient = appointments.find((a) => a.id === activeAptId) || null;
   const sys = parseInt(vitals.systolic) || 0;
@@ -828,29 +786,32 @@ export default function DashboardTodayPage() {
         setUser({ id: me.id, phone: me.phone, full_name: me.full_name, role: me.role, clinic_id: me.clinic_id, clinic_name: me.clinic_name, clinic_slug: me.clinic_slug });
         const docs = await API.get("/api/doctors");
         const dList: Doctor[] = Array.isArray(docs) ? docs : (docs.doctors || []);
-        const cp = String(me.phone || "").replace(/[^0-9]/g, "").slice(-10);
-        const m = dList.find((d) => String(d.medical_council_reg_number || "").includes(cp) || String(d.full_name || "").toLowerCase().includes(me.full_name?.toLowerCase() || "")) || dList[0];
-        if (m) setDoctor(m);
-      } catch {
-        setUseMockData(true);
-        // Use mock doctor
-        setDoctor({
-          id: "dr-001",
-          slug: "dr-001",
-          full_name: "Dr. Rahul Sharma",
-          specialization: "Dermatologist",
-          medical_council_reg_number: "NMC-12345",
-          chamber_name: "Chamber 1",
-        });
-        setUser({
-          id: "user-001",
-          phone: "9876543210",
-          full_name: "Dr. Rahul Sharma",
-          role: "doctor",
-          clinic_id: "clinic-001",
-          clinic_name: "Demo Clinic",
-          clinic_slug: "demo-clinic",
-        });
+
+        // Resolve the signed-in doctor strictly. The old name/registration
+        // heuristic fell through to `dList[0]`, so a doctor with an unlinked
+        // profile could open another doctor's chamber and sign prescriptions
+        // under the wrong name.
+        const matched = resolveSignedInDoctor(me, dList);
+
+        if (!matched) {
+          if (mounted) {
+            setAppointmentsError(
+              "Your account is not linked to a doctor profile yet. Ask the clinic owner to link your login to your doctor record, or open this page from that doctor's account."
+            );
+          }
+          return;
+        }
+
+        if (mounted) setDoctor(matched);
+      } catch (e: any) {
+        // Do not impersonate a doctor when /api/auth/me fails. A fabricated
+        // identity here would let a prescription be signed under the wrong
+        // name, so leave the cockpit empty and show the real error.
+        if (mounted) {
+          setAppointmentsError(
+            e?.message || "Could not verify your clinic session. Please sign in again."
+          );
+        }
       } finally {
         if (mounted) setLoadingContext(false);
       }
@@ -865,21 +826,30 @@ export default function DashboardTodayPage() {
       const data = await API.get(`/api/appointments?doctor_slug=${doctor.slug}&date=${TODAY_STR}`);
       const list: Appointment[] = Array.isArray(data) ? data : (data.appointments || []);
       setAppointments(list);
-      if (!activeAptId && list.length > 0) {
-        const n = list.find((a) => a.status === "in_consultation") || list.find((a) => a.status === "arrived" || a.status === "booked" || a.status === "confirmed") || list[0];
-        if (n) setActiveAptId(n.id);
-      }
-    } catch {
-      setUseMockData(true);
-      setAppointments(MOCK_APPOINTMENTS);
-      if (!activeAptId) {
-        const n = MOCK_APPOINTMENTS.find((a) => a.status === "arrived") || MOCK_APPOINTMENTS[0];
-        setActiveAptId(n.id);
-      }
+      setAppointmentsError(null);
+      setActiveAptId((prev) => {
+        const inConsult = list.find((a) => a.status === "in_consultation");
+        const current = prev ? list.find((a) => a.id === prev) : null;
+        // Reception may call a token while the doctor's cockpit is open. Follow
+        // the live consultation unless the doctor is already consulting one.
+        if (inConsult && (!current || current.status !== "in_consultation")) {
+          return inConsult.id;
+        }
+        if (current) return prev;
+        const next =
+          list.find((a) => a.status === "arrived" || a.status === "booked" || a.status === "confirmed") ||
+          list[0];
+        return next ? next.id : null;
+      });
+    } catch (e: any) {
+      // Never fabricate patients. An empty cockpit plus an explicit error is
+      // safer than sample data that can never sync with reception or pharmacy.
+      setAppointments([]);
+      setAppointmentsError(e?.message || "Could not reach the appointments service.");
     } finally {
       setLoadingAppointments(false);
     }
-  }, [doctor?.slug, TODAY_STR, activeAptId, setUseMockData]);
+  }, [doctor?.slug, TODAY_STR]);
 
   useEffect(() => { loadAppts(); const iv = setInterval(loadAppts, 15000); return () => clearInterval(iv); }, [loadAppts]);
 
@@ -1001,7 +971,7 @@ export default function DashboardTodayPage() {
                 Today&apos;s Consultations • {TODAY_DISPLAY}
               </h1>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate hidden sm:block">
-                {doctor?.full_name || user?.full_name || "Doctor"} • {doctor?.specialization || "General Practice"} {doctor?.medical_council_reg_number ? `• NMC ${doctor.medical_council_reg_number}` : ""}
+                {doctor?.full_name || user?.full_name || "Doctor"} • {doctor?.specialization || "General Practice"} {doctor?.medical_council_reg_number ? `• Reg ${doctor.medical_council_reg_number}` : ""}
               </p>
             </div>
           </div>
@@ -1067,13 +1037,6 @@ export default function DashboardTodayPage() {
           </div>
         )}
 
-        {/* Demo Mode Notice */}
-        {useMockData && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-medium py-1 px-4 text-center">
-            Demo clinic mode active — showing sample patient consultation queue
-          </div>
-        )}
-
         {/* Main Consultation Content Area (Predictable single scroll, max-width 1540px) */}
         <div className="flex-1 w-full max-w-[1540px] mx-auto p-4 sm:p-5 lg:p-6">
           {loadingContext && !user && (
@@ -1085,7 +1048,7 @@ export default function DashboardTodayPage() {
             </div>
           )}
 
-          {!loadingContext && user && appointmentsError && !appointments.length && !doctor && (
+          {!loadingContext && appointmentsError && !appointments.length && (
             <Card variant="elevated" className="flex flex-col items-center justify-center py-16 text-center border border-rose-300 bg-rose-50/50 dark:border-rose-900/50 dark:bg-rose-950/20 max-w-xl mx-auto">
               <AlertTriangle className="h-6 w-6 text-rose-600 dark:text-rose-400 mb-2" />
               <h3 className="font-bold text-sm text-slate-900 dark:text-white">Unable to load clinic appointments</h3>

@@ -18,6 +18,13 @@ from apps.api.database import Base, get_db
 from apps.api.core.security import get_current_user
 from apps.api.main import app
 from apps.api.models.consultation import ConsultationSession
+from apps.api.config import settings
+
+
+@pytest.fixture(autouse=True)
+def disable_external_llm(monkeypatch):
+    """Keep the suite hermetic: never call Gemini/Groq/Ollama during tests."""
+    monkeypatch.setattr(settings, "LLM_PROVIDER", "off", raising=False)
 
 test_engine = create_engine(
     "sqlite:///:memory:",

@@ -21,6 +21,7 @@ import {
   Activity,
   Loader2,
 } from "lucide-react";
+import { clinicToday } from "@/lib/clinic-date";
 
 // ─────────────────────────────────────────────────────────
 // API helpers
@@ -154,13 +155,13 @@ function ScheduleCard({
   onToggleActive,
 }: ScheduleCardProps) {
   const todayBlocked = blockedSlots.filter(
-    (b) => b.doctor_slug === doctor.slug && b.date === new Date().toISOString().split("T")[0]
+    (b) => b.doctor_slug === doctor.slug && b.date === clinicToday()
   );
   const docBlocked = blockedSlots.filter((b) => b.doctor_slug === doctor.slug);
 
   const isActive = schedule?.is_active ?? false;
   const workingDays = schedule?.working_days || [];
-  const today = new Date().toISOString().split("T")[0];
+  const today = clinicToday();
   const todayDayKey = DAYS_OF_WEEK[new Date().getDay()].key;
   const worksToday = workingDays.includes(todayDayKey);
 
@@ -475,7 +476,7 @@ type BlockDateProps = {
 };
 
 function BlockDate({ open, onClose, doctor, onSave, loading }: BlockDateProps) {
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(clinicToday());
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("10:00");
   const [reason, setReason] = useState("");

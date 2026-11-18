@@ -1,6 +1,6 @@
 /**
- * Clinical Safety, Hindi Translation & Jan Aushadhi Cost-Saving Helpers
- * Powering enterprise hospital-grade clinical safety and accessibility in Clinicos.
+ * Clinical Safety, Hindi Translation & PMBJP Generic Equivalence Helpers
+ * Powering clinical safety checks and accessibility in Clinicos.
  */
 
 export interface InteractionAlert {
@@ -20,14 +20,6 @@ export interface InteractionCheckResult {
   severe_alerts: number;
   moderate_alerts: number;
   alerts: InteractionAlert[];
-}
-
-export interface GenericCostComparison {
-  generic_name: string;
-  brand_name: string;
-  brand_mrp: number;
-  generic_mrp: number;
-  savings_percentage: number;
 }
 
 // 1. KNOWN DRUG-DRUG INTERACTIONS KNOWLEDGE BASE
@@ -183,42 +175,37 @@ export const ALLERGY_FAMILIES: Record<string, {
   }
 };
 
-// 3. JAN AUSHADHI GENERIC PRICING COMPARISON MATRIX
-export const JAN_AUSHADHI_PRICING: Record<string, { brand_mrp: number; generic_mrp: number }> = {
-  "AMOXICILLIN": { brand_mrp: 210, generic_mrp: 52 },
-  "AMOXICILLIN + POTASSIUM CLAVULANATE": { brand_mrp: 205, generic_mrp: 54 },
-  "PARACETAMOL": { brand_mrp: 32, generic_mrp: 11 },
-  "PANTOPRAZOLE SODIUM": { brand_mrp: 142, generic_mrp: 28 },
-  "PANTOPRAZOLE": { brand_mrp: 142, generic_mrp: 28 },
-  "DOXYCYCLINE HYCLATE": { brand_mrp: 125, generic_mrp: 24 },
-  "DOXYCYCLINE": { brand_mrp: 125, generic_mrp: 24 },
-  "CETIRIZINE HYDROCHLORIDE": { brand_mrp: 45, generic_mrp: 9 },
-  "CETIRIZINE": { brand_mrp: 45, generic_mrp: 9 },
-  "AZITHROMYCIN": { brand_mrp: 135, generic_mrp: 42 },
-  "ATORVASTATIN": { brand_mrp: 110, generic_mrp: 18 },
-  "METFORMIN": { brand_mrp: 65, generic_mrp: 12 },
-  "ACECLOFENAC + PARACETAMOL": { brand_mrp: 85, generic_mrp: 22 },
-  "CLOPIDOGREL": { brand_mrp: 130, generic_mrp: 35 },
-  "TELMISARTAN": { brand_mrp: 95, generic_mrp: 20 }
-};
+// 3. PMBJP GENERIC EQUIVALENCE (no invented prices)
+//
+// We only track whether a prescribed generic molecule is commonly stocked as a
+// PMBJP (Jan Aushadhi) generic. Prices are intentionally NOT stored here: a
+// hard-coded MRP table goes stale immediately and would present invented rupee
+// figures to the doctor and patient. The UI links out to the official PMBJP
+// product list instead of quoting a price.
+export const PMBJP_GENERIC_MOLECULES: string[] = [
+  "AMOXICILLIN",
+  "AMOXICILLIN + POTASSIUM CLAVULANATE",
+  "PARACETAMOL",
+  "PANTOPRAZOLE SODIUM",
+  "PANTOPRAZOLE",
+  "DOXYCYCLINE HYCLATE",
+  "DOXYCYCLINE",
+  "CETIRIZINE HYDROCHLORIDE",
+  "CETIRIZINE",
+  "AZITHROMYCIN",
+  "ATORVASTATIN",
+  "METFORMIN",
+  "ACECLOFENAC + PARACETAMOL",
+  "CLOPIDOGREL",
+  "TELMISARTAN"
+];
 
-export function getJanAushadhiSavings(genericName: string, brandName: string): GenericCostComparison | null {
-  if (!genericName) return null;
+export function hasPmbjpEquivalent(genericName: string): boolean {
+  if (!genericName) return false;
   const upper = genericName.toUpperCase().trim();
-  
-  for (const [key, price] of Object.entries(JAN_AUSHADHI_PRICING)) {
-    if (upper.includes(key) || key.includes(upper)) {
-      const savings = Math.round(((price.brand_mrp - price.generic_mrp) / price.brand_mrp) * 100);
-      return {
-        generic_name: genericName,
-        brand_name: brandName,
-        brand_mrp: price.brand_mrp,
-        generic_mrp: price.generic_mrp,
-        savings_percentage: savings
-      };
-    }
-  }
-  return null;
+  return PMBJP_GENERIC_MOLECULES.some(
+    (key) => upper.includes(key) || key.includes(upper)
+  );
 }
 
 // 4. CLIENT-SIDE INSTANT DDI & ALLERGY CHECK WITH API FALLBACK

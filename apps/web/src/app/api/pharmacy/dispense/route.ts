@@ -66,11 +66,14 @@ export async function POST(req: NextRequest) {
       prescription = rows[0];
     }
 
-    const finalPatientName = String(patient_name || prescription?.patient_name || "").trim();
-    const finalPatientPhone = String(patient_phone || prescription?.patient_phone || "").trim();
-    const finalDoctorName = String(doctor_name || prescription?.doctor_name || "").trim();
+    // When a prescription is attached it is the source of truth for identity:
+    // the pharmacist's POS must not be able to overwrite the patient or the
+    // prescriber on the statutory record with body values.
+    const finalPatientName = String(prescription?.patient_name || patient_name || "").trim();
+    const finalPatientPhone = String(prescription?.patient_phone || patient_phone || "").trim();
+    const finalDoctorName = String(prescription?.doctor_name || doctor_name || "").trim();
     const finalDoctorReg = String(
-      doctor_reg_number || prescription?.doctor_reg_number || ""
+      prescription?.doctor_reg_number || doctor_reg_number || ""
     ).trim();
 
     if (!finalPatientName) {
@@ -98,7 +101,10 @@ export async function POST(req: NextRequest) {
       return { ...item, quantity: qty };
     });
 
-    // Pre-flight: recalls and stock for every packaged item.
+    // Pre-flight: recalls, stock and the statutory H1 answer for every
+    // packaged item. This runs before any stock is decremented so a rejected
+    // bill never leaves the shelf short.
+    const h1Lines: any[] = [];
     for (const item of lines) {
       if (item.item_id && !String(item.item_id).startsWith("manual-")) {
         const itemRows = await sql`
@@ -134,7 +140,23 @@ export async function POST(req: NextRequest) {
             "insufficient_stock"
           );
         }
+        // The inventory row is authoritative for the drug schedule; never let
+        // a client omit H1 status by sending `schedule_type: "Regular"`.
+        if (matched.schedule_type === "Schedule H1" || item.is_schedule_h1) {
+          item.schedule_type = matched.schedule_type || item.schedule_type;
+          h1Lines.push(item);
+        }
+      } else if (item.schedule_type === "Schedule H1" || item.is_schedule_h1) {
+        h1Lines.push(item);
       }
+    }
+
+    if (h1Lines.length > 0 && !finalDoctorReg) {
+      return apiError(
+        422,
+        `"${h1Lines[0].brand_name}" is a Schedule H1 drug. The prescriber's council registration number is required for the H1 register.`,
+        "registration_required"
+      );
     }
 
     // Atomic conditional decrement. Any failure rolls back the lines already
@@ -223,16 +245,8 @@ export async function POST(req: NextRequest) {
     `;
 
     // Schedule H1 register (Drugs & Cosmetics Rule 65).
-    for (const item of lines) {
-      if (item.schedule_type === "Schedule H1" || item.is_schedule_h1) {
-        if (!finalDoctorReg) {
-          return apiError(
-            422,
-            `"${item.brand_name}" is a Schedule H1 drug. The prescriber's council registration number is required for the H1 register.`,
-            "registration_required"
-          );
-        }
-        await sql`
+    for (const item of h1Lines) {
+      await sql`
           INSERT INTO pharmacy_schedule_h1_logs (
             id, bill_number, clinic_slug, patient_name, patient_phone,
             patient_address, doctor_name, doctor_reg_number, drug_name,
@@ -253,7 +267,6 @@ export async function POST(req: NextRequest) {
             NOW()
           );
         `;
-      }
     }
 
     await logAudit({

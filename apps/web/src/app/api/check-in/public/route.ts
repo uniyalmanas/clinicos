@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { clinicToday } from "@/lib/clinic-date";
 import { randomUUID } from "crypto";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 import { logAudit } from "@/lib/audit";
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     }
     const doc = doctors[0];
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     // ── Follow-up fee logic (declared outside tx for scope) ──
     let isFreeFollowup = false;

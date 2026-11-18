@@ -1,61 +1,110 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
-import { API_BASE_URL } from "@/lib/api";
+import { resolveSignedInDoctor } from "@/lib/doctor-identity";
 import {
   ArrowLeft,
   ArrowRight,
   AlertCircle,
   Clock,
   FileText,
-  Stethoscope,
-  UserCheck,
 } from "lucide-react";
+
+type ChamberDoctor = {
+  slug: string;
+  full_name: string;
+  specialization?: string | null;
+  medical_council_reg_number?: string | null;
+  clinic_name?: string | null;
+  user_id?: string | null;
+  phone?: string | null;
+};
+
+const WAITING_STATUSES = ["waiting", "in_waiting", "arrived", "booked", "confirmed"];
 
 export default function DoctorQueuePage() {
   const [queue, setQueue] = useState<any[]>([]);
+  const [doctor, setDoctor] = useState<ChamberDoctor | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const activeDoctor = useMemo(
-    () => ({
-      full_name: "Dr. Rahul Sharma",
-      specialization: "Dermatologist",
-      clinic_name: "Derma Care Skin & Laser Centre",
-      reg_number: "UKMC-8942-2012",
-    }),
-    []
-  );
-
-  const refreshQueue = async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch(`/api/clinic/desk-queue`);
-      if (!res.ok) {
-        throw new Error("Unable to load live queue");
-      }
-      const data = await res.json();
-      setQueue(Array.isArray(data.queue) ? data.queue : []);
-      setError(null);
-    } catch (err) {
-      console.error("Doctor queue refresh failed:", err);
-      setError("The live queue is temporarily unavailable. Refreshing automatically.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Resolve the signed-in doctor before filtering the queue. The queue is
+  // clinic-wide, so without this every doctor would see (and could open) every
+  // other doctor's patients.
   useEffect(() => {
-    refreshQueue();
-    const interval = setInterval(refreshQueue, 5000);
-    return () => clearInterval(interval);
+    let mounted = true;
+    (async () => {
+      try {
+        const [meRes, docsRes] = await Promise.all([
+          fetch("/api/auth/me"),
+          fetch("/api/doctors"),
+        ]);
+        if (!meRes.ok) throw new Error("Could not verify your clinic session.");
+        const me = await meRes.json();
+        const docsJson = docsRes.ok ? await docsRes.json() : [];
+        const dList: ChamberDoctor[] = Array.isArray(docsJson)
+          ? docsJson
+          : docsJson.doctors || [];
+        const matched = resolveSignedInDoctor(me, dList);
+        if (!mounted) return;
+        if (!matched) {
+          setError(
+            "Your login is not linked to a doctor profile. Ask the clinic owner to link it before opening the chamber console."
+          );
+          return;
+        }
+        setDoctor(matched);
+      } catch (err: any) {
+        if (mounted) {
+          setError(err?.message || "Could not resolve your chamber. Please sign in again.");
+        }
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const activePatient = queue.find((item) => item.status === "in_consultation") ?? null;
-  const upcomingQueue = queue.filter(
-    (item) => item.status === "in_waiting" || item.status === "waiting" || item.status === "confirmed"
+  useEffect(() => {
+    let mounted = true;
+    const refreshQueue = async () => {
+      try {
+        const res = await fetch(`/api/clinic/desk-queue`);
+        if (!res.ok) throw new Error("Unable to load live queue");
+        const data = await res.json();
+        if (!mounted) return;
+        setQueue(Array.isArray(data.queue) ? data.queue : []);
+        setError((prev) =>
+          prev && prev.startsWith("Your login is not linked") ? prev : null
+        );
+      } catch (err) {
+        console.error("Doctor queue refresh failed:", err);
+        if (mounted) {
+          setError("The live queue is temporarily unavailable. Refreshing automatically.");
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    refreshQueue();
+    const interval = setInterval(refreshQueue, 5000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Only this doctor's patients belong in this chamber.
+  const chamberQueue = doctor?.slug
+    ? queue.filter((item) => item.doctor_slug === doctor.slug)
+    : [];
+  const activePatient =
+    chamberQueue.find((item) => item.status === "in_consultation") ?? null;
+  const upcomingQueue = chamberQueue.filter((item) =>
+    WAITING_STATUSES.includes(String(item.status || ""))
   );
 
   return (
@@ -69,14 +118,20 @@ export default function DoctorQueuePage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-black text-slate-900 dark:text-white">
-                  {activeDoctor.full_name}
+                  {doctor?.full_name || "Doctor Chamber"}
                 </h1>
                 <span className="rounded bg-teal-50 px-2 py-0.5 text-[11px] font-bold text-teal-700 dark:bg-teal-950 dark:text-teal-300">
                   Doctor Chamber OPD Console
                 </span>
               </div>
               <p className="text-[11px] text-slate-500">
-                {activeDoctor.specialization} • Reg: {activeDoctor.reg_number} • {activeDoctor.clinic_name}
+                {doctor
+                  ? `${doctor.specialization || "Consultant"}${
+                      doctor.medical_council_reg_number
+                        ? ` • Reg: ${doctor.medical_council_reg_number}`
+                        : ""
+                    }${doctor.clinic_name ? ` • ${doctor.clinic_name}` : ""}`
+                  : "Resolving your chamber…"}
               </p>
             </div>
           </div>
@@ -161,7 +216,7 @@ export default function DoctorQueuePage() {
               <div className="grid grid-cols-4 gap-2 text-center text-xs">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
                   <div className="text-[10px] text-slate-500">Total</div>
-                  <div className="font-bold text-slate-900 dark:text-white mt-0.5">{queue.length}</div>
+                  <div className="font-bold text-slate-900 dark:text-white mt-0.5">{chamberQueue.length}</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950">
                   <div className="text-[10px] text-slate-500">Now</div>
@@ -188,7 +243,7 @@ export default function DoctorQueuePage() {
               </h3>
               <p className="text-xs text-slate-500">Next patients queued by reception desk.</p>
             </div>
-            <Link href="/clinic/desk" className="text-xs font-semibold text-brand-600 hover:underline">
+            <Link href="/dashboard/desk" className="text-xs font-semibold text-brand-600 hover:underline">
               Open Reception Desk Console
             </Link>
           </div>

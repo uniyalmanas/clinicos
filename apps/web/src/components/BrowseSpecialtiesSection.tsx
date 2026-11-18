@@ -646,7 +646,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-6 backdrop-blur-sm">
               <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Direct Doctor Booking • 100% Commission-Free</span>
+              <span>Direct Doctor Booking • No Aggregator Markup</span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-[#1D1D1F] dark:text-white leading-[1.08]">
@@ -925,7 +925,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                     Direct Infrastructure
                   </span>
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <ShieldCheck className="h-4 w-4" /> 100% Retained
+                    <ShieldCheck className="h-4 w-4" /> Retained by Clinic
                   </span>
                 </div>
 
@@ -978,7 +978,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
 
               <div className="mt-8 pt-6 border-t border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-center justify-between">
                 <span>Direct UPI / Cash to clinic counter</span>
-                <span className="text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded-sm">NMC & ABDM Ready</span>
+                <span className="text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded-sm">ABDM sandbox available</span>
               </div>
             </div>
 
@@ -1106,7 +1106,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               </div>
 
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-white/5 text-[11px] font-medium text-green-600 dark:text-green-400 font-semibold">
-                SHA-256 sealed & verified
+                SHA-256 sealed
               </div>
             </div>
 
@@ -1119,7 +1119,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                 Ready to consult an independent specialist?
               </h3>
               <p className="text-xs sm:text-sm text-white/80 mt-1 max-w-xl">
-                Browse our verified practitioners in the Dehradun pilot network or search by your symptoms.
+                Browse registered practitioners in the Dehradun pilot network or search by your symptoms.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -1149,10 +1149,10 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               DocSphere Specialities — Clinical Expertise You Can Trust
             </h2>
             <p className="mt-4 text-sm sm:text-base text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-              A clinical specialty represents dedicated medical training focusing on specific organ systems, pathologies, and surgical procedures. DocSphere connects you directly with certified specialists across verified local OPD clinics with zero middleman markup.
+              A clinical specialty represents dedicated medical training focusing on specific organ systems, pathologies, and surgical procedures. DocSphere connects you directly with specialists across local OPD clinics with no middleman markup.
             </p>
             <p className="mt-2 text-sm sm:text-base font-semibold text-[#1D1D1F] dark:text-white">
-              DocSphere features verified practitioners across essential medical specialities, including:
+              DocSphere lists practitioners across essential medical specialities, including:
             </p>
           </div>
 
@@ -1185,7 +1185,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                 General Medicine / Physician
               </h3>
               <p className="mt-2 text-xs sm:text-[13px] text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                Board-certified physicians offering primary medical consultations, viral fever triage, preventive health checks, and ongoing medical management for hypertension and lifestyle diseases.
+                Physicians offering primary medical consultations, viral fever triage, preventive health checks, and ongoing medical management for hypertension and lifestyle diseases.
               </p>
             </div>
 
@@ -1287,7 +1287,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               Why Consult Through DocSphere?
             </h3>
             <p className="mt-3 text-sm text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-              Experience transparent clinical care without waiting hours in crowded reception halls or paying aggregator booking surcharges. DocSphere connects patients directly with verified neighborhood clinics and independent practitioners.
+              Experience transparent clinical care without waiting hours in crowded reception halls or paying aggregator booking surcharges. DocSphere connects patients directly with neighbourhood clinics and independent practitioners.
             </p>
 
             <div className="mt-6">
@@ -1297,7 +1297,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
 
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
-                  "Verified NMC-registered specialists with published clinic fees",
+                  "Specialists with registration and clinic fees on their profile",
                   "Real-time live queue counter — wait from home, not crowded rooms",
                   "Instant digital prescriptions delivered directly on WhatsApp",
                   "Direct clinic payment via UPI or cash with zero platform commissions",
@@ -1319,7 +1319,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                 When to Consult a Specialist?
               </h4>
               <p className="mt-2 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                If your symptoms persist, require focused diagnostic workups, or your family doctor advises specialist intervention, booking a verified clinical consultation ensures timely attention. You can schedule direct OPD visits or quick triage with full medical record continuity.
+                If your symptoms persist, require focused diagnostic workups, or your family doctor advises specialist intervention, booking a clinical consultation ensures timely attention. You can schedule direct OPD visits or quick triage with full medical record continuity.
               </p>
             </div>
           </div>
@@ -1330,10 +1330,10 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
               How to Consult a Doctor?
             </h3>
             <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#008778] dark:text-[#34D399]">
-              Fast, Transparent Access to Verified Healthcare
+              Fast, Transparent Access to Care
             </p>
             <p className="mt-2 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-              Prioritize your health with instant access to qualified specialists across verified OPD clinics. Enjoy personalized clinical care with direct doctor appointments, real-time waiting tokens, and tamper-proof digital prescriptions.
+              Prioritize your health with instant access to qualified specialists across OPD clinics. Enjoy personalized clinical care with direct doctor appointments, real-time waiting tokens, and digitally sealed prescriptions.
             </p>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1451,7 +1451,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
                   {selectedSpecialtyModal.name}
                 </h3>
                 <p className="text-xs text-[#86868B] mt-0.5">
-                  {selectedSpecialtyModal.doctorCount} verified clinics in pilot network
+                  {selectedSpecialtyModal.doctorCount} clinics in pilot network
                 </p>
               </div>
             </div>
@@ -1474,7 +1474,7 @@ export default function BrowseSpecialtiesSection({ showHero = false }: BrowseSpe
 
             <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-50/60 p-4 dark:border-emerald-500/20 dark:bg-emerald-950/20">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                <Check className="h-4 w-4" /> 100% Direct Clinic Pricing
+                <Check className="h-4 w-4" /> Direct Clinic Pricing
               </div>
               <p className="text-xs text-emerald-700/90 dark:text-emerald-400 mt-1">
                 Zero markup added. Consult fees typically range from ₹400 to ₹800 directly to the doctor via UPI or cash.

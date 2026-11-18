@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { roleHome } from "@/lib/role-home";
 import {
   Stethoscope,
   ShieldCheck,
@@ -44,7 +45,7 @@ const DEMO_ROLES: DemoRole[] = [
     id: "doctor",
     label: "Doctor OPD Chamber",
     roleTitle: "Consultation, Rx, AI Scribe & Clinical Queue",
-    name: "Dr. Aditi Joshi (Senior Physician)",
+    name: "Dr. Aditi Joshi (Dentist)",
     phone: "9876500002",
     destination: "/dashboard/today",
     badge: "OPD Live",
@@ -88,7 +89,7 @@ const DEMO_ROLES: DemoRole[] = [
     id: "lab",
     label: "Diagnostic Pathology Lab",
     roleTitle: "Diagnostic Orders, Specimen & Test Results",
-    name: "Dr. Neha Kapoor (Pathologist)",
+    name: "Diagnostics & Lab Desk",
     phone: "9876500005",
     destination: "/dashboard/lab",
     badge: "Diagnostics",
@@ -98,10 +99,7 @@ const DEMO_ROLES: DemoRole[] = [
 ];
 
 function destinationFor(role: string): string {
-  if (role === "super_admin") return "/superadmin";
-  if (role === "staff" || role === "receptionist") return "/dashboard/desk";
-  if (role === "patient") return "/patient/portal";
-  return "/dashboard";
+  return roleHome(role);
 }
 
 function LoginForm() {
@@ -404,9 +402,9 @@ function LoginForm() {
           <span>256-Bit Encrypted</span>
         </span>
         <span>•</span>
-        <span>DPDP Act 2023 Compliant</span>
+        <span>DPDP-aligned design</span>
         <span>•</span>
-        <span>NMC Telemedicine Guidelines</span>
+        <span>Telemedicine workflows</span>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +14,29 @@ export async function GET(req: NextRequest) {
     const clinicSlug = searchParams.get("clinic_slug") || auth.auth.clinic!.slug;
     const clinicId = auth.auth.clinic!.id;
 
-    const appointments = await sql`
-      SELECT * FROM appointments
-      WHERE clinic_id::text = ${clinicId}::text
-      ORDER BY token_number ASC;
-    `;
+    // The desk queue is an operational view: it must show today's tokens, not
+    // every token the clinic has ever issued. Without this, the "collected
+    // today" totals and the waiting count grow forever, and this morning's
+    // queue competes with last month's completed visits. `?date=all` is an
+    // explicit opt-in for history/lookup tooling.
+    const dateParam = searchParams.get("date");
+    const dateFilter = dateParam === "all" ? null : dateParam || clinicToday();
+    if (dateFilter !== null && !/^\d{4}-\d{2}-\d{2}$/.test(dateFilter)) {
+      return apiError(400, "date must be YYYY-MM-DD or 'all'.", "invalid_date");
+    }
+
+    const appointments = dateFilter
+      ? await sql`
+          SELECT * FROM appointments
+          WHERE clinic_id::text = ${clinicId}::text
+            AND appointment_date = ${dateFilter}
+          ORDER BY token_number ASC;
+        `
+      : await sql`
+          SELECT * FROM appointments
+          WHERE clinic_id::text = ${clinicId}::text
+          ORDER BY appointment_date DESC, token_number ASC;
+        `;
 
     // Map status into standard desk status: 'waiting', 'in_consultation', 'completed'
     const formattedQueue = appointments.map((apt: any) => {
@@ -32,11 +51,12 @@ export async function GET(req: NextRequest) {
         patient_name: apt.patient_name,
         patient_phone: apt.patient_phone,
         status: deskStatus,
+        appointment_date: apt.appointment_date,
         time_slot: apt.time_slot,
         fee_amount: Number(apt.fee_amount || 0),
         payment_status: apt.payment_status || "pending",
         payment_mode: apt.payment_mode || "cash",
-        is_walk_in: apt.time_slot?.toLowerCase().includes("walk-in") || !apt.time_slot?.includes("-"),
+        is_walk_in: Boolean(apt.time_slot?.toLowerCase().includes("walk-in")),
         doctor_name: apt.doctor_name,
         doctor_slug: apt.doctor_slug,
         symptoms_description: apt.symptoms_description,

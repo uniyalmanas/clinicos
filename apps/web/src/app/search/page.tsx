@@ -33,280 +33,53 @@ import GoogleTerrainMap, { DoctorMapItem } from "@/components/GoogleTerrainMap";
 import { usePatientSession } from "@/lib/patientSession";
 
 // ============================================================================
-// COMPREHENSIVE DOCTORS DIRECTORY (Matches Screenshot & Dehradun Topography)
+// LIVE DOCTOR DIRECTORY
 // ============================================================================
-const ALL_SEARCH_DOCTORS: DoctorMapItem[] = [
-  {
-    slug: "dr-rohit-sureka",
-    full_name: "Dr Rohit Sureka",
-    title: "Dr.",
-    specialization: "Gastroenterology/Gi Medicine Specialist",
-    qualification_summary: "15 YEARS • MBBS, DNB GENERAL MEDICINE, DNB GASTROENTEROLOGY",
-    years_of_experience: 15,
-    rating: 4.95,
-    total_reviews: 184,
-    consultation_fee: 999,
-    clinic_name: "DocSphere Direct - Virtual & Clinic",
-    clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
-    locality: "Rajpur Road",
-    wait_time: "Available in 14 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Male",
-    avatar_url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3421,
-    lng: 78.0512,
-    languages: ["English", "Hindi"],
-    services: ["Acid Reflux (GERD)", "Liver Cirrhosis", "Colonoscopy", "Fatty Liver Care"],
-    next_available_slot: "Today, 04:30 PM",
-    patient_story_snippet: "Dr. Sureka diagnosed my chronic abdominal pain accurately in one consultation. Very calm and reassuring.",
-    distance_km: "1.4 km",
-    nmc_reg_no: "UK-48912/2009"
-  },
-  {
-    slug: "dr-harish-k-c",
-    full_name: "Dr Harish K C",
-    title: "Dr.",
-    specialization: "Gastroenterology/Gi Medicine Specialist",
-    qualification_summary: "15 YEARS • MBBS, MD (GENERAL MEDICINE), DM (GASTROENTEROLOGY)",
-    years_of_experience: 15,
-    rating: 4.88,
-    total_reviews: 125,
-    consultation_fee: 1000,
-    clinic_name: "DocSphere Clinic, Survey Chowk",
-    clinic_address: "42, EC Road, Survey Chowk, Dehradun",
-    locality: "EC Road",
-    wait_time: "Available in 9 minutes",
-    on_time_guarantee: false,
-    online_available: true,
-    gender: "Male",
-    avatar_url: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3204,
-    lng: 78.0489,
-    languages: ["English", "Hindi", "Kannada"],
-    services: ["IBD & Ulcerative Colitis", "Gastritis", "Endoscopy", "Hepatitis Care"],
-    next_available_slot: "Today, 05:15 PM",
-    patient_story_snippet: "Very empathetic specialist. Provided actionable diet and lifestyle advice rather than rushing into tests.",
-    distance_km: "2.1 km",
-    nmc_reg_no: "UK-39218/2011"
-  },
-  {
-    slug: "dr-rahul-sharma",
-    full_name: "Dr Rahul Sharma",
-    title: "Dr.",
-    specialization: "Dermatology/Skin & Hair Specialist",
-    qualification_summary: "12 YEARS • MBBS, MD (DERMATOLOGY, VENEREOLOGY & LEPROSY)",
-    years_of_experience: 12,
-    rating: 4.90,
-    total_reviews: 142,
-    consultation_fee: 600,
-    clinic_name: "Derma Care Skin & Laser Centre",
-    clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
-    locality: "Rajpur Road",
-    wait_time: "Available in 10 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Male",
-    avatar_url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3255,
-    lng: 78.0436,
-    languages: ["English", "Hindi"],
-    services: ["Acne & Scar Laser", "PRP Hair Loss Therapy", "Eczema Treatment", "Chemical Peels"],
-    next_available_slot: "Today, 04:00 PM",
-    patient_story_snippet: "Remarkable improvement in my stubborn acne within 3 weeks. Does not push expensive cosmetics.",
-    distance_km: "0.8 km",
-    nmc_reg_no: "UK-51204/2012"
-  },
-  {
-    slug: "dr-aditi-joshi",
-    full_name: "Dr Aditi Joshi",
-    title: "Dr.",
-    specialization: "Dentistry/Endodontics Specialist",
-    qualification_summary: "8 YEARS • BDS, MDS (CONSERVATIVE DENTISTRY & ENDODONTICS)",
-    years_of_experience: 8,
-    rating: 4.80,
-    total_reviews: 98,
-    consultation_fee: 400,
-    clinic_name: "Smile Craft Multi-Speciality Dental",
-    clinic_address: "42, EC Road, Near Survey Chowk, Dehradun",
-    locality: "EC Road",
-    wait_time: "Available in 5 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Female",
-    avatar_url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3218,
-    lng: 78.0495,
-    languages: ["English", "Hindi", "Garhwali"],
-    services: ["Painless Root Canal (RCT)", "Ceramic Crowns", "Teeth Whitening", "Laser Dentistry"],
-    next_available_slot: "Today, 03:45 PM",
-    patient_story_snippet: "Zero pain during the root canal procedure. Clinic is spotless and maintains exceptional sterilization.",
-    distance_km: "1.1 km",
-    nmc_reg_no: "UK-61984/2016"
-  },
-  {
-    slug: "dr-vikram-sethi",
-    full_name: "Dr Vikram Sethi",
-    title: "Dr.",
-    specialization: "Paediatrics/Child & Newborn Specialist",
-    qualification_summary: "15 YEARS • MBBS, DCH, DNB (PEDIATRICS)",
-    years_of_experience: 15,
-    rating: 4.95,
-    total_reviews: 210,
-    consultation_fee: 500,
-    clinic_name: "Dron Child & Newborn Health Centre",
-    clinic_address: "88, Chakrata Road, Near Ballupur Chowk, Dehradun",
-    locality: "Chakrata Road",
-    wait_time: "Available in 15 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Male",
-    avatar_url: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3342,
-    lng: 78.0125,
-    languages: ["English", "Hindi", "Punjabi"],
-    services: ["Newborn Care & NICU Followup", "Childhood Immunization", "Asthma & Allergies", "Growth Monitoring"],
-    next_available_slot: "Today, 05:00 PM",
-    patient_story_snippet: "Dr. Sethi is wonderfully gentle with babies. Never rushes and explains every dose patiently to anxious parents.",
-    distance_km: "3.2 km",
-    nmc_reg_no: "UK-44129/2009"
-  },
-  {
-    slug: "dr-priya-nair",
-    full_name: "Dr Priya Nair",
-    title: "Dr.",
-    specialization: "Cardiology/Heart & Vascular Specialist",
-    qualification_summary: "14 YEARS • MBBS, MD (MEDICINE), DM (CARDIOLOGY), FACC",
-    years_of_experience: 14,
-    rating: 4.96,
-    total_reviews: 167,
-    consultation_fee: 800,
-    clinic_name: "Himalayan Heart & Vascular Clinic",
-    clinic_address: "56, Rajpur Road, Opp. Hotel Madhuban, Dehradun",
-    locality: "Rajpur Road",
-    wait_time: "Available in 12 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Female",
-    avatar_url: "https://images.unsplash.com/photo-1594824813589-38b4d8d1e0d4?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3381,
-    lng: 78.0512,
-    languages: ["English", "Hindi", "Malayalam"],
-    services: ["2D Echocardiography", "Preventive Heart Check", "Hypertension Clinic", "Post-Angioplasty Care"],
-    next_available_slot: "Today, 04:45 PM",
-    patient_story_snippet: "Dr. Nair accurately detected an early arrhythmia that previous doctors overlooked. Extremely competent.",
-    distance_km: "1.6 km",
-    nmc_reg_no: "UK-47890/2010"
-  },
-  {
-    slug: "dr-arvind-rawat",
-    full_name: "Dr Arvind Rawat",
-    title: "Dr.",
-    specialization: "General Physician/Internal Medicine Specialist",
-    qualification_summary: "16 YEARS • MBBS, MD (INTERNAL MEDICINE)",
-    years_of_experience: 16,
-    rating: 4.92,
-    total_reviews: 184,
-    consultation_fee: 500,
-    clinic_name: "Doon Family Health & Diabetes Care",
-    clinic_address: "12, Saharanpur Road, Near Patel Chowk, Dehradun",
-    locality: "Saharanpur Road",
-    wait_time: "Available in 8 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Male",
-    avatar_url: "https://images.unsplash.com/photo-1614608682850-e0d6ed316d47?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3152,
-    lng: 78.0321,
-    languages: ["English", "Hindi", "Garhwali"],
-    services: ["Type 2 Diabetes Reversal", "Thyroid Disorders", "Dengue & Viral Fevers", "Elderly Geriatric Care"],
-    next_available_slot: "Today, 03:30 PM",
-    patient_story_snippet: "Our trusted family physician for over a decade. Prescribes minimum medications and solves problems quickly.",
-    distance_km: "2.4 km",
-    nmc_reg_no: "UK-38761/2008"
-  },
-  {
-    slug: "dr-meenakshi-sundaram",
-    full_name: "Dr Meenakshi Sundaram",
-    title: "Dr.",
-    specialization: "Obstetrics & Gynaecology Specialist",
-    qualification_summary: "15 YEARS • MBBS, MS (OBSTETRICS & GYNECOLOGY), DGO",
-    years_of_experience: 15,
-    rating: 4.94,
-    total_reviews: 195,
-    consultation_fee: 600,
-    clinic_name: "Motherhood Care & Fertility Clinic",
-    clinic_address: "31, Dalanwala, Circular Road, Dehradun",
-    locality: "Dalanwala",
-    wait_time: "Available in 10 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Female",
-    avatar_url: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3211,
-    lng: 78.0562,
-    languages: ["English", "Hindi", "Tamil"],
-    services: ["High-Risk Pregnancy", "PCOS / PCOD Reversal", "Infertility Evaluation", "Menopause Care"],
-    next_available_slot: "Today, 05:30 PM",
-    patient_story_snippet: "Guided me with supreme confidence and calm through an anxious high-risk pregnancy. Forever thankful.",
-    distance_km: "1.9 km",
-    nmc_reg_no: "UK-42198/2009"
-  },
-  {
-    slug: "dr-rajesh-semwal",
-    full_name: "Dr Rajesh Semwal",
-    title: "Dr.",
-    specialization: "Orthopaedics/Joint & Spine Specialist",
-    qualification_summary: "18 YEARS • MBBS, MS (ORTHOPEDICS), MCH (JOINT REPLACEMENT)",
-    years_of_experience: 18,
-    rating: 4.92,
-    total_reviews: 230,
-    consultation_fee: 600,
-    clinic_name: "Doon Ortho & Joint Spine Clinic",
-    clinic_address: "24, Ballupur Chowk, Chakrata Road, Dehradun",
-    locality: "Ballupur Chowk",
-    wait_time: "Available in 20 minutes",
-    on_time_guarantee: false,
-    online_available: true,
-    gender: "Male",
-    avatar_url: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3395,
-    lng: 78.0089,
-    languages: ["English", "Hindi"],
-    services: ["Robotic Knee Replacement", "Sciatica & Slip Disc", "Sports Ligament (ACL)", "Arthritis Management"],
-    next_available_slot: "Tomorrow, 10:00 AM",
-    patient_story_snippet: "My mother walked pain-free 12 days after knee replacement. Clear advice without false promises.",
-    distance_km: "3.5 km",
-    nmc_reg_no: "UK-31298/2006"
-  },
-  {
-    slug: "dr-amit-bansal",
-    full_name: "Dr Amit Bansal",
-    title: "Dr.",
-    specialization: "ENT/Otorhinolaryngology Specialist",
-    qualification_summary: "11 YEARS • MBBS, MS (ENT)",
-    years_of_experience: 11,
-    rating: 4.85,
-    total_reviews: 115,
-    consultation_fee: 500,
-    clinic_name: "Bansal ENT & Micro-Ear Care Centre",
-    clinic_address: "18, Subhash Road, Near Clock Tower, Dehradun",
-    locality: "Subhash Road",
-    wait_time: "Available in 6 minutes",
-    on_time_guarantee: true,
-    online_available: true,
-    gender: "Male",
-    avatar_url: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=300&auto=format&fit=crop&q=80",
-    lat: 30.3274,
-    lng: 78.0415,
-    languages: ["English", "Hindi"],
-    services: ["Endoscopic Sinus Surgery", "Tympanoplasty (Ear Drum)", "Tonsillitis & Adenoid", "Vertigo Treatment"],
-    next_available_slot: "Today, 04:15 PM",
-    patient_story_snippet: "Cured my chronic sinus blockage and vertigo completely. Clear diagnosis and transparent fees.",
-    distance_km: "1.0 km",
-    nmc_reg_no: "UK-53412/2013"
-  }
-];
+// The public directory is fetched from the clinic database at runtime. No
+// sample doctors are bundled, so every result points at a real bookable profile.
+
+const DEHRADUN_CENTER = { lat: 30.3165, lng: 78.0322 };
+
+function mapDoctorToMapItem(
+  doc: any,
+  clinicsBySlug: Record<string, any>
+): DoctorMapItem | null {
+  if (!doc?.slug || !doc?.full_name) return null;
+  const clinic = clinicsBySlug[String(doc.clinic_slug || "").toLowerCase()] || {};
+  const services = Array.isArray(doc.services_offered)
+    ? doc.services_offered
+        .map((service: any) =>
+          typeof service === "string" ? service : service?.name
+        )
+        .filter(Boolean)
+    : [];
+  const languages = Array.isArray(doc.languages_spoken)
+    ? doc.languages_spoken.filter(Boolean)
+    : [];
+  const lat = Number(clinic.latitude);
+  const lng = Number(clinic.longitude);
+
+  return {
+    slug: String(doc.slug),
+    full_name: String(doc.full_name),
+    title: doc.title || "Dr.",
+    specialization: doc.specialization || "",
+    qualification_summary: doc.qualification_summary || "",
+    years_of_experience: Number(doc.years_of_experience) || 0,
+    rating: Number(doc.rating) || 0,
+    total_reviews: Number(doc.total_reviews) || 0,
+    consultation_fee: Number(doc.consultation_fee) || 0,
+    clinic_name: doc.clinic_name || clinic.name || "",
+    clinic_address: doc.clinic_address || clinic.address_line || "",
+    locality: clinic.city || "",
+    wait_time: "",
+    lat: Number.isFinite(lat) && lat ? lat : DEHRADUN_CENTER.lat,
+    lng: Number.isFinite(lng) && lng ? lng : DEHRADUN_CENTER.lng,
+    services,
+    languages,
+    next_available_slot: "",
+  };
+}
 
 // Fallback Doctor Avatar SVG when image is loading or fails
 function DoctorPortrait({ 
@@ -433,8 +206,59 @@ function SearchDiscoveryContent() {
   // View Mode: "split" | "list" | "map"
   const [viewMode, setViewMode] = useState<"split" | "list" | "map">("split");
 
+  // Live directory (doctors + clinic coordinates)
+  const [directoryDoctors, setDirectoryDoctors] = useState<DoctorMapItem[]>([]);
+  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [directoryError, setDirectoryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setDirectoryLoading(true);
+      setDirectoryError(null);
+      try {
+        const [doctorsRes, clinicsRes] = await Promise.all([
+          fetch("/api/doctors", { cache: "no-store" }),
+          fetch("/api/clinics", { cache: "no-store" }),
+        ]);
+        if (!doctorsRes.ok) {
+          throw new Error("Could not load the doctor directory.");
+        }
+        const doctorsJson = await doctorsRes.json().catch(() => []);
+        const clinicsJson = clinicsRes.ok
+          ? await clinicsRes.json().catch(() => [])
+          : [];
+        const doctorRows = Array.isArray(doctorsJson)
+          ? doctorsJson
+          : doctorsJson?.doctors || [];
+        const clinicRows = Array.isArray(clinicsJson) ? clinicsJson : [];
+        const clinicsBySlug: Record<string, any> = {};
+        for (const clinic of clinicRows) {
+          if (clinic?.slug) {
+            clinicsBySlug[String(clinic.slug).toLowerCase()] = clinic;
+          }
+        }
+        const mapped = doctorRows
+          .map((doc: any) => mapDoctorToMapItem(doc, clinicsBySlug))
+          .filter((doc: DoctorMapItem | null): doc is DoctorMapItem => Boolean(doc));
+        if (!cancelled) setDirectoryDoctors(mapped);
+      } catch (err: any) {
+        if (!cancelled) {
+          setDirectoryError(
+            err?.message || "Could not load the doctor directory."
+          );
+        }
+      } finally {
+        if (!cancelled) setDirectoryLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Active doctor for Map highlighting & info modal
-  const [activeDoctor, setActiveDoctor] = useState<DoctorMapItem | null>(ALL_SEARCH_DOCTORS[0]);
+  const [activeDoctor, setActiveDoctor] = useState<DoctorMapItem | null>(null);
   const [infoModalDoctor, setInfoModalDoctor] = useState<DoctorMapItem | null>(null);
 
   // Clear all filters handler
@@ -462,7 +286,7 @@ function SearchDiscoveryContent() {
   // FILTER LOGIC
   // --------------------------------------------------------------------------
   const filteredDoctors = useMemo(() => {
-    return ALL_SEARCH_DOCTORS.filter((doc) => {
+    return directoryDoctors.filter((doc) => {
       // Keyword search
       if (query.trim()) {
         const q = query.toLowerCase();
@@ -525,7 +349,7 @@ function SearchDiscoveryContent() {
 
       return true;
     });
-  }, [query, selectedSpecialty, selectedGenders, expRanges, feeRanges]);
+  }, [query, selectedSpecialty, selectedGenders, expRanges, feeRanges, directoryDoctors]);
 
   // Keep active doctor in sync
   useEffect(() => {
@@ -867,7 +691,7 @@ function SearchDiscoveryContent() {
 
               <div className="flex items-center justify-between text-xs font-semibold text-gray-500 px-1">
                 <span>
-                  Showing <strong className="text-gray-900 dark:text-white">{filteredDoctors.length}</strong> verified specialists
+                  Showing <strong className="text-gray-900 dark:text-white">{filteredDoctors.length}</strong> registered specialists
                 </span>
                 <span className="text-[#008778] text-[11px] font-medium hidden sm:inline">
                   ● Direct Chamber Booking • Zero Platform Markup
@@ -877,7 +701,30 @@ function SearchDiscoveryContent() {
 
             {/* Scrollable Doctor Cards List */}
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1.5 pb-8 scrollbar-thin">
-              {filteredDoctors.length === 0 ? (
+              {directoryLoading ? (
+                <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-[#1C1C1E]">
+                  <div className="mx-auto h-8 w-8 rounded-full border-2 border-[#0071E3]/30 border-t-[#0071E3] animate-spin" />
+                  <p className="mt-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Loading specialists…
+                  </p>
+                </div>
+              ) : directoryError ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-900 dark:bg-amber-950/30">
+                  <h3 className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                    Doctor directory unavailable
+                  </h3>
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                    {directoryError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="mt-3 rounded-full bg-[#0071E3] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#0077ED] transition"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : filteredDoctors.length === 0 ? (
                 <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-[#1C1C1E]">
                   <Stethoscope className="mx-auto h-8 w-8 text-gray-400" />
                   <h3 className="mt-2 text-sm font-bold text-gray-900 dark:text-white">
@@ -931,7 +778,7 @@ function SearchDiscoveryContent() {
 
                           {/* Middle: Doctor Details */}
                           <div className="min-w-0 flex-1 space-y-0.5">
-                            {/* Line 1: Doctor Name, Info, NMC Badge, Rating */}
+                            {/* Line 1: Doctor Name, Info, Registration Badge, Rating */}
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white group-hover:text-[#0071E3] transition truncate">
                                 {doc.full_name}
@@ -948,7 +795,7 @@ function SearchDiscoveryContent() {
                                 <Info className="h-3.5 w-3.5" />
                               </button>
 
-                              {/* NMC Medical Registration Pill */}
+                              {/* Medical Registration Pill */}
                               {doc.nmc_reg_no && (
                                 <span className="inline-flex items-center gap-1 rounded bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.2 text-[9.5px] font-semibold text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/40">
                                   <CheckCircle2 className="h-2 w-2 text-sky-600" />
@@ -957,10 +804,16 @@ function SearchDiscoveryContent() {
                               )}
 
                               {/* Patient Satisfaction Rating */}
-                              <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800/40">
-                                <ThumbsUp className="h-2.5 w-2.5 fill-emerald-600" />
-                                <span>{Math.round(doc.rating * 19)}% ({doc.total_reviews} Patients)</span>
-                              </span>
+                              {doc.total_reviews > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800/40">
+                                  <ThumbsUp className="h-2.5 w-2.5 fill-emerald-600" />
+                                  <span>
+                                    {`${Number(doc.rating).toFixed(1)} ★ (${doc.total_reviews} ${
+                                      doc.total_reviews === 1 ? "Review" : "Reviews"
+                                    })`}
+                                  </span>
+                                </span>
+                              )}
                             </div>
 
                             {/* Line 2: Speciality, Experience & Qualifications */}
@@ -982,7 +835,7 @@ function SearchDiscoveryContent() {
                             <div className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 flex-wrap pt-0.5">
                               <span className="flex items-center gap-1 font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px] sm:max-w-xs">
                                 <MapPin className="h-3 w-3 text-gray-400 shrink-0" />
-                                <span>{doc.clinic_name} ({doc.locality})</span>
+                                <span>{doc.clinic_name}{doc.locality ? ` (${doc.locality})` : ""}</span>
                               </span>
                               {doc.distance_km && (
                                 <>
@@ -990,11 +843,15 @@ function SearchDiscoveryContent() {
                                   <span className="text-gray-500 font-medium">{doc.distance_km}</span>
                                 </>
                               )}
-                              <span className="text-gray-300 dark:text-white/20">•</span>
-                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span>{doc.wait_time}</span>
-                              </span>
+                              {doc.wait_time && (
+                                <>
+                                  <span className="text-gray-300 dark:text-white/20">•</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>{doc.wait_time}</span>
+                                  </span>
+                                </>
+                              )}
                               {doc.languages && doc.languages.length > 0 && (
                                 <>
                                   <span className="text-gray-300 dark:text-white/20 hidden md:inline">•</span>
@@ -1020,18 +877,19 @@ function SearchDiscoveryContent() {
                             </span>
                           )}
 
-                          {/* Next Available Slot Indicator */}
-                          <div className="rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-1.5 py-0.5 text-left w-full sm:w-auto">
-                            <div className="text-[9px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                              <Clock className="h-2.5 w-2.5 text-emerald-600" />
-                              <span>Next: <strong className="text-emerald-950 dark:text-emerald-200 font-extrabold">{doc.next_available_slot || "Today"}</strong></span>
+                          {doc.next_available_slot && (
+                            <div className="rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-1.5 py-0.5 text-left w-full sm:w-auto">
+                              <div className="text-[9px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
+                                <Clock className="h-2.5 w-2.5 text-emerald-600" />
+                                <span>Next: <strong className="text-emerald-950 dark:text-emerald-200 font-extrabold">{doc.next_available_slot}</strong></span>
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Fee & Zero Markup */}
                           <div className="text-right">
                             <div className="text-base sm:text-lg font-black text-gray-900 dark:text-white font-mono leading-tight">
-                              ₹{doc.consultation_fee}
+                              {doc.consultation_fee > 0 ? `₹${doc.consultation_fee}` : "Fee at clinic"}
                             </div>
                             <div className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">
                               Zero Platform Fee
@@ -1161,7 +1019,7 @@ function SearchDiscoveryContent() {
                 <p className="text-xs text-gray-500">{infoModalDoctor.specialization}</p>
                 <div className="mt-1 flex items-center gap-1 text-xs font-bold text-emerald-600">
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>NMC Registered & Verified</span>
+                  <span>Registration on file</span>
                 </div>
               </div>
             </div>
@@ -1177,7 +1035,7 @@ function SearchDiscoveryContent() {
               </p>
               <p>
                 <strong className="text-gray-900 dark:text-white">Clinic Address:</strong>{" "}
-                {infoModalDoctor.clinic_address}
+                {infoModalDoctor.clinic_address || "Not recorded"}
               </p>
               <p>
                 <strong className="text-gray-900 dark:text-white">DocSphere Promise:</strong> Direct
@@ -1190,7 +1048,7 @@ function SearchDiscoveryContent() {
                 href={`/book?doctor=${infoModalDoctor.slug}`}
                 className="flex-1 rounded-xl bg-[#0071E3] py-2.5 text-center text-xs font-bold text-white shadow-sm hover:bg-[#0077ED] transition"
               >
-                Book Direct Consultation (₹{infoModalDoctor.consultation_fee})
+                Book Direct Consultation{infoModalDoctor.consultation_fee > 0 ? ` (₹${infoModalDoctor.consultation_fee})` : ""}
               </Link>
             </div>
           </div>

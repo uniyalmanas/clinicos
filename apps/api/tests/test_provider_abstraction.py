@@ -1,19 +1,34 @@
 import uuid
 import pytest
 from apps.api.models.consultation import ConsultationSession, ClinicalFact
+from apps.api.integrations.llm.gemini_provider import GeminiLLMProvider
 from apps.api.integrations.llm.groq_provider import GroqLLMProvider
 from apps.api.integrations.llm.ollama_provider import OllamaLLMProvider
 from apps.api.integrations.llm.local_embedding_provider import LocalDeterministicEmbeddingProvider
-from apps.api.integrations.llm.provider_factory import get_llm_provider, get_embedding_provider
+from apps.api.integrations.llm.provider_factory import (
+    ChainLLMProvider,
+    get_llm_provider,
+    get_embedding_provider,
+)
 from apps.api.services.hybrid_retrieval import HybridRetrievalService, cosine_similarity
 
 
 def test_groq_llm_provider_configuration():
-    provider = GroqLLMProvider(api_key="mock-key-123", model="llama-3.3-70b-versatile")
+    provider = GroqLLMProvider(api_key="mock-key-123", model="openai/gpt-oss-20b")
     assert provider.health_check() is True
-    assert provider.model == "llama-3.3-70b-versatile"
+    assert provider.model == "openai/gpt-oss-20b"
 
     no_key_provider = GroqLLMProvider(api_key="")
+    assert no_key_provider.health_check() is False
+
+
+def test_gemini_llm_provider_configuration():
+    provider = GeminiLLMProvider(api_key="mock-gemini-key", model="gemini-2.5-flash")
+    assert provider.health_check() is True
+    assert provider.model == "gemini-2.5-flash"
+    assert "generativelanguage.googleapis.com" in provider.api_url
+
+    no_key_provider = GeminiLLMProvider(api_key="")
     assert no_key_provider.health_check() is False
 
 
@@ -24,11 +39,20 @@ def test_ollama_llm_provider_configuration():
 
 
 def test_provider_factory_selection():
-    ollama = get_llm_provider(preference="ollama")
-    assert isinstance(ollama, (OllamaLLMProvider, GroqLLMProvider))
+    provider = get_llm_provider(preference="ollama")
+    assert isinstance(provider, ChainLLMProvider)
+    # Ollama is attempted first, with cloud providers as fallback.
+    assert isinstance(provider.providers[0], OllamaLLMProvider)
 
     embedding_prov = get_embedding_provider(preference="local")
     assert isinstance(embedding_prov, LocalDeterministicEmbeddingProvider)
+
+
+def test_provider_factory_gemini_preferred():
+    provider = get_llm_provider(preference="gemini")
+    assert isinstance(provider, ChainLLMProvider)
+    assert isinstance(provider.providers[0], GeminiLLMProvider)
+    assert any(isinstance(p, GroqLLMProvider) for p in provider.providers)
 
 
 def test_semantic_embedding_cosine_similarity():

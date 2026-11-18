@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, ADMIN_ROLES, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
       ORDER BY full_name ASC;
     `;
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
     const monthStart = `${todayStr.slice(0, 7)}-01`;
 
     // 3. Global configuration — only values that actually exist for this tenant.
@@ -364,7 +365,7 @@ export async function POST(req: NextRequest) {
       return apiError(404, "Clinic not found.", "clinic_not_found");
     }
     const clinic: any = clinicRows[0];
-    const monthStart = `${new Date().toISOString().split("T")[0].slice(0, 7)}-01`;
+    const monthStart = `${clinicToday().slice(0, 7)}-01`;
     const actorName = `${auth.auth.user.full_name} (${auth.auth.role})`;
 
     // 1. ACTION: Toggle User Account Lock (Revoke / Restore Staff Access)

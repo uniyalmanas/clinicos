@@ -58,7 +58,7 @@ export default function HeroIllustrationShowcase() {
                   <span className="ml-2">Chamber Live Queue</span>
                 </span>
                 <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  Derma Care OPD
+                  Live OPD Preview
                 </span>
               </div>
 
@@ -82,11 +82,11 @@ export default function HeroIllustrationShowcase() {
             <div className="space-y-2 text-xs">
               <div className="flex items-center gap-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.04] p-2.5 text-slate-700 dark:text-slate-300">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                <span className="font-medium">100% Direct Clinic Fee — ₹0 Aggregator Markup</span>
+                <span className="font-medium">Direct clinic fee — no aggregator markup</span>
               </div>
               <div className="flex items-center gap-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.04] p-2.5 text-slate-700 dark:text-slate-300">
                 <ShieldCheck className="h-4 w-4 text-blue-500 shrink-0" />
-                <span className="font-medium">NMC Verified Doctor Councils (UKMC-8942-2012)</span>
+                <span className="font-medium">Doctor registration &amp; clinic profiles</span>
               </div>
               <div className="flex items-center gap-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.04] p-2.5 text-slate-700 dark:text-slate-300">
                 <Zap className="h-4 w-4 text-amber-500 shrink-0" />
@@ -97,7 +97,7 @@ export default function HeroIllustrationShowcase() {
             {/* Quick Action */}
             <div className="pt-2">
               <Link
-                href="/book?clinic=derma-care-dehradun"
+                href="/search"
                 className="flex items-center justify-center gap-2 w-full rounded-xl bg-apple-blue py-3 text-xs font-bold text-white shadow-apple-sm hover:bg-[#0077ED] active:scale-98 transition"
               >
                 <Ticket className="h-4 w-4" />

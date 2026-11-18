@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { clinicToday } from "@/lib/clinic-date";
 import {
   Calendar,
   Stethoscope,
@@ -106,7 +107,7 @@ type QueuePatient = {
   doctor_slug: string;
   patient_name: string;
   patient_phone: string;
-  status: "confirmed" | "booked" | "arrived" | "in_consultation" | "completed" | "no_show";
+  status: "waiting" | "confirmed" | "booked" | "arrived" | "in_consultation" | "completed" | "no_show";
   fee_amount: number;
   payment_status: "paid" | "pending";
   payment_mode: "upi" | "cash";
@@ -114,6 +115,17 @@ type QueuePatient = {
   time_slot: string;
   is_walk_in: boolean;
 };
+
+/**
+ * Statuses that mean "this patient is here and waiting for the doctor".
+ *
+ * `/api/clinic/desk-queue` normalizes `confirmed`/`booked` to `waiting`, while
+ * older payloads use the raw appointment statuses, so every consumer has to
+ * accept all of them or waiting patients silently disappear from reception.
+ */
+const WAITING_STATUSES = ["waiting", "arrived", "booked", "confirmed"] as const;
+const isWaitingStatus = (status: string) =>
+  (WAITING_STATUSES as readonly string[]).includes(status);
 
 type ShiftState = {
   isOpen: boolean;
@@ -129,6 +141,7 @@ type ShiftState = {
 function StatusChip({ status }: { status: string }) {
   const variants: Record<string, string> = {
     booked: "bg-blue-50/60 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border border-blue-100/30 dark:border-blue-800/30",
+    waiting: "bg-amber-50/60 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 border border-amber-100/30 dark:border-amber-800/30",
     arrived: "bg-amber-50/60 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 border border-amber-100/30 dark:border-amber-800/30",
     in_consultation: "bg-emerald-50/60 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100/30 dark:border-emerald-800/30 animate-pulse",
     completed: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60",
@@ -140,6 +153,7 @@ function StatusChip({ status }: { status: string }) {
   };
   const labels: Record<string, string> = {
     booked: "Booked",
+    waiting: "Waiting",
     arrived: "Arrived",
     in_consultation: "In Chamber",
     completed: "Completed",
@@ -213,7 +227,7 @@ type DoctorCardProps = {
 
 function DoctorCard({ doctor, queue, onCallNext, onSetAway, onSetIdle, onTransfer }: DoctorCardProps) {
   const docQueue = queue.filter((q) => q.doctor_slug === doctor.doctorSlug);
-  const waiting = docQueue.filter((q) => q.status === "arrived" || q.status === "booked" || q.status === "confirmed");
+  const waiting = docQueue.filter((q) => isWaitingStatus(q.status));
   const inConsult = docQueue.find((q) => q.status === "in_consultation");
   const completed = docQueue.filter((q) => q.status === "completed").length;
 
@@ -391,7 +405,7 @@ function PatientRow({ patient, doctorName, onCall, onComplete, onTogglePayment, 
 
       {/* Right: actions */}
       <div className="flex items-center gap-1">
-        {patient.status === "arrived" || patient.status === "booked" || patient.status === "confirmed" ? (
+        {isWaitingStatus(patient.status) ? (
           <Button variant="success" size="sm" onClick={() => onCall(patient)} fullWidth>
             <Volume2 className="h-3 w-3" /> Call
           </Button>
@@ -458,7 +472,8 @@ function WalkinModal({ open, onClose, onSubmit, doctors, loading }: WalkinModalP
         });
         if (res.ok) {
           const data = await res.json();
-          const profile = data.patientProfile;
+          // GET /api/patients/[phone] returns { patient: { ...visits } }.
+          const profile = data?.patient;
           if (profile?.full_name) {
             setFoundPatient(profile);
             setName(profile.full_name);
@@ -699,36 +714,9 @@ function ShiftPanel({ shift, onOpenShift, onCloseShift }: ShiftPanelProps) {
 // ─────────────────────────────────────────────────────────
 
 function ReceptionInner() {
-  const [doctors, setDoctors] = useState<DoctorChamberState[]>([
-    {
-      doctorSlug: "dr-rahul-sharma",
-      doctorName: "Dr. Rahul Sharma",
-      specialization: "Dermatologist",
-      chamberName: "Chamber 1 • Room 101",
-      status: "idle",
-      waitingCount: 0,
-      lastUpdated: new Date().toISOString(),
-    },
-    {
-      doctorSlug: "dr-aditi-joshi",
-      doctorName: "Dr. Aditi Joshi",
-      specialization: "Dental Surgeon",
-      chamberName: "Chamber 2 • Dental Chair 1",
-      status: "idle",
-      waitingCount: 0,
-      lastUpdated: new Date().toISOString(),
-    },
-    {
-      doctorSlug: "dr-vikram-sethi",
-      doctorName: "Dr. Vikram Sethi",
-      specialization: "Pediatrician",
-      chamberName: "Chamber 3 • Room 103",
-      status: "idle",
-      waitingCount: 0,
-      lastUpdated: new Date().toISOString(),
-    },
-  ]);
-
+  // Doctor chambers come from the shared clinic-sync provider, which hydrates
+  // them from `/api/doctors` + today's desk queue. Never seed sample chambers:
+  // reception would see doctors who are not in this clinic.
   const [queue, setQueue] = useState<QueuePatient[]>([]);
   const [shift, setShift] = useState<ShiftState>({ isOpen: false, cashFloat: 0, openedAt: null, openedBy: null });
   const [walkinOpen, setWalkinOpen] = useState(false);
@@ -739,35 +727,31 @@ function ReceptionInner() {
 
   const { chambers: syncChambers, setChamberStatus, connected } = useClinicSync();
 
-  const displayDoctors = useMemo(() => {
-    if (syncChambers.length > 0) return syncChambers;
-    return doctors;
-  }, [syncChambers, doctors]);
+  const displayDoctors = syncChambers;
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
 
+  const loadQueue = useCallback(async () => {
+    try {
+      const data = await API.get("/api/clinic/desk-queue");
+      setQueue(Array.isArray(data.queue) ? data.queue : []);
+    } catch {
+      // Keep the last server snapshot; the next poll retries. Never fall back
+      // to sample patients — reception must see the same queue as the doctor.
+    }
+  }, []);
+
   useEffect(() => {
-    const loadQueue = async () => {
-      try {
-        const data = await API.get("/api/clinic/desk-queue");
-        const q: QueuePatient[] = Array.isArray(data.queue) ? data.queue : [];
-        setQueue(q);
-      } catch {
-        // Keep local mock
-      }
-    };
     loadQueue();
     const interval = setInterval(loadQueue, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadQueue]);
 
-  const TODAY_STR = new Date().toISOString().split("T")[0];
-  const waitingCount = queue.filter(
-    (q) => q.status === "arrived" || q.status === "booked" || q.status === "confirmed"
-  ).length;
+  const TODAY_STR = clinicToday();
+  const waitingCount = queue.filter((q) => isWaitingStatus(q.status)).length;
   const inConsultCount = queue.filter((q) => q.status === "in_consultation").length;
   const completedCount = queue.filter((q) => q.status === "completed").length;
   const totalCollected = queue
@@ -857,25 +841,44 @@ function ReceptionInner() {
           p.id === patient.id ? { ...p, status: "no_show" } : p
         )
       );
-      showToast(`${patient.patient_name} marked as no-show`);
+      API.post("/api/clinic/update-appointment", {
+        appointment_number: patient.appointment_number,
+        status: "no_show",
+      })
+        .then(() => {
+          loadQueue();
+          showToast(`${patient.patient_name} marked as no-show`);
+        })
+        .catch((err: any) => {
+          loadQueue();
+          showToast(`Could not mark no-show: ${err?.message || "request failed"}`);
+        });
     },
-    [showToast]
+    [loadQueue, showToast]
   );
 
   const handleTransfer = useCallback(
     (patient: QueuePatient, targetDoctorSlug: string) => {
-      setQueue((prev) =>
-        prev.map((p) =>
-          p.id === patient.id ? { ...p, doctor_slug: targetDoctorSlug } : p
-        )
-      );
       const targetDoctor = displayDoctors.find((d) => d.doctorSlug === targetDoctorSlug);
-      if (targetDoctor) {
-        setChamberStatus(targetDoctor.doctorSlug, targetDoctor.status, targetDoctor.currentPatient);
-      }
-      showToast(`${patient.patient_name} transferred to ${targetDoctor?.doctorName}`);
+      API.post("/api/clinic/update-appointment", {
+        appointment_number: patient.appointment_number,
+        target_doctor_slug: targetDoctorSlug,
+      })
+        .then((res: any) => {
+          if (targetDoctor) {
+            setChamberStatus(targetDoctor.doctorSlug, targetDoctor.status, targetDoctor.currentPatient);
+          }
+          loadQueue();
+          showToast(
+            `${patient.patient_name} transferred to ${targetDoctor?.doctorName || targetDoctorSlug} (Token #${res?.appointment?.token_number ?? "—"})`
+          );
+        })
+        .catch((err: any) => {
+          loadQueue();
+          showToast(`Transfer failed: ${err?.message || "request failed"}`);
+        });
     },
-    [queue, displayDoctors, setChamberStatus, showToast]
+    [displayDoctors, loadQueue, setChamberStatus, showToast]
   );
 
   const handleSetAway = useCallback(
@@ -920,56 +923,30 @@ function ReceptionInner() {
         payment_mode: data.paymentMode,
         symptoms_description: data.complaint,
       })
-        .then((res: any) => {
-          const newApt = res.appointment || {
-            id: `walkin-${Date.now()}`,
-            appointment_number: `APT-WALKIN-${Math.floor(Math.random() * 9000) + 1000}`,
-            token_number: Math.max(...queue.map((q) => q.token_number), 0) + 1,
-            doctor_slug: data.doctorSlug,
-            patient_name: data.name,
-            patient_phone: data.phone,
-            status: "arrived",
-            fee_amount: data.fee,
-            payment_status: data.paymentMode === "upi" ? "paid" : "pending",
-            payment_mode: data.paymentMode,
-            symptoms_description: data.complaint,
-            time_slot: "Immediate Walk-In",
-            is_walk_in: true,
-          };
-          setQueue((prev) => [...prev, newApt]);
+        .then(async (res: any) => {
+          const newApt = res.appointment;
+          if (!newApt?.appointment_number) {
+            throw new Error("The clinic did not return a token for this walk-in.");
+          }
+          // Re-read the server queue instead of splicing the response in:
+          // token numbers are allocated per doctor and the response may not
+          // carry the same shape as `desk-queue`.
+          await loadQueue();
           setChamberStatus(data.doctorSlug, "idle", undefined);
           playCheckInChime();
           showToast(`Token #${newApt.token_number} generated for ${data.name}`);
         })
-        .catch(() => {
-          showToast("Walk-in check-in failed — using local fallback");
-          const newToken = Math.max(...queue.map((q) => q.token_number), 0) + 1;
-          setQueue((prev) => [
-            ...prev,
-            {
-              id: `walkin-local-${Date.now()}`,
-              appointment_number: `APT-WALKIN-${newToken}`,
-              token_number: newToken,
-              doctor_slug: data.doctorSlug,
-              patient_name: data.name,
-              patient_phone: data.phone,
-              status: "arrived",
-              fee_amount: data.fee,
-              payment_status: data.paymentMode === "upi" ? "paid" : "pending",
-              payment_mode: data.paymentMode,
-              symptoms_description: data.complaint,
-              time_slot: "Immediate Walk-In",
-              is_walk_in: true,
-            },
-          ]);
-          showToast(`Token #${newToken} generated for ${data.name} (local)`);
+        .catch((err: any) => {
+          // A locally invented token is invisible to the doctor and pharmacy,
+          // so surface the failure instead of pretending it worked.
+          showToast(`Walk-in check-in failed: ${err?.message || "network error"}`);
         })
         .finally(() => {
           setWalkinLoading(false);
           setWalkinOpen(false);
         });
     },
-    [queue, setChamberStatus, showToast]
+    [loadQueue, setChamberStatus, showToast]
   );
 
   return (
@@ -1026,9 +1003,7 @@ function ReceptionInner() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {displayDoctors.map((doc) => {
             const docQueue = queue.filter((q) => q.doctor_slug === doc.doctorSlug);
-            const waiting = docQueue.filter(
-              (q) => q.status === "arrived" || q.status === "booked" || q.status === "confirmed"
-            ).length;
+            const waiting = docQueue.filter((q) => isWaitingStatus(q.status)).length;
             const inConsult = docQueue.find((q) => q.status === "in_consultation");
             return (
               <DoctorCard

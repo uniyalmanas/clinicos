@@ -50,9 +50,9 @@ export default function ForDoctorsPage() {
       imageLabel: "Speed Rx Touch & Keyboard Studio",
       features: [
         "1-Tap Disease Combos (Pediatric Fever, Adult Hypertension, Type-2 Diabetes)",
-        "NMC-Compliant UPPERCASE generic chemical name auto-formatter",
+        "UPPERCASE generic chemical name auto-formatter",
         "Safe 'Repeat Last Rx' & 30-Day Extend with zero drug hallucination",
-        "Direct WhatsApp prescription transmission with cryptographic tamper-proofing",
+        "Direct WhatsApp prescription transmission with a cryptographic SHA-256 seal",
         "Vitals quick-pad with one-key systolic/diastolic/pulse entry"
       ],
       stat: "30s",
@@ -112,7 +112,7 @@ export default function ForDoctorsPage() {
       accent: "from-amber-600 to-orange-600",
       pillColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
       headline: "Close the clinic day in 5 minutes with zero Excel spreadsheets",
-      description: "Physical denomination counter for ₹500, ₹200, ₹100 notes joined with UPI logs. Auto-calculates petty cash outflows and visiting doctor fee shares with a tamper-proof day lock.",
+      description: "Physical denomination counter for ₹500, ₹200, ₹100 notes joined with UPI logs. Auto-calculates petty cash outflows and visiting doctor fee shares with a signed day lock.",
       url: "/dashboard/finance",
       actionText: "Launch 9 PM Day Closing",
       image: "/images/clinical/eod-settlement-ledger.jpg",
@@ -257,7 +257,7 @@ export default function ForDoctorsPage() {
               className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-700 hover:shadow-xl transition active:scale-95"
             >
               <Sparkles className="h-4 w-4" />
-              <span>Start 60-Second Onboarding (100% Free)</span>
+              <span>Start 60-Second Onboarding (Free)</span>
             </Link>
 
             {/* Doctor Sign In Button */}
@@ -333,7 +333,7 @@ export default function ForDoctorsPage() {
                     Speed Rx: 38s
                   </span>
                   <span className="rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-xs font-bold text-white border border-white/20">
-                    NMC Generic Molecule: PARACETAMOL 650MG
+                    Generic Molecule: PARACETAMOL 650MG
                   </span>
                 </div>
                 <Link
@@ -355,7 +355,7 @@ export default function ForDoctorsPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-[#0071E3]" />
-              <span>NMC Generic Compliant</span>
+              <span>Generic-First Prescribing</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
@@ -410,21 +410,21 @@ export default function ForDoctorsPage() {
                   0% Platform Commission
                 </h3>
                 <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                  100% of patient consultation fees go directly to your personal UPI QR code or clinic cash drawer. Zero commissions, zero middleman escrow.
+                  Patient consultation fees go directly to your personal UPI QR code or clinic cash drawer. Zero commissions, zero middleman escrow.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                ✓ 100% Doctor-Owned
+                ✓ Doctor-Owned
               </div>
             </div>
 
-            {/* Pillar 2: NMC Compliant */}
+            {/* Pillar 2: Generic-first prescribing */}
             <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] p-5 dark:border-white/[0.08] dark:bg-[#16171B] shadow-2xs hover:shadow-md transition flex flex-col justify-between">
               <div>
                 <div className="relative h-24 w-full mb-4 rounded-xl bg-blue-500/5 dark:bg-blue-500/10 flex items-center justify-center p-2 overflow-hidden border border-blue-500/10">
                   <Image
                     src="/images/illustrations/digital-records.svg"
-                    alt="NMC generic prescription compliance records"
+                    alt="Generic prescription compliance records"
                     width={90}
                     height={90}
                     className="object-contain max-h-20 w-auto hover:scale-105 transition"
@@ -437,14 +437,14 @@ export default function ForDoctorsPage() {
                   Audit Proof
                 </div>
                 <h3 className="mt-1 text-base font-bold text-[#1D1D1F] dark:text-white">
-                  NMC Generic Compliance
+                  Generic Prescribing
                 </h3>
                 <p className="mt-2 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                  Automatically enforces UPPERCASE generic chemical molecule names on every prescription to protect your license during clinical audits.
+                  Automatically enforces UPPERCASE generic chemical molecule names on every prescription for clearer, generic-first records during clinical audits.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[11px] font-semibold text-[#0071E3] dark:text-[#2997FF]">
-                ✓ NMC Registered Guidelines
+                ✓ Generic-first prescribing
               </div>
             </div>
 
@@ -742,7 +742,7 @@ export default function ForDoctorsPage() {
               <div className="p-4">
                 <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Doctor Speed Rx Chamber</h4>
                 <p className="mt-1 text-xs text-[#6E6E73] dark:text-[#A1A1A6] leading-relaxed">
-                  One-tap patient call, sub-50ms typing speed, and 100% compliant generic molecule enforcement.
+                  One-tap patient call, fast prescription typing, and a generic-first molecule format.
                 </p>
               </div>
             </div>
@@ -809,7 +809,7 @@ export default function ForDoctorsPage() {
                     Aggregator owns patient contact and cross-sells hospital beds &amp; labs.
                   </td>
                   <td className="p-4 sm:p-5 font-bold text-emerald-600 dark:text-emerald-400 bg-blue-50/30 dark:bg-blue-950/10">
-                    ✓ 100% Doctor-Owned. Zero cross-selling. Your direct patient relationship.
+                    ✓ Doctor-Owned. Zero cross-selling. Your direct patient relationship.
                   </td>
                 </tr>
 
@@ -821,7 +821,7 @@ export default function ForDoctorsPage() {
                     15% to 30% cut per booking, or heavy pay-per-lead charges.
                   </td>
                   <td className="p-4 sm:p-5 font-bold text-emerald-600 dark:text-emerald-400 bg-blue-50/30 dark:bg-blue-950/10">
-                    ✓ 0% Commission. 100% direct patient payment via your personal UPI or Cash.
+                    ✓ 0% Commission. Direct patient payment via your personal UPI or Cash.
                   </td>
                 </tr>
 
@@ -1041,100 +1041,63 @@ export default function ForDoctorsPage() {
         </div>
       </section>
 
-      {/* 5.5. TRUSTED BY PRACTICING INDIAN DOCTORS */}
+      {/* 5.5. WHAT THE CHAMBER ACTUALLY RUNS ON */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#101114] border-t border-black/[0.06] dark:border-white/[0.08]">
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-3xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              Verified Physician Endorsements
+              Built For The Indian OPD
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#1D1D1F] dark:text-white">
-              Trusted by 1,200+ Independent Indian Practitioners.
+              Three screens. One source of truth.
             </h2>
             <p className="mt-3 text-sm sm:text-base text-[#6E6E73] dark:text-[#A1A1A6]">
-              Real doctors across Delhi NCR, Mumbai, Bengaluru, and Pune running paperless, autonomous OPD chambers.
+              The front desk, the consulting chamber and the pharmacy work from the same
+              appointment record, so a token called at reception appears in your chamber and
+              the patient&rsquo;s phone without a single re-entry.
             </p>
           </div>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Doctor 1 */}
             <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#16171B] p-6 shadow-2xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-3.5 mb-4">
-                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-emerald-500/30 flex-shrink-0">
-                    <Image
-                      src="/images/doctors/dr-rahul-sharma.jpg"
-                      alt="Dr. Rahul Sharma"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Dr. Rahul Sharma</h4>
-                    <p className="text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">MD Medicine, New Delhi</p>
-                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">DMC/R/14290</span>
-                  </div>
-                </div>
-                <p className="text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed italic">
-                  &ldquo;ClinicOS replaced our messy Excel sheets and cash discrepancies in 48 hours. The 9 PM cash drawer closing takes my receptionist under 5 minutes.&rdquo;
+                <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Front Desk &amp; Tokens</h4>
+                <p className="mt-2 text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed">
+                  Walk-ins and online bookings land in one queue. Reception takes payment,
+                  calls the next token, marks a no-show or transfers the patient to another
+                  doctor, and every change survives the next poll.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[10px] font-bold text-[#86868B] uppercase">
-                Using Speed Rx &amp; Cash Closing Cockpit
+                Desk queue &amp; payment capture
               </div>
             </div>
 
-            {/* Doctor 2 */}
             <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#16171B] p-6 shadow-2xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-3.5 mb-4">
-                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-blue-500/30 flex-shrink-0">
-                    <Image
-                      src="/images/doctors/dr-aditi-joshi.jpg"
-                      alt="Dr. Aditi Joshi"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Dr. Aditi Joshi</h4>
-                    <p className="text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">MBBS, DCH Pediatrics, Pune</p>
-                    <span className="text-[10px] font-semibold text-[#0071E3] dark:text-[#2997FF]">MMC/2018/04/1892</span>
-                  </div>
-                </div>
-                <p className="text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed italic">
-                  &ldquo;The auto-uppercase generic molecule format gives me complete peace of mind for NMC compliance. Plus, parents love getting their prescription directly via WhatsApp.&rdquo;
+                <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Consulting Chamber</h4>
+                <p className="mt-2 text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed">
+                  The called patient opens straight into their chart. Vitals, diagnosis,
+                  medicines and advice are written once; the prescription is signed with
+                  your own council registration from your profile.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[10px] font-bold text-[#86868B] uppercase">
-                Using NMC Speed Rx &amp; WhatsApp Delivery
+                Chart &amp; signed prescription
               </div>
             </div>
 
-            {/* Doctor 3 */}
             <div className="rounded-2xl border border-black/[0.06] bg-[#F5F6F9] dark:border-white/[0.08] dark:bg-[#16171B] p-6 shadow-2xs flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-3.5 mb-4">
-                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-violet-500/30 flex-shrink-0">
-                    <Image
-                      src="/images/doctors/dr-sameer-saxena.jpg"
-                      alt="Dr. Sameer Saxena"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Dr. Sameer Saxena</h4>
-                    <p className="text-[11px] text-[#6E6E73] dark:text-[#A1A1A6]">MD, DM Cardiology, Bengaluru</p>
-                    <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400">KMC/68412</span>
-                  </div>
-                </div>
-                <p className="text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed italic">
-                  &ldquo;0% commission means our cardiology polyclinic keeps 100% of consultation fees. The Smart TV waiting display ended the crowding outside my consultation door.&rdquo;
+                <h4 className="text-sm font-bold text-[#1D1D1F] dark:text-white">Pharmacy &amp; Patient</h4>
+                <p className="mt-2 text-xs text-[#1D1D1F] dark:text-[#E5E5E7] leading-relaxed">
+                  The signed prescription appears in the dispensary with live stock. After
+                  dispensing, the patient&rsquo;s portal shows the visit, the medicines and the
+                  payment record &mdash; no phone call required.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.06] text-[10px] font-bold text-[#86868B] uppercase">
-                Using Smart TV Waiting Room &amp; 0% Direct UPI
+                Dispense &amp; patient record
               </div>
             </div>
           </div>
@@ -1149,7 +1112,7 @@ export default function ForDoctorsPage() {
               Flat Software Fee. Zero Patient Commissions.
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black text-[#1D1D1F] dark:text-white tracking-tight">
-              Keep 100% of Your Consultation Fees
+              Keep Your Consultation Fees
             </h2>
             <p className="mt-3 text-xs sm:text-sm text-[#6E6E73] dark:text-[#A1A1A6]">
               Never surrender 20% to 25% of your earnings to aggregators. Patients pay you directly via UPI or cash.
@@ -1167,7 +1130,7 @@ export default function ForDoctorsPage() {
                   <span className="text-xs text-[#6E6E73] dark:text-[#A1A1A6]">/ forever</span>
                 </div>
                 <ul className="mt-6 space-y-3 text-xs text-[#1D1D1F] dark:text-[#F5F5F7]">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Verified Doctor Profile</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Doctor Profile Page</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Google Maps Discovery</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Up to 30 Appointments/month</li>
                 </ul>
@@ -1197,7 +1160,7 @@ export default function ForDoctorsPage() {
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 30-Sec Digital Rx Studio</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Direct WhatsApp Rx PDF Delivery</li>
                   <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Soundbox UPI Reconciliation</li>
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> 100% Patient Data Ownership</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#30D158]" /> Patient Data Ownership</li>
                 </ul>
               </div>
               <Link 

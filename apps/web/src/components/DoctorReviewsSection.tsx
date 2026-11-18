@@ -102,10 +102,10 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-[#1D1D1F] dark:text-white flex items-center gap-2">
             <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-            Verified Patient Reviews & Clinical Ratings
+            Patient Reviews &amp; Clinical Ratings
           </h2>
           <p className="text-xs text-[#86868B] mt-0.5 font-normal">
-            Based on completed consultations verified by ClinicOS digital token check-ins.
+            Reviews are shown below. A badge marks a review matched to a completed visit at this clinic.
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
               {data.average_rating}
             </div>
             <div className="text-[11px] font-medium text-[#86868B] mt-1">Overall Satisfaction</div>
-            <div className="text-[10px] text-[#86868B]/80 font-mono">({data.total_reviews} verified patients)</div>
+            <div className="text-[10px] text-[#86868B]/80 font-mono">({data.total_reviews} {data.total_reviews === 1 ? "review" : "reviews"})</div>
           </div>
 
           <div className="rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center">
@@ -153,7 +153,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
       {/* Reviews List */}
       <div className="mt-6 space-y-3.5">
         {loading ? (
-          <div className="py-8 text-center text-xs text-[#86868B]">Loading verified feedback...</div>
+          <div className="py-8 text-center text-xs text-[#86868B]">Loading reviews...</div>
         ) : !data || data.reviews.length === 0 ? (
           <div className="py-8 text-center text-xs text-[#86868B]">
             No patient reviews recorded yet. Be the first to review after your visit!
@@ -176,7 +176,7 @@ export default function DoctorReviewsSection({ doctorSlug, doctorName }: { docto
                       </span>
                       {rev.is_verified_visit && (
                         <span className="inline-flex items-center gap-0.5 rounded-full bg-apple-teal/10 px-2 py-0.5 text-[10px] font-medium text-apple-teal dark:text-[#30D1BE]">
-                          <ShieldCheck className="h-3 w-3" /> Verified Visit
+                          <ShieldCheck className="h-3 w-3" /> Completed visit
                         </span>
                       )}
                     </div>

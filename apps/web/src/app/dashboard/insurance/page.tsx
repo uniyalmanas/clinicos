@@ -36,12 +36,12 @@ import {
   UploadCloud,
   FileSpreadsheet
 } from "lucide-react";
+import { clinicToday } from "@/lib/clinic-date";
 
 import {
   PROCEDURE_CATALOG,
   ProcedurePackage,
   FINANCE_OVERRIDE_REASON_CODES,
-  AUTHORIZED_FINANCE_PINS,
   IRDAI_DEDUCTION_REASON_CODES,
   calculateQuerySla,
   MandatoryDocumentItem,
@@ -128,20 +128,19 @@ export default function InsuranceDashboardPage() {
   const [formChecklist, setFormChecklist] = useState<MandatoryDocumentItem[]>(
     PROCEDURE_CATALOG[0].mandatory_documents.map(d => ({ ...d, verified: false }))
   );
-  const [overridePin, setOverridePin] = useState("");
   const [overrideReason, setOverrideReason] = useState(FINANCE_OVERRIDE_REASON_CODES[0].code);
   const [submittingClaim, setSubmittingClaim] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Query Response State
   const [queryResponseText, setQueryResponseText] = useState("");
-  const [queryResponder, setQueryResponder] = useState("Dr. Arvind Shenoy (Cardiology Consultant)");
+  const [queryResponder, setQueryResponder] = useState("");
   const [queryEvidence, setQueryEvidence] = useState("Clinical indoor chart + daily vitals progress sheet attached");
   const [submittingQuery, setSubmittingQuery] = useState(false);
 
   // Settlement Reconciliation Form State
   const [utrNumber, setUtrNumber] = useState("");
-  const [remittanceDate, setRemittanceDate] = useState(new Date().toISOString().split("T")[0]);
+  const [remittanceDate, setRemittanceDate] = useState(clinicToday());
   const [remittedAmount, setRemittedAmount] = useState<string>("");
   const [reconciledBy, setReconciledBy] = useState("Suresh Rawat (Finance Head)");
   const [deductionRows, setDeductionRows] = useState<Array<{ code: string; reason: string; amount: number; disputed: boolean; appeal_notes?: string }>>([]);
@@ -209,8 +208,7 @@ export default function InsuranceDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "verify_doc",
-          doc_id: docId,
-          verified_by: "TPA Desk Officer"
+          doc_id: docId
         })
       });
       if (res.ok) {
@@ -268,8 +266,8 @@ export default function InsuranceDashboardPage() {
         return;
       }
 
-      if (isOverrun && !overridePin) {
-        setSubmitError(`Package Overrun: Estimate exceeds agreed cap of ₹${negotiatedCap.toLocaleString()} by ₹${overrunDiff.toLocaleString()}. Finance Head PIN is mandatory.`);
+      if (isOverrun && !overrideReason) {
+        setSubmitError(`Package Overrun: Estimate exceeds agreed cap of ₹${negotiatedCap.toLocaleString()} by ₹${overrunDiff.toLocaleString()}. An override reason is mandatory.`);
         return;
       }
     }
@@ -288,7 +286,6 @@ export default function InsuranceDashboardPage() {
           estimated_amount: numEstAmount,
           remarks: claimRemarks,
           mandatory_docs_checklist: formChecklist,
-          package_override_pin: isOverrun ? overridePin : null,
           package_override_reason: isOverrun ? overrideReason : null,
           as_draft: asDraft
         })
@@ -316,7 +313,6 @@ export default function InsuranceDashboardPage() {
     setPtPhone("+91 ");
     setPolicyNo("");
     setClaimRemarks("");
-    setOverridePin("");
     setSubmitError(null);
   };
 
@@ -740,7 +736,7 @@ export default function InsuranceDashboardPage() {
                       </span>
                       {isDocsComplete ? (
                         <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 text-[11px] font-semibold">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> 100% Dossier
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Dossier complete
                         </span>
                       ) : (
                         <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1 text-[11px] font-semibold">
@@ -878,7 +874,7 @@ export default function InsuranceDashboardPage() {
                                 <div className="font-bold text-[#1D1D1F] dark:text-white">{doc.label}</div>
                                 {doc.verified && (
                                   <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
-                                    Verified by {doc.verified_by || "TPA Officer"} {doc.file_name ? `• ${doc.file_name}` : ""}
+                                    Verified by {doc.verified_by || "verifier not recorded"} {doc.file_name ? `• ${doc.file_name}` : ""}
                                   </div>
                                 )}
                               </div>
@@ -1081,23 +1077,10 @@ export default function InsuranceDashboardPage() {
                       PACKAGE RATE OVERRUN DETECTED (+₹{overrunDiff.toLocaleString()})
                     </div>
                     <p className="text-[11px] leading-relaxed">
-                      Estimated ₹{numEstAmount.toLocaleString()} exceeds negotiated {selectedTpa} agreed tariff of ₹{negotiatedCap.toLocaleString()}. Insurer will disallow this difference unless approved by Finance Head with valid Clinical Reason Code.
+                      Estimated ₹{numEstAmount.toLocaleString()} exceeds negotiated {selectedTpa} agreed tariff of ₹{negotiatedCap.toLocaleString()}. Insurer may disallow this difference unless the overrun is authorized by an owner or clinic administrator with a clinical reason code.
                     </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      <div>
-                        <label className="block text-[11px] font-bold text-[#1D1D1F] dark:text-white mb-1">
-                          Finance Head PIN (e.g. FIN-9921 or 8842) *
-                        </label>
-                        <input
-                          type="password"
-                          placeholder="Enter Finance PIN"
-                          value={overridePin}
-                          onChange={(e) => setOverridePin(e.target.value)}
-                          className="w-full px-3 py-2 bg-white dark:bg-[#1C1C1E] border border-amber-500/50 rounded-[10px] text-[#1D1D1F] dark:text-white font-mono font-bold"
-                        />
-                      </div>
-
+                    <div className="pt-1">
                       <div>
                         <label className="block text-[11px] font-bold text-[#1D1D1F] dark:text-white mb-1">
                           Override Reason Code *
@@ -1111,6 +1094,9 @@ export default function InsuranceDashboardPage() {
                             <option key={r.code} value={r.code}>{r.label}</option>
                           ))}
                         </select>
+                        <p className="mt-1.5 text-[10px] text-amber-800 dark:text-amber-300">
+                          Authorization is checked on the server against your signed-in owner / administrator role. No PIN is stored or accepted.
+                        </p>
                       </div>
                     </div>
                   </div>

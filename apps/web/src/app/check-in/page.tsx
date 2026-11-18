@@ -740,7 +740,7 @@ export default function CheckInKioskPage() {
               {/* QR Code */}
               <div className="mt-6 flex flex-col items-center">
                 <QrCodeDisplay
-                  value={`https://medic-sept-2026.vercel.app/waiting-room?clinic=${clinicSlug}&token=${tokenResult.appointment.token_number}`}
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/waiting-room?clinic=${clinicSlug}&token=${tokenResult.appointment.token_number}`}
                   size={160}
                   level="H"
                   fgColor="#000000"

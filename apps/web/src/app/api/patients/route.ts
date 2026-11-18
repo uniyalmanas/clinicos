@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { createHash, randomUUID } from "crypto";
-import { guard, CLINIC_ROLES, CLINICAL_ROLES, ADMIN_ROLES, apiError } from "@/lib/api-auth";
+import { guard, normalisePhone, CLINIC_ROLES, CLINICAL_ROLES, ADMIN_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
+import { isOtpDevMode, sendOtp } from "@/lib/notifications";
+import { generateOtp, hashOtp, OTP_MAX_ATTEMPTS, OTP_TTL_SECONDS, safeEqualHex } from "@/lib/otp";
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { 
   checkAllergyConflict, 
   EMRAllergy, 
   HIGH_RISK_ATC_CLASSES,
-  VERIFIED_SENIOR_DOCTORS,
   CLINICAL_OVERRIDE_REASON_CODES,
   maskEmergencyPhone,
   SeniorDoctorCredential
@@ -176,11 +179,11 @@ export async function GET(req: NextRequest) {
         gender: p.gender,
         blood_group: p.blood_group,
         emergency_contact: p.emergency_contact,
-        emergency_contact_relationship: p.emergency_contact_relationship || "Mother (Legal Guardian - Minor)",
-        emergency_contact_phone: p.emergency_contact_phone || "+91 98765 01928",
-        emergency_contact_consent_status: p.emergency_contact_consent_status || "DPDP_FORM_3_EXPLICIT_CONSENT",
-        emergency_contact_consent_date: p.emergency_contact_consent_date || p.created_at,
-        emergency_contact_encrypted_hash: p.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C",
+        emergency_contact_relationship: p.emergency_contact_relationship || null,
+        emergency_contact_phone: p.emergency_contact_phone || null,
+        emergency_contact_consent_status: p.emergency_contact_consent_status || null,
+        emergency_contact_consent_date: p.emergency_contact_consent_date || null,
+        emergency_contact_encrypted_hash: p.emergency_contact_encrypted_hash || null,
         identity_hash: p.identity_hash,
         is_duplicate_flagged: p.is_duplicate_flagged,
         merged_into_uhid: p.merged_into_uhid,
@@ -291,7 +294,7 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================================
-    // FIX 2: CLINICAL OVERRIDE OF ALLERGY HARD-STOP (Senior Role + NMC Registry)
+    // FIX 2: CLINICAL OVERRIDE OF ALLERGY HARD-STOP (council registration on file)
     // =========================================================================
     if (action === "override_allergy") {
       const { 
@@ -300,21 +303,39 @@ export async function POST(req: NextRequest) {
         conflicting_allergy, 
         atc_code, 
         reason_code, 
-        reason_text, 
-        doctor_pin 
+        reason_text
       } = body;
 
-      // Real-Time Role & NMC Credential Check via Authenticated Session
+      // Role & council-registration check via the authenticated session
       let seniorDoctor: SeniorDoctorCredential;
       const auth = await guard(req, { roles: ["doctor", "owner", "clinic_admin"] });
       if (!auth.ok) return auth.response;
 
+      // The override must be signed by a doctor whose council registration is
+      // actually on file. Nothing is substituted: no placeholder registration
+      // number and no invented council, so the audit trail cannot claim a
+      // credential the account does not hold.
+      const regNumber = String(
+        auth.auth.doctor?.medical_council_reg_number || ""
+      ).trim();
+      if (!auth.auth.doctor || !regNumber) {
+        return NextResponse.json(
+          {
+            error:
+              "No doctor profile with a council registration number is linked to this account. An allergy override cannot be signed.",
+          },
+          { status: 422 }
+        );
+      }
       seniorDoctor = {
-        doctor_name: auth.auth.doctor?.full_name || auth.auth.user.full_name,
-        role: "Senior Consultant",
-        nmc_reg_number: auth.auth.doctor?.medical_council_reg_number || "NMC-UK-2024-REG",
-        state_medical_council: "Uttarakhand Medical Council",
-        specialization: auth.auth.doctor?.specialization || "Clinical Medicine",
+        doctor_name: auth.auth.doctor.full_name,
+        role: auth.auth.role,
+        nmc_reg_number: regNumber,
+        state_medical_council:
+          auth.auth.doctor.medical_council_state ||
+          auth.auth.clinic?.state ||
+          "",
+        specialization: auth.auth.doctor.specialization,
         is_active: true,
       };
 
@@ -345,10 +366,10 @@ export async function POST(req: NextRequest) {
           ${seniorDoctor.doctor_name},
           ${seniorDoctor.role},
           ${seniorDoctor.nmc_reg_number},
-          true,
-          true,
-          true,
-          true
+          false,
+          false,
+          false,
+          false
         ) RETURNING *;
       `;
 
@@ -360,13 +381,13 @@ export async function POST(req: NextRequest) {
           'OVERRIDE_ALLERGY',
           ${`${seniorDoctor.doctor_name} (${seniorDoctor.nmc_reg_number})`},
           ${seniorDoctor.role},
-          ${`Authorized hard-stop override for ${prescribed_drug} with protocol: ${reasonLabel}. NMC Live Status Verified (${seniorDoctor.state_medical_council} - Good Standing). Alert persisted to Pharmacy & LIS modules. Justification: ${reason_text}`}
+          ${`Authorized hard-stop override for ${prescribed_drug} with protocol: ${reasonLabel}. Registration on file: ${seniorDoctor.nmc_reg_number} (${seniorDoctor.state_medical_council || "council not recorded"}). Recorded in the EMR allergy-contraindication log. Justification: ${reason_text}`}
         );
       `;
 
       return NextResponse.json({
         success: true,
-        message: `✓ Clinical Override Authorized by ${seniorDoctor.doctor_name} (${seniorDoctor.nmc_reg_number}). Hard-stop released & persisted across Rx, Pharmacy, and LIS.`,
+        message: `Clinical Override signed by ${seniorDoctor.doctor_name} (registration on file: ${seniorDoctor.nmc_reg_number}). Hard-stop released and recorded in the EMR audit trail.`,
         record: contraindication[0],
         verified_doctor: seniorDoctor
       });
@@ -384,8 +405,8 @@ export async function POST(req: NextRequest) {
         unit,
         reference_min,
         reference_max,
-        report_date = new Date().toISOString().split("T")[0],
-        lab_source = "Marley LIS (HL7 v2.5.1 / FHIR)"
+        report_date = clinicToday(),
+        lab_source = "Manual lab entry"
       } = body;
 
       if (!patient_uhid || !parameter_name || parameter_value === undefined) {
@@ -428,8 +449,8 @@ export async function POST(req: NextRequest) {
         ) VALUES (
           ${patient_uhid},
           'VIEW_RECORD',
-          'Marley LIS Integration Engine',
-          'LIS Service Gateway',
+          ${auth.auth.user.full_name},
+          ${auth.auth.role},
           ${`Ingested structured lab parameter: ${parameter_name} = ${val} ${unit} (${flag}). Plotted on historical trend.`}
         );
       `;
@@ -448,23 +469,21 @@ export async function POST(req: NextRequest) {
       const {
         patient_uhid,
         visit_number,
-        doctor_name = "Dr. Rahul Sharma",
-        doctor_specialization = "Dermatologist",
-        provisional_diagnosis,
+        doctor_specialization = "",
+        provisional_diagnosis = null,
         vitals = {},
-        subjective_notes,
-        objective_findings,
-        assessment_plan,
+        subjective_notes = null,
+        objective_findings = null,
+        assessment_plan = null,
         prescribed_medications = [],
         amendment_reason,
-        manager_pin
       } = body;
 
       if (!patient_uhid || !visit_number || !amendment_reason) {
         return NextResponse.json({ error: "patient_uhid, visit_number, and amendment_reason are mandatory" }, { status: 400 });
       }
 
-      let authorizedDoctor = doctor_name || "Consultant Doctor";
+      let authorizedDoctor = "";
       const auth = await guard(req, { roles: ["owner", "clinic_admin", "doctor"] });
       if (!auth.ok) return auth.response;
       authorizedDoctor = `${auth.auth.user.full_name} (${auth.auth.role})`;
@@ -501,8 +520,8 @@ export async function POST(req: NextRequest) {
           true,
           'DERMATOLOGY_FITZPATRICK',
           CURRENT_DATE,
-          ${doctor_name},
-          ${doctor_specialization},
+          ${auth.auth.user.full_name},
+          ${auth.auth.doctor?.specialization || doctor_specialization || ""},
           ${provisional_diagnosis},
           ${JSON.stringify(vitals)},
           ${subjective_notes},
@@ -521,8 +540,8 @@ export async function POST(req: NextRequest) {
         ) VALUES (
           ${patient_uhid},
           'EDIT_NOTE',
-          ${doctor_name},
-          'Clinical Lead',
+          ${auth.auth.user.full_name},
+          ${auth.auth.role},
           ${`Created immutable version v${nextVersion}.0 Addendum for visit ${visit_number}. Seal: ${tamperSeal}. Reason: ${amendment_reason}`}
         );
       `;
@@ -540,10 +559,9 @@ export async function POST(req: NextRequest) {
     if (action === "resolve_duplicate_merge") {
       const { ticket_id } = body;
 
-      let approver_2 = "Medical Director";
       const auth = await guard(req, { roles: ["owner", "clinic_admin"] });
       if (!auth.ok) return auth.response;
-      approver_2 = `${auth.auth.user.full_name} (${auth.auth.role})`;
+      const approver_2 = `${auth.auth.user.full_name} (${auth.auth.role})`;
 
       const ticketRows = await sql`
         SELECT * FROM emr_duplicate_merges WHERE id = ${ticket_id} LIMIT 1;
@@ -554,13 +572,34 @@ export async function POST(req: NextRequest) {
 
       const ticket = ticketRows[0];
 
+      // A merge is a two-person control. The second approver must be a different
+      // administrator from the one recorded on the ticket; otherwise a single
+      // account could complete both halves of the approval.
+      const firstApprover = String(ticket.approver_1 || "").trim();
+      if (!firstApprover) {
+        return NextResponse.json(
+          { error: "This ticket has no first approver on record. It cannot be closed as a dual-admin merge." },
+          { status: 409 }
+        );
+      }
+      if (
+        firstApprover.toLowerCase().includes(
+          auth.auth.user.full_name.trim().toLowerCase()
+        )
+      ) {
+        return NextResponse.json(
+          { error: "The second approval must come from a different administrator than the first approver." },
+          { status: 409 }
+        );
+      }
+
       // Update ticket status to APPROVED_MERGED
       await sql`
         UPDATE emr_duplicate_merges
         SET 
           status = 'APPROVED_MERGED',
           approver_2 = ${approver_2},
-          reconciliation_notes = 'Dual-admin verified identity match. Clinical histories consolidated into primary UHID.'
+          reconciliation_notes = 'Second administrator verified the identity match. Clinical histories re-pointed to the primary UHID.'
         WHERE id = ${ticket_id};
       `;
 
@@ -587,14 +626,14 @@ export async function POST(req: NextRequest) {
           ${ticket.target_uhid},
           'MERGE_PATIENT',
           ${approver_2},
-          'Dual-Admin Merge Committee',
-          ${`Merged duplicate profile ${ticket.source_uhid} into master record ${ticket.target_uhid}. Full longitudinal health record consolidated.`}
+          ${auth.auth.role},
+          ${`Merged duplicate profile ${ticket.source_uhid} into master record ${ticket.target_uhid} after a second administrator approval (first approver: ${firstApprover}).`}
         );
       `;
 
       return NextResponse.json({
         success: true,
-        message: `✓ Dual-Admin Merge Approved. Profile ${ticket.source_uhid} merged into ${ticket.target_uhid} with zero clinical data loss.`
+        message: `Merge approved by a second administrator. Profile ${ticket.source_uhid} merged into ${ticket.target_uhid}.`
       });
     }
 
@@ -604,11 +643,14 @@ export async function POST(req: NextRequest) {
     if (action === "access_emergency_contact") {
       const {
         patient_uhid,
-        staff_name = "Nurse Incharge",
-        staff_role = "Senior Nursing Officer",
-        access_reason = "Clinical Emergency / Triage Notification",
+        access_reason = "",
         dispatch_action = "UNMASK_CALL" // "UNMASK_CALL" | "SEND_CRITICAL_SMS"
       } = body;
+      // The accessing staff identity comes from the authenticated session, never
+      // from the request body — otherwise the audit trail could be attributed
+      // to anyone the caller names.
+      const staff_name = auth.auth.user.full_name;
+      const staff_role = auth.auth.role;
 
       if (!patient_uhid) {
         return NextResponse.json({ error: "patient_uhid is required" }, { status: 400 });
@@ -622,13 +664,27 @@ export async function POST(req: NextRequest) {
       }
       const pt = pts[0];
 
+      // No number on file means there is nothing to unmask. Previously the API
+      // returned an invented guardian number and a fabricated consent record.
+      const contactPhone = String(pt.emergency_contact_phone || "").trim();
+      if (contactPhone.replace(/[^0-9]/g, "").length < 10) {
+        return NextResponse.json(
+          { error: "No emergency contact number is on file for this patient." },
+          { status: 404 }
+        );
+      }
+      const relationship =
+        pt.emergency_contact_relationship || "Emergency contact";
+      const consentStatus =
+        pt.emergency_contact_consent_status || "NOT_RECORDED";
+
       const actionType = dispatch_action === "SEND_CRITICAL_SMS" 
         ? "EMERGENCY_DISPATCH_INITIATED" 
         : "EMERGENCY_CONTACT_ACCESSED";
 
       const details = dispatch_action === "SEND_CRITICAL_SMS"
-        ? `Emergency critical SMS alert dispatched to legal guardian ${pt.emergency_contact_relationship || "Mother"} (${pt.emergency_contact_phone || "+91 98765 01928"}). Reason: ${access_reason}. Explicit consent verified: ${pt.emergency_contact_consent_status || "DPDP_FORM_3_EXPLICIT_CONSENT"}.`
-        : `Emergency contact unmasked and clinical call initiated to ${pt.emergency_contact_relationship || "Mother"} (${pt.emergency_contact_phone || "+91 98765 01928"}). Staff: ${staff_name} (${staff_role}). Reason: ${access_reason}. Explicit consent on file.`;
+        ? `Emergency alert recorded for ${relationship} (${contactPhone}). Staff: ${staff_name} (${staff_role}). Reason: ${access_reason || "not specified"}. Consent status: ${consentStatus}. No SMS gateway is configured, so delivery is not claimed.`
+        : `Emergency contact unmasked for ${relationship} (${contactPhone}). Staff: ${staff_name} (${staff_role}). Reason: ${access_reason || "not specified"}. Consent status: ${consentStatus}.`;
 
       await sql`
         INSERT INTO emr_audit_trail (
@@ -644,20 +700,80 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        unmasked_phone: pt.emergency_contact_phone || "+91 98765 01928",
-        relationship: pt.emergency_contact_relationship || "Mother (Legal Guardian - Minor)",
-        consent_status: pt.emergency_contact_consent_status || "DPDP_FORM_3_EXPLICIT_CONSENT",
-        consent_date: pt.emergency_contact_consent_date || pt.created_at,
-        encrypted_hash: pt.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C",
+        unmasked_phone: contactPhone,
+        relationship,
+        consent_status: consentStatus,
+        consent_date: pt.emergency_contact_consent_date || null,
+        encrypted_hash: pt.emergency_contact_encrypted_hash || null,
         message: dispatch_action === "SEND_CRITICAL_SMS"
-          ? `✓ Emergency Critical SMS successfully dispatched to ${pt.emergency_contact_relationship || "Guardian"}. Logged to DPDP Section 12 Audit Trail.`
-          : `✓ Emergency contact unmasked for authorized clinical staff. Access logged to DPDP Section 12 Audit Trail.`
+          ? `Emergency alert recorded for ${relationship}. No SMS gateway is configured; the access is logged to the DPDP audit trail.`
+          : `Emergency contact unmasked for authorized clinical staff. Access logged to the DPDP audit trail.`
       });
     }
 
     // =========================================================================
-    // FIX 3: SECURE WATERMARKED TIME-BOUND EXPORT (Patient OTP Protected)
+    // FIX 3: SECURE WATERMARKED TIME-BOUND EXPORT (Patient consent OTP)
     // =========================================================================
+    if (action === "request_export_otp") {
+      const { patient_uhid } = body;
+      if (!patient_uhid) {
+        return NextResponse.json({ error: "patient_uhid is required" }, { status: 400 });
+      }
+
+      const pts = await sql`
+        SELECT uhid, phone FROM emr_patients WHERE uhid = ${patient_uhid} LIMIT 1;
+      `;
+      if (pts.length === 0) {
+        return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+      }
+
+      const phone = normalisePhone(pts[0].phone);
+      if (phone.length !== 10) {
+        return NextResponse.json(
+          { error: "This patient has no valid mobile number on file, so a consent code cannot be issued." },
+          { status: 422 }
+        );
+      }
+
+      const cooldown = await rateLimit(`export-otp:${phone}`, 1, 60);
+      if (!cooldown.allowed) {
+        return NextResponse.json(tooManyRequests(cooldown.retryAfterSeconds), {
+          status: 429,
+          headers: { "Retry-After": String(cooldown.retryAfterSeconds) },
+        });
+      }
+
+      const code = generateOtp();
+      const challengeId = randomUUID();
+      const expiresAt = new Date(Date.now() + OTP_TTL_SECONDS * 1000);
+
+      await sql`
+        INSERT INTO patient_otp_challenges (id, phone, otp_hash, expires_at)
+        VALUES (${challengeId}, ${phone}, ${hashOtp(phone, code)}, ${expiresAt.toISOString()});
+      `;
+
+      await sendOtp(phone, code);
+
+      await sql`
+        INSERT INTO emr_audit_trail (
+          patient_uhid, action_type, user_name, user_role, details
+        ) VALUES (
+          ${patient_uhid},
+          'EXPORT_CONSENT_OTP_REQUESTED',
+          ${auth.auth.user.full_name},
+          ${auth.auth.role},
+          ${`Consent code issued to the patient's registered mobile ending ${phone.slice(-2)}. Challenge ${challengeId}. Expires in ${OTP_TTL_SECONDS}s.`}
+        );
+      `;
+
+      return NextResponse.json({
+        ok: true,
+        message: `A consent code was sent to the patient's registered mobile ending ${phone.slice(-2)}. It expires in 5 minutes.`,
+        expires_in: OTP_TTL_SECONDS,
+        ...(isOtpDevMode() && process.env.OTP_DEV_MODE === "true" ? { dev_otp: code } : {}),
+      });
+    }
+
     if (action === "create_secure_export") {
       const {
         patient_uhid,
@@ -672,17 +788,92 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "patient_uhid, recipient_name, and recipient_id are required" }, { status: 400 });
       }
 
-      // Verify OTP (demo check: "7729" or any valid numeric string length >= 4)
-      if (!patient_otp || String(patient_otp).trim().length < 4) {
-        return NextResponse.json({ error: "Patient Consent OTP is mandatory for external data sharing & right-to-access exports." }, { status: 400 });
+      const code = String(patient_otp || "").replace(/\D/g, "");
+      if (code.length !== 6) {
+        return NextResponse.json(
+          { error: "A 6-digit patient consent code is required for external data sharing and right-to-access exports." },
+          { status: 400 }
+        );
+      }
+
+      const pts = await sql`
+        SELECT uhid, phone FROM emr_patients WHERE uhid = ${patient_uhid} LIMIT 1;
+      `;
+      if (pts.length === 0) {
+        return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+      }
+
+      const phone = normalisePhone(pts[0].phone);
+      if (phone.length !== 10) {
+        return NextResponse.json(
+          { error: "This patient has no valid mobile number on file, so consent cannot be verified." },
+          { status: 422 }
+        );
+      }
+
+      const challenges = await sql`
+        SELECT id, otp_hash, attempts, max_attempts, expires_at, consumed_at
+        FROM patient_otp_challenges
+        WHERE phone = ${phone}
+          AND consumed_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `;
+
+      const challenge = challenges[0];
+      if (!challenge || new Date(challenge.expires_at).getTime() < Date.now()) {
+        return NextResponse.json(
+          { error: "The patient consent code has expired or was never requested. Send a new code and try again.", code: "otp_expired" },
+          { status: 401 }
+        );
+      }
+
+      const maxAttempts = Number(challenge.max_attempts || OTP_MAX_ATTEMPTS);
+      if (Number(challenge.attempts) >= maxAttempts) {
+        return NextResponse.json(
+          { error: "Too many incorrect attempts. Send a new consent code.", code: "otp_locked" },
+          { status: 429 }
+        );
+      }
+
+      // Record the attempt before comparing so brute force is bounded.
+      await sql`
+        UPDATE patient_otp_challenges
+        SET attempts = attempts + 1
+        WHERE id = ${challenge.id};
+      `;
+
+      if (!safeEqualHex(String(challenge.otp_hash), hashOtp(phone, code))) {
+        return NextResponse.json(
+          { error: "Incorrect patient consent code.", code: "otp_invalid" },
+          { status: 401 }
+        );
+      }
+
+      // Single-use: only the first successful verification wins.
+      const consumed = await sql`
+        UPDATE patient_otp_challenges
+        SET consumed_at = now()
+        WHERE id = ${challenge.id} AND consumed_at IS NULL
+        RETURNING id;
+      `;
+      if (consumed.length === 0) {
+        return NextResponse.json(
+          { error: "This consent code has already been used. Send a new one.", code: "otp_consumed" },
+          { status: 401 }
+        );
       }
 
       const id = randomUUID();
       const expiresAt = new Date(Date.now() + Number(expiry_hours) * 3600 * 1000).toISOString();
       const expiryDateFormatted = expiresAt.split("T")[0];
       const watermark = `CONFIDENTIAL MEDICAL RECORD • PREPARED FOR ${recipient_id} (${recipient_name}) • EXPIRES ${expiryDateFormatted} • DPDP SEC-12 PROTECTED`;
-      const tamperSeal = `SEAL-EXP-SHA256-${randomUUID().slice(0, 8).toUpperCase()}`;
-      const otpSessionId = `OTP-AUTH-${randomUUID().slice(0, 6).toUpperCase()}`;
+      const tamperSeal = `SEAL-EXP-SHA256-${createHash("sha256")
+        .update(`${id}|${patient_uhid}|${export_type}|${recipient_id}|${expiresAt}|${watermark}`)
+        .digest("hex")
+        .slice(0, 16)
+        .toUpperCase()}`;
+      const otpSessionId = `OTP-${challenge.id}`;
 
       const inserted = await sql`
         INSERT INTO emr_secure_exports (
@@ -710,15 +901,15 @@ export async function POST(req: NextRequest) {
         ) VALUES (
           ${patient_uhid},
           'EXPORT_WATERMARKED_EMR',
-          'Clinical Privacy Gateway',
-          'DPDP Section 12 Data Controller',
-          ${`Watermarked time-bound PDF export generated for ${recipient_name} (${recipient_id}). Protocol: ${export_type}. Validity: ${expiry_hours}h. Patient OTP Verified (${otpSessionId}). Tamper seal: ${tamperSeal}.`}
+          ${auth.auth.user.full_name},
+          ${auth.auth.role},
+          ${`Watermarked time-bound PDF export generated for ${recipient_name} (${recipient_id}). Protocol: ${export_type}. Validity: ${expiry_hours}h. Patient consent OTP verified (challenge ${challenge.id}). Tamper seal: ${tamperSeal}.`}
         );
       `;
 
       return NextResponse.json({
         success: true,
-        message: `✓ Secure Watermarked EMR Export Generated. Valid for ${expiry_hours} hours. Logged to DPDP Section 12 Audit Trail.`,
+        message: `Secure watermarked EMR export generated. Valid for ${expiry_hours} hours. Logged to the DPDP audit trail.`,
         export_record: inserted[0]
       });
     }

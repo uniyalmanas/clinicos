@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { guard, ADMIN_ROLES, CLINIC_ROLES } from "@/lib/api-auth";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
 /** Public directory fields — never tenant configuration or credentials. */
 const PUBLIC_CLINIC_FIELDS = `
   id, slug, name, phone, address_line, city, state, postal_code,
-  facilities, opening_hours, status, tagline, subscription_status
+  latitude, longitude, facilities, opening_hours, status, tagline,
+  subscription_status
 `;
 
 const PUBLIC_DOCTOR_FIELDS = `
@@ -407,7 +409,7 @@ export async function POST(req: NextRequest) {
       const pendingGrossRevenue = Number(pending[0]?.gross || 0);
 
       // The payout split comes from the doctor's active compensation contract.
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = clinicToday();
       const contracts = await sql`
         SELECT split_pct, fixed_fee_inr
         FROM doctor_compensation_contracts

@@ -9,28 +9,16 @@ import {
 } from "@/lib/clinical-companion-service";
 import type { ClinicalMemory, HistoricalVisitSummary } from "@/lib/clinical-companion-types";
 import type { ConsultationLanguage } from "@/lib/consultation-types";
+import { chatComplete } from "@/lib/llm";
 
 export const dynamic = "force-dynamic";
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_CHAT_MODEL = process.env.GROQ_CHAT_MODEL || "openai/gpt-oss-20b";
-
 export async function POST(req: NextRequest) {
   try {
-    let doctorName = "Dr. Rahul Sharma";
-    let clinicName = "ClinicOS Care Network";
-
-    try {
-      const auth = await guard(req, { roles: CLINICAL_ROLES, requireClinic: false });
-      if (auth.ok) {
-        doctorName = auth.auth.user.full_name || doctorName;
-        if (auth.auth.clinic?.name) {
-          clinicName = auth.auth.clinic.name;
-        }
-      }
-    } catch {
-      // Demo consultation cockpit
-    }
+    // This route generates clinical reports, so it requires a real clinician.
+    const auth = await guard(req, { roles: CLINICAL_ROLES, requireClinic: false });
+    if (!auth.ok) return auth.response;
+    const clinicName = auth.auth.clinic?.name || "";
 
     const limit = await rateLimit(rateLimitKey(req, "ai:companion"), 120, 600);
     if (!limit.allowed) {
@@ -58,9 +46,8 @@ export async function POST(req: NextRequest) {
       }
       const historicalVisits: HistoricalVisitSummary[] = body.historical_visits || [];
 
-      // Check if we can enhance command reasoning via Groq LLM if key present
-      const groqApiKey = process.env.GROQ_API_KEY;
-      if (groqApiKey && (command.startsWith("?") || command.length > 25)) {
+      // Enhance command reasoning with the configured LLM provider.
+      if (command.startsWith("?") || command.length > 25) {
         try {
           const sysPrompt = `You are ClinicOS AI Clinical Companion. The doctor is in active consultation with patient ${memory.patient_name} (${memory.patient_uhid}).
 Current Memory:
@@ -71,39 +58,29 @@ Current Memory:
 
 Respond concisely in 1-2 professional sentences to the doctor. Do not make up facts.`;
 
-          const groqRes = await fetch(GROQ_API_URL, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${groqApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: GROQ_CHAT_MODEL,
-              messages: [
-                { role: "system", content: sysPrompt },
-                { role: "user", content: command },
-              ],
-              temperature: 0.2,
-              max_tokens: 256,
-            }),
+          const ai = await chatComplete({
+            messages: [
+              { role: "system", content: sysPrompt },
+              { role: "user", content: command },
+            ],
+            temperature: 0.2,
+            maxTokens: 256,
           });
 
-          if (groqRes.ok) {
-            const data = await groqRes.json();
-            const aiReply = data?.choices?.[0]?.message?.content?.trim();
-            if (aiReply) {
-              const localResult = handleDoctorCommand(command, memory, historicalVisits);
-              return NextResponse.json({
-                status: "success",
-                reply: aiReply,
-                spokenReply: aiReply,
-                updatedMemory: localResult.updatedMemory,
-                actionTaken: localResult.actionTaken,
-              });
-            }
+          if (ai?.text) {
+            const localResult = handleDoctorCommand(command, memory, historicalVisits);
+            return NextResponse.json({
+              status: "success",
+              reply: ai.text,
+              spokenReply: ai.text,
+              provider: ai.provider,
+              model: ai.model,
+              updatedMemory: localResult.updatedMemory,
+              actionTaken: localResult.actionTaken,
+            });
           }
         } catch (e) {
-          console.warn("Groq command error, using heuristic engine:", e);
+          console.warn("AI command error, using heuristic engine:", e);
         }
       }
 
@@ -143,7 +120,7 @@ Respond concisely in 1-2 professional sentences to the doctor. Do not make up fa
     // ─────────────────────────────────────────────────────────────
     if (action === "generate_reports") {
       const language = (body.language || "english") as ConsultationLanguage;
-      const clinicPhone = body.clinic_phone || "+91 91234 56789";
+      const clinicPhone = body.clinic_phone || auth.auth.clinic?.phone || "";
 
       const doctorReport = generateDoctorClinicalReport(memory, clinicName);
       const patientSummary = generatePatientVisitSummary(memory, language, clinicName, clinicPhone);

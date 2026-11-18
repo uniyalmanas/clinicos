@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { apiError } from "@/lib/api-auth";
+import { clinicToday, clinicDatePlusDays } from "@/lib/clinic-date";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -99,12 +100,12 @@ export async function POST(req: NextRequest) {
       return apiError(422, "The doctor's clinic record is incomplete.", "clinic_not_configured");
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
     const requestedDate = appointment_date ? String(appointment_date) : todayStr;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(requestedDate)) {
       return apiError(400, "appointment_date must be YYYY-MM-DD.", "invalid_date");
     }
-    const maxDate = new Date(Date.now() + 90 * 86400000).toISOString().split("T")[0];
+    const maxDate = clinicDatePlusDays(90);
     if (requestedDate < todayStr || requestedDate > maxDate) {
       return apiError(400, "appointment_date must be between today and 90 days ahead.", "invalid_date");
     }

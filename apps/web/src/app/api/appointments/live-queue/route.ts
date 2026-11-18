@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { apiError } from "@/lib/api-auth";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
       return apiError(400, "doctor_slug is required.", "missing_doctor");
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     const activeTokenRes = await sql`
       SELECT token_number, patient_name

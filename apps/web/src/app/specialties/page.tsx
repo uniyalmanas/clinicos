@@ -22,7 +22,7 @@ export default function SpecialtiesPage() {
             <Stethoscope className="h-4 w-4 text-[#0071E3] dark:text-[#2997FF]" />
             <span className="font-bold text-[#1D1D1F] dark:text-white">DocSphere ClinicOS</span>
             <span>•</span>
-            <span>Direct Healthcare Operating Infrastructure • NMC & ABDM Ready</span>
+            <span>Practice operations software • ABDM sandbox available</span>
           </div>
 
           <div className="flex items-center gap-6 font-medium">

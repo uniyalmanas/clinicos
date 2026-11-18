@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, ADMIN_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
     const clinicSlug = auth.auth.clinic!.slug;
     const id = randomUUID();
     const settlementNumber = `STL-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, "0")}${String(new Date().getDate()).padStart(2, "0")}-${new Date().getHours() < 14 ? "M" : "E"}-${Math.floor(100 + Math.random() * 900)}`;
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     const inserted = await sql`
       INSERT INTO settlements (

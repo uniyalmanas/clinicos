@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { user, role, clinic, membership } = auth.auth;
+    const { user, role, clinic, membership, doctor } = auth.auth;
 
     return NextResponse.json({
       id: user.id,
@@ -33,6 +33,16 @@ export async function GET(req: NextRequest) {
       clinic_name: clinic?.name || null,
       clinic_slug: clinic?.slug || null,
       subscription_status: clinic?.subscription_status || "active",
+      doctor: doctor
+        ? {
+            slug: doctor.slug,
+            full_name: doctor.full_name,
+            specialization: doctor.specialization,
+            medical_council_reg_number:
+              doctor.medical_council_reg_number || null,
+            medical_council_state: doctor.medical_council_state || null,
+          }
+        : null,
     });
   } catch (error: any) {
     console.error("Auth /me API route error:", error);

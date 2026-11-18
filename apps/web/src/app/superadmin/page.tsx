@@ -972,36 +972,36 @@ export default function SuperAdminPage() {
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-black text-[#1D1D1F] dark:text-white flex items-center gap-2">
                     <Zap className="h-5 w-5 text-amber-500" />
-                    Platform Infrastructure & Edge Topology
+                    Platform Snapshot (Live Counts)
                   </h3>
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-black text-[10px] uppercase">
-                    100% Operational
+                    From database
                   </span>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-[#F5F5F7] dark:bg-[#2C2C2E]">
                     <div>
-                      <div className="font-bold text-xs">Supabase Transaction Pooler</div>
-                      <div className="text-[10px] text-[#86868B] font-mono">aws-1-ap-south-1.pooler.supabase.com:6543</div>
+                      <div className="font-bold text-xs">Clinics on platform</div>
+                      <div className="text-[10px] text-[#86868B]">Registered tenants</div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-emerald-600">CONNECTED</span>
+                    <span className="text-xs font-mono font-bold text-[#1D1D1F] dark:text-white">{kpis?.total_clinics || 0}</span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-[#F5F5F7] dark:bg-[#2C2C2E]">
                     <div>
-                      <div className="font-bold text-xs">Vercel Serverless Edge Runtime</div>
-                      <div className="text-[10px] text-[#86868B]">Next.js 15 App Router API Handlers</div>
+                      <div className="font-bold text-xs">Tokens issued today</div>
+                      <div className="text-[10px] text-[#86868B]">Across the network</div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-emerald-600">LATENCY 28ms</span>
+                    <span className="text-xs font-mono font-bold text-emerald-600">{kpis?.today_network_tokens || 0}</span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-[#F5F5F7] dark:bg-[#2C2C2E]">
                     <div>
-                      <div className="font-bold text-xs">ABDM & FHIR M2 Engine</div>
-                      <div className="text-[10px] text-[#86868B]">Ayushman Bharat Digital Health Records</div>
+                      <div className="font-bold text-xs">Acute inpatient beds</div>
+                      <div className="text-[10px] text-[#86868B]">Occupied / total</div>
                     </div>
-                    <span className="text-xs font-mono font-bold text-emerald-600">COMPLIANT</span>
+                    <span className="text-xs font-mono font-bold text-purple-600">{kpis?.occupied_beds || 0} / {kpis?.total_beds || 0}</span>
                   </div>
                 </div>
               </div>

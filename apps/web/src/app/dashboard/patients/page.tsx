@@ -52,10 +52,11 @@ import {
   EMRDuplicateMergeTicket,
   EMRSecureExport,
   CLINICAL_OVERRIDE_REASON_CODES,
-  VERIFIED_SENIOR_DOCTORS,
   maskEmergencyPhone
 } from "@/data/emrGovernance";
 import PatientDocumentsManager from "@/components/PatientDocumentsManager";
+import { clinicToday } from "@/lib/clinic-date";
+import { getStoredUser } from "@/lib/current-user";
 
 export default function DashboardPatientsPage() {
   const [patients, setPatients] = useState<EMRPatient[]>([]);
@@ -69,18 +70,23 @@ export default function DashboardPatientsPage() {
   // Fix 1: Emergency Contact Access & Consent Modal
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const [emergencyReason, setEmergencyReason] = useState("Critical Diagnostic Alert Notification");
-  const [staffNameInput, setStaffNameInput] = useState("Nurse Incharge");
-  const [staffRoleInput, setStaffRoleInput] = useState("Senior Nursing Officer");
+  const [staffNameInput, setStaffNameInput] = useState("");
+  const [staffRoleInput, setStaffRoleInput] = useState("");
   const [unmaskedContactPhone, setUnmaskedContactPhone] = useState<string | null>(null);
   const [isAccessingContact, setIsAccessingContact] = useState(false);
 
-  // Fix 2: Hard-Stop Allergy Modal & Senior Role NMC Verification
+  // Fix 2: Hard-Stop Allergy Modal & council-registration sign-off
   const [prescribeModalOpen, setPrescribeModalOpen] = useState(false);
   const [testDrugInput, setTestDrugInput] = useState("Syrup Amoxyclav 228.5mg");
   const [hardStopAlert, setHardStopAlert] = useState<any | null>(null);
   const [isCheckingAllergy, setIsCheckingAllergy] = useState(false);
   const [overrideModalOpen, setOverrideModalOpen] = useState(false);
-  const [selectedDoctorNmc, setSelectedDoctorNmc] = useState(VERIFIED_SENIOR_DOCTORS[0].nmc_reg_number);
+  const [currentDoctor, setCurrentDoctor] = useState<{
+    full_name: string;
+    specialization?: string | null;
+    medical_council_reg_number?: string | null;
+    medical_council_state?: string | null;
+  } | null>(null);
   const [overrideReasonCode, setOverrideReasonCode] = useState(CLINICAL_OVERRIDE_REASON_CODES[0].code);
   const [overrideReasonText, setOverrideReasonText] = useState("");
 
@@ -98,22 +104,22 @@ export default function DashboardPatientsPage() {
   const [selectedVisitForAmend, setSelectedVisitForAmend] = useState<EMRClinicalVisit | null>(null);
   const [amendmentReason, setAmendmentReason] = useState("");
   const [amendedMedication, setAmendedMedication] = useState("");
-  const [amendmentPin, setAmendmentPin] = useState("");
 
   // Fix 3 (Exports): Secure Watermarked Time-Bound Export Modal
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportType, setExportType] = useState<"SPECIALIST_REFERRAL" | "RIGHT_TO_ACCESS_PATIENT" | "EMERGENCY_TRANSFER">("SPECIALIST_REFERRAL");
-  const [recipientName, setRecipientName] = useState("Dr. Sameer Sen (Pediatric Pulmonology, Max Hospital)");
-  const [recipientId, setRecipientId] = useState("REC-SPEC-MAX-2026-891");
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientId, setRecipientId] = useState("");
   const [expiryHours, setExpiryHours] = useState(48);
-  const [patientOtpInput, setPatientOtpInput] = useState("7729");
+  const [patientOtpInput, setPatientOtpInput] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [isRequestingExportOtp, setIsRequestingExportOtp] = useState(false);
+  const [exportOtpNotice, setExportOtpNotice] = useState<{ tone: "info" | "error"; text: string } | null>(null);
   const [previewExportModal, setPreviewExportModal] = useState<EMRSecureExport | null>(null);
 
   // Fix 4: Dual-Admin Merge Modal
   const [mergeModalOpen, setMergeModalOpen] = useState(false);
   const [selectedMergeTicket, setSelectedMergeTicket] = useState<EMRDuplicateMergeTicket | null>(null);
-  const [mergeAdminPin, setMergeAdminPin] = useState("");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -147,6 +153,17 @@ export default function DashboardPatientsPage() {
 
   useEffect(() => {
     fetchPatients();
+
+    const user = getStoredUser();
+    if (user?.full_name) setStaffNameInput(user.full_name);
+    if (user?.role) setStaffRoleInput(user.role);
+
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.doctor) setCurrentDoctor(json.doctor);
+      })
+      .catch(() => {});
   }, []);
 
   const [directoryFilter, setDirectoryFilter] = useState<"all" | "allergies" | "visits" | "pediatric">("all");
@@ -227,8 +244,6 @@ export default function DashboardPatientsPage() {
         body: JSON.stringify({
           action: "access_emergency_contact",
           patient_uhid: selectedPatient.uhid,
-          staff_name: staffNameInput,
-          staff_role: staffRoleInput,
           access_reason: emergencyReason,
           dispatch_action: dispatchAction
         })
@@ -249,7 +264,7 @@ export default function DashboardPatientsPage() {
     }
   };
 
-  // FIX 2: Authorize Clinical Override with Real-Time Senior Role & NMC Verification
+  // FIX 2: Authorize Clinical Override with the authenticated doctor's council registration
   const handleAuthorizeOverride = async () => {
     if (!selectedPatient || !hardStopAlert) return;
 
@@ -284,6 +299,41 @@ export default function DashboardPatientsPage() {
     }
   };
 
+  // FIX 3: Request a patient consent OTP for a secure export
+  const handleRequestExportOtp = async () => {
+    if (!selectedPatient) return;
+    setIsRequestingExportOtp(true);
+    setExportOtpNotice(null);
+    try {
+      const res = await fetch("/api/patients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "request_export_otp",
+          patient_uhid: selectedPatient.uhid
+        })
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setExportOtpNotice({
+          tone: "info",
+          text: json.dev_otp
+            ? `${json.message} Dev code: ${json.dev_otp}`
+            : json.message
+        });
+      } else {
+        setExportOtpNotice({
+          tone: "error",
+          text: json.error || "Could not send the consent code."
+        });
+      }
+    } catch (e) {
+      setExportOtpNotice({ tone: "error", text: "Could not send the consent code." });
+    } finally {
+      setIsRequestingExportOtp(false);
+    }
+  };
+
   // FIX 3: Generate Secure Watermarked Time-Bound Export
   const handleCreateSecureExport = async () => {
     if (!selectedPatient || !recipientName || !recipientId) return;
@@ -308,6 +358,8 @@ export default function DashboardPatientsPage() {
         setPreviewExportModal(json.export_record);
         showToast(json.message);
         setExportModalOpen(false);
+        setPatientOtpInput("");
+        setExportOtpNotice(null);
         fetchPatients();
       } else {
         showToast(`Export Error: ${json.error}`);
@@ -336,8 +388,8 @@ export default function DashboardPatientsPage() {
           unit: newLabUnit,
           reference_min: Number(newLabMin),
           reference_max: Number(newLabMax),
-          report_date: new Date().toISOString().split("T")[0],
-          lab_source: "Marley LIS (HL7 v2.5.1 / FHIR Ingestion)"
+          report_date: clinicToday(),
+          lab_source: "Manual lab entry"
         })
       });
 
@@ -385,7 +437,7 @@ export default function DashboardPatientsPage() {
           action: "add_visit_version",
           patient_uhid: selectedPatient.uhid,
           visit_number: selectedVisitForAmend.visit_number,
-          doctor_name: "Dr. Rahul Sharma",
+          doctor_name: getStoredUser()?.full_name || selectedVisitForAmend.doctor_name || "",
           doctor_specialization: selectedVisitForAmend.doctor_specialization,
           provisional_diagnosis: `${selectedVisitForAmend.provisional_diagnosis} (Amended)`,
           vitals: selectedVisitForAmend.vitals,
@@ -393,8 +445,7 @@ export default function DashboardPatientsPage() {
           objective_findings: selectedVisitForAmend.objective_findings,
           assessment_plan: `${selectedVisitForAmend.assessment_plan}\n\n[Addendum]: ${amendmentReason}`,
           prescribed_medications: updatedMedications,
-          amendment_reason: amendmentReason,
-          manager_pin: amendmentPin
+          amendment_reason: amendmentReason
         })
       });
 
@@ -405,7 +456,6 @@ export default function DashboardPatientsPage() {
         setSelectedVisitForAmend(null);
         setAmendmentReason("");
         setAmendedMedication("");
-        setAmendmentPin("");
         fetchPatients();
       } else {
         showToast(`Amendment Rejected: ${json.error}`);
@@ -417,7 +467,7 @@ export default function DashboardPatientsPage() {
 
   // FIX 4: Approve Dual-Admin Merge
   const handleApproveMerge = async () => {
-    if (!selectedMergeTicket || !mergeAdminPin) return;
+    if (!selectedMergeTicket) return;
 
     try {
       const res = await fetch("/api/patients", {
@@ -426,8 +476,7 @@ export default function DashboardPatientsPage() {
         body: JSON.stringify({
           action: "resolve_duplicate_merge",
           ticket_id: selectedMergeTicket.id,
-          approver_2: "Dr. Rahul Sharma (Medical Director)",
-          pin: mergeAdminPin
+          approver_2: getStoredUser()?.full_name || ""
         })
       });
 
@@ -436,7 +485,6 @@ export default function DashboardPatientsPage() {
         showToast(json.message);
         setMergeModalOpen(false);
         setSelectedMergeTicket(null);
-        setMergeAdminPin("");
         fetchPatients();
       } else {
         showToast(`Merge Failed: ${json.error}`);
@@ -450,7 +498,7 @@ export default function DashboardPatientsPage() {
   const handleExportAuditCsv = () => {
     if (!selectedPatient) return;
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = clinicToday();
       const rows = [
         ["Timestamp", "Patient UHID", "Patient Name", "Action Type", "User Name", "Staff Role", "IP Address", "Details"],
         ...(selectedPatient.audit_trail || []).map(a => [
@@ -501,7 +549,7 @@ export default function DashboardPatientsPage() {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Clinic_Patient_Directory_${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute("download", `Clinic_Patient_Directory_${clinicToday()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1061,14 +1109,14 @@ export default function DashboardPatientsPage() {
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-slate-900 dark:text-white text-xs">
-                        Emergency: {selectedPatient.emergency_contact || "Sunita Sharma"}
+                        Emergency: {selectedPatient.emergency_contact || "Not on file"}
                       </span>
                       <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-[#0071E3] dark:bg-blue-950/40 dark:text-[#2997FF] border border-blue-200/60 dark:border-blue-900/40">
-                        {selectedPatient.emergency_contact_relationship || "Mother (Legal Guardian)"}
+                        {selectedPatient.emergency_contact_relationship || "Relationship not recorded"}
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60">
                         <ShieldCheck className="h-3 w-3" />
-                        <span>{selectedPatient.emergency_contact_consent_status || "DPDP Consent Active"}</span>
+                        <span>{selectedPatient.emergency_contact_consent_status || "Consent not recorded"}</span>
                       </span>
                     </div>
 
@@ -1078,7 +1126,7 @@ export default function DashboardPatientsPage() {
                       </span>
                       <span>•</span>
                       <span>
-                        Encrypted: <code className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">{selectedPatient.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C"}</code>
+                        Encrypted: <code className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">{selectedPatient.emergency_contact_encrypted_hash || "Not recorded"}</code>
                       </span>
                     </div>
                   </div>
@@ -1465,7 +1513,7 @@ export default function DashboardPatientsPage() {
                         Watermarked &amp; Time-Bound EMR Export Vault
                       </h3>
                       <p className="text-[11px] text-slate-500">
-                        Cryptographically sealed, patient OTP authorized PDFs for Specialist Referrals &amp; Right to Access
+                        Time-bound, watermarked exports with a verified patient consent code for referrals and right-to-access requests
                       </p>
                     </div>
 
@@ -1508,7 +1556,11 @@ export default function DashboardPatientsPage() {
                                 <span className="hidden sm:inline">•</span>
                                 <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
                                   <ShieldCheck className="h-3 w-3" />
-                                  <span>Patient OTP Verified ({exp.otp_session_id})</span>
+                                  <span>
+                                    {exp.patient_otp_verified
+                                      ? `Patient consent code verified (${exp.otp_session_id})`
+                                      : "Consent not verified on this record"}
+                                  </span>
                                 </span>
                               </div>
                             </div>
@@ -1698,7 +1750,7 @@ export default function DashboardPatientsPage() {
                     className="inline-flex items-center gap-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 text-xs font-bold shadow-md transition cursor-pointer"
                   >
                     <Unlock className="h-3.5 w-3.5" />
-                    <span>Clinical Override (PIN Required)</span>
+                    <span>Clinical Override (Doctor Sign-off)</span>
                   </button>
                 </div>
               </div>
@@ -1744,31 +1796,38 @@ export default function DashboardPatientsPage() {
             </div>
 
             <p className="text-xs text-[#86868B]">
-              Per medical governance, hard-stop overrides require e-sign from a verified Senior Doctor with active National Medical Commission (NMC) registration and mandatory predefined protocol code.
+              Per medical governance, a hard-stop override is signed by the registered doctor who is signed into this clinic, with a mandatory predefined protocol code. The registration shown is the one on file for your account.
             </p>
 
             <div>
               <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">
-                Authorizing Senior Doctor (NMC Role Flag Verified)
+                Authorizing Clinician (from your signed-in session)
               </label>
-              <select
-                value={selectedDoctorNmc}
-                onChange={(e) => setSelectedDoctorNmc(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-black/[0.08] p-2.5 text-xs text-[#1D1D1F] dark:border-white/[0.1] dark:bg-black/30 dark:text-white"
-              >
-                {VERIFIED_SENIOR_DOCTORS.map(d => (
-                  <option key={d.nmc_reg_number} value={d.nmc_reg_number}>
-                    {d.doctor_name} — {d.role} ({d.nmc_reg_number})
-                  </option>
-                ))}
-              </select>
+              <div className="mt-1 w-full rounded-xl border border-black/[0.08] p-2.5 text-xs text-[#1D1D1F] dark:border-white/[0.1] dark:bg-black/30 dark:text-white">
+                {currentDoctor ? (
+                  <>
+                    <div className="font-bold">{currentDoctor.full_name}</div>
+                    <div className="text-[10px] text-[#86868B]">
+                      {currentDoctor.specialization || "Specialty not recorded"}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-rose-600 dark:text-rose-400 font-semibold">
+                    No doctor profile is linked to this account. An override cannot be signed.
+                  </div>
+                )}
+              </div>
 
-              <div className="mt-1.5 flex items-center justify-between text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+              <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] font-bold bg-slate-500/10 px-2.5 py-1 rounded-lg border border-slate-500/20 text-slate-600 dark:text-slate-300">
                 <span className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                  <span>NMC Registry Status: Active &amp; Good Standing</span>
+                  <Shield className="h-3 w-3" />
+                  <span>
+                    {currentDoctor?.medical_council_reg_number
+                      ? `Registration on file: ${currentDoctor.medical_council_reg_number}`
+                      : "No council registration on file"}
+                  </span>
                 </span>
-                <span>{VERIFIED_SENIOR_DOCTORS.find(d => d.nmc_reg_number === selectedDoctorNmc)?.state_medical_council}</span>
+                <span>{currentDoctor?.medical_council_state || ""}</span>
               </div>
             </div>
 
@@ -1800,16 +1859,16 @@ export default function DashboardPatientsPage() {
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:text-emerald-300">
               <div className="flex items-center gap-2 font-bold">
                 <span className="text-emerald-600">✓</span>
-                <span>Active Senior Practitioner Session Verified</span>
+                <span>Signed-in clinical session</span>
               </div>
               <p className="mt-1 text-[11px] text-emerald-700/80 dark:text-emerald-400/80">
-                Override will be cryptographically signed and logged with your active clinical session and NMC credentials.
+                The override is recorded against your authenticated account and the council registration on file. It is not an external registry lookup.
               </p>
             </div>
 
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2.5 text-[10px] text-amber-800 dark:text-amber-300">
               <strong>⚡ Multi-Module Alert Persistence: </strong>
-              <span>Authorizing this clinical override broadcasts and permanently locks audit records across Prescription Generation, Dispensary Pharmacy Queue, and LIS Diagnostic Vault.</span>
+              <span>Authorizing this clinical override records the decision in the EMR allergy-contraindication log and the immutable audit trail against your signed-in account.</span>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -1823,7 +1882,8 @@ export default function DashboardPatientsPage() {
               <button
                 type="button"
                 onClick={handleAuthorizeOverride}
-                className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-xs font-bold shadow-md"
+                disabled={!currentDoctor?.medical_council_reg_number}
+                className="rounded-xl bg-rose-600 hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-40 text-white px-4 py-2 text-xs font-bold shadow-md"
               >
                 Sign &amp; Release Hard-Stop
               </button>
@@ -1970,16 +2030,8 @@ export default function DashboardPatientsPage() {
               />
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Senior Doctor Security PIN</label>
-              <input
-                type="password"
-                maxLength={6}
-                placeholder="Enter Senior Doctor PIN"
-                value={amendmentPin}
-                onChange={(e) => setAmendmentPin(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-black/[0.08] p-2 text-center font-mono font-bold text-sm dark:border-white/[0.1] dark:bg-black/40 dark:text-white"
-              />
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-[11px] text-emerald-800 dark:text-emerald-200">
+              This addendum is signed with your signed-in clinician identity. Authorization is checked on the server against your account role; no PIN is stored or accepted.
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -2031,16 +2083,8 @@ export default function DashboardPatientsPage() {
               <div>First Approver: <strong>{selectedMergeTicket.approver_1}</strong></div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[#1D1D1F] dark:text-white">Second Admin Authorization PIN</label>
-              <input
-                type="password"
-                maxLength={6}
-                placeholder="Enter Second Admin PIN"
-                value={mergeAdminPin}
-                onChange={(e) => setMergeAdminPin(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-black/[0.08] p-2 text-center font-mono font-bold text-sm dark:border-white/[0.1] dark:bg-black/40 dark:text-white"
-              />
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-2.5 text-[11px] text-purple-900 dark:text-purple-200">
+              Approval is checked on the server: you must be an owner or clinic administrator, and must be a different person from the first approver on the ticket. No PIN is stored or accepted.
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -2081,22 +2125,22 @@ export default function DashboardPatientsPage() {
             </div>
 
             <p className="text-xs text-[#86868B]">
-              Under DPDP Act (2023) Section 12 &amp; GDPR healthcare exemptions, emergency contact data is encrypted at rest and accessible strictly for verified clinical emergencies. Every unmasking or SMS/call initiation is cryptographically logged.
+              Under DPDP Act (2023) right-to-access principles, emergency contact data is encrypted at rest and accessible only to signed-in staff for clinical emergencies. Every unmasking or SMS/call initiation is recorded in the audit trail.
             </p>
 
             <div className="rounded-xl bg-[#ECEEF2]/60 dark:bg-white/[0.04] p-3 text-xs space-y-1">
               <div>Patient: <strong>{selectedPatient.full_name}</strong> ({selectedPatient.uhid})</div>
-              <div>Designated Emergency Contact: <strong>{selectedPatient.emergency_contact || "Sunita Sharma"}</strong></div>
-              <div>Relationship: <strong className="text-[#0071E3] dark:text-[#2997FF]">{selectedPatient.emergency_contact_relationship || "Mother (Legal Guardian - Minor)"}</strong></div>
-              <div>Consent Record: <strong className="text-emerald-600">{selectedPatient.emergency_contact_consent_status || "DPDP_FORM_3_EXPLICIT_CONSENT"}</strong></div>
-              <div>Encryption at Rest: <code className="text-[10px] text-emerald-600 font-bold">{selectedPatient.emergency_contact_encrypted_hash || "AES256-GCM-ENC-09A8F711C"}</code></div>
+              <div>Designated Emergency Contact: <strong>{selectedPatient.emergency_contact || "Not on file"}</strong></div>
+              <div>Relationship: <strong className="text-[#0071E3] dark:text-[#2997FF]">{selectedPatient.emergency_contact_relationship || "Not recorded"}</strong></div>
+              <div>Consent Record: <strong className="text-emerald-600">{selectedPatient.emergency_contact_consent_status || "Not recorded"}</strong></div>
+              <div>Encryption at Rest: <code className="text-[10px] text-emerald-600 font-bold">{selectedPatient.emergency_contact_encrypted_hash || "Not recorded"}</code></div>
             </div>
 
             {/* Unmasked Phone Result if already accessed */}
             {unmaskedContactPhone && (
               <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 p-3.5 space-y-1 text-center animate-in zoom-in-95">
                 <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                  ✓ Verified Emergency Contact Number Unmasked
+                  ✓ Emergency Contact Number Unmasked
                 </div>
                 <div className="text-xl font-mono font-black text-emerald-700 dark:text-emerald-400">
                   {unmaskedContactPhone}
@@ -2107,25 +2151,13 @@ export default function DashboardPatientsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div>
-                <label className="font-bold text-[#1D1D1F] dark:text-white">Staff Member Name</label>
-                <input
-                  type="text"
-                  value={staffNameInput}
-                  onChange={(e) => setStaffNameInput(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-black/[0.08] p-2 dark:border-white/[0.1] dark:bg-black/30 dark:text-white"
-                />
+            <div className="rounded-xl border border-black/[0.08] p-2.5 text-xs dark:border-white/[0.1]">
+              <div className="font-bold text-[#1D1D1F] dark:text-white">
+                Accessing staff (signed-in session)
               </div>
-
-              <div>
-                <label className="font-bold text-[#1D1D1F] dark:text-white">Staff Clinical Role</label>
-                <input
-                  type="text"
-                  value={staffRoleInput}
-                  onChange={(e) => setStaffRoleInput(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-black/[0.08] p-2 dark:border-white/[0.1] dark:bg-black/30 dark:text-white"
-                />
+              <div className="mt-0.5 text-[#86868B]">
+                {staffNameInput || "—"}
+                {staffRoleInput ? ` (${staffRoleInput})` : ""}
               </div>
             </div>
 
@@ -2160,7 +2192,7 @@ export default function DashboardPatientsPage() {
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/20 bg-blue-500/10 hover:bg-blue-500/20 text-[#0071E3] dark:text-[#2997FF] px-3.5 py-2 text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
               >
                 <Send className="h-3.5 w-3.5" />
-                <span>Dispatch Critical SMS</span>
+                <span>Log Emergency Alert</span>
               </button>
 
               <button
@@ -2196,7 +2228,7 @@ export default function DashboardPatientsPage() {
             </div>
 
             <p className="text-xs text-[#86868B]">
-              Per DPDP Act 2023 Section 12 (Right to Access) &amp; NABH clinical guidelines, all clinical records exported to external specialists require patient OTP authorization and are embedded with a cryptographic, time-bound watermark.
+              Under the DPDP Act's right-to-access principle, records shared with an external recipient require the patient's consent code and carry a time-bound watermark. Request a fresh code from the patient before generating the export.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -2261,26 +2293,42 @@ export default function DashboardPatientsPage() {
 
             {/* Patient Consent OTP Challenge */}
             <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <span className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                   <Key className="h-4 w-4 text-amber-600" />
-                  <span>Patient / Guardian Consent OTP Required</span>
+                  <span>Patient / Guardian Consent Code</span>
                 </span>
-                <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-800 dark:text-amber-300">
-                  Demo OTP: 7729
-                </span>
+                <button
+                  type="button"
+                  disabled={isRequestingExportOtp}
+                  onClick={handleRequestExportOtp}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/50 bg-white dark:bg-black/30 px-3 py-1.5 text-[11px] font-bold text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition cursor-pointer disabled:opacity-50"
+                >
+                  {isRequestingExportOtp ? "Sending…" : "Send code to patient"}
+                </button>
               </div>
               <p className="text-[11px] text-amber-800/90 dark:text-amber-200/90">
-                To prevent unauthorized external data leakage, enter the 4-digit verification OTP sent to the registered mobile number ({maskEmergencyPhone(selectedPatient.phone)}).
+                A 6-digit code is sent to the patient&apos;s registered mobile number ({maskEmergencyPhone(selectedPatient.phone)}) and expires in 5 minutes. Enter the code the patient reads back to you.
               </p>
+
+              {exportOtpNotice && (
+                <p className={`text-[11px] font-semibold ${
+                  exportOtpNotice.tone === "error"
+                    ? "text-rose-700 dark:text-rose-300"
+                    : "text-emerald-700 dark:text-emerald-300"
+                }`}>
+                  {exportOtpNotice.text}
+                </p>
+              )}
 
               <div>
                 <input
                   type="text"
+                  inputMode="numeric"
                   maxLength={6}
                   value={patientOtpInput}
-                  onChange={(e) => setPatientOtpInput(e.target.value)}
-                  placeholder="Enter 4 or 6-digit OTP (Try: 7729)"
+                  onChange={(e) => setPatientOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="Enter 6-digit consent code"
                   className="w-full rounded-xl border border-amber-500/40 bg-white dark:bg-black/40 p-2 text-center font-mono font-black text-sm tracking-widest text-[#1D1D1F] dark:text-white"
                 />
               </div>
@@ -2344,7 +2392,7 @@ export default function DashboardPatientsPage() {
                     </span>
                   </div>
                   <p className="text-[11px] text-[#86868B]">
-                    NABH &amp; DPDP Act (2023) Section 12 Certified Medical Record
+                    DPDP-aligned medical record export
                   </p>
                 </div>
 
@@ -2414,7 +2462,11 @@ export default function DashboardPatientsPage() {
               {/* Export Security Certificate Stamp */}
               <div className="rounded-xl border border-black/[0.06] bg-white dark:bg-[#1C1C1E] p-3 text-[10px] text-[#86868B] space-y-1">
                 <div>Recipient: <strong>{previewExportModal.recipient_name}</strong> (ID: {previewExportModal.recipient_id})</div>
-                <div>Patient Consent OTP Session: <strong className="text-emerald-600">{previewExportModal.otp_session_id}</strong> (Verified)</div>
+                <div>
+                  Patient Consent Code:{" "}
+                  <strong className="text-emerald-600">{previewExportModal.otp_session_id}</strong>{" "}
+                  {previewExportModal.patient_otp_verified ? "(verified)" : "(not verified)"}
+                </div>
                 <div>Watermark Fingerprint: <span className="font-mono">{previewExportModal.watermark_text}</span></div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { 
   FileText, 
@@ -18,98 +18,62 @@ import {
   ArrowRight,
   Filter
 } from "lucide-react";
+import { clinicToday } from "@/lib/clinic-date";
 
 export default function PrescriptionsArchivePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<"all" | "today" | "dr-rahul" | "dr-aditi">("all");
+  const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const [prescriptions, setPrescriptions] = useState<any[]>([
-    {
-      rx_id: "RX-2026-09-1024",
-      date: "02 Nov 2026",
-      appointment_number: "APT-DERMA-101",
-      token_number: 11,
-      patient_name: "Amit Rawat",
-      patient_phone: "+91 91234 56780",
-      age: 32,
-      gender: "M",
-      doctor_name: "Dr. Rahul Sharma",
-      doctor_slug: "dr-rahul-sharma",
-      specialization: "Dermatologist",
-      provisional_diagnosis: "Tinea Corporis & Fungal Folliculitis",
-      medications: [
-        "ITRACONAZOLE 200MG (1-0-1 After food • 14 days)",
-        "LEVOCETIRIZINE 5MG (0-0-1 Night • 7 days)",
-        "LULICONAZOLE CREAM 1% (Apply twice daily • 2 weeks)"
-      ],
-      fee_amount: 600,
-      payment_status: "paid"
-    },
-    {
-      rx_id: "RX-2026-09-1025",
-      date: "02 Nov 2026",
-      appointment_number: "APT-DERMA-102",
-      token_number: 12,
-      patient_name: "Priya Singh",
-      patient_phone: "+91 91234 56781",
-      age: 24,
-      gender: "F",
-      doctor_name: "Dr. Rahul Sharma",
-      doctor_slug: "dr-rahul-sharma",
-      specialization: "Dermatologist",
-      provisional_diagnosis: "Acne Vulgaris (Grade II Papulopustular)",
-      medications: [
-        "DOXYCYCLINE 100MG (0-1-0 After food • 21 days)",
-        "BENZOYL PEROXIDE 2.5% GEL (Apply pea-size at night)",
-        "CLINDAMYCIN 1% GEL (Morning application)"
-      ],
-      fee_amount: 600,
-      payment_status: "paid"
-    },
-    {
-      rx_id: "RX-2026-09-1023",
-      date: "01 Nov 2026",
-      appointment_number: "APT-DENT-089",
-      token_number: 8,
-      patient_name: "Kavita Bisht",
-      patient_phone: "+91 98765 43210",
-      age: 41,
-      gender: "F",
-      doctor_name: "Dr. Aditi Joshi",
-      doctor_slug: "dr-aditi-joshi",
-      specialization: "Dental Surgeon",
-      provisional_diagnosis: "Periapical Abscess (Tooth #46)",
-      medications: [
-        "AMOXICILLIN + CLAVULANIC ACID 625MG (1-0-1 After food • 5 days)",
-        "ACECLOFENAC + PARACETAMOL (1-0-1 SOS for pain)",
-        "CHLORHEXIDINE 0.2% MOUTHWASH (Rinse twice daily)"
-      ],
-      fee_amount: 500,
-      payment_status: "paid"
-    },
-    {
-      rx_id: "RX-2026-09-1022",
-      date: "01 Nov 2026",
-      appointment_number: "APT-DERMA-088",
-      token_number: 9,
-      patient_name: "Suresh Chandra",
-      patient_phone: "+91 94120 55443",
-      age: 58,
-      gender: "M",
-      doctor_name: "Dr. Rahul Sharma",
-      doctor_slug: "dr-rahul-sharma",
-      specialization: "Dermatologist",
-      provisional_diagnosis: "Chronic Plaque Psoriasis (Extensor aspects)",
-      medications: [
-        "METHOTREXATE 7.5MG (Weekly once on Sunday after breakfast)",
-        "FOLIC ACID 5MG (Take on Tuesday & Friday)",
-        "HALOBETASOL + SALICYLIC ACID OINTMENT (Apply at night)"
-      ],
-      fee_amount: 600,
-      payment_status: "paid"
-    }
-  ]);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadPrescriptions = async () => {
+      try {
+        const res = await fetch("/api/prescriptions", { cache: "no-store" });
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok) {
+          setLoadError(json?.error || "Could not load the prescription register.");
+          setPrescriptions([]);
+          return;
+        }
+        setPrescriptions(Array.isArray(json.prescriptions) ? json.prescriptions : []);
+        setLoadError(null);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError("Could not reach the prescription register. Check your connection.");
+          setPrescriptions([]);
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    loadPrescriptions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const todayIso = clinicToday();
+
+  const doctorFilters = useMemo(() => {
+    const seen = new Map<string, string>();
+    prescriptions.forEach((rx) => {
+      if (rx.doctor_slug && !seen.has(rx.doctor_slug)) {
+        seen.set(rx.doctor_slug, rx.doctor_name);
+      }
+    });
+    return Array.from(seen.entries()).map(([slug, name]) => ({ slug, name }));
+  }, [prescriptions]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -119,26 +83,31 @@ export default function PrescriptionsArchivePage() {
   // 1-Click Excel CSV Export
   const handleExportCsv = () => {
     try {
-      const headers = ["Rx Number", "Date", "Token", "Patient Name", "Phone", "Age", "Gender", "Doctor", "Provisional Diagnosis", "Medicines", "Consultation Fee"];
+      if (prescriptions.length === 0) {
+        showToast("No prescriptions to export yet.");
+        return;
+      }
+      const headers = ["Rx Number", "Date", "Token", "Patient Name", "Phone", "Age", "Gender", "Doctor", "Provisional Diagnosis", "Medicines", "Consultation Fee", "Payment Status"];
       const rows = prescriptions.map(rx => [
         rx.rx_id,
         rx.date,
-        rx.token_number,
+        rx.token_number ?? "",
         `"${rx.patient_name}"`,
         rx.patient_phone,
-        rx.age,
-        rx.gender,
+        rx.age ?? "",
+        rx.gender ?? "",
         `"${rx.doctor_name}"`,
-        `"${rx.provisional_diagnosis}"`,
-        `"${rx.medications.join(" | ")}"`,
-        rx.fee_amount
+        `"${rx.provisional_diagnosis || ""}"`,
+        `"${(rx.medications || []).join(" | ")}"`,
+        rx.fee_amount ?? "",
+        rx.payment_status ?? ""
       ]);
 
       const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Clinic_Prescriptions_Register_${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute("download", `Clinic_Prescriptions_Register_${clinicToday()}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -150,17 +119,18 @@ export default function PrescriptionsArchivePage() {
   };
 
   const filteredRx = prescriptions.filter(rx => {
+    const query = searchQuery.toLowerCase().trim();
     const matchesSearch =
-      rx.rx_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rx.patient_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rx.patient_phone.includes(searchQuery) ||
-      rx.provisional_diagnosis.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rx.medications.some((m: string) => m.toLowerCase().includes(searchQuery.toLowerCase()));
+      !query ||
+      String(rx.rx_id || "").toLowerCase().includes(query) ||
+      String(rx.patient_name || "").toLowerCase().includes(query) ||
+      String(rx.patient_phone || "").includes(searchQuery) ||
+      String(rx.provisional_diagnosis || "").toLowerCase().includes(query) ||
+      (rx.medications || []).some((m: string) => String(m).toLowerCase().includes(query));
 
     if (!matchesSearch) return false;
-    if (selectedFilter === "dr-rahul") return rx.doctor_slug === "dr-rahul-sharma";
-    if (selectedFilter === "dr-aditi") return rx.doctor_slug === "dr-aditi-joshi";
-    if (selectedFilter === "today") return rx.date === "02 Nov 2026";
+    if (selectedFilter === "today") return rx.date_iso === todayIso;
+    if (selectedFilter !== "all") return rx.doctor_slug === selectedFilter;
     return true;
   });
 
@@ -186,7 +156,7 @@ export default function PrescriptionsArchivePage() {
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Digital NMC-compliant prescription vault • Direct WhatsApp re-dispatch • Generic Jan Aushadhi tracking
+            Digital prescription vault • Direct WhatsApp re-dispatch • Generic Jan Aushadhi comparison
           </p>
         </div>
 
@@ -231,28 +201,21 @@ export default function PrescriptionsArchivePage() {
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
             }`}
           >
-            Today ({prescriptions.filter(p => p.date === "02 Nov 2026").length})
+            Today ({prescriptions.filter(p => p.date_iso === todayIso).length})
           </button>
-          <button
-            onClick={() => setSelectedFilter("dr-rahul")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-              selectedFilter === "dr-rahul"
-                ? "bg-[#0071E3] text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
-            }`}
-          >
-            Dr. Rahul Sharma
-          </button>
-          <button
-            onClick={() => setSelectedFilter("dr-aditi")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-              selectedFilter === "dr-aditi"
-                ? "bg-[#0071E3] text-white shadow-xs"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
-            }`}
-          >
-            Dr. Aditi Joshi
-          </button>
+          {doctorFilters.map((doc) => (
+            <button
+              key={doc.slug}
+              onClick={() => setSelectedFilter(doc.slug)}
+              className={`rounded-md px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
+                selectedFilter === doc.slug
+                  ? "bg-[#0071E3] text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/[0.06] dark:text-slate-300"
+              }`}
+            >
+              {doc.name}
+            </button>
+          ))}
         </div>
 
         <div className="relative w-full sm:w-72">
@@ -282,7 +245,27 @@ export default function PrescriptionsArchivePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
-              {filteredRx.map(rx => (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-slate-400">
+                    Loading prescription register…
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-rose-600 dark:text-rose-400">
+                    {loadError}
+                  </td>
+                </tr>
+              ) : filteredRx.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-slate-400">
+                    {prescriptions.length === 0
+                      ? "No prescriptions yet. Completed consultations appear here automatically."
+                      : "No prescriptions match this filter."}
+                  </td>
+                </tr>
+              ) : filteredRx.map(rx => (
                 <tr key={rx.rx_id} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition">
                   <td className="py-3 px-4">
                     <span className="font-mono font-semibold text-[#0071E3] dark:text-[#2997FF]">
@@ -337,7 +320,7 @@ export default function PrescriptionsArchivePage() {
 
                       <a
                         href={`https://wa.me/${rx.patient_phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                          `Namaste ${rx.patient_name}, your digital prescription ${rx.rx_id} from ${rx.doctor_name} is available here: https://medic-sept-2026.vercel.app/p/${rx.rx_id}`
+                          `Namaste ${rx.patient_name}, your digital prescription ${rx.rx_id} from ${rx.doctor_name} is available here: ${origin}/p/${rx.rx_id}`
                         )}`}
                         target="_blank"
                         rel="noreferrer"

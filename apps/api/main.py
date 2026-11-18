@@ -61,6 +61,9 @@ def health_check():
         "service": "ClinicOS AI Clinical Companion Backend",
         "transcription_provider": "Groq Whisper" if settings.GROQ_API_KEY else "Fallback / Local",
         "orchestration": "LangGraph",
+        "llm_provider": settings.LLM_PROVIDER or "auto",
+        "gemini_configured": bool(settings.GEMINI_API_KEY),
+        "groq_configured": bool(settings.GROQ_API_KEY),
     }
 
 

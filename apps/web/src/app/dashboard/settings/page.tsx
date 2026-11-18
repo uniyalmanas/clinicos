@@ -37,6 +37,7 @@ import {
   CheckSquare
 } from "lucide-react";
 import QRCodeDisplay from "@/components/QRCodeDisplay";
+import { clinicToday } from "@/lib/clinic-date";
 
 interface TariffVersion {
   id: string;
@@ -91,27 +92,29 @@ export default function DashboardSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [clinicId, setClinicId] = useState("");
-  const [clinicSlug, setClinicSlug] = useState("derma-care-dehradun");
+  const [clinicSlug, setClinicSlug] = useState("");
+  const [clinicLoadError, setClinicLoadError] = useState<string | null>(null);
+  const [displayOrigin, setDisplayOrigin] = useState("");
 
-  // Clinic Profile State
-  const [clinicName, setClinicName] = useState("Derma Care Skin & Laser Centre");
-  const [tagline, setTagline] = useState("Advanced Dermatology, Laser & Aesthetic Surgery");
-  const [regNumber, setRegNumber] = useState("UK-CEA-2024-8891");
-  const [address, setAddress] = useState("14, Rajpur Road, Near Ashley Hall");
-  const [city, setCity] = useState("Dehradun");
-  const [state, setState] = useState("Uttarakhand");
-  const [postalCode, setPostalCode] = useState("248001");
-  const [phone, setPhone] = useState("+919876543210");
-  const [upiVpa, setUpiVpa] = useState("dermacare@icici");
+  // Clinic Profile State — filled from the signed-in clinic, never invented.
+  const [clinicName, setClinicName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [regNumber, setRegNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [phone, setPhone] = useState("");
+  const [upiVpa, setUpiVpa] = useState("");
 
   // Tariff State
-  const [fee, setFee] = useState(600);
-  const [followupFee, setFollowupFee] = useState(300);
-  const [validityDays, setValidityDays] = useState(7);
-  const [doctorSplit, setDoctorSplit] = useState(80);
+  const [fee, setFee] = useState(0);
+  const [followupFee, setFollowupFee] = useState(0);
+  const [validityDays, setValidityDays] = useState(0);
+  const [doctorSplit, setDoctorSplit] = useState(0);
   const [tariffVersions, setTariffVersions] = useState<TariffVersion[]>([]);
   const [showTariffModal, setShowTariffModal] = useState(false);
-  const [tariffEffectiveDate, setTariffEffectiveDate] = useState(new Date().toISOString().split("T")[0]);
+  const [tariffEffectiveDate, setTariffEffectiveDate] = useState(clinicToday());
   const [tariffReason, setTariffReason] = useState("");
   const [tariffPin, setTariffPin] = useState("");
   const [tariffError, setTariffError] = useState("");
@@ -146,10 +149,10 @@ export default function DashboardSettingsPage() {
   const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [newDocName, setNewDocName] = useState("");
   const [newDocSpecialty, setNewDocSpecialty] = useState("");
-  const [newDocFee, setNewDocFee] = useState(700);
-  const [newDocChamber, setNewDocChamber] = useState("Chamber 2 - Laser Suite");
-  const [newDocReg, setNewDocReg] = useState("UKMC-REG-2024");
-  const [newDocSplit, setNewDocSplit] = useState(80);
+  const [newDocFee, setNewDocFee] = useState(0);
+  const [newDocChamber, setNewDocChamber] = useState("");
+  const [newDocReg, setNewDocReg] = useState("");
+  const [newDocSplit, setNewDocSplit] = useState(0);
   const [onboardPin, setOnboardPin] = useState("");
   const [onboardError, setOnboardError] = useState("");
   const [onboarding, setOnboarding] = useState(false);
@@ -206,16 +209,41 @@ export default function DashboardSettingsPage() {
   const fetchClinicData = async () => {
     try {
       setLoading(true);
-      let slug = "derma-care-dehradun";
+      setClinicLoadError(null);
+      let slug = "";
+      let knownClinicId = "";
       const userStr = localStorage.getItem("clinicos_user");
       if (userStr) {
-        const user = JSON.parse(userStr);
-        if (user.clinic_slug) slug = user.clinic_slug;
-        if (user.clinic_id) setClinicId(user.clinic_id);
+        try {
+          const user = JSON.parse(userStr);
+          if (user.clinic_slug) slug = user.clinic_slug;
+          if (user.clinic_id) knownClinicId = user.clinic_id;
+        } catch {}
+      }
+      if (!slug) {
+        const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          slug = me?.clinic_slug || "";
+          knownClinicId = knownClinicId || me?.clinic_id || "";
+        }
+      }
+      if (knownClinicId) setClinicId(knownClinicId);
+      if (!slug) {
+        setClinicLoadError(
+          "Your account is not linked to a clinic yet, so there are no settings to show."
+        );
+        return;
       }
       setClinicSlug(slug);
 
-      const res = await fetch(`/api/clinics?slug=${encodeURIComponent(slug)}`);
+      const res = await fetch(`/api/clinics?slug=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setClinicLoadError(err?.detail || "Could not load this clinic's configuration.");
+      }
       if (res.ok) {
         const data = await res.json();
         if (data.id) setClinicId(data.id);
@@ -251,12 +279,14 @@ export default function DashboardSettingsPage() {
       }
     } catch (err) {
       console.error("Failed to load clinic settings:", err);
+      setClinicLoadError("Could not reach the clinic service. Check your connection.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    setDisplayOrigin(window.location.origin);
     fetchClinicData();
   }, []);
 
@@ -543,7 +573,7 @@ export default function DashboardSettingsPage() {
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
               <ShieldCheck className="h-3 w-3" />
-              <span>DPDP &amp; NMC Compliant</span>
+              <span>DPDP-aligned workflows</span>
             </span>
           </div>
 
@@ -578,6 +608,18 @@ export default function DashboardSettingsPage() {
         </div>
       </div>
 
+      {clinicLoadError && (
+        <div className="flex items-start gap-2.5 rounded-[18px] border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/60 dark:bg-rose-950/30">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+          <div>
+            <div className="text-xs font-bold text-rose-800 dark:text-rose-200">
+              Clinic configuration unavailable
+            </div>
+            <div className="mt-0.5 text-xs text-rose-700 dark:text-rose-300">{clinicLoadError}</div>
+          </div>
+        </div>
+      )}
+
       {/* 2. 4 CLINICAL GOVERNANCE PILLARS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-[18px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-4 shadow-apple-sm">
@@ -587,7 +629,7 @@ export default function DashboardSettingsPage() {
               <span>Effective-Dated Tariffs</span>
             </div>
             <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-              RBAC Verified
+              Versioned
             </span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
@@ -636,7 +678,7 @@ export default function DashboardSettingsPage() {
             </span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Deactivation freezes new bookings while preserving 100% of historical EMR &amp; auto-calculating final settlements.
+            Deactivation freezes new bookings while preserving historical EMR &amp; auto-calculating final settlements.
           </p>
         </div>
       </div>
@@ -847,7 +889,7 @@ export default function DashboardSettingsPage() {
 
             <div className="flex items-center gap-2 p-3 rounded-[14px] bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/40 text-xs text-blue-800 dark:text-blue-300">
               <Info className="h-4 w-4 shrink-0 text-[#0071E3]" />
-              <span>Financial Immutability Rule: Updates never overwrite prior receipts or payouts. Past billing ledgers remain 100% auditable.</span>
+              <span>Financial Immutability Rule: Updates never overwrite prior receipts or payouts. Past billing ledgers remain auditable.</span>
             </div>
           </div>
         </div>
@@ -957,7 +999,7 @@ export default function DashboardSettingsPage() {
                   Active Clinical Roster &amp; Safe Offboarding Management
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                  DPDP &amp; NMC compliant lifecycle: Deactivation freezes new appointments while strictly preserving all historical EMR, prescriptions &amp; billing.
+                  DPDP-aligned lifecycle: Deactivation freezes new appointments while strictly preserving all historical EMR, prescriptions &amp; billing.
                 </p>
               </div>
 
@@ -1096,7 +1138,7 @@ export default function DashboardSettingsPage() {
               </div>
 
               <div>
-                <label className="font-semibold text-[#1D1D1F] dark:text-white">Clinical Est. Act / NABH Reg #</label>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Clinical Establishment Reg #</label>
                 <input
                   type="text"
                   value={regNumber}
@@ -1210,7 +1252,7 @@ export default function DashboardSettingsPage() {
               {/* REAL VECTOR QR CODE VIA QRCodeDisplay */}
               <div className="mx-auto my-3 flex items-center justify-center p-4 rounded-[20px] bg-white border border-black/[0.08] shadow-apple-sm max-w-xs">
                 <QRCodeDisplay
-                  value={`https://medic-sept-2026.vercel.app/waiting-room?clinic=${clinicSlug}&view=patient`}
+                  value={`${displayOrigin}/waiting-room?clinic=${clinicSlug}&view=patient`}
                   size={180}
                   level="H"
                   fgColor="#000000"
@@ -1220,7 +1262,7 @@ export default function DashboardSettingsPage() {
               </div>
 
               <div className="rounded-[12px] bg-black/[0.03] dark:bg-white/[0.04] p-2.5 text-[11px] font-mono text-[#1D1D1F] dark:text-[#F5F5F7] truncate">
-                https://medic-sept-2026.vercel.app/waiting-room?clinic={clinicSlug}&amp;view=patient
+                {displayOrigin}/waiting-room?clinic={clinicSlug}&amp;view=patient
               </div>
 
               <div className="flex gap-2 pt-2">
@@ -1593,7 +1635,7 @@ export default function DashboardSettingsPage() {
             </div>
 
             <div className="p-3.5 rounded-[16px] bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
-              <strong>DPDP Act &amp; NMC Compliance Notice:</strong> Deactivating <strong>{selectedDoctorForOffboard.full_name}</strong> freezes new appointment bookings immediately. All historical medical records, past prescriptions, and bills remain 100% permanently linked and intact without data loss.
+              <strong>Record retention notice:</strong> Deactivating <strong>{selectedDoctorForOffboard.full_name}</strong> freezes new appointment bookings immediately. All historical medical records, past prescriptions, and bills remain permanently linked and intact without data loss.
             </div>
 
             {/* Automated Final Settlement Calculation */}

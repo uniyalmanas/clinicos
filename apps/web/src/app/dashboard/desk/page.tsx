@@ -67,71 +67,19 @@ function playTokenCallChime() {
 }
 
 export default function DashboardDeskPage() {
-  const [queue, setQueue] = useState<any[]>([
-    {
-      appointment_number: "APT-DERMA-101",
-      token_number: 11,
-      patient_name: "Amit Rawat",
-      patient_phone: "+919123456780",
-      status: "completed",
-      time_slot: "10:15 AM",
-      fee_amount: 600,
-      payment_status: "paid",
-      payment_mode: "upi",
-      is_walk_in: false
-    },
-    {
-      appointment_number: "APT-DERMA-102",
-      token_number: 12,
-      patient_name: "Priya Singh",
-      patient_phone: "+919123456781",
-      status: "in_consultation",
-      time_slot: "10:30 AM (Acne Consult)",
-      fee_amount: 600,
-      payment_status: "paid",
-      payment_mode: "upi",
-      is_walk_in: false
-    },
-    {
-      appointment_number: "APT-DERMA-103",
-      token_number: 13,
-      patient_name: "Rohit V.",
-      patient_phone: "+919123456782",
-      status: "waiting",
-      time_slot: "10:45 AM (BP Check)",
-      fee_amount: 600,
-      payment_status: "pending",
-      payment_mode: "cash",
-      is_walk_in: false
-    },
-    {
-      appointment_number: "APT-DERMA-104",
-      token_number: 14,
-      patient_name: "Anjali K.",
-      patient_phone: "+919876511111",
-      status: "waiting",
-      time_slot: "11:00 AM (Laser Consult)",
-      fee_amount: 1200,
-      payment_status: "pending",
-      payment_mode: "cash",
-      is_walk_in: false
-    },
-    {
-      appointment_number: "APT-WALKIN-105",
-      token_number: 15,
-      patient_name: "Vikram P.",
-      patient_phone: "+919876522222",
-      status: "waiting",
-      time_slot: "11:15 AM (Eczema Walk-In)",
-      fee_amount: 600,
-      payment_status: "pending",
-      payment_mode: "cash",
-      is_walk_in: true
-    }
-  ]);
+  // The desk starts empty and is hydrated from the server. Never seed this with
+  // sample patients: a fabricated queue looks real to reception and would never
+  // sync with the doctor or the pharmacy.
+  const [queue, setQueue] = useState<any[]>([]);
 
   const [showWalkInModal, setShowWalkInModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [clinicSlug, setClinicSlug] = useState("");
+  const [clinicName, setClinicName] = useState("");
+  const [staffName, setStaffName] = useState("");
+  const [publicOrigin, setPublicOrigin] = useState("");
+  const [walkInDoctorSlug, setWalkInDoctorSlug] = useState("");
   const [walkInName, setWalkInName] = useState("");
   const [walkInPhone, setWalkInPhone] = useState("");
   const [walkInFee, setWalkInFee] = useState(600);
@@ -143,48 +91,9 @@ export default function DashboardDeskPage() {
 
   // Automated WhatsApp Follow-up & Review Booster (Option B)
   const [showAutomationsModal, setShowAutomationsModal] = useState(false);
-  const [automationsList, setAutomationsList] = useState<any[]>([
-    {
-      id: "auto-rx-101",
-      appointment_number: "APT-DERMA-101",
-      patient_name: "Amit Rawat",
-      patient_phone: "+919123456780",
-      trigger_type: "rx_dispatch",
-      title: "Instant Rx WhatsApp Dispatch",
-      badge: "Immediate",
-      scheduled_for: "Immediate (0 Min)",
-      status: "sent",
-      sent_at: "10:35 AM",
-      message_text: "Namaste Amit Rawat,\nYour digital prescription from Dr. Rahul Sharma at DermaCare Skin & Laser Clinic is ready.\n\n📄 View & Download Rx: http://localhost:3000/prescriptions/RX-2026-09-1024\n💊 Please take medicines as advised after meals.\n\nWishing you good health!",
-      whatsapp_url: "https://wa.me/919123456780?text=" + encodeURIComponent("Namaste Amit Rawat,\nYour digital prescription is ready: http://localhost:3000/prescriptions/RX-2026-09-1024")
-    },
-    {
-      id: "auto-rev-101",
-      appointment_number: "APT-DERMA-101",
-      patient_name: "Amit Rawat",
-      patient_phone: "+919123456780",
-      trigger_type: "google_review",
-      title: "Google 5-Star Review Booster",
-      badge: "Evening Booster",
-      scheduled_for: "Today at 19:30 PM",
-      status: "scheduled",
-      message_text: "Namaste Amit Rawat! We hope you are recovering well after your visit with Dr. Rahul Sharma at DermaCare. ⭐ If you had a helpful and comforting experience, could you please take 15 seconds to support our clinic with a 5-star Google review? 👉 https://g.page/r/derma-care-dehradun/review",
-      whatsapp_url: "https://wa.me/919123456780?text=" + encodeURIComponent("Namaste Amit Rawat! If you had a good experience with Dr. Rahul Sharma, please leave us a 5-star Google review: https://g.page/r/derma-care-dehradun/review")
-    },
-    {
-      id: "auto-flw-101",
-      appointment_number: "APT-DERMA-101",
-      patient_name: "Amit Rawat",
-      patient_phone: "+919123456780",
-      trigger_type: "followup_reminder",
-      title: "Follow-Up Validity Expiry Alert",
-      badge: "Day 5 Reminder",
-      scheduled_for: "24-Sep-2026 (Day 5)",
-      status: "scheduled",
-      message_text: "Namaste Amit Rawat, gentle reminder from DermaCare Clinic: Your consultation follow-up validity with Dr. Rahul Sharma expires in 48 hours. Tap here to view queue & reserve your priority token: http://localhost:3000/doctors/dr-rahul-sharma",
-      whatsapp_url: "https://wa.me/919123456780?text=" + encodeURIComponent("Namaste Amit Rawat, your follow-up validity expires in 48h. Reserve token: http://localhost:3000/doctors/dr-rahul-sharma")
-    }
-  ]);
+  // Loaded from /api/clinic/automations. Never seed this with sample patients —
+  // the desk would show (and WhatsApp) messages that belong to nobody.
+  const [automationsList, setAutomationsList] = useState<any[]>([]);
   const [loadingAutomations, setLoadingAutomations] = useState(false);
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
 
@@ -269,24 +178,34 @@ export default function DashboardDeskPage() {
             setTimeout(() => setCalledTokenMsg(null), 5000);
           } else if (payload.event === "walk_in_registered") {
             const data = payload.data;
-            setQueue(prev => {
-              if (prev.some(q => q.token_number === data.token_number)) return prev;
-              return [
-                ...prev,
-                {
-                  appointment_number: data.appointment_number,
-                  token_number: data.token_number,
-                  patient_name: data.patient_name,
-                  patient_phone: "+91 98765 00000",
-                  status: "waiting",
-                  time_slot: "Immediate Walk-In",
-                  fee_amount: 600,
-                  payment_status: "paid",
-                  payment_mode: "upi",
-                  is_walk_in: true
-                }
-              ];
-            });
+            // The event carries identity only — not the fee or payment status.
+            // Re-read the server queue so reception never shows invented money.
+            fetch(`/api/clinic/desk-queue`)
+              .then((r) => (r.ok ? r.json() : null))
+              .then((json) => {
+                if (json && Array.isArray(json.queue)) setQueue(json.queue);
+              })
+              .catch(() => {});
+            setCalledTokenMsg(`Live Broadcast: Walk-in token #${data.token_number} registered`);
+            setTimeout(() => setCalledTokenMsg(null), 5000);
+          } else if (payload.event === "queue_updated") {
+            fetch(`/api/clinic/desk-queue`)
+              .then((r) => (r.ok ? r.json() : null))
+              .then((json) => {
+                if (json && Array.isArray(json.queue)) setQueue(json.queue);
+              })
+              .catch(() => {});
+          } else if (payload.event === "token_completed") {
+            const data = payload.data;
+            setQueue(prev =>
+              prev.map(item =>
+                item.token_number === data.token_number
+                  ? { ...item, status: "completed" }
+                  : item
+              )
+            );
+            setCalledTokenMsg(`Live Broadcast: Token #${data.token_number} completed`);
+            setTimeout(() => setCalledTokenMsg(null), 5000);
           }
         } catch (err) {
           console.error("SSE parse error:", err);
@@ -307,17 +226,55 @@ export default function DashboardDeskPage() {
       const res = await fetch(`/api/clinic/desk-queue`);
       if (res.ok) {
         const json = await res.json();
-        if (json.queue && json.queue.length > 0) {
-          setQueue(json.queue);
-        }
+        // Always trust the server, including an empty queue. Guarding on
+        // `length > 0` would leave stale (or sample) rows on screen after the
+        // last patient of the day is completed.
+        setQueue(Array.isArray(json.queue) ? json.queue : []);
       }
     } catch {
-      // Keep local mock
+      // Keep whatever the server last returned; the next poll will retry.
     }
   };
 
   useEffect(() => {
     fetchQueue();
+    // SSE gives instant updates; the poll is the safety net when the stream
+    // drops (mobile networks, sleeping tabs, server restarts).
+    const iv = setInterval(fetchQueue, 20000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Doctors for the walk-in assignment dropdown. Without this the desk would
+  // silently book every walk-in against a hardcoded doctor.
+  useEffect(() => {
+    let mounted = true;
+    if (typeof window !== "undefined") setPublicOrigin(window.location.origin);
+    (async () => {
+      try {
+        const meRes = await fetch(`/api/auth/me`);
+        if (meRes.ok) {
+          const me = await meRes.json().catch(() => null);
+          if (mounted && me?.clinic_slug) setClinicSlug(String(me.clinic_slug));
+          if (mounted && me?.clinic_name) setClinicName(String(me.clinic_name));
+          if (mounted && me?.full_name) setStaffName(String(me.full_name));
+        }
+        const res = await fetch(`/api/doctors`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const list = Array.isArray(json) ? json : json.doctors || [];
+        if (!mounted || !Array.isArray(list) || list.length === 0) return;
+        setDoctors(list);
+        setWalkInDoctorSlug((prev) => prev || list[0].slug);
+        setWalkInFee((prev) =>
+          prev && prev !== 600 ? prev : Number(list[0].consultation_fee || prev || 0)
+        );
+      } catch {
+        // The dropdown will be empty; the desk can still cancel and retry.
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleCallToken = async (tokenNumber: number, patientName: string) => {
@@ -348,6 +305,7 @@ export default function DashboardDeskPage() {
       } catch (e) {
         // Local state already updated
       }
+      await fetchQueue();
     }
   };
 
@@ -376,6 +334,7 @@ export default function DashboardDeskPage() {
           })
         });
       } catch (e) {}
+      await fetchQueue();
     }
   };
 
@@ -390,13 +349,15 @@ export default function DashboardDeskPage() {
         const res = await fetch(`/api/patients/${cleanDigits}`);
         if (res.ok) {
           const data = await res.json();
-          if (data?.patientProfile?.full_name && data.patientProfile.full_name !== "Patient") {
+          // GET /api/patients/[phone] returns { patient: { ...visits } }.
+          const profile = data?.patient;
+          if (profile?.full_name && profile.full_name !== "Patient") {
             setFoundPatient(data);
-            setWalkInName(data.patientProfile.full_name);
+            setWalkInName(profile.full_name);
 
             // Check follow-up fee validity
-            const lastVisit = data.visits?.[0];
-            const visitCount = data.total_visits || data.visits?.length || 1;
+            const lastVisit = profile.visits?.[0];
+            const visitCount = profile.total_visits || profile.visits?.length || 1;
 
             let isFreeFollowup = false;
             if (lastVisit?.visit_date) {
@@ -412,7 +373,7 @@ export default function DashboardDeskPage() {
             }
 
             setSearchFeedback(
-              `✅ Returning Patient: ${data.patientProfile.full_name} (${data.patientProfile.age || '25'}${data.patientProfile.gender?.[0] || 'M'}) • ${visitCount} previous visits • ${isFreeFollowup ? '🎉 Free Follow-up (Within 7 Days)' : 'Follow-up Active'}`
+              `✅ Returning Patient: ${profile.full_name} (${profile.age || '25'}${profile.gender?.[0] || 'M'}) • ${visitCount} previous visits • ${isFreeFollowup ? '🎉 Free Follow-up (Within 7 Days)' : 'Follow-up Active'}`
             );
             return;
           }
@@ -434,6 +395,11 @@ export default function DashboardDeskPage() {
   const handleAdmitWalkIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!walkInName || !walkInPhone) return;
+    if (!walkInDoctorSlug) {
+      setCalledTokenMsg("❌ Select the doctor this walk-in is for.");
+      setTimeout(() => setCalledTokenMsg(null), 6000);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/clinic/walk-in`, {
@@ -444,62 +410,31 @@ export default function DashboardDeskPage() {
           patient_phone: walkInPhone,
           fee_amount: walkInFee,
           payment_mode: walkInPaymentMode,
-          clinic_slug: "derma-care-dehradun",
-          doctor_slug: "dr-rahul-sharma"
+          doctor_slug: walkInDoctorSlug
         })
       });
 
-      playTokenCallChime();
-
-      if (res.ok) {
-        const data = await res.json();
-        setQueue(prev => [...prev, data.appointment]);
-        const assignedToken = data.appointment?.token_number;
-        setCalledTokenMsg(`✅ Token #${assignedToken} Generated for ${walkInName}`);
-      } else {
-        const nextTokenNum = Math.max(...queue.map(q => q.token_number), 0) + 1;
-        setQueue(prev => [
-          ...prev,
-          {
-            appointment_number: `APT-WALKIN-${100 + nextTokenNum}`,
-            token_number: nextTokenNum,
-            patient_name: walkInName,
-            patient_phone: walkInPhone,
-            status: "waiting",
-            time_slot: "Immediate Walk-In",
-            fee_amount: walkInFee,
-            payment_status: "paid",
-            payment_mode: walkInPaymentMode,
-            is_walk_in: true
-          }
-        ]);
-        setCalledTokenMsg(`✅ Token #${nextTokenNum} Generated for ${walkInName}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Never invent a local fallback token: a token that exists only in this
+        // browser is invisible to the doctor and the pharmacy.
+        setCalledTokenMsg(`❌ Walk-in failed: ${data.error || res.statusText}`);
+        setTimeout(() => setCalledTokenMsg(null), 6000);
+        return;
       }
-    } catch {
-      const nextTokenNum = Math.max(...queue.map(q => q.token_number), 0) + 1;
-      setQueue(prev => [
-        ...prev,
-        {
-          appointment_number: `APT-WALKIN-${100 + nextTokenNum}`,
-          token_number: nextTokenNum,
-          patient_name: walkInName,
-          patient_phone: walkInPhone,
-          status: "waiting",
-          time_slot: "Immediate Walk-In",
-          fee_amount: walkInFee,
-          payment_status: "paid",
-          payment_mode: walkInPaymentMode,
-          is_walk_in: true
-        }
-      ]);
-      setCalledTokenMsg(`✅ Token #${nextTokenNum} Generated for ${walkInName}`);
-    } finally {
+
+      playTokenCallChime();
+      await fetchQueue();
+      setCalledTokenMsg(`✅ Token #${data.appointment?.token_number} Generated for ${walkInName}`);
       setShowWalkInModal(false);
       setWalkInName("");
       setWalkInPhone("");
       setFoundPatient(null);
       setSearchFeedback(null);
       setTimeout(() => setCalledTokenMsg(null), 5000);
+    } catch (err: any) {
+      setCalledTokenMsg(`❌ Walk-in failed: ${err?.message || "network error"}`);
+      setTimeout(() => setCalledTokenMsg(null), 6000);
     }
   };
 
@@ -513,7 +448,7 @@ export default function DashboardDeskPage() {
               DESK CONSOLE
             </span>
             <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-              Pooja | Dr. Rahul Sharma
+              {staffName || "Front Desk"}{clinicName ? ` | ${clinicName}` : ""}
             </h1>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -607,10 +542,9 @@ export default function DashboardDeskPage() {
                 </span>
                 <div className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                    #{activeInConsultation?.token_number || 12}
+                    {activeInConsultation?.token_number ? `#${activeInConsultation.token_number}` : "—"}
                   </span>
-                  <span>{activeInConsultation?.patient_name || "Priya Singh"}</span>
-                  <span className="text-[11px] font-normal text-slate-400">· 24m</span>
+                  <span>{activeInConsultation?.patient_name || "No patient in chamber"}</span>
                 </div>
               </div>
             </div>
@@ -677,7 +611,7 @@ export default function DashboardDeskPage() {
           </div>
           <p className="mt-0.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
             <Check className="h-3 w-3" />
-            <span>Soundbox UPI Verified</span>
+            <span>Counter payments enabled</span>
           </p>
         </div>
 
@@ -830,7 +764,7 @@ export default function DashboardDeskPage() {
                         </button>
                       ) : item.status === "in_consultation" ? (
                         <Link
-                          href="/dashboard/consult/APT-DERMA-102"
+                          href={`/dashboard/consult/${item.appointment_number}`}
                           className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-white/[0.1] dark:bg-[#1E2024] dark:text-slate-300 transition"
                         >
                           <span>Open Rx</span>
@@ -912,7 +846,33 @@ export default function DashboardDeskPage() {
                 />
               </div>
 
-              {/* 3. FEE & PAYMENT MODE */}
+              {/* 3. DOCTOR */}
+              <div>
+                <label className="font-medium text-[#1D1D1F] dark:text-white">3. Consulting Doctor</label>
+                <select
+                  required
+                  value={walkInDoctorSlug}
+                  onChange={e => {
+                    const slug = e.target.value;
+                    setWalkInDoctorSlug(slug);
+                    const doc = doctors.find((d: any) => d.slug === slug);
+                    if (doc) setWalkInFee(Number(doc.consultation_fee || 0));
+                  }}
+                  className="mt-1 w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-[#ECEEF2]/70 dark:bg-black/40 p-2.5 text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-apple-blue/30"
+                >
+                  <option value="" disabled>
+                    {doctors.length === 0 ? "Loading doctors…" : "Select a doctor"}
+                  </option>
+                  {doctors.map((doc: any) => (
+                    <option key={doc.slug} value={doc.slug}>
+                      {doc.full_name}
+                      {doc.specialization ? ` — ${doc.specialization}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 4. FEE & PAYMENT MODE */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between">
@@ -976,20 +936,26 @@ export default function DashboardDeskPage() {
             </div>
 
             <div className="mx-auto my-2 flex items-center justify-center">
-              <QRCodeDisplay
-                value="http://localhost:3000/waiting-room?clinic=derma-care"
-                size={180}
-                level="H"
-                fgColor="#000000"
-                bgColor="#FFFFFF"
-                showDownloadBtn={true}
-                downloadFilename="derma-care-counter-qr"
-                centerBadgeText="TOKEN QR"
-              />
+              {clinicSlug ? (
+                <QRCodeDisplay
+                  value={`${publicOrigin}/waiting-room?clinic=${encodeURIComponent(clinicSlug)}`}
+                  size={180}
+                  level="H"
+                  fgColor="#000000"
+                  bgColor="#FFFFFF"
+                  showDownloadBtn={true}
+                  downloadFilename={`${clinicSlug}-counter-qr`}
+                  centerBadgeText="TOKEN QR"
+                />
+              ) : (
+                <div className="h-[180px] w-[180px] rounded-xl border border-dashed border-black/[0.12] dark:border-white/[0.15] flex items-center justify-center text-[11px] text-[#86868B] text-center px-4">
+                  Loading your clinic&apos;s queue link…
+                </div>
+              )}
             </div>
 
-            <div className="text-xs font-mono font-medium text-apple-blue">
-              clinicos.in/waiting-room?clinic=derma-care
+            <div className="text-xs font-mono font-medium text-apple-blue break-all">
+              {clinicSlug ? `${publicOrigin}/waiting-room?clinic=${clinicSlug}` : "—"}
             </div>
 
             <div className="pt-2 flex flex-col gap-2">

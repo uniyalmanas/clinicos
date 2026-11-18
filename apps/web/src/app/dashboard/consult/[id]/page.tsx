@@ -65,7 +65,7 @@ import { AIClinicalCompanion } from "@/components/AIClinicalCompanion";
 import {
   evaluatePrescriptionSafety,
   translateDirectionsToHindi,
-  getJanAushadhiSavings,
+  hasPmbjpEquivalent,
   InteractionAlert,
   InteractionCheckResult
 } from "@/data/prescriptionHelpers";
@@ -77,7 +77,8 @@ import {
   deleteCustomComboFromStorage
 } from "@/data/rxCombos";
 import { CLINICAL_DIAGNOSIS_PROTOCOLS, DiagnosisProtocol } from "@/data/diagnosisProtocols";
-import { SEED_PATIENTS } from "@/data/patients";
+import { clinicDatePlusDays } from "@/lib/clinic-date";
+import { resolveSignedInDoctor } from "@/lib/doctor-identity";
 
 
 interface PrescribedMedicine {
@@ -94,7 +95,7 @@ interface PrescribedMedicine {
 export default function DynamicConsultationStudioPage() {
   const router = useRouter();
   const params = useParams();
-  const appointmentId = (params?.id as string) || "APT-DERMA-102";
+  const appointmentId = (params?.id as string) || "";
   const [isLoadingPatient, setIsLoadingPatient] = useState(true);
   const [patientFee, setPatientFee] = useState<number>(600);
   const [patientHistory, setPatientHistory] = useState<any>(null);
@@ -102,17 +103,19 @@ export default function DynamicConsultationStudioPage() {
   const [isSavingAndNext, setIsSavingAndNext] = useState(false);
   const [nextPatientNotice, setNextPatientNotice] = useState<{ token: number; name: string; appointment_number: string } | null>(null);
 
-  // Patient Demographic Information
+  // Patient demographics are only ever filled from the real appointment.
   const [patient, setPatient] = useState({
-    name: "Priya Singh",
-    age: 24,
-    gender: "Female",
-    phone: "+919123456781",
-    token_number: 2,
+    name: "",
+    age: 0,
+    gender: "",
+    phone: "",
+    token_number: 0,
     appointment_number: appointmentId,
-    allergies: "No known drug allergies reported",
-    blood_group: "O+"
+    allergies: "",
+    blood_group: "",
+    uhid: ""
   });
+  const [patientLoadError, setPatientLoadError] = useState<string | null>(null);
 
   const [showDocsModal, setShowDocsModal] = useState(false);
   const [showScribeModal, setShowScribeModal] = useState(false);
@@ -148,7 +151,7 @@ export default function DynamicConsultationStudioPage() {
 
   const [reportActiveTab, setReportActiveTab] = useState<"patient" | "doctor">("patient");
 
-  // Inpatient Bed Admission State (Marley Health Integration)
+  // Inpatient bed admission state
   const [showAdmitModal, setShowAdmitModal] = useState(false);
   const [availableBeds, setAvailableBeds] = useState<any[]>([]);
   const [selectedBedId, setSelectedBedId] = useState<string>("");
@@ -156,14 +159,15 @@ export default function DynamicConsultationStudioPage() {
   const [isAdmittingBed, setIsAdmittingBed] = useState(false);
   const [admitSuccessMsg, setAdmitSuccessMsg] = useState<string | null>(null);
 
+  // Filled from /api/auth/me + /api/doctors. An unlinked account cannot sign.
   const [doctor, setDoctor] = useState({
-    name: "Dr. Rahul Sharma",
-    slug: "dr-rahul-sharma",
-    title: "MBBS, MD (Dermatology)",
-    reg_number: "UKMC-8942-2012",
-    clinic_name: "Derma Care Skin & Laser Centre",
-    clinic_address: "14, Rajpur Road, Near Ashley Hall, Dehradun",
-    phone: "+919876543210"
+    name: "",
+    slug: "",
+    title: "",
+    reg_number: "",
+    clinic_name: "",
+    clinic_address: "",
+    phone: ""
   });
 
   // Initialize Web Speech API for Ambient Clinical Dictation
@@ -223,122 +227,124 @@ export default function DynamicConsultationStudioPage() {
     }
   };
 
-  // Fetch real appointment details if available
+  // Resolve the signed-in doctor and the selected appointment from real data.
+  // If either is missing we block the studio: defaulting to a demo patient or
+  // another doctor's name would let a prescription be signed against the
+  // wrong identity.
   useEffect(() => {
+    let cancelled = false;
     async function loadAppointment() {
       setIsLoadingPatient(true);
+      setPatientLoadError(null);
 
       try {
-        const queueRes = await fetch(`/api/clinic/desk-queue`);
-        const appointmentsRes = await fetch(`/api/appointments`);
+        const [meRes, docsRes] = await Promise.all([
+          fetch("/api/auth/me"),
+          fetch("/api/doctors")
+        ]);
+        const me = meRes.ok ? await meRes.json() : null;
+        const docsJson = docsRes.ok ? await docsRes.json() : null;
+        const docs = Array.isArray(docsJson) ? docsJson : docsJson?.doctors || [];
+        const signedIn: any = resolveSignedInDoctor(me, docs as any[]);
+
+        if (!signedIn) {
+          if (!cancelled) {
+            setPatientLoadError(
+              "Your account is not linked to a doctor profile, so a consultation cannot be signed in your name. Ask the clinic owner to link your login to your doctor record."
+            );
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          setDoctor({
+            name: signedIn.full_name || "",
+            slug: signedIn.slug || "",
+            title: signedIn.qualification_summary || "",
+            reg_number: signedIn.medical_council_reg_number || "",
+            clinic_name: signedIn.clinic_name || me?.clinic_name || "",
+            clinic_address: signedIn.clinic_address || "",
+            phone: signedIn.phone || me?.phone || ""
+          });
+        }
+
+        const normalizedId = String(appointmentId ?? "").trim();
+        if (!normalizedId) {
+          if (!cancelled) {
+            setPatientLoadError("No appointment was selected. Open a patient from your queue.");
+          }
+          return;
+        }
+
+        const [queueRes, appointmentsRes] = await Promise.all([
+          fetch("/api/clinic/desk-queue?date=all"),
+          fetch("/api/appointments")
+        ]);
 
         const queueJson = queueRes.ok ? await queueRes.json() : null;
         const appointmentsJson = appointmentsRes.ok ? await appointmentsRes.json() : null;
 
         const candidates: any[] = [
           ...(Array.isArray(queueJson?.queue) ? queueJson.queue : []),
-          ...(Array.isArray(appointmentsJson) ? appointmentsJson : [])
+          ...(Array.isArray(appointmentsJson)
+            ? appointmentsJson
+            : Array.isArray(appointmentsJson?.appointments)
+              ? appointmentsJson.appointments
+              : [])
         ];
 
         const match = candidates.find((a: any) => {
-          const normalizedId = String(appointmentId ?? "").trim();
-          const tokenId = Number(normalizedId);
           const appointmentNumber = String(a?.appointment_number || "").trim();
-          const patientPhone = String(a?.patient_phone || "").trim();
-          const patientName = String(a?.patient_name || "").trim();
-
-          if (!normalizedId) return false;
-          if (appointmentNumber && appointmentNumber === normalizedId) return true;
-          if (!Number.isNaN(tokenId) && Number(a?.token_number) === tokenId) return true;
-          if (patientPhone && normalizedId.replace(/\D/g, "") === patientPhone.replace(/\D/g, "")) return true;
-          if (patientName && normalizedId.toLowerCase() === patientName.toLowerCase()) return true;
-          return false;
+          const id = String(a?.id || "").trim();
+          return appointmentNumber === normalizedId || id === normalizedId;
         });
 
-        if (match) {
-          setPatient(prev => ({
-            ...prev,
-            name: match.patient_name || prev.name,
-            phone: match.patient_phone || prev.phone,
-            token_number: match.token_number || prev.token_number,
-            appointment_number: match.appointment_number || prev.appointment_number,
-            allergies: prev.allergies,
-            uhid: match.uhid || (String(appointmentId).startsWith("UHID-") ? String(appointmentId) : `UHID-2026-${String(match.token_number || 1).padStart(4, "0")}`),
-          }));
-
-          if (match.symptoms_description) {
-            setChiefComplaints(match.symptoms_description);
+        if (!match) {
+          if (!cancelled) {
+            setPatientLoadError(
+              `Appointment ${normalizedId} could not be found in your clinic. Open the patient from today's queue.`
+            );
           }
-
-          if (match.fee_amount !== undefined) {
-            setPatientFee(Number(match.fee_amount));
-          }
-
-          if (match.doctor_name) {
-            setDoctor(prev => ({
-              ...prev,
-              name: match.doctor_name,
-              slug: match.doctor_slug || prev.slug,
-              clinic_name: match.clinic_name || prev.clinic_name,
-              reg_number: match.doctor_slug?.includes("aditi") ? "UDC-4120-2016" : (match.doctor_slug?.includes("vikram") ? "UKMC-7812-2008" : prev.reg_number),
-              title: match.doctor_slug?.includes("aditi") ? "BDS, MDS (Endodontics)" : (match.doctor_slug?.includes("vikram") ? "MS, MCh (Plastic Surgery)" : prev.title)
-            }));
-          }
-        } else {
-          // Check matching against SEED_PATIENTS (e.g. UHID-2026-1001 -> pat-101 Amit Rawat)
-          const norm = String(appointmentId ?? "").trim().toLowerCase();
-          const seedMatch = SEED_PATIENTS.find((p) => {
-            if (p.id.toLowerCase() === norm) return true;
-            if (norm === "uhid-2026-1001" && p.id === "pat-101") return true;
-            if (norm.includes("1001") && p.id === "pat-101") return true;
-            if (norm.includes("1002") && p.id === "pat-102") return true;
-            if (norm.includes("1003") && p.id === "pat-103") return true;
-            if (norm.includes("1004") && p.id === "pat-104") return true;
-            if (p.full_name.toLowerCase() === norm) return true;
-            if (p.phone.replace(/\D/g, "") === norm.replace(/\D/g, "")) return true;
-            return false;
-          });
-
-          if (seedMatch) {
-            const uhidStr = String(appointmentId).startsWith("UHID-") ? String(appointmentId) : `UHID-2026-${seedMatch.id.replace(/\D/g, "").padStart(4, "0")}`;
-            setPatient({
-              name: seedMatch.full_name,
-              phone: seedMatch.phone,
-              token_number: 1,
-              appointment_number: `APT-${seedMatch.id.toUpperCase()}-2026`,
-              uhid: uhidStr,
-              age: seedMatch.age,
-              gender: seedMatch.gender,
-              allergies: seedMatch.chronic_allergies.join(", "),
-              blood_group: seedMatch.blood_group,
-            } as any);
-
-            if (seedMatch.visits && seedMatch.visits[0]) {
-              const v = seedMatch.visits[0];
-              if (v.symptoms) setChiefComplaints(v.symptoms);
-              if (v.provisional_diagnosis) setProvisionalDiagnosis(v.provisional_diagnosis);
-              if (v.followup_advice) setFollowupAdvice(v.followup_advice);
-              if (v.vitals) {
-                setVitals({
-                  bp: v.vitals.bp || "118/78",
-                  pulse: String(v.vitals.pulse || 74),
-                  temp: String(v.vitals.temp || 98.4),
-                  weight: String(v.vitals.weight || 64),
-                  height: "172",
-                  spo2: String(v.vitals.spo2 || 99),
-                  sugar: "94",
-                });
-              }
-            }
-          }
+          return;
         }
-      } catch (e) {
-        // Fallback to initial state
+
+        if (match.doctor_slug && signedIn.slug && match.doctor_slug !== signedIn.slug) {
+          if (!cancelled) {
+            setPatientLoadError(
+              `This appointment belongs to ${match.doctor_name || match.doctor_slug}, not your profile. Ask that doctor to open it.`
+            );
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          setPatient((prev) => ({
+            ...prev,
+            name: match.patient_name || "",
+            phone: match.patient_phone || "",
+            age: Number(match.patient_age ?? prev.age ?? 0),
+            gender: match.patient_gender || prev.gender || "",
+            token_number: match.token_number ?? prev.token_number,
+            appointment_number: match.appointment_number || normalizedId,
+            uhid: match.uhid || ""
+          }));
+          if (match.symptoms_description) setChiefComplaints(match.symptoms_description);
+          if (match.fee_amount !== undefined) setPatientFee(Number(match.fee_amount));
+        }
+      } catch (e: any) {
+        if (!cancelled) {
+          setPatientLoadError(
+            e?.message || "Could not load this appointment. Check your connection and try again."
+          );
+        }
       } finally {
-        setIsLoadingPatient(false);
+        if (!cancelled) setIsLoadingPatient(false);
       }
     }
     loadAppointment();
+    return () => {
+      cancelled = true;
+    };
   }, [appointmentId]);
 
   // Fetch real patient clinical memory from PostgreSQL (past visits, diagnosis, baseline vitals, allergies)
@@ -444,23 +450,13 @@ export default function DynamicConsultationStudioPage() {
     return null;
   }, [vitals.sugar]);
 
-  // Past Patient Record & 1-Click Past Visit Clone (Combines PostgreSQL memory + Seed patients)
-  const pastPatientRecord = useMemo(() => {
-    return SEED_PATIENTS.find(
-      p => p.phone.replace(/\D/g, "").includes(patient.phone.replace(/\D/g, "")) ||
-           p.full_name.toLowerCase() === patient.name.toLowerCase()
-    );
-  }, [patient.phone, patient.name]);
-
+  // Past visits come only from the patient's real clinical history.
   const lastClinicalVisit = useMemo(() => {
     if (patientHistory && patientHistory.visits && patientHistory.visits.length > 0) {
       return patientHistory.visits[0];
     }
-    if (pastPatientRecord && pastPatientRecord.visits && pastPatientRecord.visits.length > 0) {
-      return pastPatientRecord.visits[0];
-    }
     return null;
-  }, [patientHistory, pastPatientRecord]);
+  }, [patientHistory]);
 
   const clonePreviousRx = (extendDuration: boolean = false) => {
     if (!lastClinicalVisit) return;
@@ -640,24 +636,13 @@ export default function DynamicConsultationStudioPage() {
       });
   }, [prescribedItems, patient.allergies]);
 
-  // Total Generic Cost Savings Calculation
+  // Count medicines that have a commonly stocked PMBJP generic equivalent.
+  // No rupee figures are invented here; price is confirmed at the pharmacy.
   const totalGenericSavings = useMemo(() => {
-    let totalBrand = 0;
-    let totalGeneric = 0;
-    let count = 0;
-
-    for (const item of prescribedItems) {
-      const comp = getJanAushadhiSavings(item.generic_name, item.medicine_name);
-      if (comp) {
-        totalBrand += comp.brand_mrp;
-        totalGeneric += comp.generic_mrp;
-        count++;
-      }
-    }
-
-    const saved = totalBrand - totalGeneric;
-    const pct = totalBrand > 0 ? Math.round((saved / totalBrand) * 100) : 0;
-    return { count, totalBrand, totalGeneric, saved, pct };
+    const count = prescribedItems.filter((item) =>
+      hasPmbjpEquivalent(item.generic_name)
+    ).length;
+    return { count };
   }, [prescribedItems]);
 
   // Lab Orders
@@ -708,7 +693,7 @@ export default function DynamicConsultationStudioPage() {
     }
   };
 
-  // Open Bed Admission Modal (Marley Health Inpatient Protocol)
+  // Open bed admission modal
   const openAdmitModal = async () => {
     setShowAdmitModal(true);
     setAdmitNotes(`Inpatient observation for ${provisionalDiagnosis}. Baseline Vitals: BP ${vitals.bp}, Pulse ${vitals.pulse}, SpO2 ${vitals.spo2}%.`);
@@ -897,7 +882,7 @@ export default function DynamicConsultationStudioPage() {
     if (!signedPrescription) return;
     setIsDispatching(true);
     const targetPhone = dispatchPhone || patient.phone;
-    const rxNumber = signedPrescription.prescription_number || "RX-2026-09-0014";
+    const rxNumber = signedPrescription.prescription_number;
 
     try {
       const res = await fetch(`/api/prescriptions/${rxNumber}/whatsapp-dispatch`, {
@@ -922,13 +907,13 @@ export default function DynamicConsultationStudioPage() {
         setShowWhatsAppDispatchModal(false);
       } else {
         const cleanPh = targetPhone.replace(/[^0-9]/g, "");
-        const fallbackMsg = `Namaste! Here is the official NMC-signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\nhttp://localhost:3000/p/${rxNumber}`;
+        const fallbackMsg = `Namaste! Here is the digitally signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\n${appOrigin}/p/${rxNumber}`;
         window.open(`https://wa.me/${cleanPh}?text=${encodeURIComponent(fallbackMsg)}`, "_blank");
         setShowWhatsAppDispatchModal(false);
       }
     } catch (err) {
       const cleanPh = targetPhone.replace(/[^0-9]/g, "");
-      const fallbackMsg = `Namaste! Here is the official NMC-signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\nhttp://localhost:3000/p/${rxNumber}`;
+      const fallbackMsg = `Namaste! Here is the digitally signed prescription #${rxNumber} from ${doctor.name} at ${doctor.clinic_name}:\n${appOrigin}/p/${rxNumber}`;
       window.open(`https://wa.me/${cleanPh}?text=${encodeURIComponent(fallbackMsg)}`, "_blank");
       setShowWhatsAppDispatchModal(false);
     } finally {
@@ -943,9 +928,9 @@ export default function DynamicConsultationStudioPage() {
 
   const initAutomations = (rxNumber: string) => {
     const cleanPh = patient.phone.replace(/[^0-9]/g, "");
-    const rxMsg = `Namaste ${patient.name},\nYour digital prescription from ${doctor.name} at ${doctor.clinic_name} is ready.\n\n📄 View & Download Rx: http://localhost:3000/prescriptions/${rxNumber}\n💊 Please take medicines as advised after meals.\n\nWishing you good health!`;
-    const reviewMsg = `Namaste ${patient.name}! We hope you are recovering well after your visit with ${doctor.name} at ${doctor.clinic_name}. ⭐\n\nIf you had a reassuring experience, could you take 15 seconds to support our doctor with a 5-star Google review? It helps patients like you find quality care:\n👉 https://g.page/r/derma-care-dehradun/review\n\nThank you for trusting ${doctor.clinic_name}!`;
-    const followupMsg = `Namaste ${patient.name}, gentle reminder from ${doctor.clinic_name}:\nYour consultation follow-up validity with ${doctor.name} expires in 48 hours.\n\nIf you need a re-evaluation or test review, tap here to view queue & reserve your priority token:\n👉 http://localhost:3000/doctors/dr-rahul-sharma`;
+    const rxMsg = `Namaste ${patient.name},\nYour digital prescription from ${doctor.name} at ${doctor.clinic_name} is ready.\n\n📄 View & Download Rx: ${appOrigin}/p/${rxNumber}\n💊 Please take medicines as advised after meals.\n\nWishing you good health!`;
+    const reviewMsg = `Namaste ${patient.name}! We hope you are recovering well after your visit with ${doctor.name} at ${doctor.clinic_name}. ⭐\n\nThank you for trusting ${doctor.clinic_name}!`;
+    const followupMsg = `Namaste ${patient.name}, gentle reminder from ${doctor.clinic_name}:\nYour consultation follow-up validity with ${doctor.name} expires in 48 hours.\n\nIf you need a re-evaluation or test review, tap here to view queue & reserve your priority token:\n👉 ${appOrigin}/doctors/${doctor.slug}`;
 
     setScheduledAutomations([
       {
@@ -1174,7 +1159,7 @@ export default function DynamicConsultationStudioPage() {
     try {
       const payload = {
         appointment_number: patient.appointment_number,
-        doctor_slug: doctor.slug || "dr-rahul-sharma",
+        doctor_slug: doctor.slug,
         doctor_name: doctor.name,
         doctor_reg_number: doctor.reg_number,
         clinic_name: doctor.clinic_name,
@@ -1197,7 +1182,7 @@ export default function DynamicConsultationStudioPage() {
           special_instructions: p.special_instructions
         })),
         instructions: followupAdvice,
-        followup_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        followup_date: clinicDatePlusDays(7),
         lab_tests: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id)).map(l => ({
           test_name: l.test_name,
           category: l.category,
@@ -1254,7 +1239,7 @@ export default function DynamicConsultationStudioPage() {
               patient_name: patient.name,
               patient_phone: patient.phone,
               doctor_name: doctor.name,
-              doctor_slug: "dr-rahul-sharma",
+              doctor_slug: doctor.slug,
               clinic_name: doctor.clinic_name,
               prescription_id: rxNum,
               followup_days: 7
@@ -1306,7 +1291,7 @@ export default function DynamicConsultationStudioPage() {
       })),
       labs: COMMON_LAB_TESTS.filter(l => selectedLabs.includes(l.id)),
       instructions: followupAdvice,
-      followup_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      followup_date: clinicDatePlusDays(3),
       clinical_report_doctor: clinicalReportDoctor,
       patient_health_report: patientHealthReport
     };
@@ -1469,7 +1454,8 @@ export default function DynamicConsultationStudioPage() {
   }, [isSigning, isSavingAndNext, prescribedItems, provisionalDiagnosis, chiefComplaints, vitals, patient]);
 
   const cleanPhone = patient.phone.replace(/[^0-9]/g, "");
-  const waShareText = `🏥 *Prescription - ${doctor.clinic_name}*\nHello ${patient.name}, Dr. Rahul Sharma has signed your prescription (#${signedPrescription?.prescription_number || "RX-2026"}).\nView & Download: http://localhost:3000/p/${signedPrescription?.prescription_number || "RX-2026-09-0014"}`;
+  const appOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  const waShareText = `🏥 *Prescription - ${doctor.clinic_name}*\nHello ${patient.name}, ${doctor.name || "your doctor"} has signed your prescription (#${signedPrescription?.prescription_number || ""}).\nView & Download: ${typeof window !== "undefined" ? window.location.origin : ""}/p/${signedPrescription?.prescription_number || ""}`;
 
   const patientInitials = patient.name
     ? patient.name
@@ -1482,7 +1468,7 @@ export default function DynamicConsultationStudioPage() {
         .toUpperCase()
     : "PT";
 
-  const activeUhid = (patient as any).uhid || (String(appointmentId).startsWith("UHID-") ? String(appointmentId) : "UHID-2026-1001");
+  const activeUhid = (patient as any).uhid || (String(appointmentId).startsWith("UHID-") ? String(appointmentId) : "");
 
   const companionPatient = {
     name: patient.name,
@@ -1490,12 +1476,12 @@ export default function DynamicConsultationStudioPage() {
     phone: patient.phone,
     age: patient.age,
     gender: patient.gender,
-    allergies: patient.allergies ? [patient.allergies] : ["Sulpha drugs (causes skin rash)"],
-    medical_history: pastPatientRecord?.known_conditions || (patientHistory?.known_conditions) || ["Acne-prone skin"],
+    allergies: patient.allergies ? [patient.allergies] : [],
+    medical_history: patientHistory?.known_conditions || [],
     appointment_number: patient.appointment_number || appointmentId,
-    token_number: patient.token_number || 1,
+    token_number: patient.token_number || 0,
     symptoms_description: chiefComplaints,
-    previous_visit_date: lastClinicalVisit?.visit_date || "16 Sep 2026",
+    previous_visit_date: lastClinicalVisit?.visit_date || null,
   };
 
   const handleSyncToPrescription = (items: {
@@ -1571,6 +1557,41 @@ export default function DynamicConsultationStudioPage() {
     setCompanionLayout("hidden");
   };
 
+  if (isLoadingPatient) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center bg-slate-100 p-6 dark:bg-slate-950">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-[#0071E3] dark:border-white/20 dark:border-t-white" />
+          <p className="mt-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Loading patient and doctor identity…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (patientLoadError || !patient.name || !doctor.slug) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center bg-slate-100 p-6 dark:bg-slate-950">
+        <div className="w-full max-w-lg rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-xl dark:border-rose-900/60 dark:bg-[#1C1C1E]">
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white">
+            Consultation cannot be opened
+          </h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            {patientLoadError || "This appointment is missing patient or doctor details."}
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push("/doctor/queue")}
+            className="mt-5 inline-flex items-center justify-center rounded-xl bg-[#0071E3] px-4 py-2 text-xs font-bold text-white hover:bg-[#0077ED]"
+          >
+            Back to my queue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3.5">
       {/* 1. TOP APPOINTMENT PATIENT BAR (Compact Physician-First Header) */}
@@ -1611,7 +1632,7 @@ export default function DynamicConsultationStudioPage() {
                     className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/60 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer"
                     title="View consolidated visit history"
                   >
-                    <span>🔁 Returning Patient · Visit #{patientHistory?.total_visits || (pastPatientRecord?.total_visits || 3)}</span>
+                    <span>🔁 Returning Patient · Visit #{patientHistory?.total_visits}</span>
                   </button>
                 ) : (
                   <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
@@ -1804,7 +1825,7 @@ export default function DynamicConsultationStudioPage() {
                   type="text"
                   value={newComboTitle}
                   onChange={e => setNewComboTitle(e.target.value)}
-                  placeholder="e.g. Dr. Rahul's Resistant Melasma & Sunscreen Protocol"
+                  placeholder="e.g. Resistant melasma & sunscreen protocol"
                   className="w-full rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-black/40 p-3 font-semibold text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                 />
               </div>
@@ -1881,7 +1902,7 @@ export default function DynamicConsultationStudioPage() {
         </div>
       )}
 
-      {/* Marley Health Inpatient Ward / Bed Admission Modal */}
+      {/* Inpatient ward / bed admission modal */}
       {showAdmitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
           <div className="w-full max-w-lg rounded-[28px] border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#1C1C1E] p-6 shadow-apple-modal">
@@ -1889,7 +1910,7 @@ export default function DynamicConsultationStudioPage() {
               <div className="flex items-center gap-2">
                 <Bed className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white">
-                  Direct Inpatient Admission (Marley Protocol)
+                  Direct Inpatient Admission
                 </h3>
               </div>
               <button
@@ -1994,9 +2015,9 @@ export default function DynamicConsultationStudioPage() {
               }}
               onSyncToPrescription={handleSyncToPrescription}
               patient={companionPatient}
-              doctorName="Dr. Rahul Sharma"
-              doctorSlug="dr-rahul-sharma"
-              clinicName="DocSphere Multispecialty Clinic"
+              doctorName={doctor.name}
+              doctorSlug={doctor.slug}
+              clinicName={doctor.clinic_name}
               onConsultationCompleted={handleConsultationCompleted}
               showToast={(msg) => setScribeSuccessMessage(msg)}
             />
@@ -2012,9 +2033,9 @@ export default function DynamicConsultationStudioPage() {
           onClose={() => setCompanionLayout("hidden")}
           onSyncToPrescription={handleSyncToPrescription}
           patient={companionPatient}
-          doctorName="Dr. Rahul Sharma"
-          doctorSlug="dr-rahul-sharma"
-          clinicName="DocSphere Multispecialty Clinic"
+          doctorName={doctor.name}
+          doctorSlug={doctor.slug}
+          clinicName={doctor.clinic_name}
           onConsultationCompleted={handleConsultationCompleted}
           showToast={(msg) => setComboToast(msg)}
         />
@@ -2141,7 +2162,7 @@ export default function DynamicConsultationStudioPage() {
                 <button
                   onClick={() => window.print()}
                   className="inline-flex items-center gap-1.5 rounded-full border border-blue-600/30 bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 px-4 py-2 text-xs font-bold shadow-apple-sm active:scale-95 transition"
-                  title="Export official NMC-signed vector PDF"
+                  title="Export digitally signed vector PDF"
                 >
                   <Download className="h-3.5 w-3.5" /> Export PDF
                 </button>
@@ -2449,7 +2470,7 @@ export default function DynamicConsultationStudioPage() {
                   </p>
                 </div>
                 <a
-                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(scheduledAutomations[1]?.message_text || `Namaste ${patient.name}! If you had a reassuring experience with ${doctor.name}, please leave us a 5-star Google review: https://g.page/r/derma-care-dehradun/review`)}`}
+                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(scheduledAutomations[1]?.message_text || `Namaste ${patient.name}! Thank you for visiting ${doctor.clinic_name}. Please follow your prescription and contact us if you have any concerns.`)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 text-xs font-bold py-2 transition active:scale-95 cursor-pointer"
@@ -2477,7 +2498,7 @@ export default function DynamicConsultationStudioPage() {
                   </p>
                 </div>
                 <a
-                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(scheduledAutomations[2]?.message_text || `Namaste ${patient.name}, your follow-up with ${doctor.name} expires in 48h. Reserve token: http://localhost:3000/doctors/dr-rahul-sharma`)}`}
+                  href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(scheduledAutomations[2]?.message_text || `Namaste ${patient.name}, your follow-up with ${doctor.name} expires in 48h. Reserve token: ${appOrigin}/doctors/${doctor.slug}`)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 hover:bg-indigo-500/20 text-xs font-bold py-2 transition active:scale-95 cursor-pointer"
@@ -2571,8 +2592,8 @@ export default function DynamicConsultationStudioPage() {
             {/* Prescribed Medications */}
             <div className="mt-6">
               <div className="text-sm font-bold text-[#1D1D1F] dark:text-white border-b border-black/[0.06] dark:border-white/[0.08] pb-1 mb-4 flex items-center justify-between">
-                <span>℞ Prescribed Medications (NMC UPPERCASE Generic Standards)</span>
-                <span className="text-[10px] text-[#86868B] font-normal">Valid with verified digital signature</span>
+                <span>℞ Prescribed Medications (Generic Name First)</span>
+                <span className="text-[10px] text-[#86868B] font-normal">Valid with the doctor's digital signature</span>
               </div>
 
               <div className="space-y-4">
@@ -2640,7 +2661,7 @@ export default function DynamicConsultationStudioPage() {
               <div className="flex items-center gap-3">
                 <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white p-1.5 shadow-sm">
                   <QRCodeDisplay
-                    value={typeof window !== "undefined" ? `${window.location.origin}/p/${signedPrescription.prescription_number || "RX-2026-09-0014"}` : `https://clinicos.vercel.app/p/${signedPrescription.prescription_number || "RX-2026-09-0014"}`}
+                    value={typeof window !== "undefined" ? `${window.location.origin}/p/${signedPrescription?.prescription_number || ""}` : `/p/${signedPrescription?.prescription_number || ""}`}
                     size={72}
                     level="M"
                     fgColor="#000000"
@@ -2649,13 +2670,15 @@ export default function DynamicConsultationStudioPage() {
                 </div>
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-1.5 text-apple-teal text-xs font-semibold dark:text-[#30D1BE]">
-                    <ShieldCheck className="h-4 w-4" /> NMC Cryptographically Signed
+                    <ShieldCheck className="h-4 w-4" /> Digitally Signed
                   </div>
                   <div className="font-mono text-[9px] text-[#86868B] break-all max-w-[220px]">
-                    SHA-256: {signedPrescription.signature_hash || signedPrescription.digital_signature_hash || "d384b67a9e1fc710e"}
+                    {signedPrescription.signature_hash || signedPrescription.digital_signature_hash
+                      ? `SHA-256: ${signedPrescription.signature_hash || signedPrescription.digital_signature_hash}`
+                      : "Signature hash not recorded"}
                   </div>
                   <div className="text-[10px] text-[#86868B]">
-                    Scan QR to verify authentic NMC prescription on Clinicos
+                    Scan the QR code to open this prescription on Clinicos
                   </div>
                 </div>
               </div>
@@ -2665,7 +2688,7 @@ export default function DynamicConsultationStudioPage() {
                 <div className="text-xs text-[#86868B]">{doctor.title}</div>
                 <div className="text-[10px] text-[#86868B] font-mono">Reg: {doctor.reg_number}</div>
                 <div className="inline-block mt-1 rounded border border-emerald-600/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
-                  ✓ Digitally Verified
+                  ✓ Digitally signed
                 </div>
               </div>
             </div>
@@ -3472,17 +3495,17 @@ export default function DynamicConsultationStudioPage() {
                 )}
               </div>
 
-              {/* Jan Aushadhi Generic Savings Banner */}
+              {/* Jan Aushadhi Generic Availability Banner */}
               {totalGenericSavings.count > 0 && (
                 <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-3 text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between">
                   <div>
-                    <span className="font-bold">Jan Aushadhi Generic Opportunity: </span>
+                    <span className="font-bold">Jan Aushadhi generic option: </span>
                     <span>
-                      Save ~₹{totalGenericSavings.saved} ({totalGenericSavings.pct}%) across {totalGenericSavings.count} medicine(s) by opting for PMBJP generic molecules.
+                      {totalGenericSavings.count} medicine(s) on this prescription have a commonly stocked PMBJP generic equivalent. Confirm availability and price at the pharmacy.
                     </span>
                   </div>
                   <span className="rounded-full bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5">
-                    PMBJP Compliant
+                    PMBJP list
                   </span>
                 </div>
               )}
@@ -3513,7 +3536,7 @@ export default function DynamicConsultationStudioPage() {
                       item.duration,
                       item.special_instructions
                     );
-                    const janAushadhiComp = getJanAushadhiSavings(item.generic_name, item.medicine_name);
+                    const hasGenericOption = hasPmbjpEquivalent(item.generic_name);
 
                     return (
                       <div
@@ -3531,9 +3554,9 @@ export default function DynamicConsultationStudioPage() {
                             <div className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase mt-0.5">
                               Generic: {item.generic_name} ({item.strength})
                             </div>
-                            {janAushadhiComp && (
+                            {hasGenericOption && (
                               <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                                Jan Aushadhi: ₹{janAushadhiComp.generic_mrp} vs Brand ₹{janAushadhiComp.brand_mrp} (Save {janAushadhiComp.savings_percentage}%)
+                                PMBJP generic equivalent commonly stocked — confirm price at the pharmacy
                               </div>
                             )}
                           </div>
@@ -3837,14 +3860,14 @@ export default function DynamicConsultationStudioPage() {
                   <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-black/30 border border-zinc-200 dark:border-zinc-800">
                     <span className="text-[10px] text-zinc-400">Total Consultations</span>
                     <div className="text-sm font-bold text-zinc-900 dark:text-white mt-0.5">
-                      {patientHistory?.total_visits || (pastPatientRecord?.total_visits || 3)} Visits
+                      {patientHistory?.total_visits} Visits
                     </div>
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-black/30 border border-zinc-200 dark:border-zinc-800">
                     <span className="text-[10px] text-zinc-400">Emergency Contact</span>
                     <div className="text-sm font-bold text-zinc-900 dark:text-white mt-0.5 truncate">
-                      {patientHistory?.emergency_contact || (pastPatientRecord?.emergency_contact || "+919876500001 (Father)")}
+                      {patientHistory?.emergency_contact || "Not on file"}
                     </div>
                   </div>
 
@@ -4068,9 +4091,9 @@ export default function DynamicConsultationStudioPage() {
             onClose={() => setCompanionLayout("hidden")}
             onSyncToPrescription={handleSyncToPrescription}
             patient={companionPatient}
-            doctorName="Dr. Rahul Sharma"
-            doctorSlug="dr-rahul-sharma"
-            clinicName="DocSphere Multispecialty Clinic"
+            doctorName={doctor.name}
+            doctorSlug={doctor.slug}
+            clinicName={doctor.clinic_name}
             onConsultationCompleted={handleConsultationCompleted}
             showToast={(msg) => setComboToast(msg)}
           />

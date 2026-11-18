@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { Button, Card, Badge } from "@/components/design-system";
 import { attributeSpeaker } from "@/lib/speaker-attribution";
+import { getStoredUser } from "@/lib/current-user";
 import {
   CONSULTATION_LANGUAGES,
   type ConsultationLanguage,
@@ -127,18 +128,10 @@ function authHeaders(): Record<string, string> {
 
 export function AIClinicalCompanion({
   patient,
-  doctorName = "Dr. Rahul Sharma",
-  doctorSlug = "dr-rahul-sharma",
-  clinicName = "ClinicOS Care Network",
-  historicalVisits = [
-    {
-      date: "14 Oct 2026",
-      doctor_name: "Dr. Rahul Sharma",
-      diagnosis: "Mild Bronchial Spasm & Rhinitis",
-      medications: ["Tab Montair-LC (0-0-1 Night • 5 Days)", "Syp Ascoril-D (10ml TDS • 3 Days)"],
-      vitals: "BP 122/80, HR 78, Temp 98.6°F, SpO2 99%",
-    },
-  ],
+  doctorName = "",
+  doctorSlug = "",
+  clinicName = "",
+  historicalVisits = [],
   onConsultationCompleted,
   showToast = () => {},
   layoutMode = "modal",
@@ -198,7 +191,7 @@ export function AIClinicalCompanion({
     {
       id: "msg-welcome",
       sender: "companion",
-      text: `Hello ${doctorName}. I am your Clinical Companion for ${patient.name} (${patient.uhid || "UHID"}). Tap the microphone to begin listening, or type/speak instructions anytime.`,
+      text: `Hello ${doctorName}. I am your Clinical Companion for ${patient.name}${patient.uhid ? ` (${patient.uhid})` : ""}. Tap the microphone to begin listening, or type/speak instructions anytime.`,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -222,7 +215,9 @@ export function AIClinicalCompanion({
     const lines: string[] = [];
     lines.push(`🏥 *${summary.section_1_visit_details.clinic_name}*`);
     lines.push(`*${isHindi ? "मरीज देखभाल सारांश (Care Summary)" : "Patient Care Summary"}*`);
-    lines.push(`👤 *Patient*: ${patient.name} (${patient.uhid || "UHID-2026"})`);
+    lines.push(
+      `👤 *Patient*: ${patient.name}${patient.uhid ? ` (${patient.uhid})` : ""}`
+    );
     lines.push(`👨‍⚕️ *Doctor*: ${summary.section_1_visit_details.doctor_name}`);
     lines.push(`📅 *Date*: ${summary.section_1_visit_details.date}\n`);
 
@@ -254,7 +249,7 @@ export function AIClinicalCompanion({
 
     lines.push(`📞 *Clinic Phone*: ${summary.section_10_contact_info.phone}`);
     lines.push(`🚨 *Emergency Helpline*: ${summary.section_10_contact_info.emergency_line}`);
-    lines.push(`\n_Digitally generated via ClinicOS AI Clinical Companion. Verified by attending physician under NMC Guidelines._`);
+    lines.push(`\n_This is an AI-generated care summary. Please review it with your doctor before acting on it._`);
 
     return lines.join("\n");
   };
@@ -263,7 +258,18 @@ export function AIClinicalCompanion({
     if (!patientSummary) return;
     const text = formatWhatsAppCareSummary(patientSummary);
     const rawPhone = (patient.phone || "").replace(/[^0-9]/g, "");
-    const formattedPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone || "919123456789";
+    // Fail closed: only dispatch to a number actually on file. A fabricated
+    // fallback could send a patient's clinical summary to a stranger.
+    const formattedPhone =
+      rawPhone.length === 10
+        ? `91${rawPhone}`
+        : rawPhone.length >= 11 && rawPhone.length <= 15
+          ? rawPhone
+          : null;
+    if (!formattedPhone) {
+      showToast("No patient phone number on file — cannot open WhatsApp.");
+      return;
+    }
     const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`;
     if (typeof window !== "undefined") {
       window.open(url, "_blank");
@@ -323,15 +329,21 @@ export function AIClinicalCompanion({
     async function initSession() {
       try {
         setWsStatus("connecting");
-        const clinicId = "00000000-0000-0000-0000-000000000001";
+        const clinicId = getStoredUser()?.clinic_id || "";
+        if (!clinicId) {
+          // Without a real clinic context the backend session would be filed
+          // against a made-up tenant, so stay offline instead.
+          setWsStatus("offline");
+          return;
+        }
         const res = await fetch("/api/companion-backend/api/consultations/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             clinic_id: clinicId,
-            patient_phone: patient.phone || "+919876543210",
+            patient_phone: patient.phone || "",
             patient_name: patient.name || "Patient",
-            patient_uhid: patient.uhid || "2026-9021",
+            patient_uhid: patient.uhid || "",
             doctor_slug: doctorSlug,
             doctor_name: doctorName,
             language: language,
@@ -2837,7 +2849,7 @@ export function AIClinicalCompanion({
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                   Draft Prescriptions ({clinicalMemory.medications.length})
                 </span>
-                <span className="text-[10px] text-slate-400">NMC Generic Standard</span>
+                <span className="text-[10px] text-slate-400">Generic-first format</span>
               </div>
 
               {clinicalMemory.medications.length > 0 ? (
@@ -3031,7 +3043,7 @@ export function AIClinicalCompanion({
                 {/* Prescriptions Table */}
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                    Prescribed Medications (NMC Generic Standards)
+                    Prescribed Medications
                   </span>
                   <table className="w-full text-left text-xs border border-slate-200 dark:border-white/[0.06] rounded-lg overflow-hidden">
                     <thead className="bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300">
@@ -3072,24 +3084,24 @@ export function AIClinicalCompanion({
                   </ul>
                 </div>
 
-                {/* NMC Digital Security Seal */}
+                {/* Draft digital seal */}
                 <div className="mt-3 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-100/70 dark:bg-white/[0.03] p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px]">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
                     <div>
                       <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        <span>NMC Telemedicine &amp; Digital Health Compliance Seal</span>
-                        <span className="font-mono text-[9px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">
-                          SHA-256 VERIFIED
+                        <span>AI-assisted prescription draft</span>
+                        <span className="font-mono text-[9px] text-amber-700 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded font-bold">
+                          DRAFT
                         </span>
                       </div>
                       <div className="text-slate-500 font-mono text-[9px]">
-                        Hash: 0x4f8a92be7c31d8e09f5a11c098234ea72d • Timestamp: {new Date().toISOString()}
+                        Generated: {new Date().toLocaleString("en-IN")}
                       </div>
                     </div>
                   </div>
                   <div className="text-right text-slate-500 text-[10px]">
-                    Signed: <strong className="text-slate-800 dark:text-slate-200">{doctorName}</strong> (Reg No: NMC-2018-847291)
+                    Prepared for: <strong className="text-slate-800 dark:text-slate-200">{doctorName || "—"}</strong>
                   </div>
                 </div>
               </div>
@@ -3111,7 +3123,7 @@ export function AIClinicalCompanion({
                         Dispatch Care Summary to Patient
                       </div>
                       <div className="text-[10px] text-emerald-700 dark:text-emerald-400">
-                        Direct delivery to patient WhatsApp ({patient.phone || "+91 91234 56789"})
+                        Direct delivery to patient WhatsApp ({patient.phone || "no number on file"})
                       </div>
                     </div>
                   </div>
@@ -3269,24 +3281,24 @@ export function AIClinicalCompanion({
                   </span>
                 </div>
 
-                {/* NMC Tamper-Evident Digital Security Seal */}
+                {/* Draft summary seal */}
                 <div className="mt-2 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[10px]">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
                     <div>
                       <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        <span>Digital Health Patient Protection Seal</span>
-                        <span className="font-mono text-[9px] text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">
-                          AUTHENTIC RECORD
+                        <span>AI-assisted patient summary</span>
+                        <span className="font-mono text-[9px] text-amber-700 dark:text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded font-bold">
+                          DRAFT
                         </span>
                       </div>
                       <div className="text-slate-500 font-mono text-[9px]">
-                        Cryptographic Hash: 0x4f8a92be7c31d8e09f5a11c098234ea72d • Verified &amp; Signed
+                        Not a signed medical record. Review before sharing.
                       </div>
                     </div>
                   </div>
                   <div className="text-right text-slate-500 text-[10px]">
-                    Consulting Doctor: <strong className="text-slate-800 dark:text-slate-200">{doctorName}</strong>
+                    Prepared for: <strong className="text-slate-800 dark:text-slate-200">{doctorName}</strong>
                   </div>
                 </div>
               </div>

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
+import { chatComplete, type ChatMessage } from "@/lib/llm";
 
 export const dynamic = "force-dynamic";
-
-const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 
 type DoctorRow = {
   slug: string;
@@ -113,8 +112,10 @@ Your goal is to be a warm, helpful, medically grounded assistant that performs 3
 3. Doctor recommendation: recommend the best-matching verified doctor from this live platform list. Use only these doctors and only these exact slugs:
 ${doctorList || "- No verified doctors are currently listed."}
 
+Only recommend a doctor whose specialty genuinely matches the patient's symptoms and age. Never recommend a Pediatrician for an adult, a Dentist for a fever, or a Physiotherapist for an infection. If no listed doctor is a safe match, do NOT output a doctor-card block — instead name the specialty the patient needs and say it is not currently listed.
+
 Keep the response concise, empathetic and under 120 words.
-At the end, ALWAYS output one doctor-card JSON block for the best-matching doctor:
+Only when you are recommending one of the listed doctors, output exactly one doctor-card JSON block:
 \`\`\`doctor_card
 {
   "doctor_name": "...",
@@ -127,9 +128,9 @@ At the end, ALWAYS output one doctor-card JSON block for the best-matching docto
 }
 \`\`\``;
 
-    const messages = [
+    const messages: ChatMessage[] = [
       { role: "system", content: systemPrompt },
-      ...history.slice(-6).map((h: any) => ({
+      ...history.slice(-6).map((h: any): ChatMessage => ({
         role: h?.role === "user" ? "user" : "assistant",
         content: String(h?.content ?? "").slice(0, 2000),
       })),
@@ -138,35 +139,14 @@ At the end, ALWAYS output one doctor-card JSON block for the best-matching docto
 
     let reply = "";
 
-    if (GROQ_API_KEY) {
-      for (const model of ["qwen/qwen3.8-27b", "openai/gpt-oss-20b"]) {
-        try {
-          const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${GROQ_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model,
-              messages,
-              max_tokens: 600,
-              temperature: 0.3,
-            }),
-          });
+    const ai = await chatComplete({
+      messages,
+      maxTokens: 900,
+      temperature: 0.3,
+    });
+    if (ai?.text) reply = ai.text;
 
-          if (groqRes.ok) {
-            const data = await groqRes.json();
-            reply = data.choices?.[0]?.message?.content || "";
-            if (reply) break;
-          }
-        } catch (err) {
-          console.warn(`Groq model ${model} failed:`, err);
-        }
-      }
-    }
-
-    // Rule-based fallback when Groq is unavailable.
+    // Rule-based fallback when no AI provider is available.
     if (!reply) {
       const doc = pickDoctor(message, doctors);
       if (!doc) {
@@ -201,7 +181,12 @@ ${JSON.stringify(card, null, 2)}
       doctorCard = match ? { ...buildDoctorCard(match), ...doctorCard } : null;
     }
 
-    return NextResponse.json({ reply, doctorCard });
+    return NextResponse.json({
+      reply,
+      doctorCard,
+      provider: ai?.provider ?? null,
+      model: ai?.model ?? null,
+    });
   } catch (error: any) {
     console.error("AI Consultant API error:", error);
     return NextResponse.json(

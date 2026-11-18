@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const clinicSlug = searchParams.get("clinic_slug") || auth.auth.clinic!.slug;
     const clinicId = auth.auth.clinic!.id;
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     const clinicRows = await sql`
       SELECT name, phone FROM clinics WHERE id::text = ${clinicId}::text LIMIT 1;

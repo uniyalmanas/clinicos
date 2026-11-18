@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -253,7 +254,7 @@ export async function POST(req: NextRequest) {
       },
     ];
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = clinicToday();
 
     const inserted = await db`
       INSERT INTO therapy_plans (

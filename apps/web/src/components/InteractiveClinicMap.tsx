@@ -80,7 +80,7 @@ export default function InteractiveClinicMap({ doctors, activeDoctor, onSelectDo
           <Crosshair className="h-4 w-4 text-teal-400" />
           <span>Dehradun Medical Grid</span>
           <span className="rounded-full bg-teal-500/20 px-2 py-0.5 text-[10px] text-teal-300 border border-teal-500/40">
-            {doctors.length} Verified Chambers
+            {doctors.length} Chambers Mapped
           </span>
         </div>
 
@@ -223,7 +223,7 @@ export default function InteractiveClinicMap({ doctors, activeDoctor, onSelectDo
                   <div className="flex items-center gap-2">
                     <h4 className="text-sm font-bold text-white">{activeDoctor.full_name}</h4>
                     <span className="flex items-center gap-0.5 rounded-full bg-emerald-950 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-800/60">
-                      <ShieldCheck className="h-3 w-3" /> NMC Verified
+                      <ShieldCheck className="h-3 w-3" /> Registration on file
                     </span>
                   </div>
                   <p className="text-xs text-slate-400">
@@ -234,12 +234,17 @@ export default function InteractiveClinicMap({ doctors, activeDoctor, onSelectDo
 
               <div className="flex items-center gap-4 text-right">
                 <div>
-                  <div className="flex items-center justify-end gap-1 text-xs font-bold text-amber-400">
-                    <Star className="h-3.5 w-3.5 fill-amber-400" /> {activeDoctor.rating}
-                    <span className="text-[10px] text-slate-400">({activeDoctor.total_reviews})</span>
-                  </div>
+                  {activeDoctor.total_reviews > 0 ? (
+                    <div className="flex items-center justify-end gap-1 text-xs font-bold text-amber-400">
+                      <Star className="h-3.5 w-3.5 fill-amber-400" /> {activeDoctor.rating}
+                      <span className="text-[10px] text-slate-400">({activeDoctor.total_reviews})</span>
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-slate-400">No reviews yet</div>
+                  )}
                   <div className="text-xs font-black text-white mt-0.5">
-                    ₹{activeDoctor.consultation_fee} <span className="text-[10px] text-slate-400 font-normal">OPD Fee</span>
+                    {activeDoctor.consultation_fee > 0 ? `₹${activeDoctor.consultation_fee}` : "Fee at clinic"}{" "}
+                    <span className="text-[10px] text-slate-400 font-normal">OPD Fee</span>
                   </div>
                 </div>
 

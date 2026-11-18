@@ -147,31 +147,12 @@ export interface EMRSecureExport {
 
 export interface SeniorDoctorCredential {
   doctor_name: string;
-  role: "Senior Consultant" | "Medical Director" | "Head of Department";
+  role: string;
   nmc_reg_number: string;
   state_medical_council: string;
   specialization: string;
   is_active: boolean;
 }
-
-export const VERIFIED_SENIOR_DOCTORS: SeniorDoctorCredential[] = [
-  {
-    doctor_name: "Dr. Rahul Sharma",
-    role: "Senior Consultant",
-    nmc_reg_number: "NMC-DL-2014-99821",
-    state_medical_council: "Delhi Medical Council (DMC)",
-    specialization: "Internal Medicine & Critical Care",
-    is_active: true
-  },
-  {
-    doctor_name: "Dr. Neha Kapoor",
-    role: "Head of Department",
-    nmc_reg_number: "NMC-MH-2011-88412",
-    state_medical_council: "Maharashtra Medical Council (MMC)",
-    specialization: "Pediatrics & Neonatology",
-    is_active: true
-  }
-];
 
 export function maskEmergencyPhone(phone?: string): string {
   if (!phone) return "+91 ••••• •••••";

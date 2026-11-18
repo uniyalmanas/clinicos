@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     const doctorFee = doc.consultation_fee == null ? null : Number(doc.consultation_fee);
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
 
     let isFreeFollowup = false;
 

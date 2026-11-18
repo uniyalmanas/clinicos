@@ -203,12 +203,24 @@ export default function WaitingRoomSmartDisplayPage() {
   });
   const [clinicDoctors, setClinicDoctors] = useState<Doctor[]>([]);
   const [clinicLoading, setClinicLoading] = useState(true);
+  const [missingClinic, setMissingClinic] = useState<string | null>(null);
+  const [displayOrigin, setDisplayOrigin] = useState("");
 
-  // Read clinic slug from URL on mount
+  // Read clinic slug from URL on mount. Without a clinic the display has no
+  // identity or queue to show, so it explains how to open it correctly instead
+  // of falling back to a made-up clinic.
   useEffect(() => {
     if (typeof window === "undefined") return;
+    setDisplayOrigin(window.location.origin);
     const params = new URLSearchParams(window.location.search);
-    const slug = params.get("clinic") || "derma-care-dehradun";
+    const slug = params.get("clinic");
+    if (!slug) {
+      setMissingClinic(
+        "This display is not linked to a clinic. Scan your clinic's standee QR or add ?clinic=<your-clinic-slug> to the URL."
+      );
+      setClinicLoading(false);
+      return;
+    }
     loadClinic(slug);
   }, []);
 
@@ -641,7 +653,7 @@ export default function WaitingRoomSmartDisplayPage() {
   const positionsAway = Math.max(0, patientToken - currentChamberToken);
   const isWithin2Tokens = positionsAway <= 2 && positionsAway >= 0;
 
-  const liveQueueUrl = `https://medic-sept-2026.vercel.app/waiting-room?clinic=${clinic.slug}&view=patient`;
+  const liveQueueUrl = `${displayOrigin}/waiting-room?clinic=${clinic.slug}&view=patient`;
 
   return (
     <div 
@@ -824,7 +836,20 @@ export default function WaitingRoomSmartDisplayPage() {
           </div>
         </main>
       )}
-      {!clinicLoading && viewMode === "patient" && (
+      {!clinicLoading && missingClinic && (
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-md rounded-[24px] border border-amber-200 bg-amber-50 p-6 text-center dark:border-amber-900 dark:bg-amber-950/30">
+            <Building2 className="mx-auto h-8 w-8 text-amber-600 dark:text-amber-400" />
+            <h2 className="mt-3 text-lg font-bold text-amber-900 dark:text-amber-100">
+              Clinic display not configured
+            </h2>
+            <p className="mt-2 text-xs font-medium text-amber-800 dark:text-amber-300">
+              {missingClinic}
+            </p>
+          </div>
+        </main>
+      )}
+      {!clinicLoading && !missingClinic && viewMode === "patient" && (
         /* PATIENT MOBILE TOKEN TRACKER (APPLE WALLET LIVE ACTIVITY DESIGN) */
         <main className="flex-1 p-4 sm:p-6 max-w-lg mx-auto w-full space-y-4 animate-in fade-in duration-300">
           
@@ -1068,7 +1093,7 @@ export default function WaitingRoomSmartDisplayPage() {
       )}
 
       {/* 3. LOUNGE SMART TV MATRIX DISPLAY (OPTIMIZED FOR 43"-65" SCREENS) */}
-      {!clinicLoading && viewMode === "tv" && (
+      {!clinicLoading && !missingClinic && viewMode === "tv" && (
         <main className="flex-1 p-6 lg:p-8 max-w-[1800px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-in fade-in duration-300">
           
           {/* LEFT COLUMN: HERO "NOW SERVING" CHAMBER SPOTLIGHT (7 Cols) */}
@@ -1368,8 +1393,8 @@ export default function WaitingRoomSmartDisplayPage() {
         <div className="relative flex-1 overflow-hidden whitespace-nowrap">
           <div className="inline-block animate-marquee">
             <span>
-              🏥 <strong>Welcome to {clinic.name}:</strong> Free Patient Wi-Fi: <strong>ClinicGuest</strong> (No Password Required) &bull; 
-              PMBJP Jan Aushadhi generic medicines available at the in-house pharmacy desk for up to 70% savings &bull; 
+              🏥 <strong>Welcome to {clinic.name}:</strong> Ask the front desk for guest Wi-Fi &bull; 
+              In-house pharmacy available at the reception desk &bull; 
               Need urgent help or special assistance? Notify front-desk reception immediately &bull; 
               Consultations are in progress &bull; 
               Please watch this screen and listen for your token number.

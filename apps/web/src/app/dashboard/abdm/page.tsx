@@ -56,15 +56,15 @@ export default function AbdmDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Form states - Registration & e-KYC
-  const [patientName, setPatientName] = useState("Vikas Sharma");
-  const [patientPhone, setPatientPhone] = useState("+91 98765 43210");
-  const [aadhaarInput, setAadhaarInput] = useState("4819");
+  // Form states - Registration & sandbox identity
+  const [patientName, setPatientName] = useState("");
+  const [patientPhone, setPatientPhone] = useState("");
+  const [aadhaarInput, setAadhaarInput] = useState("");
   const [selectedGatewayMode, setSelectedGatewayMode] = useState<"sandbox" | "timeout_fallback">("sandbox");
   const [registryMatch, setRegistryMatch] = useState<any>(null);
   const [checkingRegistry, setCheckingRegistry] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState("123456");
+  const [otpCode, setOtpCode] = useState("");
   const [submittingKyc, setSubmittingKyc] = useState(false);
 
   // Active ABHA Card display
@@ -72,12 +72,13 @@ export default function AbdmDashboardPage() {
 
   // Consent Request Form Modal
   const [consentModalOpen, setConsentModalOpen] = useState(false);
-  const [consentPtName, setConsentPtName] = useState("Vikas Sharma");
-  const [consentPtPhone, setConsentPtPhone] = useState("+91 98765 43210");
-  const [consentAbha, setConsentAbha] = useState("91-4819-2041-8891");
+  const [consentPtName, setConsentPtName] = useState("");
+  const [consentPtPhone, setConsentPtPhone] = useState("");
+  const [consentAbha, setConsentAbha] = useState("");
   const [consentPurpose, setConsentPurpose] = useState(ABDM_PURPOSE_CODES[0].code);
   const [consentValidityDays, setConsentValidityDays] = useState(7);
   const [requestingConsent, setRequestingConsent] = useState(false);
+  const [consentOtpInputs, setConsentOtpInputs] = useState<Record<string, string>>({});
 
   // Syncing Queue
   const [syncingQueue, setSyncingQueue] = useState(false);
@@ -128,10 +129,10 @@ export default function AbdmDashboardPage() {
       const data = await res.json();
       if (data.match_found) {
         setRegistryMatch(data.patient);
-        showToast("Existing ABHA found in national registry.");
+        showToast("Existing local ABDM record found for this clinic.");
       } else {
         setRegistryMatch(false);
-        showToast("No existing ABHA found. Ready for e-KYC.");
+        showToast("No local ABDM record found. A sandbox record can be created.");
       }
     } catch (e) {
       console.error(e);
@@ -140,10 +141,10 @@ export default function AbdmDashboardPage() {
     }
   };
 
-  // FIX 2: Request UIDAI OTP
+  // FIX 2: Generate a sandbox verification code
   const handleRequestOtp = async () => {
     if (!aadhaarInput) {
-      alert("Please provide 4-digit reference, 12-digit Aadhaar, or 16-digit VID.");
+      alert("Please provide a 4-digit reference, 12-digit Aadhaar, or 16-digit VID.");
       return;
     }
     try {
@@ -152,16 +153,16 @@ export default function AbdmDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "request_otp",
-          aadhaar_input: aadhaarInput.length === 4 ? `11112222${aadhaarInput}` : aadhaarInput,
+          aadhaar_input: aadhaarInput,
           patient_phone: patientPhone
         })
       });
       const data = await res.json();
       if (res.ok) {
         setOtpSent(true);
-        showToast(`OTP dispatched to UIDAI registered mobile (${data.masked_aadhaar}). Raw Aadhaar purged.`);
+        showToast(data.message || `Sandbox code generated for ${data.masked_aadhaar}.`);
       } else {
-        alert(data.error || "Failed to request OTP");
+        alert(data.error || "Failed to generate a sandbox code");
       }
     } catch (e) {
       console.error(e);
@@ -173,7 +174,7 @@ export default function AbdmDashboardPage() {
     e.preventDefault();
     setSubmittingKyc(true);
     try {
-      const masked = maskAadhaar(aadhaarInput.length === 4 ? `11112222${aadhaarInput}` : aadhaarInput);
+      const masked = maskAadhaar(aadhaarInput);
       const res = await fetch("/api/abdm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -236,8 +237,13 @@ export default function AbdmDashboardPage() {
     }
   };
 
-  // FIX 1: Grant Consent with OTP
+  // FIX 1: Grant Consent with a sandbox consent code
   const handleGrantConsent = async (requestId: string) => {
+    const otp = (consentOtpInputs[requestId] || "").replace(/\D/g, "");
+    if (otp.length !== 6) {
+      showToast("Enter the 6-digit sandbox consent code.");
+      return;
+    }
     try {
       const res = await fetch("/api/abdm", {
         method: "POST",
@@ -245,13 +251,16 @@ export default function AbdmDashboardPage() {
         body: JSON.stringify({
           action: "verify_consent_otp",
           consent_request_id: requestId,
-          otp_code: "123456"
+          otp_code: otp
         })
       });
       const data = await res.json();
       if (res.ok) {
         showToast(data.message);
+        setConsentOtpInputs((prev) => ({ ...prev, [requestId]: "" }));
         await fetchAbdmData();
+      } else {
+        showToast(data.error || "Could not record the consent code.");
       }
     } catch (e) {
       console.error(e);
@@ -260,7 +269,7 @@ export default function AbdmDashboardPage() {
 
   // FIX 1: 1-Click Revoke Consent
   const handleRevokeConsent = async (requestId: string) => {
-    if (!confirm("Are you sure you want to revoke this consent token? Data access will be immediately terminated per DPDP Act.")) return;
+    if (!confirm("Revoke this sandbox consent record? The local access token is locked immediately.")) return;
     try {
       const res = await fetch("/api/abdm", {
         method: "POST",
@@ -268,13 +277,15 @@ export default function AbdmDashboardPage() {
         body: JSON.stringify({
           action: "revoke_consent",
           consent_request_id: requestId,
-          revoked_by: "Citizen Self (via ABHA PHR App)"
+          revoked_by: "Clinic staff (sandbox)"
         })
       });
       const data = await res.json();
       if (res.ok) {
         showToast(data.message);
         await fetchAbdmData();
+      } else {
+        showToast(data.error || "Could not revoke this consent record.");
       }
     } catch (e) {
       console.error(e);
@@ -294,6 +305,8 @@ export default function AbdmDashboardPage() {
       if (res.ok) {
         showToast(data.message);
         await fetchAbdmData();
+      } else {
+        showToast(data.error || "Could not re-check the pending queue.");
       }
     } catch (e) {
       console.error(e);
@@ -321,18 +334,18 @@ export default function AbdmDashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-0.5 border border-orange-500/20 text-[11px] font-black uppercase tracking-wider text-orange-700 dark:bg-orange-500/10 dark:text-orange-400">
               <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-              <span>NHA Milestone M1 / M2 Certified</span>
+              <span>ABDM Sandbox Simulator</span>
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 border border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
               <ShieldCheck className="h-3 w-3" />
-              <span>UIDAI Section 29 &amp; DPDP Compliant</span>
+              <span>DPDP-aligned data handling</span>
             </span>
           </div>
           <h1 className="mt-1.5 text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
-            Ayushman Bharat Digital Mission (ABDM) Gateway
+            Ayushman Bharat Digital Mission (ABDM) Sandbox
           </h1>
           <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-            Consent-Artefact Driven • UIDAI-Masked KYC • Duplicate-Free Linkage • Resilient NHA Integration
+            Sandbox workflow • Consent artefacts • Masked identifiers • Duplicate checks • Offline fallback
           </p>
         </div>
 
@@ -356,6 +369,12 @@ export default function AbdmDashboardPage() {
         </div>
       </div>
 
+      {/* Sandbox disclosure */}
+      <div className="rounded-[14px] border border-orange-500/25 bg-orange-500/5 px-4 py-2.5 text-[11px] text-orange-800 dark:text-orange-300">
+        <strong>Sandbox environment: </strong>
+        No UIDAI or NHA gateway is configured on this deployment. Codes, ABHA-style identifiers and consent artefacts are simulated locally and are not valid outside this demo.
+      </div>
+
       {/* 4 Pillars Governance Ribbon */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
@@ -364,37 +383,37 @@ export default function AbdmDashboardPage() {
             <span>Dynamic Consent Engine</span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Time-bound, purpose-specific Consent Requests. Zero health data fetch permitted without active CA token.
+            Time-bound, purpose-specific consent records. Local health data is only released against an active consent record.
           </p>
         </div>
 
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
           <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-xs mb-1">
             <ShieldCheck className="h-4 w-4" />
-            <span>UIDAI Identity Handling</span>
+            <span>Masked Identity Handling</span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Transient e-KYC verification. Stores strictly masked (XXXX-XXXX-1234) or 16-digit VID references.
+            Stores strictly masked (XXXX-XXXX-1234) or 16-digit VID references. Raw Aadhaar is never persisted.
           </p>
         </div>
 
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold text-xs mb-1">
             <RotateCw className="h-4 w-4" />
-            <span>Pre-Creation Registry Check</span>
+            <span>Pre-Creation Duplicate Check</span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Queries NHA registry before creation. Re-links existing ABHA to prevent record fragmentation.
+            Checks this clinic&apos;s local ABDM records before creation. Re-links an existing record to prevent fragmentation.
           </p>
         </div>
 
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
           <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400 font-bold text-xs mb-1">
             <Zap className="h-4 w-4" />
-            <span>Resilient NHA Integration</span>
+            <span>Resilient Offline Queue</span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Exponential retry backoff &amp; offline queue. Auto-fallback to Pending Verification on NHA 504 timeouts.
+            Records that cannot be verified are kept in a pending queue so the registration desk is never blocked.
           </p>
         </div>
       </div>
@@ -407,7 +426,7 @@ export default function AbdmDashboardPage() {
         </div>
 
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
-          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Verified e-KYC</span>
+          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Sandbox KYC records</span>
           <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{metrics.verified_kyc}</div>
         </div>
 
@@ -425,12 +444,12 @@ export default function AbdmDashboardPage() {
         </div>
 
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
-          <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">Registry Conflicts</span>
+          <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">Local Mismatches</span>
           <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{metrics.conflicts_count}</div>
         </div>
 
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
-          <span className="text-[11px] font-semibold text-orange-700 dark:text-orange-400">Pending Sync Queue</span>
+          <span className="text-[11px] font-semibold text-orange-700 dark:text-orange-400">Pending Verification</span>
           <div className="text-xl sm:text-2xl font-black text-orange-600 dark:text-orange-400 mt-1">{metrics.pending_sync}</div>
         </div>
       </div>
@@ -446,7 +465,7 @@ export default function AbdmDashboardPage() {
           }`}
         >
           <CreditCard className="h-3.5 w-3.5" />
-          <span>UIDAI e-KYC &amp; ABHA Issuance</span>
+          <span>Sandbox Identity Records</span>
         </button>
 
         <button
@@ -458,7 +477,7 @@ export default function AbdmDashboardPage() {
           }`}
         >
           <Lock className="h-3.5 w-3.5" />
-          <span>Consent Artefact Architecture ({consents.length})</span>
+          <span>Consent Records ({consents.length})</span>
         </button>
 
         <button
@@ -470,23 +489,23 @@ export default function AbdmDashboardPage() {
           }`}
         >
           <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-          <span>Registry Conflicts &amp; Offline Queue ({metrics.conflicts_count + metrics.pending_sync})</span>
+          <span>Pending Queue &amp; Mismatches ({metrics.conflicts_count + metrics.pending_sync})</span>
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: UIDAI e-KYC & ABHA ISSUANCE                                       */}
+      {/* TAB 1: SANDBOX IDENTITY RECORDS                                          */}
       {/* ========================================================================= */}
       {activeTab === "kyc" && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Form: e-KYC Console */}
+          {/* Left Form: sandbox identity console */}
           <div className="lg:col-span-7 rounded-[20px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-6 shadow-apple-sm space-y-5">
             <div className="border-b border-black/[0.06] dark:border-white/[0.08] pb-4">
               <h2 className="text-base font-black text-[#1D1D1F] dark:text-white flex items-center gap-2">
-                <span>UIDAI-Compliant ABHA Issuance Engine</span>
+                <span>Sandbox ABDM Record Builder</span>
               </h2>
               <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                Pre-creation duplicate check, transient OTP verification, and zero raw Aadhaar storage.
+                Pre-creation duplicate check, sandbox code entry, and zero raw Aadhaar storage.
               </p>
             </div>
 
@@ -516,9 +535,9 @@ export default function AbdmDashboardPage() {
               {/* FIX 3: Registry Check Trigger */}
               <div className="p-3.5 rounded-[14px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between gap-3">
                 <div>
-                  <div className="font-bold text-[#1D1D1F] dark:text-white">Pre-Creation Registry Check:</div>
+                  <div className="font-bold text-[#1D1D1F] dark:text-white">Pre-Creation Duplicate Check:</div>
                   <div className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">
-                    Queries NHA sandbox/production to prevent duplicate ABHA issuance.
+                    Checks this clinic&apos;s local ABDM records before creating a new one.
                   </div>
                 </div>
                 <button
@@ -527,7 +546,7 @@ export default function AbdmDashboardPage() {
                   disabled={checkingRegistry}
                   className="px-3.5 py-2 rounded-[10px] bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#2997FF] border border-black/[0.08] dark:border-white/[0.12] font-bold text-xs shadow-apple-sm hover:bg-black/[0.02]"
                 >
-                  {checkingRegistry ? "Querying NHA..." : "Check Registry"}
+                  {checkingRegistry ? "Checking local records..." : "Check Records"}
                 </button>
               </div>
 
@@ -535,7 +554,7 @@ export default function AbdmDashboardPage() {
                 <div className="p-3.5 rounded-[14px] bg-blue-50 border border-blue-200 dark:bg-blue-950/30 dark:border-blue-800 text-blue-900 dark:text-blue-200 space-y-2">
                   <div className="font-bold flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300">
                     <CheckCircle2 className="w-4 h-4" />
-                    Existing ABHA Found in National Registry:
+                    Existing Local ABDM Record Found:
                   </div>
                   <div className="text-xs">
                     ABHA ID: <strong className="font-mono text-[#0071E3] dark:text-[#2997FF]">{registryMatch.abha_number}</strong> ({registryMatch.abha_address})
@@ -544,16 +563,16 @@ export default function AbdmDashboardPage() {
                     type="button"
                     onClick={() => {
                       setSelectedPatientCard(registryMatch);
-                      showToast(`Existing identity linked for ${registryMatch.patient_name}. Record fragmentation prevented.`);
+                      showToast(`Existing local record linked for ${registryMatch.patient_name}. Duplicate prevented.`);
                     }}
                     className="px-3 py-1.5 bg-[#0071E3] text-white font-bold rounded-[8px] text-[11px]"
                   >
-                    Link Existing ABHA Identity (Recommended)
+                    Link Existing Local Record (Recommended)
                   </button>
                 </div>
               )}
 
-              {/* FIX 2: UIDAI Aadhaar / VID Masked Input */}
+              {/* FIX 2: masked Aadhaar / VID input */}
               <div>
                 <label className="block text-[#1D1D1F] dark:text-white font-bold mb-1">
                   Aadhaar Reference / 16-Digit VID *
@@ -571,11 +590,11 @@ export default function AbdmDashboardPage() {
                     onClick={handleRequestOtp}
                     className="px-4 py-2.5 bg-[#0071E3] hover:bg-[#0077ED] text-white font-bold rounded-[12px] transition shrink-0"
                   >
-                    {otpSent ? "Resend OTP" : "Request UIDAI OTP"}
+                    {otpSent ? "New sandbox code" : "Generate sandbox code"}
                   </button>
                 </div>
                 <p className="text-[10px] text-[#86868B] dark:text-[#8E8E93] mt-1">
-                  🔒 UIDAI Act Section 29 Guarantee: Raw 12-digit Aadhaar is purged from transient memory immediately post-session.
+                  🔒 Raw Aadhaar is never stored. Only the masked reference (XXXX-XXXX-1234) is retained.
                 </p>
               </div>
 
@@ -584,13 +603,13 @@ export default function AbdmDashboardPage() {
                 <div className="p-4 rounded-[16px] bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
                   <div>
                     <label className="block text-[#1D1D1F] dark:text-white font-bold mb-1">
-                      Enter 6-Digit UIDAI e-KYC OTP *
+                      Enter 6-Digit Sandbox Code *
                     </label>
                     <input
                       type="text"
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
-                      placeholder="123456"
+                      placeholder="Enter 6-digit sandbox code"
                       className="w-full px-3.5 py-2 bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.12] rounded-[10px] text-[#1D1D1F] dark:text-white font-mono font-bold text-center tracking-widest text-base"
                     />
                   </div>
@@ -598,7 +617,7 @@ export default function AbdmDashboardPage() {
                   {/* FIX 4: Gateway Mode & Fallback Simulator */}
                   <div>
                     <label className="block text-[#86868B] dark:text-[#8E8E93] font-semibold mb-1 text-[11px]">
-                      NHA Gateway Resiliency Mode:
+                      Sandbox gateway mode:
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
@@ -610,8 +629,8 @@ export default function AbdmDashboardPage() {
                             : "border-black/[0.06] dark:border-white/[0.08] text-[#86868B]"
                         }`}
                       >
-                        <div className="text-[11px]">Standard NHA M1 / M2</div>
-                        <div className="text-[10px] text-[#86868B]">Live Sandbox Verification</div>
+                        <div className="text-[11px]">Standard sandbox</div>
+                        <div className="text-[10px] text-[#86868B]">Simulated verification</div>
                       </button>
 
                       <button
@@ -637,20 +656,20 @@ export default function AbdmDashboardPage() {
                 className="w-full py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white font-black rounded-[14px] text-xs shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submittingKyc ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                <span>Verify OTP &amp; Issue Official ABHA Credentials</span>
+                <span>Create Sandbox ABDM Record</span>
               </button>
             </form>
           </div>
 
-          {/* Right Card: Official ABHA Smart Card Preview */}
+          {/* Right Card: Sandbox ABDM Record Preview */}
           <div className="lg:col-span-5 space-y-4">
             <div className="rounded-[20px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-5 shadow-apple-sm">
               <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3 mb-4">
                 <span className="text-xs font-black text-[#1D1D1F] dark:text-white uppercase tracking-wider">
-                  Ayushman Bharat Smart Card
+                  Sandbox ABDM Record Preview
                 </span>
                 <span className="text-[10px] font-bold text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 px-2 py-0.5 rounded-[6px]">
-                  Government of India
+                  Not a government document
                 </span>
               </div>
 
@@ -662,10 +681,10 @@ export default function AbdmDashboardPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="text-[10px] font-black uppercase tracking-widest text-[#FF9933]">
-                        National Health Authority
+                        Sandbox simulation
                       </div>
                       <div className="text-xs font-bold text-[#1D1D1F] dark:text-white">
-                        Ayushman Bharat Health Account (ABHA)
+                        Simulated ABDM record
                       </div>
                     </div>
                     <div className="h-7 w-7 rounded-full bg-orange-500/10 text-orange-600 flex items-center justify-center text-xs font-black">
@@ -683,14 +702,14 @@ export default function AbdmDashboardPage() {
                       </div>
 
                       <div>
-                        <span className="text-[9px] text-[#86868B] dark:text-[#8E8E93] uppercase font-bold">ABHA Number (14 Digits)</span>
+                        <span className="text-[9px] text-[#86868B] dark:text-[#8E8E93] uppercase font-bold">Simulated Identifier</span>
                         <div className="text-base font-black font-mono text-[#0071E3] dark:text-[#2997FF] tracking-wider">
                           {selectedPatientCard.abha_number}
                         </div>
                       </div>
 
                       <div>
-                        <span className="text-[9px] text-[#86868B] dark:text-[#8E8E93] uppercase font-bold">ABHA Address (PHR Handle)</span>
+                        <span className="text-[9px] text-[#86868B] dark:text-[#8E8E93] uppercase font-bold">Simulated Address</span>
                         <div className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400">
                           {selectedPatientCard.abha_address}
                         </div>
@@ -699,10 +718,10 @@ export default function AbdmDashboardPage() {
 
                     <div className="flex flex-col items-center justify-center p-2 rounded-[12px] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.1]">
                       <QRCodeDisplay 
-                        value={`https://abdm.gov.in/abha/${selectedPatientCard.abha_number}`}
+                        value={`SANDBOX-ABDM|${selectedPatientCard.abha_number}`}
                         size={84}
                       />
-                      <span className="text-[8px] font-bold text-[#86868B] mt-1">Scan to Verify</span>
+                      <span className="text-[8px] font-bold text-[#86868B] mt-1">Sandbox QR</span>
                     </div>
                   </div>
 
@@ -715,7 +734,7 @@ export default function AbdmDashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-[#86868B] text-xs">
-                  Select or register a citizen to preview official ABHA smart card.
+                  Select or register a citizen to preview a sandbox ABDM record.
                 </div>
               )}
             </div>
@@ -723,7 +742,7 @@ export default function AbdmDashboardPage() {
             {/* Quick Link Citizen List */}
             <div className="rounded-[20px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-4 shadow-apple-sm space-y-2">
               <span className="text-xs font-bold text-[#1D1D1F] dark:text-white block mb-1">
-                Recent Issued Identities ({patients.length})
+                Recent Sandbox Records ({patients.length})
               </span>
               <div className="space-y-1.5 max-h-52 overflow-y-auto">
                 {patients.map(p => (
@@ -756,17 +775,17 @@ export default function AbdmDashboardPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: CONSENT ARTEFACT ARCHITECTURE (FIX 1)                             */}
+      {/* TAB 2: CONSENT RECORDS                                                   */}
       {/* ========================================================================= */}
       {activeTab === "consent" && (
         <div className="space-y-4">
           <div className="rounded-[20px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-5 shadow-apple-sm flex items-center justify-between">
             <div>
               <h2 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                Active Dynamic Consent Artefacts (CA Engine)
+                Consent Records
               </h2>
               <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                Every longitudinal record fetch requires an unexpired, citizen-approved cryptographic consent token per DPDP Act (2023).
+                Each local health-data release is checked against an unexpired consent record before access is allowed.
               </p>
             </div>
             <button
@@ -803,13 +822,13 @@ export default function AbdmDashboardPage() {
                       {isGranted && (
                         <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 font-bold text-[11px] flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          Token Granted &amp; Active
+                          Token Granted Locally
                         </span>
                       )}
                       {c.status === "REQUESTED" && (
                         <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300 font-bold text-[11px] flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 animate-spin" />
-                          Awaiting Citizen OTP
+                          Awaiting Sandbox Consent Code
                         </span>
                       )}
                       {isRevoked && (
@@ -850,12 +869,28 @@ export default function AbdmDashboardPage() {
 
                     <div className="flex items-center gap-2">
                       {c.status === "REQUESTED" && (
-                        <button
-                          onClick={() => handleGrantConsent(c.consent_request_id)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[8px] text-[11px]"
-                        >
-                          Simulate Citizen OTP Approval
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={6}
+                            value={consentOtpInputs[c.consent_request_id] || ""}
+                            onChange={(e) =>
+                              setConsentOtpInputs((prev) => ({
+                                ...prev,
+                                [c.consent_request_id]: e.target.value.replace(/\D/g, "").slice(0, 6),
+                              }))
+                            }
+                            placeholder="6-digit code"
+                            className="w-24 px-2 py-1.5 bg-[#F5F5F7] dark:bg-[#2C2C2E] border border-black/[0.08] dark:border-white/[0.12] rounded-[8px] font-mono text-center text-[11px] font-bold text-[#1D1D1F] dark:text-white"
+                          />
+                          <button
+                            onClick={() => handleGrantConsent(c.consent_request_id)}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-[8px] text-[11px]"
+                          >
+                            Record Sandbox Consent
+                          </button>
+                        </div>
                       )}
 
                       {isGranted && (
@@ -877,17 +912,17 @@ export default function AbdmDashboardPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: REGISTRY CONFLICTS & RESILIENT OFFLINE QUEUE (FIX 3 & FIX 4)       */}
+      {/* TAB 3: PENDING QUEUE & DEMOGRAPHIC MISMATCHES                            */}
       {/* ========================================================================= */}
       {activeTab === "conflicts" && (
         <div className="space-y-4">
           <div className="rounded-[20px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-5 shadow-apple-sm flex items-center justify-between">
             <div>
               <h2 className="text-base font-black text-[#1D1D1F] dark:text-white">
-                Resilient Gateway Queue &amp; Demographic Conflict Resolver
+                Pending Queue &amp; Demographic Conflict Resolver
               </h2>
               <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                Handles NHA gateway downtime gracefully with zero registration desk stoppage, and logs demographic mismatch tickets.
+                Keeps unverified records in a pending queue so the registration desk is never blocked, and flags demographic mismatches.
               </p>
             </div>
 
@@ -897,7 +932,7 @@ export default function AbdmDashboardPage() {
               className="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold text-xs rounded-[12px] shadow-sm transition disabled:opacity-50 flex items-center gap-2"
             >
               <RotateCw className={`h-3.5 w-3.5 ${syncingQueue ? "animate-spin" : ""}`} />
-              <span>Run Resilient NHA Queue Sync</span>
+              <span>Re-check Pending Queue</span>
             </button>
           </div>
 
@@ -916,12 +951,12 @@ export default function AbdmDashboardPage() {
                   {p.demographic_conflict ? (
                     <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold text-[11px] border border-amber-300 dark:border-amber-800 flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                      Demographic Mismatch Ticket #NHA-UK-4419
+                      Demographic mismatch flagged
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300 font-bold text-[11px] border border-orange-300 dark:border-orange-800 flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5 text-orange-500" />
-                      Offline Queue (HTTP 504 Recoverable)
+                      Pending verification
                     </span>
                   )}
                 </div>
@@ -951,7 +986,7 @@ export default function AbdmDashboardPage() {
                 <div className="w-8 h-8 rounded-[10px] bg-[#0071E3]/10 text-[#0071E3] dark:text-[#2997FF] flex items-center justify-center">
                   <Lock className="w-5 h-5" />
                 </div>
-                <h3 className="font-black text-[#1D1D1F] dark:text-white text-base">New ABDM Consent Requisition</h3>
+                <h3 className="font-black text-[#1D1D1F] dark:text-white text-base">New Sandbox Consent Record</h3>
               </div>
               <button 
                 onClick={() => setConsentModalOpen(false)}
@@ -996,7 +1031,7 @@ export default function AbdmDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-[#1D1D1F] dark:text-white font-bold mb-1">Token Validity Duration (Days) *</label>
+                <label className="block text-[#1D1D1F] dark:text-white font-bold mb-1">Record Validity (Days) *</label>
                 <input
                   type="number"
                   min={1}
@@ -1020,7 +1055,7 @@ export default function AbdmDashboardPage() {
                   disabled={requestingConsent}
                   className="px-5 py-2 bg-[#0071E3] hover:bg-[#0077ED] text-white font-bold rounded-[12px] text-xs shadow-sm transition disabled:opacity-50"
                 >
-                  {requestingConsent ? "Transmitting..." : "Transmit Consent Request to Citizen"}
+                  {requestingConsent ? "Saving..." : "Create Sandbox Consent Record"}
                 </button>
               </div>
             </form>

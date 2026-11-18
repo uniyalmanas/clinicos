@@ -124,17 +124,17 @@ export default function LabDashboardPage() {
 
   // Modals state
   const [sampleModalOrder, setSampleModalOrder] = useState<DiagnosticOrder | null>(null);
-  const [collectorName, setCollectorName] = useState("Sister Rekha (Phlebotomist)");
+  const [collectorName, setCollectorName] = useState("");
   const [accessionModalOrder, setAccessionModalOrder] = useState<DiagnosticOrder | null>(null);
   const [scannedBarcode, setScannedBarcode] = useState("");
-  const [accessionerName, setAccessionerName] = useState("Rajesh Sharma (Senior Lab Tech)");
+  const [accessionerName, setAccessionerName] = useState("");
   const [rejectionReason, setRejectionReason] = useState("HEMOLYZED_SAMPLE");
   const [rejectionNotes, setRejectionNotes] = useState("");
 
   const [resultModalOrder, setResultModalOrder] = useState<DiagnosticOrder | null>(null);
   const [reportModalOrder, setReportModalOrder] = useState<DiagnosticOrder | null>(null);
   const [criticalModalOrder, setCriticalModalOrder] = useState<DiagnosticOrder | null>(null);
-  const [doctorReadBackNurse, setDoctorReadBackNurse] = useState("Sister Rekha (Lab Duty Nurse)");
+  const [doctorReadBackNurse, setDoctorReadBackNurse] = useState("");
   const [readBackNotes, setReadBackNotes] = useState("Panic value verbally read back and confirmed by ordering physician.");
 
   const [newOrderModal, setNewOrderModal] = useState(false);
@@ -150,14 +150,14 @@ export default function LabDashboardPage() {
   // QC State
   const [qcRuns, setQcRuns] = useState<QualityControlRun[]>([]);
   const [qcForm, setQcForm] = useState({
-    analyzer_name: "Mindray BC-5150 (5-Part Hematology)",
+    analyzer_name: "",
     test_category: "Hematology",
-    control_lot_number: "LOT-2026-NABL",
+    control_lot_number: "",
     level: "Level 1 (Normal Control)",
-    target_mean: 14.0,
-    target_sd: 0.4,
-    measured_value: 14.1,
-    calibrated_by: "Dr. S. K. Pathak (Quality Manager)"
+    target_mean: 0,
+    target_sd: 0,
+    measured_value: 0,
+    calibrated_by: ""
   });
 
   // New Order Form state
@@ -165,14 +165,14 @@ export default function LabDashboardPage() {
   const [newPtPhone, setNewPtPhone] = useState("");
   const [newPtAge, setNewPtAge] = useState(38);
   const [newPtGender, setNewPtGender] = useState("male");
-  const [newDocName, setNewDocName] = useState("Dr. Rahul Sharma");
+  const [newDocName, setNewDocName] = useState("");
   const [selectedTestId, setSelectedTestId] = useState(COMMON_LAB_TESTS[0].id);
 
   // Result entry form state
   const [resultParams, setResultParams] = useState<ParameterResult[]>([]);
-  const [pathNotes, setPathNotes] = useState("All parameters evaluated and verified under NABL standard.");
-  const [pathologistName, setPathologistName] = useState("Dr. S. K. Pathak (MD Pathologist)");
-  const [pathologistRegNo, setPathologistRegNo] = useState("MCI-DMC-48291");
+  const [pathNotes, setPathNotes] = useState("");
+  const [pathologistName, setPathologistName] = useState("");
+  const [pathologistRegNo, setPathologistRegNo] = useState("");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -271,7 +271,7 @@ export default function LabDashboardPage() {
     setResultModalOrder(order);
     if (order.results && order.results.length > 0) {
       setResultParams(order.results);
-      setPathNotes(order.pathologist_notes || "All parameters evaluated and verified under NABL compliance standard.");
+      setPathNotes(order.pathologist_notes || "");
       return;
     }
 
@@ -327,7 +327,7 @@ export default function LabDashboardPage() {
     }
 
     setResultParams(template);
-    setPathNotes("Sample analyzed using calibrated automated analyzer. Microscopic correlation verified under NABL quality standard.");
+    setPathNotes("Sample analyzed using the calibrated automated analyzer. Microscopic correlation reviewed against the analyser printout.");
   };
 
   // Fix 5 & Fix 6: Save Results with Pathologist Verification & SHA-256 Checksum
@@ -479,7 +479,7 @@ L|1|N`);
   const loadSampleHl7 = () => {
     setSelectedTargetOrder("LAB-2026-003");
     setMachineStream(`MSH|^~\\&|MINDRAY^BC-5150|LAB|CLINICOS|HOSPITAL|20260925143000||ORU^R01|MSG0001|P|2.3.1
-PID|1||+919123456782||Rohit Pant||19940710|M
+PID|1||SAMPLE-0001||SAMPLE^PATIENT^A||19940710|M
 OBR|1|LAB-2026-003||CBC^Complete Blood Count
 OBX|1|NM|WBC^Total Leukocyte Count||8.1|/cumm|4000-11000|N|||F
 OBX|2|NM|HGB^Hemoglobin||15.1|g/dL|13.0-17.0|N|||F
@@ -490,7 +490,7 @@ OBX|4|NM|ESR^ESR Westergren||8|mm/1st hr|0-15|N|||F`);
   const loadSampleCriticalHl7 = () => {
     setSelectedTargetOrder("LAB-2026-004");
     setMachineStream(`MSH|^~\\&|ROCHE^Cobas-c311|LAB|CLINICOS|HOSPITAL|20260925143500||ORU^R01|MSG0002|P|2.3.1
-PID|1||+919876500001||Suresh Verma||19800101|M
+PID|1||SAMPLE-0002||SAMPLE^PATIENT^B||19800101|M
 OBR|1|LAB-2026-004||GLU^Emergency Blood Glucose
 OBX|1|NM|FBS^Fasting Blood Sugar (FBS)||42|mg/dL|70-100|C|||F
 OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
@@ -554,7 +554,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 border border-purple-500/20 text-[10px] font-bold text-purple-700 dark:bg-purple-500/10 dark:text-purple-400">
               <ShieldCheck className="h-3 w-3" />
-              <span>NABL ISO-15189 Quality Control</span>
+              <span>Quality Control (Levey-Jennings)</span>
             </span>
             {metrics.critical_count > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-0.5 text-[10px] font-black text-white animate-pulse">
@@ -564,10 +564,10 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
             )}
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-[#1D1D1F] dark:text-white">
-            Marley Clinical LIS &amp; Analyzer Studio
+            Clinical LIS &amp; Analyzer Studio
           </h1>
           <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-            Automated Accessioning • Instrument Integration • Critical Value Alerts • NABL-Compliant Reporting
+            Automated Accessioning • Instrument Integration • Critical Value Alerts • QC-gated Reporting
           </p>
         </div>
 
@@ -667,7 +667,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
         <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-white to-white dark:via-[#1C1C1E] dark:to-[#1C1C1E] p-4 shadow-apple-card space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5" /> NABL Verified
+              <ShieldCheck className="h-3.5 w-3.5" /> QC gate
             </span>
             <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-700 dark:text-emerald-400 font-mono">
               SHA-256 E-Sign
@@ -677,7 +677,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
             Pathologist Verification &amp; Reporting
           </h3>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Digital sign-off with e-signature. NABL-compliant QC tracking (Levey-Jennings charts) blocks release if quality fails. Reports delivered via WhatsApp/Patient Portal within defined TAT. Immutable audit trail for every result change.
+            Digital sign-off with e-signature. QC tracking (Levey-Jennings charts) blocks release if quality fails. Reports delivered via WhatsApp/Patient Portal within defined TAT. Immutable audit trail for every result change.
           </p>
         </div>
       </div>
@@ -923,7 +923,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
                           )}
                           {order.sample_accessioner_name && (
                             <div>
-                              ✓ Accessioned: {order.sample_accessioner_name} ({order.analyzer_model || "Benchtop Analyzer"})
+                              ✓ Accessioned: {order.sample_accessioner_name}{order.analyzer_model ? ` (${order.analyzer_model})` : ""}
                             </div>
                           )}
                           {order.sample_rejected && (
@@ -1023,7 +1023,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
               <div>
                 <h2 className="text-base font-black text-[#1D1D1F] dark:text-white flex items-center gap-2">
                   <Activity className="h-4 w-4 text-emerald-600" />
-                  NABL ISO-15189 Levey-Jennings Quality Control Studio
+                  Levey-Jennings Quality Control Studio
                 </h2>
                 <p className="text-xs text-[#86868B]">
                   Daily 2-Level analyzer calibration and Westgard multi-rule evaluation. Results blocked if QC fails.
@@ -1116,7 +1116,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
       {activeTab === "critical" && (
         <div className="space-y-4">
           <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 text-xs text-rose-900 dark:text-rose-300">
-            <strong>Mandatory Clinical Protocol:</strong> In accordance with NABL and clinical safety guidelines, any result breaching life-threatening panic limits triggers automatic doctor notification and requires documented verbal/digital read-back confirmation before final release.
+            <strong>Mandatory Clinical Protocol:</strong> In accordance with clinical safety guidelines, any result breaching life-threatening panic limits triggers automatic doctor notification and requires documented verbal/digital read-back confirmation before final release.
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1297,7 +1297,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
               <div className="rounded-2xl border border-black/[0.06] p-3 dark:border-white/[0.06] space-y-2">
                 <div className="font-bold text-[#1D1D1F] dark:text-white flex items-center justify-between">
                   <span>Pre-Analytical Integrity Checks:</span>
-                  <span className="text-[10px] text-emerald-600 font-bold">NABL Standard</span>
+                  <span className="text-[10px] text-emerald-600 font-bold">Reference range</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
@@ -1354,13 +1354,16 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
             <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
               <div>
                 <span className="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-black text-purple-700 dark:text-purple-400">
-                  NABL Digital Verification Gate
+                  Digital Verification Gate
                 </span>
                 <h3 className="font-black text-base text-[#1D1D1F] dark:text-white mt-1">
                   {resultModalOrder.test_name} - Result Evaluation
                 </h3>
                 <p className="text-xs text-[#86868B]">
-                  Patient: {resultModalOrder.patient_name} • Age: {resultModalOrder.patient_age || 35}y / {resultModalOrder.patient_gender || "Male"} • Barcode: {resultModalOrder.sample_barcode}
+                  Patient: {resultModalOrder.patient_name}
+                  {resultModalOrder.patient_age ? ` • Age: ${resultModalOrder.patient_age}y` : ""}
+                  {resultModalOrder.patient_gender ? ` / ${resultModalOrder.patient_gender}` : ""}
+                  {" • Barcode: "}{resultModalOrder.sample_barcode || "—"}
                 </p>
               </div>
               <button onClick={() => setResultModalOrder(null)} className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
@@ -1500,7 +1503,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
             <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
               <div>
                 <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">
-                  NABL Panic Value Read-Back
+                  Panic Value Read-Back
                 </span>
                 <h3 className="font-black text-base text-[#1D1D1F] dark:text-white mt-1">
                   Physician Verbal Confirmation Log
@@ -1678,7 +1681,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
         </div>
       )}
 
-      {/* FIX 6 MODAL: NABL Official Diagnostic Report with SHA-256 Tamper-Proof Checksum */}
+      {/* FIX 6 MODAL: Official Diagnostic Report with SHA-256 Checksum */}
       {reportModalOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="w-full max-w-3xl rounded-[28px] border border-black/[0.08] bg-white p-6 shadow-2xl dark:border-white/[0.1] dark:bg-[#1C1C1E] space-y-4 max-h-[90vh] overflow-y-auto">
@@ -1692,7 +1695,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
                     Official Diagnostic Laboratory Report
                   </h3>
                   <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider font-mono">
-                    NABL ISO-15189 Accredited Laboratory
+                    Quality-controlled laboratory report
                   </span>
                 </div>
               </div>
@@ -1714,7 +1717,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
                 </div>
                 <div>
                   <span className="text-[#86868B] block text-[10px]">Sample Barcode</span>
-                  <span className="font-mono font-bold text-[#0071E3]">{reportModalOrder.sample_barcode || "BC-DEFAULT"}</span>
+                  <span className="font-mono font-bold text-[#0071E3]">{reportModalOrder.sample_barcode || "—"}</span>
                 </div>
                 <div>
                   <span className="text-[#86868B] block text-[10px]">Ordering Physician</span>
@@ -1805,7 +1808,7 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
                 Pathologist Clinical Comments:
               </span>
               <p className="text-[11px] text-[#86868B] leading-relaxed">
-                {reportModalOrder.pathologist_notes || "All parameters evaluated and verified under NABL compliance standard."}
+                {reportModalOrder.pathologist_notes || "No pathologist comments recorded."}
               </p>
             </div>
 
@@ -1813,23 +1816,27 @@ OBX|2|NM|POT^Potassium||6.4|mmol/L|3.5-5.1|C|||F`);
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 border-t border-black/[0.06] dark:border-white/[0.06]">
               <div>
                 <div className="font-bold text-xs text-[#1D1D1F] dark:text-white">
-                  {reportModalOrder.verified_by || "Dr. S. K. Pathak (MD Pathologist)"}
+                  {reportModalOrder.verified_by || "Awaiting pathologist verification"}
                 </div>
                 <div className="text-[10px] text-[#86868B] font-mono">
-                  Reg No: {reportModalOrder.pathologist_reg_no || "MCI-DMC-48291"} • Consultant Pathologist
+                  {reportModalOrder.pathologist_reg_no
+                    ? `Reg No: ${reportModalOrder.pathologist_reg_no} • Consultant Pathologist`
+                    : "Consultant Pathologist"}
                 </div>
-                <div className="text-[10px] text-emerald-600 font-bold mt-0.5">
-                  ✓ Digitally Signed &amp; Authenticated
-                </div>
+                {reportModalOrder.verified_by && (
+                  <div className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                    ✓ Digitally Signed &amp; Authenticated
+                  </div>
+                )}
               </div>
 
-              {/* SHA-256 Tamper-Proof Cryptographic Hash */}
+              {/* SHA-256 tamper-evident checksum */}
               <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.03] p-2 text-right">
                 <span className="text-[9px] uppercase tracking-wider text-[#86868B] block font-mono font-bold">
-                  SHA-256 Tamper-Proof Digital Checksum:
+                  SHA-256 tamper-evident checksum:
                 </span>
                 <span className="font-mono text-[9.5px] text-[#0071E3] font-bold break-all">
-                  {reportModalOrder.report_sha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+                  {reportModalOrder.report_sha256 || "Not yet sealed"}
                 </span>
               </div>
             </div>

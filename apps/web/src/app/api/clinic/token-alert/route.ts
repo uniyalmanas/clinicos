@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { apiError } from "@/lib/api-auth";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 import { sendMessage } from "@/lib/notifications";
+import { clinicToday } from "@/lib/clinic-date";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
     const clinic = clinicRows[0];
 
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = clinicToday();
     const currentRows = await sql`
       SELECT COALESCE(MAX(token_number), 0) AS current_token
       FROM appointments

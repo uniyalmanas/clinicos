@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  * by onboarding stay hidden until a super admin approves the clinic.
  */
 const PUBLIC_FIELDS = `
-  id, slug, title, full_name, specialization, sub_specializations,
+  id, slug, title, full_name, specialization,
   qualification_summary, years_of_experience, languages_spoken, bio,
   consultation_fee, followup_fee, followup_validity_days, services_offered,
   rating, total_reviews, clinic_id, clinic_name, clinic_slug, clinic_address,

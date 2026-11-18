@@ -52,42 +52,38 @@ export default function SuperAdminConsolePage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // 1. Global Config State
+  // Filled from /api/clinic/admin. Nothing is pre-invented.
   const [globalConfig, setGlobalConfig] = useState<any>({
-    clinic_name: "Derma Care Skin & Laser Centre",
-    tagline: "Advanced Dermatology, Laser & Aesthetic Surgery",
-    reg_number: "UK-CEA-2024-8891",
-    gstin: "05AAACD1234F1Z8",
-    abdm_facility_id: "IN0510001298",
-    nabl_cert_no: "NABL-MC-2026-9912",
-    official_helpline: "+91 98765 43210",
-    official_email: "contact@dermacare.in",
-    address_line: "14, Rajpur Road, Near Ashley Hall",
-    city: "Dehradun",
-    state: "Uttarakhand",
-    postal_code: "248001",
-    bank_account_no: "001405009821",
-    bank_ifsc: "ICIC0000014",
-    bank_name: "ICICI Bank - Rajpur Road Branch",
-    upi_vpa: "dermacare@icici",
-    default_consultation_fee: 600,
-    default_followup_fee: 300,
-    default_doctor_split: 80,
+    clinic_name: "",
+    tagline: "",
+    reg_number: "",
+    gstin: "",
+    abdm_facility_id: "",
+    nabl_cert_no: "",
+    official_helpline: "",
+    official_email: "",
+    address_line: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    bank_account_no: "",
+    bank_ifsc: "",
+    bank_name: "",
+    upi_vpa: "",
+    default_consultation_fee: 0,
+    default_followup_fee: 0,
+    default_doctor_split: 0,
     tax_rates: {
       clinical_consultations: 0,
-      aesthetic_laser_procedures: 18,
-      pharmacy_dispensing: 12
+      aesthetic_laser_procedures: 0,
+      pharmacy_dispensing: 0
     },
-    invoice_header_note: "Govt Recognized Clinical Establishment • NABH Compliant Standards",
-    invoice_footer_note: "Computer Generated Tax Invoice. All disputes subject to Dehradun jurisdiction."
+    invoice_header_note: "",
+    invoice_footer_note: ""
   });
 
   // 2. Discount Tiers State
-  const [discountTiers, setDiscountTiers] = useState<any[]>([
-    { id: "disc-1", code: "SSP_SURGICAL", label: "Special Surgical Package", discount_pct: 15, applicable_to: "Dermatosurgery / Minor OT", is_active: true },
-    { id: "disc-2", code: "SR_CITIZEN", label: "Senior Citizen Welfare (>60y)", discount_pct: 20, applicable_to: "All OPD Consultations", is_active: true },
-    { id: "disc-3", code: "CLINIC_STAFF", label: "Clinic Staff & Dependent Proxy", discount_pct: 50, applicable_to: "Consultations & In-house Labs", is_active: true },
-    { id: "disc-4", code: "DEFENSE_VET", label: "Armed Forces & Veterans", discount_pct: 25, applicable_to: "Full Clinic Services", is_active: true }
-  ]);
+  const [discountTiers, setDiscountTiers] = useState<any[]>([]);
 
   // 3. User & Role Management (RBAC)
   const [rbacMatrix, setRbacMatrix] = useState<any>({});
@@ -95,31 +91,30 @@ export default function SuperAdminConsolePage() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
   // 4. What-If Simulation State
-  const [simFeeDelta, setSimFeeDelta] = useState<number>(200);
-  const [simSplitPct, setSimSplitPct] = useState<number>(80);
-  const [simMonthlyVolume, setSimMonthlyVolume] = useState<number>(450);
+  const [simFeeDelta, setSimFeeDelta] = useState<number>(0);
+  const [simSplitPct, setSimSplitPct] = useState<number>(0);
+  const [simMonthlyVolume, setSimMonthlyVolume] = useState<number>(0);
   const [simResult, setSimResult] = useState<any>(null);
   const [simRunning, setSimRunning] = useState(false);
 
   // 5. System Health & Integrations State
   const [integrations, setIntegrations] = useState<any[]>([]);
-  const [syncingTarget, setSyncingTarget] = useState<string | null>(null);
 
   // 6. Financial Overview State
   const [financeKpis, setFinanceKpis] = useState<any>({
-    gross_revenue_mtd: 342600,
-    soundbox_upi_inflow: 245000,
-    cash_collected: 97600,
-    total_expenses_mtd: 158400,
-    real_net_profit_mtd: 184200,
-    profit_margin_pct: 53.8,
-    pending_doctor_payouts: 13240,
-    petty_cash_reserve: 1450,
+    gross_revenue_mtd: 0,
+    soundbox_upi_inflow: 0,
+    cash_collected: 0,
+    total_expenses_mtd: 0,
+    real_net_profit_mtd: 0,
+    profit_margin_pct: 0,
+    pending_doctor_payouts: 0,
+    petty_cash_reserve: 0,
     monthly_expense_breakdown: {
-      clinic_lease_rent: 45000,
-      staff_salaries: 65000,
-      clinical_consumables: 32400,
-      power_utilities_internet: 16000
+      clinic_lease_rent: 0,
+      staff_salaries: 0,
+      clinical_consumables: 0,
+      power_utilities_internet: 0
     }
   });
 
@@ -127,12 +122,12 @@ export default function SuperAdminConsolePage() {
   const [practiceType, setPracticeType] = useState<"solo" | "clinic">("solo");
   const [isUpgradingPlan, setIsUpgradingPlan] = useState(false);
 
-  // Modal / PIN authorization
-  const [pinModalOpen, setPinModalOpen] = useState(false);
-  const [pinAction, setPinAction] = useState<string>("");
-  const [pinPayload, setPinPayload] = useState<any>(null);
-  const [managerPinInput, setManagerPinInput] = useState("");
-  const [pinError, setPinError] = useState("");
+  // Confirmation modal for privileged actions. Authorization itself is
+  // enforced server-side from the signed-in user's role.
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<string>("");
+  const [confirmPayload, setConfirmPayload] = useState<any>(null);
+  const [confirmError, setConfirmError] = useState("");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -174,7 +169,15 @@ export default function SuperAdminConsolePage() {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/clinic/admin?clinic_slug=derma-care-dehradun");
+      let slug = "";
+      try {
+        const userStr = localStorage.getItem("clinicos_user");
+        if (userStr) slug = JSON.parse(userStr)?.clinic_slug || "";
+      } catch {}
+      const res = await fetch(
+        `/api/clinic/admin${slug ? `?clinic_slug=${encodeURIComponent(slug)}` : ""}`,
+        { cache: "no-store" }
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.global_config) setGlobalConfig(data.global_config);
@@ -218,7 +221,7 @@ export default function SuperAdminConsolePage() {
             fee_delta: simFeeDelta,
             split_pct: simSplitPct,
             monthly_volume: simMonthlyVolume,
-            base_fee: globalConfig.default_consultation_fee || 600
+            base_fee: globalConfig.default_consultation_fee ?? 0
           })
         });
         if (res.ok) {
@@ -234,69 +237,62 @@ export default function SuperAdminConsolePage() {
     runSimulation();
   }, [simFeeDelta, simSplitPct, simMonthlyVolume, globalConfig.default_consultation_fee]);
 
-  // Handle PIN Authorized Actions
-  const handleExecutePinAction = async (e: React.FormEvent) => {
+  // Handle privileged actions after explicit confirmation. The server
+  // re-checks the caller's role; no client-side PIN is involved.
+  const handleConfirmAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    setPinError("");
-
-    if (!managerPinInput.trim()) {
-      setPinError("Manager Authorization PIN is required.");
-      return;
-    }
+    setConfirmError("");
 
     try {
-      if (pinAction === "toggle_user_lock") {
-        const { user_id, is_active } = pinPayload;
+      if (confirmAction === "toggle_user_lock") {
+        const { user_id, is_active } = confirmPayload;
         const res = await fetch("/api/clinic/admin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "toggle_user_lock",
             user_id,
-            is_active,
-            manager_pin: managerPinInput
+            is_active
           })
         });
         const data = await res.json();
         if (res.ok) {
           setStaffUsers(prev => prev.map(u => u.id === user_id ? { ...u, is_active } : u));
           showToast(data.message);
-          setPinModalOpen(false);
+          setConfirmModalOpen(false);
         } else {
-          setPinError(data.detail || "Action failed");
+          setConfirmError(data.detail || "Action failed");
         }
       }
 
-      if (pinAction === "save_global_config") {
+      if (confirmAction === "save_global_config") {
         const res = await fetch("/api/clinic/admin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "save_global_config",
             global_config: globalConfig,
-            discount_tiers: discountTiers,
-            manager_pin: managerPinInput
+            discount_tiers: discountTiers
           })
         });
         const data = await res.json();
         if (res.ok) {
           showToast(data.message);
-          setPinModalOpen(false);
+          setConfirmModalOpen(false);
         } else {
-          setPinError(data.detail || "Save failed");
+          setConfirmError(data.detail || "Save failed");
         }
       }
 
-      if (pinAction === "apply_simulation_to_live") {
-        const { new_fee, split_pct } = pinPayload;
+      if (confirmAction === "apply_simulation_to_live") {
+        const { new_fee, split_pct } = confirmPayload;
         const res = await fetch("/api/clinic/admin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "apply_simulation_to_live",
             new_fee,
-            split_pct,
-            manager_pin: managerPinInput
+            split_pct
           })
         });
         const data = await res.json();
@@ -307,40 +303,17 @@ export default function SuperAdminConsolePage() {
             default_doctor_split: split_pct
           }));
           showToast(data.message);
-          setPinModalOpen(false);
+          setConfirmModalOpen(false);
         } else {
-          setPinError(data.detail || "Simulation apply failed");
+          setConfirmError(data.detail || "Simulation apply failed");
         }
       }
     } catch (err: any) {
-      setPinError(err.message || "Network error");
-    } finally {
-      setManagerPinInput("");
+      setConfirmError(err.message || "Network error");
     }
   };
 
   // Trigger system integration sync
-  const handleTriggerSync = async (target: string) => {
-    setSyncingTarget(target);
-    try {
-      const res = await fetch("/api/clinic/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "trigger_system_sync",
-          target
-        })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showToast(data.message);
-      }
-    } catch (e: any) {
-      alert("Sync error: " + e.message);
-    } finally {
-      setSyncingTarget(null);
-    }
-  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -365,7 +338,7 @@ export default function SuperAdminConsolePage() {
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 border border-blue-500/20 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
               <ShieldCheck className="h-3 w-3" />
-              <span>Practice Manager Authorized</span>
+              <span>Owner / Admin Access</span>
             </span>
             <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 border text-[10px] font-bold ${
               practiceType === "solo"
@@ -396,9 +369,9 @@ export default function SuperAdminConsolePage() {
 
           <button 
             onClick={() => {
-              setPinAction("save_global_config");
-              setPinPayload(null);
-              setPinModalOpen(true);
+              setConfirmAction("save_global_config");
+              setConfirmPayload(null);
+              setConfirmModalOpen(true);
             }}
             className="flex items-center gap-1.5 rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-4 py-2 text-xs font-bold text-white shadow-sm transition active:scale-98"
           >
@@ -421,7 +394,7 @@ export default function SuperAdminConsolePage() {
             </span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Centralized practice identity, NABL/CEA credentials, GSTIN, ABDM ID, default tariffs &amp; discount tiers.
+            Centralized practice identity, accreditation details, GSTIN, ABDM facility ID, default tariffs &amp; discount tiers.
           </p>
         </div>
 
@@ -462,11 +435,13 @@ export default function SuperAdminConsolePage() {
               <span>Bi-Directional Health</span>
             </div>
             <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-              5/5 Online
+              {integrations.length > 0
+                ? `${integrations.filter((i) => i.configured).length}/${integrations.length} configured`
+                : "Not loaded"}
             </span>
           </div>
           <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93] leading-relaxed">
-            Live connection telemetry for NHA ABDM, Pharmacy POS, Pathology LIS, Network Thermal Printer &amp; WhatsApp.
+            Configuration status of optional integrations (messaging, payments, storage) and clinical data flows.
           </p>
         </div>
       </div>
@@ -501,8 +476,12 @@ export default function SuperAdminConsolePage() {
         </div>
 
         <div className="rounded-[16px] bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.08] p-3.5 shadow-apple-sm">
-          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">System Connectors</span>
-          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">100% Online</div>
+          <span className="text-[11px] font-semibold text-[#86868B] dark:text-[#8E8E93]">Configured Integrations</span>
+          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+            {integrations.length > 0
+              ? `${integrations.filter((i) => i.configured).length} / ${integrations.length}`
+              : "—"}
+          </div>
         </div>
       </div>
 
@@ -551,16 +530,16 @@ export default function SuperAdminConsolePage() {
                   Centralized Practice Identity &amp; Legal Configuration
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                  Universal parameters applied across reception check-in, billing soundbox, tax receipts, and ABDM gateway.
+                  Universal parameters applied across reception check-in, billing, tax receipts, and ABDM facility details.
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => {
-                  setPinAction("save_global_config");
-                  setPinPayload(null);
-                  setPinModalOpen(true);
+                  setConfirmAction("save_global_config");
+                  setConfirmPayload(null);
+                  setConfirmModalOpen(true);
                 }}
                 className="rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-4 py-2 text-xs font-bold text-white shadow-apple-sm transition"
               >
@@ -610,7 +589,7 @@ export default function SuperAdminConsolePage() {
               </div>
 
               <div>
-                <label className="font-semibold text-[#1D1D1F] dark:text-white">NABL Accreditation #</label>
+                <label className="font-semibold text-[#1D1D1F] dark:text-white">Lab Accreditation #</label>
                 <input
                   type="text"
                   value={globalConfig.nabl_cert_no}
@@ -686,7 +665,7 @@ export default function SuperAdminConsolePage() {
                   Clinic User Accounts &amp; Access Controls
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                  Disable user access immediately if staff departs. Zero session leak guarantee.
+                  Disable user access immediately if staff departs. Active sessions are revoked on deactivation.
                 </p>
               </div>
 
@@ -766,9 +745,9 @@ export default function SuperAdminConsolePage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setPinAction("toggle_user_lock");
-                          setPinPayload({ user_id: user.id, is_active: false });
-                          setPinModalOpen(true);
+                          setConfirmAction("toggle_user_lock");
+                          setConfirmPayload({ user_id: user.id, is_active: false });
+                          setConfirmModalOpen(true);
                         }}
                         className="inline-flex items-center gap-1.5 rounded-[12px] bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 px-3 py-1.5 text-xs font-bold transition"
                       >
@@ -779,9 +758,9 @@ export default function SuperAdminConsolePage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setPinAction("toggle_user_lock");
-                          setPinPayload({ user_id: user.id, is_active: true });
-                          setPinModalOpen(true);
+                          setConfirmAction("toggle_user_lock");
+                          setConfirmPayload({ user_id: user.id, is_active: true });
+                          setConfirmModalOpen(true);
                         }}
                         className="inline-flex items-center gap-1.5 rounded-[12px] bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 px-3 py-1.5 text-xs font-bold transition"
                       >
@@ -860,9 +839,9 @@ export default function SuperAdminConsolePage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setPinAction("apply_simulation_to_live");
-                    setPinPayload({ new_fee: simResult.new_consultation_fee, split_pct: simSplitPct });
-                    setPinModalOpen(true);
+                    setConfirmAction("apply_simulation_to_live");
+                    setConfirmPayload({ new_fee: simResult.new_consultation_fee, split_pct: simSplitPct });
+                    setConfirmModalOpen(true);
                   }}
                   className="rounded-[12px] bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-apple-sm transition"
                 >
@@ -1013,67 +992,43 @@ export default function SuperAdminConsolePage() {
               <div>
                 <h3 className="text-sm font-bold text-[#1D1D1F] dark:text-white flex items-center gap-2">
                   <Radio className="h-4 w-4 text-[#0071E3]" />
-                  Live System Health &amp; Bi-Directional Connectors
+                  System Integration Status
                 </h3>
                 <p className="text-xs text-[#86868B] dark:text-[#8E8E93] mt-0.5">
-                  Sub-second heartbeat telemetry for NHA gateway, dispensary POS, pathology LIS, and counter hardware.
+                  Whether each optional integration is configured in this deployment&apos;s environment.
                 </p>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleTriggerSync("run_diagnostics")}
-                  disabled={syncingTarget !== null}
-                  className="rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-3.5 py-2 text-xs font-bold text-white shadow-apple-sm transition"
-                >
-                  Run Full Diagnostic Ping
-                </button>
               </div>
             </div>
 
             <div className="grid gap-3.5 sm:grid-cols-2">
+              {integrations.length === 0 && (
+                <div className="sm:col-span-2 rounded-[18px] border border-dashed border-black/[0.10] dark:border-white/[0.12] p-6 text-center text-xs text-[#86868B] dark:text-[#8E8E93]">
+                  Integration status is unavailable right now.
+                </div>
+              )}
               {integrations.map((conn) => (
                 <div key={conn.id} className="p-4 rounded-[18px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] space-y-2 shadow-apple-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-[#1D1D1F] dark:text-white">{conn.name}</span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-500/20">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      {conn.status}
+                    <span className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                      conn.configured
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-500/20"
+                        : "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-500/20"
+                    }`}>
+                      <span className={`h-2 w-2 rounded-full ${conn.configured ? "bg-emerald-500" : "bg-amber-500"}`}></span>
+                      {conn.configured ? "Configured" : "Not configured"}
                     </span>
                   </div>
 
-                  <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">{conn.details}</p>
+                  <p className="text-[11px] text-[#86868B] dark:text-[#8E8E93]">{conn.category}</p>
 
-                  <div className="flex items-center justify-between text-[10px] font-mono text-[#86868B] dark:text-[#8E8E93] pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
-                    <span>Latency: <strong className="text-emerald-600 dark:text-emerald-400">{conn.latency_ms}ms</strong></span>
-                    <span>Last Sync: {conn.last_sync}</span>
+                  <div className="text-[10px] font-mono text-[#86868B] dark:text-[#8E8E93] pt-1 border-t border-black/[0.04] dark:border-white/[0.06]">
+                    {conn.configured
+                      ? "Environment credentials present."
+                      : "Set the required environment variables to enable this integration."}
                   </div>
                 </div>
               ))}
-            </div>
-
-            {/* Manual Sync Triggers */}
-            <div className="p-4 rounded-[18px] bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] space-y-3">
-              <h4 className="text-xs font-bold text-[#1D1D1F] dark:text-white">Manual Bi-Directional Sync Triggers</h4>
-              <div className="flex flex-wrap gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => handleTriggerSync("push_pharmacy")}
-                  disabled={syncingTarget !== null}
-                  className="rounded-[10px] border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white shadow-apple-sm hover:bg-black/[0.02]"
-                >
-                  {syncingTarget === "push_pharmacy" ? "Pushing..." : "Force Push Rx to Pharmacy POS"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTriggerSync("resync_lab")}
-                  disabled={syncingTarget !== null}
-                  className="rounded-[10px] border border-black/[0.08] dark:border-white/[0.12] bg-white dark:bg-[#1C1C1E] px-3 py-1.5 text-xs font-semibold text-[#1D1D1F] dark:text-white shadow-apple-sm hover:bg-black/[0.02]"
-                >
-                  {syncingTarget === "resync_lab" ? "Syncing..." : "Re-sync Pathology Lab Ingestion"}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -1155,17 +1110,17 @@ export default function SuperAdminConsolePage() {
         </div>
       )}
 
-      {/* PIN AUTHORIZATION MODAL */}
-      {pinModalOpen && (
+      {/* CONFIRMATION MODAL FOR PRIVILEGED ACTIONS */}
+      {confirmModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4 animate-in fade-in">
           <div className="w-full max-w-md rounded-[24px] bg-white dark:bg-[#1C1C1E] border border-black/[0.08] dark:border-white/[0.12] shadow-apple-modal p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] pb-3">
               <div className="flex items-center gap-2 font-bold text-sm text-[#1D1D1F] dark:text-white">
                 <Lock className="h-4 w-4 text-[#0071E3]" />
-                <span>Manager Authorization Required</span>
+                <span>Confirm Privileged Action</span>
               </div>
-              <button 
-                onClick={() => setPinModalOpen(false)}
+              <button
+                onClick={() => setConfirmModalOpen(false)}
                 className="p-1 rounded-xl text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white"
               >
                 <X className="h-4 w-4" />
@@ -1173,33 +1128,20 @@ export default function SuperAdminConsolePage() {
             </div>
 
             <p className="text-xs text-[#86868B] dark:text-[#8E8E93]">
-              Modifying system owner settings, user locks, or tariff rates requires Practice Manager security authorization.
+              This changes tenant settings, staff access, or billing. Access is restricted to clinic owners and admins and is enforced by the server for your signed-in account.
             </p>
 
-            <form onSubmit={handleExecutePinAction} className="space-y-4 text-xs">
-              <div>
-                <input
-                  type="password"
-                  value={managerPinInput}
-                  onChange={e => setManagerPinInput(e.target.value)}
-                  placeholder="Enter Manager Security PIN"
-                  maxLength={6}
-                  required
-                  autoFocus
-                  className="w-full rounded-[12px] border border-black/[0.15] dark:border-white/[0.15] bg-black/[0.02] dark:bg-white/[0.04] p-3 font-mono text-center text-lg font-bold tracking-widest text-[#1D1D1F] dark:text-white focus:outline-none focus:border-[#0071E3]"
-                />
-              </div>
-
-              {pinError && (
+            <form onSubmit={handleConfirmAction} className="space-y-4 text-xs">
+              {confirmError && (
                 <div className="p-2.5 rounded-[12px] bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 font-medium">
-                  {pinError}
+                  {confirmError}
                 </div>
               )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setPinModalOpen(false)}
+                  onClick={() => setConfirmModalOpen(false)}
                   className="rounded-[12px] border border-black/[0.08] dark:border-white/[0.12] px-4 py-2 font-semibold text-[#86868B] dark:text-[#8E8E93] hover:text-[#1D1D1F] dark:hover:text-white"
                 >
                   Cancel
@@ -1208,7 +1150,7 @@ export default function SuperAdminConsolePage() {
                   type="submit"
                   className="rounded-[12px] bg-[#0071E3] hover:bg-[#0077ED] px-5 py-2 font-bold text-white shadow-apple-sm"
                 >
-                  Authorize &amp; Execute
+                  Confirm &amp; Execute
                 </button>
               </div>
             </form>

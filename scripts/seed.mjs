@@ -998,8 +998,8 @@ async function main() {
   // ABDM / ABHA registry, consent artefacts and gateway audit
   // -------------------------------------------------------------------------
   const abdmPatientSeed = [
-    ["44444444-4444-4444-8444-444444444444", "9812345601", "Aarav Mehta", "91-4819-2041-8891", "XXXX-XXXX-8891"],
-    ["55555555-5555-4555-8555-555555555555", "9812345607", "Devansh Pant", "91-7723-5510-4432", "XXXX-XXXX-4432"],
+    ["44444444-4444-4444-8444-444444444444", "9812345601", "Aarav Mehta", "SANDBOX-48-2041-8891-8891", "XXXX-XXXX-8891"],
+    ["55555555-5555-4555-8555-555555555555", "9812345607", "Devansh Pant", "SANDBOX-77-5510-4432-4432", "XXXX-XXXX-4432"],
   ];
   for (const [id, phone, name, abha, masked] of abdmPatientSeed) {
     await sql`
@@ -1008,19 +1008,20 @@ async function main() {
         patient_phone, masked_aadhaar, kyc_status, demographic_conflict, gateway_mode
       ) VALUES (
         ${id}, ${clinic.id}, ${clinic.slug}, ${abha},
-        ${`${name.toLowerCase().replace(/[^a-z0-9]/g, "")}${phone.slice(-4)}@abdm`},
-        ${name}, ${phone}, ${masked}, 'VERIFIED', false, 'SANDBOX_M1_M2'
+        ${`sandbox-${phone.slice(-4)}@abdm.invalid`},
+        ${name}, ${phone}, ${masked}, 'PENDING_NHA_SYNC', false, 'SANDBOX_M1_M2'
       )
       ON CONFLICT (id) DO UPDATE SET
         abha_number = EXCLUDED.abha_number,
-        kyc_status = 'VERIFIED',
+        abha_address = EXCLUDED.abha_address,
+        kyc_status = 'PENDING_NHA_SYNC',
         updated_at = NOW()
     `;
   }
 
   const consentSeed = [
-    ["CA-REQ-2026-1001", "Aarav Mehta", "9812345601", "91-4819-2041-8891", "CAREFUL_EPISODE_MANAGEMENT", "GRANTED"],
-    ["CA-REQ-2026-1002", "Devansh Pant", "9812345607", "91-7723-5510-4432", "CAREMANAGEMENT", "REQUESTED"],
+    ["CA-REQ-2026-1001", "Aarav Mehta", "9812345601", "SANDBOX-48-2041-8891-8891", "CAREFUL_EPISODE_MANAGEMENT", "GRANTED"],
+    ["CA-REQ-2026-1002", "Devansh Pant", "9812345607", "SANDBOX-77-5510-4432-4432", "CAREMANAGEMENT", "REQUESTED"],
   ];
   for (const [requestId, name, phone, abha, purpose, status] of consentSeed) {
     await sql`
@@ -1030,7 +1031,7 @@ async function main() {
         date_range_from, date_range_to, expiry_timestamp, status, access_count
       ) VALUES (
         ${uuid()}, ${clinic.id}, ${clinic.slug}, ${requestId}, ${name}, ${phone},
-        ${abha}, ${`${name.toLowerCase().replace(/[^a-z0-9]/g, "")}${phone.slice(-4)}@abdm`},
+        ${abha}, ${`sandbox-${phone.slice(-4)}@abdm.invalid`},
         ${clinic.name}, ${purpose}, ${purpose === "CAREMANAGEMENT" ? "Care management" : "Careful episode management"},
         ${today}, ${future(90)}, ${future(7)}, ${status}, 0
       )
@@ -1041,8 +1042,8 @@ async function main() {
   }
 
   const gatewayLogSeed = [
-    ["/v2/registration/aadhaar/generateOtp", 200, 180],
-    ["/v2/consent/v3/request", 202, 240],
+    ["/sandbox/identity/generate-code", 200, 0],
+    ["/sandbox/consent/create", 200, 0],
   ];
   await sql`DELETE FROM abdm_gateway_logs WHERE transaction_id LIKE 'TXN-SEED-%'`;
   for (const [endpoint, statusCode, latency] of gatewayLogSeed) {

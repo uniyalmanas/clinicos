@@ -39,23 +39,41 @@ export default async function DoctorProfilePage({ params }: Props) {
     notFound();
   }
 
-  // Schema.org MedicalBusiness / Physician JSON-LD
-  const jsonLd = {
+  // Schema.org MedicalBusiness / Physician JSON-LD. Optional fields are only
+  // published when the clinic actually recorded them.
+  const jsonLd: Record<string, any> = {
     "@context": "https://schema.org",
     "@type": "Physician",
     "name": doctor.full_name,
     "medicalSpecialty": doctor.specialization,
-    "description": doctor.bio,
-    "address": {
+  };
+  if (doctor.bio) jsonLd.description = doctor.bio;
+  if (doctor.clinic_address) {
+    jsonLd.address = {
       "@type": "PostalAddress",
       "streetAddress": doctor.clinic_address,
       "addressLocality": "Dehradun",
       "addressRegion": "Uttarakhand",
-      "addressCountry": "IN"
-    },
-    "telephone": doctor.phone,
-    "priceRange": `₹${doctor.consultation_fee}`
+      "addressCountry": "IN",
+    };
+  }
+  if (doctor.phone) jsonLd.telephone = doctor.phone;
+  if (doctor.consultation_fee > 0) jsonLd.priceRange = `₹${doctor.consultation_fee}`;
+
+  const doctorPhotos: Record<string, string> = {
+    "dr-rahul-sharma": "/images/doctors/dr-rahul-sharma.jpg",
+    "dr-aditi-joshi": "/images/doctors/dr-aditi-joshi.jpg",
+    "dr-sameer-saxena": "/images/doctors/dr-sameer-saxena.jpg",
   };
+  const photo = doctorPhotos[slug];
+  const initials = doctor.full_name
+    .replace(/^Dr\.?\s*/i, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <div className="min-h-screen bg-[#ECEEF2] dark:bg-black text-[#1D1D1F] dark:text-[#F5F5F7]">
@@ -90,96 +108,113 @@ export default async function DoctorProfilePage({ params }: Props) {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
                   <div className="relative h-20 w-20 sm:h-28 sm:w-28 shrink-0 overflow-hidden rounded-3xl border-2 border-white dark:border-[#2C2C2E] shadow-apple-sm">
-                    <Image
-                      src={
-                        slug === "dr-rahul-sharma"
-                          ? "/images/doctors/dr-rahul-sharma.jpg"
-                          : slug === "dr-aditi-joshi"
-                          ? "/images/doctors/dr-aditi-joshi.jpg"
-                          : slug === "dr-sameer-saxena"
-                          ? "/images/doctors/dr-sameer-saxena.jpg"
-                          : "/images/doctors/dr-rahul-sharma.jpg"
-                      }
-                      alt={doctor.full_name}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
+                    {photo ? (
+                      <Image
+                        src={photo}
+                        alt={doctor.full_name}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-apple-blue/10 text-2xl font-black text-apple-blue">
+                        {initials || <Stethoscope className="h-8 w-8" />}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-apple-blue/10 dark:bg-apple-blue/15 px-3 py-1 text-xs font-semibold text-apple-blue">
                         {doctor.specialization}
                       </span>
-                      <span className="flex items-center gap-1 rounded-full bg-apple-teal/10 dark:bg-apple-teal/15 px-3 py-1 text-xs font-medium text-apple-teal dark:text-[#30D1BE]">
-                        <ShieldCheck className="h-3.5 w-3.5" /> Verified NMC Doctor
-                      </span>
+                      {doctor.medical_council_reg_number && (
+                        <span className="flex items-center gap-1 rounded-full bg-apple-teal/10 dark:bg-apple-teal/15 px-3 py-1 text-xs font-medium text-apple-teal dark:text-[#30D1BE]">
+                          <ShieldCheck className="h-3.5 w-3.5" /> Registration on file
+                        </span>
+                      )}
                     </div>
                     <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-[#1D1D1F] dark:text-white">
                       {doctor.full_name}
                     </h1>
-                    <p className="mt-1 text-xs sm:text-sm font-normal text-[#86868B]">
-                      {doctor.qualification_summary}
-                    </p>
+                    {doctor.qualification_summary && (
+                      <p className="mt-1 text-xs sm:text-sm font-normal text-[#86868B]">
+                        {doctor.qualification_summary}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Rating Badge */}
-                <div className="rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center min-w-[120px]">
-                  <div className="flex items-center justify-center gap-1 text-lg font-bold text-[#1D1D1F] dark:text-white font-mono">
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {doctor.rating}
+                {/* Rating Badge — only when patients have actually reviewed */}
+                {doctor.total_reviews > 0 && (
+                  <div className="rounded-[20px] bg-[#ECEEF2]/70 dark:bg-[#2C2C2E] border border-black/[0.04] dark:border-white/[0.06] p-4 text-center min-w-[120px]">
+                    <div className="flex items-center justify-center gap-1 text-lg font-bold text-[#1D1D1F] dark:text-white font-mono">
+                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {doctor.rating}
+                    </div>
+                    <div className="text-[11px] text-[#86868B] mt-0.5">{doctor.total_reviews} {doctor.total_reviews === 1 ? "review" : "reviews"}</div>
                   </div>
-                  <div className="text-[11px] text-[#86868B] mt-0.5">{doctor.total_reviews} verified reviews</div>
-                </div>
+                )}
               </div>
 
               {/* Registration & Clinic metadata */}
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-black/[0.04] dark:border-white/[0.06] pt-6 text-xs text-[#86868B]">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-apple-teal dark:text-[#30D1BE]" />
-                  <span>Reg: <strong className="text-[#1D1D1F] dark:text-white font-medium">{doctor.medical_council_reg_number}</strong> ({doctor.medical_council_state})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-apple-blue" />
-                  <span>Experience: <strong className="text-[#1D1D1F] dark:text-white font-medium">{doctor.years_of_experience} Years</strong></span>
-                </div>
-                <div className="flex items-center gap-2 sm:col-span-2">
-                  <MapPin className="h-4 w-4 text-[#86868B]" />
-                  <span>{doctor.clinic_address}</span>
-                </div>
+                {doctor.medical_council_reg_number && (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-apple-teal dark:text-[#30D1BE]" />
+                    <span>
+                      Reg: <strong className="text-[#1D1D1F] dark:text-white font-medium">{doctor.medical_council_reg_number}</strong>
+                      {doctor.medical_council_state ? ` (${doctor.medical_council_state})` : ""}
+                    </span>
+                  </div>
+                )}
+                {doctor.years_of_experience > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-apple-blue" />
+                    <span>Experience: <strong className="text-[#1D1D1F] dark:text-white font-medium">{doctor.years_of_experience} Years</strong></span>
+                  </div>
+                )}
+                {doctor.clinic_address && (
+                  <div className="flex items-center gap-2 sm:col-span-2">
+                    <MapPin className="h-4 w-4 text-[#86868B]" />
+                    <span>{doctor.clinic_address}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* About & Bio */}
-            <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card">
-              <h2 className="text-base font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
-                About the Doctor
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-[#515154] dark:text-[#A1A1A6]">
-                {doctor.bio}
-              </p>
-            </div>
+            {doctor.bio && (
+              <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card">
+                <h2 className="text-base font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+                  About the Doctor
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-[#515154] dark:text-[#A1A1A6]">
+                  {doctor.bio}
+                </p>
+              </div>
+            )}
 
             {/* Services & Treatment Options */}
-            <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card">
-              <h2 className="text-base font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
-                Services & Clinical Procedures
-              </h2>
-              <div className="mt-4 divide-y divide-black/[0.04] dark:divide-white/[0.06]">
-                {doctor.services_offered.map((s: any, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between py-3.5">
-                    <span className="text-xs font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
-                      {s.name}
-                    </span>
-                    <span className="text-xs font-semibold text-[#1D1D1F] dark:text-white font-mono">
-                      ₹{s.fee}
-                    </span>
-                  </div>
-                ))}
+            {doctor.services_offered.length > 0 && (
+              <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card">
+                <h2 className="text-base font-semibold tracking-tight text-[#1D1D1F] dark:text-white">
+                  Services & Clinical Procedures
+                </h2>
+                <div className="mt-4 divide-y divide-black/[0.04] dark:divide-white/[0.06]">
+                  {doctor.services_offered.map((s: any, idx: number) => (
+                    <div key={idx} className="flex items-center justify-between py-3.5">
+                      <span className="text-xs font-medium text-[#1D1D1F] dark:text-[#F5F5F7]">
+                        {s.name}
+                      </span>
+                      <span className="text-xs font-semibold text-[#1D1D1F] dark:text-white font-mono">
+                        ₹{s.fee}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Verified Patient Reviews & Rating System */}
+            {/* Patient Reviews & Rating System */}
             <DoctorReviewsSection doctorSlug={doctor.slug} doctorName={doctor.full_name} />
           </div>
 
@@ -188,18 +223,24 @@ export default async function DoctorProfilePage({ params }: Props) {
             <div className="sticky top-24 rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-7 shadow-apple-card space-y-6">
               <div className="flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.06] pb-4">
                 <span className="text-xs font-normal text-[#86868B]">In-Clinic Consultation</span>
-                <span className="text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">₹{doctor.consultation_fee}</span>
+                <span className="text-2xl font-bold tracking-tight text-[#1D1D1F] dark:text-white font-mono">
+                  {doctor.consultation_fee > 0 ? `₹${doctor.consultation_fee}` : "Fee at clinic"}
+                </span>
               </div>
 
               <div className="space-y-2.5 text-xs text-[#86868B]">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-apple-blue" />
-                  <span>{doctor.opd_timings}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-apple-blue" />
-                  <span>{doctor.clinic_name}</span>
-                </div>
+                {doctor.opd_timings && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-apple-blue" />
+                    <span>{doctor.opd_timings}</span>
+                  </div>
+                )}
+                {doctor.clinic_name && (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-apple-blue" />
+                    <span>{doctor.clinic_name}</span>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -211,21 +252,25 @@ export default async function DoctorProfilePage({ params }: Props) {
                   <Calendar className="h-4 w-4" /> Book Appointment / Token
                 </Link>
 
-                <a
-                  href={`tel:${doctor.phone}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] py-3 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.98] transition"
-                >
-                  <Phone className="h-4 w-4 text-apple-teal dark:text-[#30D1BE]" /> Call Clinic Directly
-                </a>
+                {doctor.phone && (
+                  <a
+                    href={`tel:${doctor.phone}`}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] py-3 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.98] transition"
+                  >
+                    <Phone className="h-4 w-4 text-apple-teal dark:text-[#30D1BE]" /> Call Clinic Directly
+                  </a>
+                )}
 
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(doctor.clinic_address)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] py-3 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.98] transition"
-                >
-                  <Navigation className="h-4 w-4 text-apple-blue" /> Get Directions
-                </a>
+                {doctor.clinic_address && (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(doctor.clinic_address)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-2 rounded-full border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] dark:bg-white/[0.04] py-3 text-xs font-medium text-[#1D1D1F] dark:text-white hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.98] transition"
+                  >
+                    <Navigation className="h-4 w-4 text-apple-blue" /> Get Directions
+                  </a>
+                )}
               </div>
             </div>
           </div>

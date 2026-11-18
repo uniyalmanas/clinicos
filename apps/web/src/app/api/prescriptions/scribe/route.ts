@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { guard, CLINICAL_ROLES, apiError } from "@/lib/api-auth";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
+import { chatComplete, llmConfigured } from "@/lib/llm";
 
 export const dynamic = "force-dynamic";
-
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-/** Groq retires models regularly; keep this overridable per deployment. */
-const GROQ_CHAT_MODEL = process.env.GROQ_CHAT_MODEL || "openai/gpt-oss-20b";
 
 const SCRIBE_SYSTEM_PROMPT = `You are an expert clinical AI Scribe and Medical Intelligence Assistant for an Indian medical clinic. 
 Your job is to extract structured prescription data and generate comprehensive clinical reports from a doctor's voice dictation or typed notes.
@@ -25,7 +22,7 @@ Extract and return ONLY valid JSON (no markdown fences, no explanation) in this 
   "provisional_diagnosis": "string",
   "medicines": [
     {
-      "medicine_name": "Brand Name (e.g. Tab Dolo 650)",
+      "medicine_name": "Exactly as the doctor dictated (e.g. Tab Azithromycin 500mg)",
       "generic_name": "GENERIC NAME IN CAPS (e.g. PARACETAMOL)",
       "dosage_form": "Tablet|Capsule|Syrup|Ointment|Injection|Gel|Drops",
       "strength": "e.g. 650mg",
@@ -59,164 +56,164 @@ Extract and return ONLY valid JSON (no markdown fences, no explanation) in this 
 }
 
 Rules:
-- Standardize Indian pharmaceutical brand names (e.g. Dolo 650, Pan 40, Cetzine 10, Augmentin 625, Azithral 500)
+- medicine_name MUST be exactly what the doctor dictated. Never substitute a brand for a generic or a different brand. If they said "Azithromycin", write "Tab Azithromycin 500mg" — not "Azithral".
 - Always provide GENERIC CHEMICAL NAME IN UPPERCASE (e.g. PARACETAMOL, PANTOPRAZOLE, CETIRIZINE)
 - Frequency format: morning-afternoon-night as numbers (e.g. 1-0-1, 1-1-1, 0-0-1, 1-0-0)
 - Accurately parse vitals: BP (e.g. 120/78), Pulse (e.g. 88 bpm), Temp (e.g. 101.2°F), SpO2 (e.g. 98%), Weight (e.g. 68 kg)
-- Generate empathetic, actionable patient health report in patient_health_report`;
+- Generate empathetic, actionable patient health report in patient_health_report
 
-// Resilient heuristic clinical fallback parser
+EXTRACTION, NOT INVENTION (critical):
+- This is a scribe. Record only what the doctor said. You are not diagnosing.
+- provisional_diagnosis: use ONLY a diagnosis the doctor explicitly states ("diagnosis is…", "impression…", "this is…", "looks like…"). If the doctor only describes symptoms, set provisional_diagnosis to an empty string. Never infer or name a disease the doctor did not say.
+- vitals: return null for any vital the doctor did not state. Never supply a plausible default (no "120/78", "98%", "88 bpm").
+- medicines: return [] when no medicine is named. Never add a medicine, dose, frequency, duration or instruction the doctor did not dictate. If a field was not stated, use null — do not guess "1-0-1" or "3 Days".
+- lab_tests: only tests the doctor ordered. Otherwise [].
+- diet_advice / followup_advice: only advice the doctor gave. Otherwise empty string.
+- clinical_report_doctor: summarise the dictation. differential_diagnoses and red_flags may only follow from stated findings; use [] when nothing was said.
+- patient_health_report: explain only the recorded diagnosis and medicines. If no diagnosis was recorded, describe the symptoms instead. Do not introduce new conditions, medicines or warnings that are not grounded in the dictation.`;
+
+// Deterministic extractor used only when the LLM is unavailable.
+//
+// It is strictly extractive: a vital, diagnosis, medicine or advice is
+// returned only when it is present in the dictation. Nothing is invented, so a
+// provider outage can never put a drug or diagnosis the doctor did not say onto
+// the prescription. Dosing fields are left empty for the doctor to complete.
 function fallbackHeuristicParser(text: string) {
-  const lower = text.toLowerCase();
-
-  // BP
   const bpMatch = text.match(/(?:bp|blood\s*pressure)?[:\s]*(\d{2,3}\s*\/\s*\d{2,3})/i);
   const bp = bpMatch ? bpMatch[1].replace(/\s+/g, "") : null;
 
-  // Pulse
-  const pulseMatch = text.match(/(?:pulse|heart\s*rate|hr)[\s:]*(\d{2,3})/i) || text.match(/(\d{2,3})\s*(?:bpm|beats)/i);
+  const pulseMatch =
+    text.match(/(?:pulse|heart\s*rate|hr)[\s:]*(\d{2,3})/i) ||
+    text.match(/(\d{2,3})\s*(?:bpm|beats)/i);
   const pulse = pulseMatch ? pulseMatch[1] : null;
 
-  // Temp
-  const tempMatch = text.match(/(?:temp|temperature)[\s:]*(\d{2,3}(?:\.\d+)?)/i) || text.match(/(\d{2,3}(?:\.\d+)?)\s*(?:°?f|fahrenheit)/i);
+  const tempMatch =
+    text.match(/(?:temp|temperature)[\s:]*(\d{2,3}(?:\.\d+)?)/i) ||
+    text.match(/(\d{2,3}(?:\.\d+)?)\s*(?:°?f|fahrenheit)/i);
   const temp = tempMatch ? tempMatch[1] : null;
 
-  // SpO2
-  const spo2Match = text.match(/(?:spo2|oxygen|o2)[\s:]*(\d{2,3})%?/i) || text.match(/(\d{2,3})\s*%(?:\s*on\s*room\s*air)?/i);
+  const spo2Match =
+    text.match(/(?:spo2|oxygen|o2)[\s:]*(\d{2,3})%?/i) ||
+    text.match(/(\d{2,3})\s*%(?:\s*on\s*room\s*air)?/i);
   const spo2 = spo2Match ? spo2Match[1] : null;
 
-  // Weight
-  const weightMatch = text.match(/(?:weight|wt)[\s:]*(\d{2,3}(?:\.\d+)?)\s*(?:kg)?/i) || text.match(/(\d{2,3})\s*kg/i);
+  const weightMatch =
+    text.match(/(?:weight|wt)[\s:]*(\d{2,3}(?:\.\d+)?)\s*(?:kg)?/i) ||
+    text.match(/(\d{2,3})\s*kg/i);
   const weight = weightMatch ? weightMatch[1] : null;
 
-  // Diagnosis
-  let diagnosis = "Acute Viral Pyrexia (Viral Fever)";
-  if (lower.includes("urticaria") || lower.includes("itching") || lower.includes("rash")) {
-    diagnosis = "Acute Urticaria & Allergic Rash";
-  } else if (lower.includes("acne") || lower.includes("pustule")) {
-    diagnosis = "Acne Vulgaris (Grade II)";
-  } else if (lower.includes("pharyngitis") || lower.includes("sore throat")) {
-    diagnosis = "Acute Viral Pharyngitis";
-  } else if (lower.includes("fever") || lower.includes("pyrexia")) {
-    diagnosis = "Acute Viral Pyrexia";
-  }
+  // Only an explicitly dictated diagnosis is used.
+  const diagnosisMatch = text.match(
+    /(?:diagnosis|impression|assessment)\s*[:\-]\s*([^\n.;]+)/i
+  );
+  const diagnosis = diagnosisMatch ? diagnosisMatch[1].trim() : "";
 
-  // Medicines extraction
+  // Medicines are extracted only when the drug itself is named. "Fever" is a
+  // symptom, not a prescription, and dosing is never assumed.
+  const lower = text.toLowerCase();
   const medicines: any[] = [];
-  if (lower.includes("dolo") || lower.includes("paracetamol") || lower.includes("fever") || lower.includes("101")) {
-    medicines.push({
+  const addMedicine = (medicine: any, pattern: RegExp) => {
+    if (!pattern.test(lower)) return;
+    if (medicines.some((m) => m.medicine_name === medicine.medicine_name)) return;
+    medicines.push(medicine);
+  };
+  addMedicine(
+    {
       medicine_name: "Tab Dolo 650",
       generic_name: "PARACETAMOL",
       dosage_form: "Tablet",
       strength: "650mg",
-      frequency: "1-0-1",
-      duration: "3 Days",
-      special_instructions: "Take after meals if temperature > 100°F (SOS)"
-    });
-  }
-  if (lower.includes("pan") || lower.includes("pantocid") || lower.includes("pantoprazole") || lower.includes("acidity")) {
-    medicines.push({
+      frequency: null,
+      duration: null,
+      special_instructions: null,
+    },
+    /\b(dolo|paracetamol|acetaminophen)\b/
+  );
+  addMedicine(
+    {
       medicine_name: "Tab Pan 40",
       generic_name: "PANTOPRAZOLE",
       dosage_form: "Tablet",
       strength: "40mg",
-      frequency: "1-0-0",
-      duration: "5 Days",
-      special_instructions: "Take 30 minutes before breakfast on an empty stomach"
-    });
-  }
-  if (lower.includes("cetzine") || lower.includes("cetirizine") || lower.includes("bilastine") || lower.includes("cough") || lower.includes("cold")) {
-    medicines.push({
+      frequency: null,
+      duration: null,
+      special_instructions: null,
+    },
+    /\b(pan\s*40|pantocid|pantoprazole)\b/
+  );
+  addMedicine(
+    {
       medicine_name: "Tab Cetzine 10",
       generic_name: "CETIRIZINE HYDROCHLORIDE",
       dosage_form: "Tablet",
       strength: "10mg",
-      frequency: "0-0-1",
-      duration: "3 Days",
-      special_instructions: "Take at bedtime; may cause mild drowsiness"
-    });
-  }
-  if (lower.includes("multivitamin") || lower.includes("zinc") || lower.includes("syrup") || lower.includes("weakness")) {
-    medicines.push({
+      frequency: null,
+      duration: null,
+      special_instructions: null,
+    },
+    /\b(cetzine|cetirizine|bilastine)\b/
+  );
+  addMedicine(
+    {
       medicine_name: "Syp Multivitamin with Zinc",
       generic_name: "MULTIVITAMIN + MINERALS + ZINC",
       dosage_form: "Syrup",
       strength: "10ml",
-      frequency: "0-1-0",
-      duration: "5 Days",
-      special_instructions: "Take 10ml after lunch"
-    });
-  }
+      frequency: null,
+      duration: null,
+      special_instructions: null,
+    },
+    /\b(multivitamin|zinc)\b/
+  );
+
+  const followupMatch = text.match(/(?:follow\s*up|review|revisit)[^.\n]*/i);
+  const followupAdvice = followupMatch ? followupMatch[0].trim() : "";
+
+  const vitalsAssessment = [
+    bp ? `BP ${bp} mmHg` : "",
+    pulse ? `heart rate ${pulse} bpm` : "",
+    temp ? `temperature ${temp}°F` : "",
+    spo2 ? `SpO2 ${spo2}%` : "",
+    weight ? `weight ${weight} kg` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return {
-    vitals: {
-      bp: bp || "120/78",
-      pulse: pulse || "88",
-      temp: temp || "101.2",
-      spo2: spo2 || "98",
-      weight: weight || null,
-      height: null,
-    },
+    vitals: { bp, pulse, temp, spo2, weight, height: null },
     chief_complaints: text.length > 120 ? text.slice(0, 120) + "..." : text,
     provisional_diagnosis: diagnosis,
-    medicines: medicines.length > 0 ? medicines : [
-      {
-        medicine_name: "Tab Dolo 650",
-        generic_name: "PARACETAMOL",
-        dosage_form: "Tablet",
-        strength: "650mg",
-        frequency: "1-0-1",
-        duration: "3 Days",
-        special_instructions: "After food"
-      }
-    ],
-    lab_tests: lower.includes("cbc") || lower.includes("blood test") ? ["Complete Blood Count (CBC)"] : [],
-    diet_advice: "Hydrate adequately with 2.5–3 Litres of warm water, oral rehydration salts (ORS), and light nourishing meals (Khichdi, clear soups). Avoid chilled beverages and oily food.",
-    followup_advice: "Follow up in 3 days if fever persists above 100°F or if symptoms worsen.",
+    medicines,
+    lab_tests: [],
+    diet_advice: "",
+    followup_advice: followupAdvice,
     clinical_report_doctor: {
-      vitals_assessment: `Moderate pyrexia (${temp || "101.2"}°F), heart rate ${pulse || "88"} bpm (normal sinus rhythm), SpO2 ${spo2 || "98"}% on room air, and BP ${bp || "120/78"} mmHg. Hemodynamically stable.`,
-      clinical_summary: `Patient presents with acute pyrexial illness consistent with viral syndrome. Vitals show mild pyrexia without tachypnea or desaturation. Antipyretic and symptomatic management initiated.`,
-      differential_diagnoses: ["Acute Viral Pyrexia", "Seasonal Influenza", "Early Dengue (Watch for rash/platelet drop)"],
-      red_flags: ["Persistent high fever >102°F beyond 72 hrs", "Shortness of breath / SpO2 <95%", "Severe persistent vomiting or abdominal pain"]
+      vitals_assessment: vitalsAssessment,
+      clinical_summary: "",
+      differential_diagnoses: [],
+      red_flags: [],
     },
     patient_health_report: {
-      condition_overview: `You have been diagnosed with ${diagnosis}. This is a viral illness causing elevated body temperature, fatigue, and body ache. It usually clears within 3 to 5 days with appropriate medicine, hydration, and rest.`,
-      medicine_schedule: [
-        {
-          timing: "Morning (सुबह)",
-          medicine: "Tab Pan 40 (Empty stomach, before breakfast) + Tab Dolo 650 (After breakfast if fever >100°F)",
-          instructions: "Take Pan 40 with a full glass of water 30 minutes before your morning meal."
-        },
-        {
-          timing: "Afternoon (दोपहर)",
-          medicine: "Tab Dolo 650 (Only if fever returns) + Syp Multivitamin with Zinc (10ml)",
-          instructions: "Take syrup after lunch for immunity and energy support."
-        },
-        {
-          timing: "Night (रात)",
-          medicine: "Tab Dolo 650 (If fever >100°F) + Tab Cetzine 10 (Bedtime)",
-          instructions: "Take Cetzine right before sleeping to relieve body ache and sneezing."
-        }
-      ],
-      home_care_guidance: "Drink plenty of lukewarm fluids, coconut water, or ORS. Take lukewarm sponge baths if temperature spikes above 101.5°F. Rest completely for 48 hours.",
-      emergency_warning_signs: "Contact clinic or visit emergency immediately if you experience breathlessness, persistent vomiting, severe pain, or fever exceeding 102.5°F.",
-      followup_instruction: "Review with Dr. Rahul Sharma in 3 days (or earlier if needed)."
-    }
+      condition_overview: diagnosis ? `Your doctor has recorded: ${diagnosis}.` : "",
+      medicine_schedule: medicines.map((m) => ({
+        timing: "As directed",
+        medicine: m.medicine_name,
+        instructions: m.special_instructions || "",
+      })),
+      home_care_guidance: "",
+      emergency_warning_signs: "",
+      followup_instruction: followupAdvice,
+    },
   };
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // Auth Guard — allow clinical roles, or allow demo consult mode if in development/demo session
-    let doctorName = "Dr. Rahul Sharma";
-    try {
-      const auth = await guard(req, { roles: CLINICAL_ROLES, requireClinic: false });
-      if (auth.ok) {
-        doctorName = auth.auth.user.full_name;
-      }
-    } catch {
-      // Allow demo clinical session
-    }
+    // The scribe writes clinical content, so it requires a real signed-in
+    // clinician. Demo sessions carry a valid token and pass this guard too.
+    const auth = await guard(req, { roles: CLINICAL_ROLES, requireClinic: false });
+    if (!auth.ok) return auth.response;
+    const doctorName = auth.auth.user.full_name;
 
     const limit = await rateLimit(rateLimitKey(req, "ai:scribe"), 60, 600);
     if (!limit.allowed) {
@@ -258,8 +255,7 @@ LANGUAGE RULE (important):
 - Write every field of \`patient_health_report\` in ${languageName}. Use everyday words a person with no medical training can understand. Do not use English medical jargon in the patient report unless you immediately explain it in the same sentence.
 - Keep medicine brand names exactly as the doctor said them; explanation text around them should be in the patient's language.`;
 
-    const groqApiKey = process.env.GROQ_API_KEY;
-    if (!groqApiKey) {
+    if (!llmConfigured()) {
       // Fallback directly to high-fidelity heuristic extractor
       const fallbackData = fallbackHeuristicParser(dictation);
       return NextResponse.json({
@@ -271,28 +267,18 @@ LANGUAGE RULE (important):
     }
 
     try {
-      // Call GROQ LLaMA API
-      const groqResponse = await fetch(GROQ_API_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${groqApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: GROQ_CHAT_MODEL,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Doctor's voice dictation: "${dictation}"` },
-          ],
-          temperature: 0.1,
-          max_tokens: 4096,
-          response_format: { type: "json_object" },
-        }),
+      const ai = await chatComplete({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Doctor's voice dictation: "${dictation}"` },
+        ],
+        temperature: 0.1,
+        maxTokens: 4096,
+        responseFormat: { type: "json_object" },
       });
 
-      if (!groqResponse.ok) {
-        const errText = await groqResponse.text();
-        console.warn("GROQ API returned non-200, falling back to heuristic parser:", errText);
+      if (!ai?.text) {
+        console.warn("AI provider unavailable, falling back to heuristic parser");
         const fallbackData = fallbackHeuristicParser(dictation);
         return NextResponse.json({
           status: "success",
@@ -302,8 +288,7 @@ LANGUAGE RULE (important):
         });
       }
 
-      const groqData = await groqResponse.json();
-      const rawContent = groqData?.choices?.[0]?.message?.content || "{}";
+      const rawContent = ai.text;
 
       let parsed: any;
       try {
@@ -331,15 +316,17 @@ LANGUAGE RULE (important):
         },
         chief_complaints: parsed.chief_complaints || fallback.chief_complaints,
         provisional_diagnosis: parsed.provisional_diagnosis || fallback.provisional_diagnosis,
-        medicines: (Array.isArray(parsed.medicines) && parsed.medicines.length > 0 ? parsed.medicines : fallback.medicines).map((m: any) => ({
-          medicine_name: m.medicine_name || null,
-          generic_name: String(m.generic_name || "").toUpperCase() || null,
-          dosage_form: m.dosage_form || "Tablet",
-          strength: m.strength || "",
-          frequency: m.frequency || "1-0-1",
-          duration: m.duration || "3 Days",
-          special_instructions: m.special_instructions || "After meals",
-        })),
+        medicines: (Array.isArray(parsed.medicines) && parsed.medicines.length > 0 ? parsed.medicines : fallback.medicines)
+          .map((m: any) => ({
+            medicine_name: m.medicine_name || null,
+            generic_name: String(m.generic_name || "").toUpperCase() || null,
+            dosage_form: m.dosage_form || null,
+            strength: m.strength || null,
+            frequency: m.frequency || null,
+            duration: m.duration || null,
+            special_instructions: m.special_instructions || null,
+          }))
+          .filter((m: any) => m.medicine_name),
         lab_tests: Array.isArray(parsed.lab_tests) ? parsed.lab_tests : fallback.lab_tests,
         diet_advice: parsed.diet_advice || fallback.diet_advice,
         followup_advice: parsed.followup_advice || fallback.followup_advice,
@@ -349,12 +336,13 @@ LANGUAGE RULE (important):
 
       return NextResponse.json({
         status: "success",
-        model: GROQ_CHAT_MODEL,
+        model: ai.model,
+        provider: ai.provider,
         scribed_by: doctorName,
         data: result,
       });
-    } catch (groqErr) {
-      console.warn("GROQ execution error, using heuristic fallback:", groqErr);
+    } catch (aiErr) {
+      console.warn("AI execution error, using heuristic fallback:", aiErr);
       const fallbackData = fallbackHeuristicParser(dictation);
       return NextResponse.json({
         status: "success",

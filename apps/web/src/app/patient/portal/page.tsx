@@ -36,6 +36,7 @@ import {
   Tv,
   Check,
   Sparkles,
+  FlaskConical,
 } from "lucide-react";
 
 // Web Audio API chime generator for patient token alerts
@@ -126,6 +127,26 @@ interface PatientVisitReport {
   approved_at: string | null;
 }
 
+interface LabReport {
+  order_number: string;
+  test_name: string;
+  category: string | null;
+  results: Array<{
+    parameter?: string;
+    value?: string | number;
+    unit?: string;
+    reference_range?: string;
+    status?: string;
+  }>;
+  verified_at: string | null;
+  verified_by: string | null;
+  pathologist_reg_no: string | null;
+  critical_value_alert: boolean;
+  critical_parameters: string[];
+  report_sha256: string | null;
+  doctor_name: string | null;
+}
+
 interface PatientRecord {
   id: string;
   uhid: string | null;
@@ -141,6 +162,7 @@ interface PatientRecord {
   visits: Visit[];
   documents: unknown[];
   consultation_reports?: PatientVisitReport[];
+  lab_reports?: LabReport[];
 }
 
 type AuthState = "checking" | "signed_out" | "awaiting_code" | "signed_in";
@@ -511,22 +533,33 @@ function PatientPortalView() {
       if (found) return found;
     }
     if (localLatestRx) {
+      // This is a device copy of a real prescription; show only what it holds.
       return {
         visit_id: localLatestRx.prescription_number || "latest",
-        visit_date: localLatestRx.created_at || "Today",
-        doctor_name: localLatestRx.doctor_name || "Dr. Rahul Sharma",
-        doctor_slug: "dr-rahul-sharma",
-        doctor_specialization: "General Physician / Dermatologist",
-        clinic_name: localLatestRx.clinic_name || "Derma Care Skin & Laser Centre",
-        provisional_diagnosis: localLatestRx.provisional_diagnosis || "Acute Viral Pyrexia",
+        visit_date: localLatestRx.created_at || "",
+        doctor_name: localLatestRx.doctor_name || "Doctor",
+        doctor_slug: localLatestRx.doctor_slug || "",
+        doctor_specialization: localLatestRx.doctor_specialization || null,
+        clinic_name: localLatestRx.clinic_name || "",
+        provisional_diagnosis: localLatestRx.provisional_diagnosis || "",
         vitals: localLatestRx.vitals || null,
-        medications_summary: Array.isArray(localLatestRx.items) 
-          ? localLatestRx.items.map((i: any) => `${i.medicine_name} (${i.dosage_form || "Tab"}) — ${i.dosage_frequency || i.frequency || "1-0-1"} for ${i.duration_days || i.duration || "3"} days [${i.timing_relation || "After Food"}]`)
+        medications_summary: Array.isArray(localLatestRx.items)
+          ? localLatestRx.items.map((i: any) => {
+              const name = i.medicine_name || i.name || "";
+              if (!name) return "";
+              const form = i.dosage_form ? ` (${i.dosage_form})` : "";
+              const freq = i.dosage_frequency || i.frequency || "";
+              const days = i.duration_days || i.duration || "";
+              const timing = i.timing_relation || "";
+              return [`${name}${form}`, freq, days ? `for ${days} days` : "", timing ? `[${timing}]` : ""]
+                .filter(Boolean)
+                .join(" — ");
+            }).filter(Boolean)
           : [],
-        followup_advice: localLatestRx.instructions || "Adequate hydration and rest. Review in 3 days.",
-        prescription_number: localLatestRx.prescription_number || "RX-2026",
-        fee_amount: 600,
-        payment_status: "paid",
+        followup_advice: localLatestRx.instructions || "",
+        prescription_number: localLatestRx.prescription_number || "",
+        fee_amount: localLatestRx.fee_amount ?? null,
+        payment_status: localLatestRx.payment_status || "unknown",
         clinic_id: null,
       };
     }
@@ -574,8 +607,8 @@ function PatientPortalView() {
       lastClinicSlug ||
       record?.primary_clinic_slug ||
       record?.visits?.[0]?.clinic_slug ||
-      "derma-care-dehradun";
-    return `/clinics/${slug}`;
+      "";
+    return slug ? `/clinics/${slug}` : "/";
   }, [urlFrom, urlClinic, lastClinicSlug, record]);
 
   return (
@@ -795,7 +828,7 @@ function PatientPortalView() {
                           {calledAlert}
                         </p>
                         <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                          Please enter Consultation Room 1 • Dr. Rahul Sharma is waiting for you.
+                          Please proceed to the consultation room shown at the front desk.
                         </p>
                       </div>
                     </div>
@@ -1136,6 +1169,120 @@ function PatientPortalView() {
                                 </Link>
                               </div>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* LAB REPORTS — signed, pathologist-verified diagnostics */}
+                    {!!record.lab_reports?.length && (
+                      <div className="rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#1C1C1E] p-6 sm:p-8 shadow-apple-card space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-sm font-semibold text-[#1D1D1F] dark:text-white">
+                              My lab reports ({record.lab_reports.length})
+                            </h3>
+                            <p className="mt-0.5 text-[11px] text-[#86868B]">
+                              Released only after the pathologist has verified and signed the result.
+                            </p>
+                          </div>
+                          <FlaskConical className="h-4 w-4 shrink-0 text-emerald-500" />
+                        </div>
+
+                        <div className="space-y-3">
+                          {record.lab_reports.map((report) => (
+                            <details
+                              key={report.order_number}
+                              className="group rounded-[20px] bg-[#ECEEF2]/60 dark:bg-[#2C2C2E]/40 border border-black/[0.04] dark:border-white/[0.06] p-4"
+                            >
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                                <div>
+                                  <div className="font-semibold text-xs text-[#1D1D1F] dark:text-white">
+                                    {report.test_name}
+                                  </div>
+                                  <div className="mt-0.5 text-[11px] text-[#86868B]">
+                                    {report.verified_at
+                                      ? new Date(report.verified_at).toLocaleDateString("en-IN", {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        })
+                                      : ""}
+                                    {report.doctor_name ? ` • ordered by ${report.doctor_name}` : ""}
+                                  </div>
+                                </div>
+                                <span className="text-[10px] font-semibold text-apple-blue">
+                                  View
+                                </span>
+                              </summary>
+
+                              <div className="mt-3 space-y-3 border-t border-black/[0.06] dark:border-white/[0.08] pt-3">
+                                {report.critical_value_alert && (
+                                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 text-[11px] font-semibold text-rose-700 dark:text-rose-300">
+                                    <AlertCircle className="mr-1 inline h-3.5 w-3.5" />
+                                    A critical value was flagged on this report. Your clinic has been alerted — contact them if you have not heard back.
+                                  </div>
+                                )}
+
+                                {report.results.length > 0 ? (
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-[11px]">
+                                      <thead className="text-[10px] uppercase tracking-wider text-[#86868B]">
+                                        <tr>
+                                          <th className="pb-1.5 pr-3 font-bold">Parameter</th>
+                                          <th className="pb-1.5 pr-3 font-bold">Result</th>
+                                          <th className="pb-1.5 pr-3 font-bold">Reference</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="text-[#1D1D1F] dark:text-[#F5F5F7]">
+                                        {report.results.map((row, idx) => (
+                                          <tr
+                                            key={`${report.order_number}-${idx}`}
+                                            className="border-t border-black/[0.04] dark:border-white/[0.06]"
+                                          >
+                                            <td className="py-1.5 pr-3">{row.parameter || "—"}</td>
+                                            <td
+                                              className={`py-1.5 pr-3 font-semibold ${
+                                                row.status === "critical"
+                                                  ? "text-rose-600 dark:text-rose-400"
+                                                  : row.status === "high" || row.status === "low"
+                                                    ? "text-amber-600 dark:text-amber-400"
+                                                    : ""
+                                              }`}
+                                            >
+                                              {row.value ?? "—"}
+                                              {row.unit ? ` ${row.unit}` : ""}
+                                            </td>
+                                            <td className="py-1.5 pr-3 text-[#86868B]">
+                                              {row.reference_range || "—"}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-[#86868B]">
+                                    No structured parameters were recorded for this report.
+                                  </p>
+                                )}
+
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#86868B]">
+                                  {report.verified_by && (
+                                    <span>
+                                      Verified by {report.verified_by}
+                                      {report.pathologist_reg_no ? ` (${report.pathologist_reg_no})` : ""}
+                                    </span>
+                                  )}
+                                  <span>Order {report.order_number}</span>
+                                  {report.report_sha256 && (
+                                    <span className="font-mono">
+                                      Seal {report.report_sha256.slice(0, 12)}…
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </details>
                           ))}
                         </div>
                       </div>

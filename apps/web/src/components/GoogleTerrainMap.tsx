@@ -172,6 +172,15 @@ export default function GoogleTerrainMap({
       // Create Custom Google Maps Price Pill Marker for each doctor
       doctors.forEach((doc) => {
         const isSelected = activeDoctor?.slug === doc.slug;
+        const initials = String(doc.full_name || "")
+          .replace(/^Dr\.?\s*/i, "")
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((part: string) => part[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase();
+        const feeLabel = doc.consultation_fee > 0 ? `₹${doc.consultation_fee}` : "Fee at clinic";
 
         // Custom HTML for the Google Maps Marker Pill
         const markerHtml = `
@@ -188,7 +197,7 @@ export default function GoogleTerrainMap({
                 <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
                 <circle cx="20" cy="10" r="2"/>
               </svg>
-              <span class="tracking-tight">₹${doc.consultation_fee}</span>
+              <span class="tracking-tight">${feeLabel}</span>
               ${doc.on_time_guarantee ? `<span class="text-[8px] font-black uppercase px-1 py-0.2 rounded ${isSelected ? "bg-white/20 text-white" : "bg-blue-100 text-[#0d2a58]"}">OTG</span>` : ""}
             </div>
             <!-- Pointer needle -->
@@ -210,8 +219,8 @@ export default function GoogleTerrainMap({
         const popupContent = `
           <div class="google-infowindow p-1 text-[#3c4043] font-sans" style="min-width: 250px; max-width: 280px;">
             <div class="flex items-start gap-3">
-              <div class="h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                <img src="${doc.avatar_url || "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150"}" alt="${doc.full_name}" class="h-full w-full object-cover" />
+              <div class="h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-[#e8f0fe] border border-gray-200 flex items-center justify-center text-[13px] font-bold text-[#1a73e8]">
+                ${doc.avatar_url ? `<img src="${doc.avatar_url}" alt="${doc.full_name}" class="h-full w-full object-cover" />` : initials}
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1">
@@ -220,16 +229,14 @@ export default function GoogleTerrainMap({
                 </div>
                 <p class="text-[11px] text-gray-500 font-medium truncate">${doc.specialization}</p>
                 <div class="flex items-center gap-1 text-[10px] font-bold text-amber-700 mt-0.5">
-                  <span>★ ${doc.rating}</span>
-                  <span class="text-gray-400 font-normal">(${doc.total_reviews})</span>
-                  <span class="text-gray-300">•</span>
-                  <span class="text-[#188038]">₹${doc.consultation_fee} Fee</span>
+                  ${doc.total_reviews > 0 ? `<span>★ ${doc.rating}</span><span class="text-gray-400 font-normal">(${doc.total_reviews})</span><span class="text-gray-300">•</span>` : ""}
+                  <span class="text-[#188038]">${feeLabel} Fee</span>
                 </div>
               </div>
             </div>
             <div class="mt-2 pt-2 border-t border-gray-100 text-[10px] text-gray-500 space-y-0.5">
               <p class="truncate">📍 ${doc.clinic_name}</p>
-              <p class="text-[#188038] font-semibold">🕒 ${doc.wait_time} • 0% Markup</p>
+              <p class="text-[#188038] font-semibold">🕒 ${doc.wait_time ? `${doc.wait_time} • ` : ""}0% Markup</p>
             </div>
             <div class="mt-2.5 flex items-center gap-2">
               <a href="https://maps.google.com/?q=${encodeURIComponent(doc.clinic_name + ", " + doc.clinic_address)}" target="_blank" rel="noreferrer" class="flex-1 text-center py-1 text-[11px] font-semibold text-[#1a73e8] border border-[#dadce0] rounded-md hover:bg-gray-50">

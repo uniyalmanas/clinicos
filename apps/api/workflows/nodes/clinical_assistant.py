@@ -110,7 +110,7 @@ RULES:
                 reply = f"Calculated standard pediatric dosing for {drug} based on {w:g} kg body weight."
             provenance_sources.append({
                 "source_type": "medical_knowledge",
-                "citation": "Pediatric Drug Dosing Formulary",
+                "citation": "General dosing reference — verify with local formulary",
             })
         # 2. Empiric Antibiotic Stewardship Query
         elif "antibiotic" in q_lower or "stewardship" in q_lower or "first line" in q_lower:
@@ -128,7 +128,7 @@ RULES:
                 reply = "Empiric antibiotic stewardship recommends targeted therapy guided by local antibiogram, avoiding broad-spectrum fluoroquinolones when narrow-spectrum agents suffice."
             provenance_sources.append({
                 "source_type": "medical_knowledge",
-                "citation": "ICMR / WHO Antibiotic Stewardship Guidelines",
+                "citation": "General stewardship reference — verify with local policy",
             })
         # 3. Differential Diagnosis Query
         elif "differential" in q_lower or "ddx" in q_lower or "possible causes" in q_lower:
@@ -142,14 +142,17 @@ RULES:
                 reply = "Consider primary acute infectious, inflammatory, and metabolic etiologies. Correlate with physical findings and initial CBC/CRP workup."
             provenance_sources.append({
                 "source_type": "medical_knowledge",
-                "citation": "Clinical Differential Diagnosis Compendium",
+                "citation": "General clinical reference",
             })
         # 4. Allergy Query
         elif "allerg" in q_lower or "reaction" in q_lower or "safe to" in q_lower or "can i prescribe" in q_lower or "can i give" in q_lower:
-            reply = f"Patient has documented allergy to: {', '.join(allergies) if allergies else 'None documented (NKDA)'}. Please avoid cross-reactive agents."
+            reply = (
+                f"Allergies on file: {', '.join(allergies) if allergies else 'none recorded'}. "
+                "Confirm with the patient before prescribing; absence from the record is not proof of no allergy."
+            )
             provenance_sources.append({
-                "source_type": "verified_patient_record",
-                "citation": "Verified EHR Allergy Registry",
+                "source_type": "verified_patient_record" if allergies else "missing_info",
+                "citation": "Allergy record on file" if allergies else "EHR allergy check",
             })
         elif "history" in q_lower or "last visit" in q_lower or "previous" in q_lower:
             if past_visits:
@@ -195,7 +198,8 @@ RULES:
                     "citation": "Clinical Fact Registry",
                 })
         else:
-            reply = f"Noted. Current clinical facts: {len(clinical_facts)} items tracked. Longitudinal history shows {', '.join(medical_history)}."
+            history_text = ", ".join(medical_history) if medical_history else "no history on record"
+            reply = f"Noted. Current clinical facts: {len(clinical_facts)} items tracked. Patient record shows {history_text}."
             provenance_sources.append({
                 "source_type": "medical_knowledge",
                 "citation": "Clinical Knowledge Synthesizer",
@@ -211,7 +215,7 @@ RULES:
         if allergies or medical_history:
             provenance_sources.append({
                 "source_type": "verified_patient_record",
-                "citation": "Clinic EHR Profile",
+                "citation": "Clinic EHR profile on file",
             })
 
     return {

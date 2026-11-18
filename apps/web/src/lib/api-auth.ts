@@ -91,6 +91,7 @@ export interface GuardAuth {
     full_name: string;
     specialization: string;
     medical_council_reg_number?: string | null;
+    medical_council_state?: string | null;
   } | null;
   token: TokenPayload;
   isSuperAdmin: boolean;
@@ -172,12 +173,15 @@ export async function guard(
   const isDemoSession = Boolean(payload.sub && payload.sub.startsWith("usr_demo_"));
 
   if (isDemoSession) {
+    // Claims come from the demo login route. Never fall back to a real
+    // person's name or phone: a malformed demo token should fail the doctor
+    // profile lookup, not silently sign as the clinic owner.
     user = {
       id: payload.sub,
-      phone: payload.phone || "9876500001",
+      phone: payload.phone || "",
       email: `${payload.sub}@docsphere.local`,
-      full_name: payload.full_name || "Dr. Rahul Sharma",
-      role: payload.role || "doctor",
+      full_name: payload.full_name || "Demo User",
+      role: payload.role || "staff",
       is_active: true,
     };
   } else {
@@ -347,35 +351,29 @@ export async function guard(
     clinic &&
     (effectiveRole === "doctor" || effectiveRole === "owner" || effectiveRole === "clinic_admin")
   ) {
-    if (isDemoSession) {
-      doctor = {
-        id: "doc_demo_1",
-        slug: user.phone === "9876500002" ? "dr-aditi-joshi" : "dr-rahul-sharma",
-        full_name: user.full_name,
-        specialization: user.phone === "9876500002" ? "Pediatrics & Child Health" : "Internal Medicine & General Practice",
-        medical_council_reg_number: "UKMC-8421-2012",
-      };
-    } else {
-      try {
-        const docs = await sql`
-          SELECT id, slug, full_name, specialization, medical_council_reg_number
-          FROM doctors
-          WHERE phone = ${user.phone}
-            AND (
-              clinic_id::text = ${clinic.id}::text
-              OR clinic_slug = ${clinic.slug}
-            )
-          LIMIT 1;
-        `;
-        if (docs.length > 0) doctor = docs[0] as GuardAuth["doctor"];
-      } catch (err: any) {
-        console.error("[auth] doctor profile lookup failed; refusing to authorize:", err?.message);
-        return deny(
-          503,
-          "Authentication is temporarily unavailable. Please retry shortly.",
-          "auth_unavailable"
-        );
-      }
+    try {
+      // Demo sessions resolve the same real doctors row as password logins, so
+      // a 1-tap demo prescription is signed with the doctor's true specialty
+      // and council registration number — never a synthetic identity.
+      const docs = await sql`
+        SELECT id, slug, full_name, specialization, medical_council_reg_number,
+               medical_council_state
+        FROM doctors
+        WHERE phone = ${user.phone}
+          AND (
+            clinic_id::text = ${clinic.id}::text
+            OR clinic_slug = ${clinic.slug}
+          )
+        LIMIT 1;
+      `;
+      if (docs.length > 0) doctor = docs[0] as GuardAuth["doctor"];
+    } catch (err: any) {
+      console.error("[auth] doctor profile lookup failed; refusing to authorize:", err?.message);
+      return deny(
+        503,
+        "Authentication is temporarily unavailable. Please retry shortly.",
+        "auth_unavailable"
+      );
     }
 
     // Never invent a clinical identity. A user whose effective role is

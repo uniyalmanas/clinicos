@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { 
   Printer, 
@@ -48,24 +48,85 @@ export default function StandeeGeneratorPage() {
   const [showSimulatorModal, setShowSimulatorModal] = useState<boolean>(false);
   const [simPatientToken, setSimPatientToken] = useState<number>(4);
   const [simCurrentToken, setSimCurrentToken] = useState<number>(2);
-  const [simPhone, setSimPhone] = useState<string>("+919876543210");
+  const [simPhone, setSimPhone] = useState<string>("");
   const [simDispatchedMsg, setSimDispatchedMsg] = useState<string | null>(null);
   const [isSendingSimAlert, setIsSendingSimAlert] = useState<boolean>(false);
 
-  // Clinic Editable Info
-  const [clinicName, setClinicName] = useState("Derma Care Skin & Laser Centre");
-  const [tagline, setTagline] = useState("Advanced Clinical Dermatology & Laser Surgery");
-  const [doctorName, setDoctorName] = useState("Dr. Rahul Sharma");
-  const [doctorDegrees, setDoctorDegrees] = useState("MBBS, MD (Dermatology) • Reg. UKMC-8942");
-  const [helpline, setHelpline] = useState("+91 98765 43210");
-  const [opdTimings, setOpdTimings] = useState("Morning: 10:00 AM - 01:30 PM | Evening: 05:00 PM - 08:30 PM");
-  
+  // Clinic Editable Info — hydrated from the signed-in clinic.
+  const [clinicSlug, setClinicSlug] = useState("");
+  const [clinicName, setClinicName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [doctorName, setDoctorName] = useState("");
+  const [doctorDegrees, setDoctorDegrees] = useState("");
+  const [helpline, setHelpline] = useState("");
+  const [opdTimings, setOpdTimings] = useState("");
+  const [reviewUrl, setReviewUrl] = useState("");
+
   // Wi-Fi Config
-  const [wifiSsid, setWifiSsid] = useState("DermaCare_Guest");
-  const [wifiPassword, setWifiPassword] = useState("CareClinic2026");
+  const [wifiSsid, setWifiSsid] = useState("");
+  const [wifiPassword, setWifiPassword] = useState("");
 
   // Custom Link
-  const [customLink, setCustomLink] = useState("https://clinicos.in/p/derma-care");
+  const [customLink, setCustomLink] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        let slug = "";
+        const userStr = localStorage.getItem("clinicos_user");
+        if (userStr) {
+          try {
+            slug = JSON.parse(userStr)?.clinic_slug || "";
+          } catch {}
+        }
+        const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+        const me = meRes.ok ? await meRes.json() : null;
+        slug = slug || me?.clinic_slug || "";
+        if (cancelled) return;
+        if (slug) setClinicSlug(slug);
+        if (typeof window !== "undefined" && slug) {
+          setCustomLink(`${window.location.origin}/clinics/${slug}`);
+        }
+
+        if (!slug) return;
+        const clinicRes = await fetch(`/api/clinics?slug=${encodeURIComponent(slug)}`, {
+          cache: "no-store",
+        });
+        if (!clinicRes.ok) return;
+        const clinic = await clinicRes.json();
+        if (cancelled) return;
+        if (clinic.name) setClinicName(clinic.name);
+        if (clinic.tagline) setTagline(clinic.tagline);
+        if (clinic.phone) setHelpline(clinic.phone);
+        if (clinic.opening_hours?.morning || clinic.opening_hours?.evening) {
+          setOpdTimings(
+            [
+              clinic.opening_hours?.morning ? `Morning: ${clinic.opening_hours.morning}` : "",
+              clinic.opening_hours?.evening ? `Evening: ${clinic.opening_hours.evening}` : "",
+            ]
+              .filter(Boolean)
+              .join(" | ")
+          );
+        }
+        const doctors = Array.isArray(clinic.doctors) ? clinic.doctors : [];
+        const primary = doctors.find((d: any) => d.is_active !== false) || doctors[0];
+        if (primary) {
+          setDoctorName(primary.full_name || "");
+          setDoctorDegrees(
+            [primary.qualification_summary, primary.medical_council_reg_number ? `Reg. ${primary.medical_council_reg_number}` : ""]
+              .filter(Boolean)
+              .join(" • ")
+          );
+        }
+      } catch {
+        // Leave fields blank so staff can fill them in before printing.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Compute QR Destination URL & Content based on purpose
   const { qrValue, headerTitle, headerHindi, instructionText, instructionHindi, badgeText } = useMemo(() => {
@@ -74,7 +135,7 @@ export default function StandeeGeneratorPage() {
     switch (purpose) {
       case "live_queue":
         return {
-          qrValue: `${origin}/waiting-room?clinic=derma-care&view=patient`,
+          qrValue: `${origin}/waiting-room?clinic=${clinicSlug}&view=patient`,
           headerTitle: "Scan to Track Your Token",
           headerHindi: "अपने मोबाइल पर लाइव टोकन देखें",
           instructionText: "Scan with your phone camera to watch live queue progression. You can relax in your car or a nearby cafe without missing your turn!",
@@ -83,7 +144,7 @@ export default function StandeeGeneratorPage() {
         };
       case "express_booking":
         return {
-          qrValue: `${origin}/book?clinic=derma-care`,
+          qrValue: `${origin}/book?clinic=${clinicSlug}`,
           headerTitle: "Skip Front Desk Line & Book Token",
           headerHindi: "बिना लाइन में लगे तुरंत डिजिटल टोकन लें",
           instructionText: "Scan to reserve an immediate priority walk-in consultation token directly on your phone in under 15 seconds.",
@@ -92,12 +153,14 @@ export default function StandeeGeneratorPage() {
         };
       case "google_reviews":
         return {
-          qrValue: "https://g.page/r/derma-care-dehradun/review",
+          qrValue: reviewUrl || `${origin}/clinics/${clinicSlug}`,
           headerTitle: "How was your Consultation?",
           headerHindi: "डॉक्टर के साथ आपका अनुभव कैसा रहा?",
-          instructionText: "Help patients like you discover compassionate clinical care. Take 15 seconds to leave Dr. Rahul Sharma a verified Google review!",
+          instructionText: reviewUrl
+            ? `Help patients like you discover compassionate clinical care. Take 15 seconds to leave ${doctorName || "your doctor"} a Google review!`
+            : "Add your clinic's Google review link below to generate this standee.",
           instructionHindi: "कृपया गूगल पर अपना बहुमूल्य अनुभव साझा करें और 5-स्टार रेटिंग दें।",
-          badgeText: "VERIFIED PATIENT REVIEW"
+          badgeText: "PATIENT REVIEW"
         };
       case "clinic_wifi":
         return {
@@ -111,15 +174,15 @@ export default function StandeeGeneratorPage() {
       case "custom_url":
       default:
         return {
-          qrValue: customLink || "https://clinicos.in",
+          qrValue: customLink || `${origin}/clinics/${clinicSlug}`,
           headerTitle: "Official Digital Clinic Portal",
           headerHindi: "डिजिटल क्लिनिक स्वास्थ्य पोर्टल",
-          instructionText: "Scan with your phone to access prescriptions, book appointments, and view verified doctor credentials.",
+          instructionText: "Scan with your phone to access prescriptions, book appointments, and view doctor registration details.",
           instructionHindi: "डिजिटल पर्चे देखने और अपॉइंटमेंट के लिए स्कैन करें।",
           badgeText: "OFFICIAL CLINIC QR"
         };
     }
-  }, [purpose, wifiSsid, wifiPassword, customLink]);
+  }, [purpose, wifiSsid, wifiPassword, customLink, clinicSlug, reviewUrl, doctorName]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(qrValue);
@@ -163,7 +226,7 @@ export default function StandeeGeneratorPage() {
           patient_name: "Valued Patient",
           token_number: simPatientToken,
           current_token: simCurrentToken,
-          clinic_slug: "derma-care",
+          clinic_slug: clinicSlug,
           clinic_name: clinicName,
           chamber_name: "Chamber 1",
           doctor_name: doctorName
@@ -601,6 +664,24 @@ export default function StandeeGeneratorPage() {
                   />
                 </div>
               </div>
+
+              {purpose === "google_reviews" && (
+                <div>
+                  <label className="text-[11px] font-semibold text-[#86868B] block">
+                    Google Review Link
+                  </label>
+                  <input
+                    type="url"
+                    value={reviewUrl}
+                    onChange={(e) => setReviewUrl(e.target.value)}
+                    placeholder="https://g.page/r/your-clinic/review"
+                    className="w-full mt-1 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-white dark:bg-[#2C2C2E] p-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#0071E3]"
+                  />
+                  <p className="mt-1 text-[10px] text-[#86868B]">
+                    Paste the review link from your Google Business Profile. Without it, the QR points to your clinic page.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -777,7 +858,7 @@ export default function StandeeGeneratorPage() {
                 <div className="text-right">
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-0.5 text-[9px] font-mono uppercase tracking-widest text-slate-200">
                     <ShieldCheck className="h-3 w-3 text-emerald-400" />
-                    <span>NMC Verified &bull; ClinicOS</span>
+                    <span>ClinicOS</span>
                   </span>
                 </div>
               </div>
@@ -970,7 +1051,7 @@ export default function StandeeGeneratorPage() {
 
             <div className="flex items-center justify-between pt-2">
               <a
-                href={`/waiting-room?clinic=derma-care&view=patient&token=${simPatientToken}`}
+                href={`/waiting-room?clinic=${clinicSlug}&view=patient&token=${simPatientToken}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-[#0071E3] hover:underline font-bold"

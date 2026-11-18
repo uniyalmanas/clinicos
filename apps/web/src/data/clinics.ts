@@ -26,7 +26,7 @@ export interface ClinicProfile {
   doctors: ClinicDoctorSummary[];
 }
 
-// Build authentic clinic data from verified Dehradun doctors directory
+// Static demo clinic fixtures. Served only when ALLOW_DEMO_DATA is explicitly enabled.
 export const DEHRADUN_CLINICS: ClinicProfile[] = [
   {
     slug: "docsphere-gastro-dehradun",
@@ -59,7 +59,7 @@ export const DEHRADUN_CLINICS: ClinicProfile[] = [
     slug: "derma-care-dehradun",
     name: "Derma Care Skin & Laser Centre",
     tagline: "Advanced Dermatology & Cosmetic Laser Solutions",
-    about: "State of the art skin clinic specializing in acne, laser scar reduction, eczema, and hair loss therapies with certified dermatology protocols.",
+    about: "Skin clinic specializing in acne, laser scar reduction, eczema, and hair loss therapies.",
     address_line: "14, Rajpur Road, Near Ashley Hall",
     locality: "Rajpur Road",
     city: "Dehradun",

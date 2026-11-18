@@ -10,7 +10,7 @@ logger = logging.getLogger("groq_provider")
 class GroqLLMProvider(BaseLLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key if api_key is not None else settings.GROQ_API_KEY
-        self.model = model or settings.GROQ_CHAT_MODEL or "llama-3.3-70b-versatile"
+        self.model = model or settings.GROQ_CHAT_MODEL or "openai/gpt-oss-20b"
         self.api_url = "https://api.groq.com/openai/v1/chat/completions"
 
     def chat_completion(

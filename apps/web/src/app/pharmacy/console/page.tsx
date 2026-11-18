@@ -56,15 +56,15 @@ export default function PharmacyConsolePage() {
           patient_name: item.patient_name,
           patient_phone: item.patient_phone || "Phone unavailable",
           doctor_name: item.doctor_name || "Doctor unavailable",
-          doctor_council_reg: "Verified in prescription",
-          clinic_name: "Clinic prescription queue",
+          doctor_council_reg: item.doctor_council_reg || "",
+          clinic_name: item.clinic_name || "",
           items: Array.isArray(item.items) ? item.items.map((medicine: any) => ({
             name: medicine.medicine_name || medicine.generic_name || "Medicine",
             qty: `${medicine.duration_days || 1} days`,
             instructions: `${medicine.dosage_frequency || "As directed"} ${medicine.timing_relation || ""}`.trim()
           })) : [],
           order_status: item.is_dispensed ? "dispensed" : "pending_assembly",
-          signature_hash: "Verified prescription signature",
+          signature_hash: item.signature_hash || "",
           total_inr: null,
           timestamp: item.created_at ? new Date(item.created_at).toLocaleString() : "Recently issued"
         }));
@@ -98,10 +98,10 @@ export default function PharmacyConsolePage() {
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-900 dark:text-white">Partner Chemist Console</span>
                   <span className="rounded bg-emerald-100 px-1.5 py-0.2 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border dark:border-emerald-800/40">
-                    City Care Pharmacy Rajpur Road
+                    Connected clinic queue
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Zero-Commission Generic Medicine Fulfillment Hub</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Prescription fulfillment console</p>
               </div>
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function PharmacyConsolePage() {
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#1E2638] dark:bg-[#111726]">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Incoming Orders Today</span>
             <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{isLoading ? "-" : orders.length}</div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">From Derma Care & Smile Craft clinics</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">From connected DocSphere clinics</p>
           </div>
 
           <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-5 shadow-sm dark:border-emerald-900/40 dark:bg-[#111726]">
@@ -141,13 +141,15 @@ export default function PharmacyConsolePage() {
             <div className="mt-2 text-3xl font-black text-emerald-700 dark:text-emerald-400">
               {orders.filter(o => o.order_status === "dispensed").length}
             </div>
-            <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">Patients notified via WhatsApp</p>
+            <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">Dispensed at counter</p>
           </div>
 
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-[#1E2638] dark:bg-[#111726]">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">NMC Generic Compliance</span>
-            <div className="mt-2 text-3xl font-black text-brand-600 dark:text-brand-400">100%</div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">All generic molecules verified</p>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Awaiting Assembly</span>
+            <div className="mt-2 text-3xl font-black text-brand-600 dark:text-brand-400">
+              {isLoading ? "-" : orders.filter(o => o.order_status === "pending_assembly").length}
+            </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Orders still to be packed</p>
           </div>
         </div>
 
@@ -198,7 +200,8 @@ export default function PharmacyConsolePage() {
                       Prescribed by {order.doctor_name}
                     </div>
                     <div className="text-[11px] text-slate-400">
-                      Reg: {order.doctor_council_reg} • {order.clinic_name}
+                      {order.doctor_council_reg ? `Reg: ${order.doctor_council_reg}` : "Registration on file"}
+                      {order.clinic_name ? ` • ${order.clinic_name}` : ""}
                     </div>
                   </div>
                 </div>
@@ -227,7 +230,11 @@ export default function PharmacyConsolePage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                   <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Cryptographic Signature Valid: <strong className="font-mono text-[10px]">{order.signature_hash}</strong></span>
+                    <span>
+                      {order.signature_hash
+                        ? <>Cryptographic Signature Valid: <strong className="font-mono text-[10px]">{order.signature_hash}</strong></>
+                        : "Signature hash not exposed on this queue"}
+                    </span>
                   </div>
 
                   <div className="flex gap-2">
@@ -238,7 +245,7 @@ export default function PharmacyConsolePage() {
                       href={`/p/${order.prescription_number}`}
                       target="_blank"
                       className="rounded-xl border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 dark:border-[#1E2638] dark:bg-[#161F36] dark:text-slate-300"
-                      title="View Verified Prescription"
+                      title="View prescription"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Link>

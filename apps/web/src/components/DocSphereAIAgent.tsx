@@ -177,82 +177,82 @@ export default function DocSphereAIAgent({
     }
   };
 
-  // Intent matching logic
+  // Offline intent matching.
+  //
+  // The live consultant API recommends a specific doctor. When that call cannot
+  // be reached we must not invent doctors or fees, so the fallback only routes
+  // the patient to a real specialty search or the clinic directory.
   const matchIntent = (q: string): { text: string; actionButton?: ActionButton } => {
     const lower = q.toLowerCase();
+    const specialty = (
+      text: string,
+      label: string,
+      slug: string
+    ): { text: string; actionButton?: ActionButton } => ({
+      text,
+      actionButton: { label, href: `/search?specialty=${slug}` },
+    });
 
     // Dental / Teeth
     if (lower.includes("tooth") || lower.includes("teeth") || lower.includes("dental") || lower.includes("dentist") || lower.includes("gum") || lower.includes("cavity") || lower.includes("root canal")) {
-      return {
-        text: "For dental pain, root canals, or gum bleeding, we recommend Dr. Aditi Joshi (MDS Endodontics & Dental Surgery) at Smile Craft Dental, EC Road. Consultation is ₹400 with 0% markup.",
-        actionButton: {
-          label: "Book Dr. Aditi Joshi (₹400)",
-          href: "/book?doctor=dr-aditi-joshi"
-        }
-      };
+      return specialty(
+        "For dental pain, root canals, or gum problems, browse dentists and pick the chamber closest to you.",
+        "Find a Dentist",
+        "dentist"
+      );
     }
 
     // Dermatology / Skin / Hair
     if (lower.includes("skin") || lower.includes("rash") || lower.includes("acne") || lower.includes("hair") || lower.includes("itch") || lower.includes("derma") || lower.includes("eczema")) {
-      return {
-        text: "For acne, red rashes, allergic dermatitis, or hair loss, we recommend Dr. Rahul Sharma (MD Dermatology) at Derma Care Skin & Laser, Rajpur Road. Consultation is ₹600 with direct token tracking.",
-        actionButton: {
-          label: "Book Dr. Rahul Sharma (₹600)",
-          href: "/book?doctor=dr-rahul-sharma"
-        }
-      };
+      return specialty(
+        "For acne, rashes, or hair loss, browse dermatologists and book directly at their clinic fee.",
+        "Find a Dermatologist",
+        "dermatologist"
+      );
     }
 
     // Pediatrics / Child
     if (lower.includes("child") || lower.includes("baby") || lower.includes("kid") || lower.includes("pediatric") || lower.includes("vaccin")) {
-      return {
-        text: "For infant care, child fevers, or vaccinations, consult Dr. Vikram Sethi (DNB Pediatrics) at Dron Child & Newborn Clinic, Chakrata Road. Consultation fee is ₹500.",
-        actionButton: {
-          label: "Book Dr. Vikram Sethi (₹500)",
-          href: "/book?doctor=dr-vikram-sethi"
-        }
-      };
+      return specialty(
+        "For infant care, child fevers, or vaccinations, browse paediatricians near you.",
+        "Find a Paediatrician",
+        "pediatrician"
+      );
     }
 
     // Orthopaedics / Bones / Joints
     if (lower.includes("joint") || lower.includes("bone") || lower.includes("knee") || lower.includes("fracture") || lower.includes("ortho") || lower.includes("spine") || lower.includes("back pain")) {
-      return {
-        text: "For joint pain, knee stiffness, or fractures, consult Dr. Rohit Sureka (MS Orthopaedics) at Sureka Bone & Joint, Ballupur Chowk. Consultation fee is ₹600 with zero markup.",
-        actionButton: {
-          label: "Book Dr. Rohit Sureka (₹600)",
-          href: "/book?doctor=dr-rohit-sureka"
-        }
-      };
+      return specialty(
+        "For joint pain, stiffness, or fractures, browse orthopaedic specialists near you.",
+        "Find an Orthopaedic Specialist",
+        "orthopaedist"
+      );
     }
 
     // ENT
     if (lower.includes("ear") || lower.includes("throat") || lower.includes("nose") || lower.includes("sinus") || lower.includes("ent") || lower.includes("tonsil") || lower.includes("vertigo")) {
-      return {
-        text: "For ear ache, throat infection, sinus block, or vertigo, consult Dr. Priya Bansal (MS ENT) at Bansal ENT Centre on Haridwar Road. Consultation fee is ₹500.",
-        actionButton: {
-          label: "Book Dr. Priya Bansal (₹500)",
-          href: "/book?doctor=dr-priya-bansal"
-        }
-      };
+      return specialty(
+        "For ear, nose, or throat concerns, browse ENT specialists near you.",
+        "Find an ENT Specialist",
+        "ent"
+      );
     }
 
     // General Physician / Fever / BP / Sugar
     if (lower.includes("fever") || lower.includes("cough") || lower.includes("cold") || lower.includes("sugar") || lower.includes("diabetes") || lower.includes("bp") || lower.includes("general")) {
-      return {
-        text: "For acute fevers, viral illness, blood pressure, or diabetes, consult Dr. Harish K C (MD General Medicine) at Doon Medicare near Clock Tower. Consultation fee is ₹400.",
-        actionButton: {
-          label: "Book Dr. Harish K C (₹400)",
-          href: "/book?doctor=dr-harish-k-c"
-        }
-      };
+      return specialty(
+        "For fever, blood pressure, or diabetes, browse general physicians near you.",
+        "Find a General Physician",
+        "general-physician"
+      );
     }
 
     // Fees & Zero-Markup
     if (lower.includes("fee") || lower.includes("charge") || lower.includes("cost") || lower.includes("price") || lower.includes("commission") || lower.includes("markup")) {
       return {
-        text: "DocSphere has 100% Zero Aggregator Markup. You pay the doctor's exact clinic fee (₹400 to ₹600) directly via UPI or Cash at the counter with 0% commission.",
+        text: "DocSphere has zero aggregator markup. You pay the doctor's exact clinic consultation fee directly at the counter or via UPI — no booking fee and no commission added.",
         actionButton: {
-          label: "View All Doctor Fees",
+          label: "Browse Doctors & Fees",
           href: "/search"
         }
       };
@@ -261,10 +261,10 @@ export default function DocSphereAIAgent({
     // Timings & Live Queue
     if (lower.includes("timing") || lower.includes("time") || lower.includes("hour") || lower.includes("queue") || lower.includes("token") || lower.includes("wait") || lower.includes("opd")) {
       return {
-        text: "Morning OPD runs 10:00 AM – 2:00 PM, and Evening OPD runs 5:00 PM – 8:30 PM. Your live token ticker updates right on your phone so you can skip waiting room crowds.",
+        text: "OPD timings vary by doctor and clinic. Open any doctor profile to see today's chamber hours and book a live token — your position then updates on your phone.",
         actionButton: {
-          label: "Reserve Live OPD Token",
-          href: "/book"
+          label: "Browse Doctors",
+          href: "/search"
         }
       };
     }
@@ -282,14 +282,13 @@ export default function DocSphereAIAgent({
 
     // Default friendly assistant fallback
     return {
-      text: "I can help you find verified doctors in Dehradun, explain zero-markup consultation fees, or guide you to book a live counter token. What would you like help with?",
+      text: "I can help you find doctors near you, explain how direct clinic fees work, or guide you to book a live counter token. What would you like help with?",
       actionButton: {
-        label: "Find Doctors in Dehradun",
+        label: "Find Doctors",
         href: "/search"
       }
     };
   };
-
   const handleSend = async (textToSend?: string) => {
     const q = (textToSend || inputQuery).trim();
     if (!q || isThinking) return;

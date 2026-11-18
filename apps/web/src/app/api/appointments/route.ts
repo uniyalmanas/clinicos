@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { randomUUID } from "crypto";
 import { guard, CLINIC_ROLES, apiError } from "@/lib/api-auth";
 import { logAudit } from "@/lib/audit";
+import { clinicToday } from "@/lib/clinic-date";
 import { databaseUnavailable } from "@/lib/require-db";
 import { rateLimit, rateLimitKey, tooManyRequests } from "@/lib/rate-limit";
 
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest) {
       return apiError(404, "Doctor not found in your clinic.", "doctor_not_found");
     }
 
-    const todayStr = appointment_date || new Date().toISOString().split("T")[0];
+    const todayStr = appointment_date || clinicToday();
     const cleanPhone = String(patient_phone).replace(/[^0-9]/g, "").slice(-10);
     if (cleanPhone.length !== 10) {
       return apiError(400, "A valid 10-digit patient phone is required.", "invalid_phone");

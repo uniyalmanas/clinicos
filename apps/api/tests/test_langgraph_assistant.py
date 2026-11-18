@@ -24,12 +24,14 @@ def test_langgraph_doctor_question_workflow():
     assistant_resp = result.get("assistant_response")
     assert assistant_resp is not None
     assert "reply" in assistant_resp
-    assert "sulfa" in assistant_resp["reply"].lower() or "allergy" in assistant_resp["reply"].lower()
+    # No allergy was supplied: the assistant must not invent one.
+    assert "sulfa" not in assistant_resp["reply"].lower()
+    assert "none recorded" in assistant_resp["reply"].lower()
 
-    # Provenance tags must exist
+    # Provenance must be honest about the missing record.
     sources = assistant_resp.get("provenance_sources", [])
     assert len(sources) > 0
-    assert any(s["source_type"] == "verified_patient_record" for s in sources)
+    assert any(s["source_type"] == "missing_info" for s in sources)
 
 
 def test_langgraph_dual_report_generation_workflow():
@@ -60,8 +62,12 @@ def test_langgraph_dual_report_generation_workflow():
     assert "chief_complaint" in doc_report
     assert "doctor_confirmed_assessment" in doc_report
     assert "prescriptions" in doc_report
+    assert doc_report["vitals"] == {"Blood Pressure": {"systolic": 120, "diastolic": 80}}
+    assert doc_report["prescriptions"] == []
+    assert "Not documented" in doc_report["doctor_confirmed_assessment"]
 
     assert pat_report is not None
     assert "summary_of_discussion" in pat_report
     assert "when_to_seek_urgent_care" in pat_report
     assert "lifestyle_and_home_advice" in pat_report
+    assert pat_report["medications"] == []

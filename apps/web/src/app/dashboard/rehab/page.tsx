@@ -1,4 +1,5 @@
 "use client";
+import { getStoredUser } from "@/lib/current-user";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { 
@@ -239,9 +240,9 @@ export default function RehabDashboardPage() {
   // New Plan form state
   const [newPtName, setNewPtName] = useState("");
   const [newPtPhone, setNewPtPhone] = useState("");
-  const [newDoctor, setNewDoctor] = useState("Dr. Arvind Shenoy (MS Ortho, Joint Specialist)");
-  const [newTherapist, setNewTherapist] = useState("Dr. Sneha Verma (PT)");
-  const [newSeniorPt, setNewSeniorPt] = useState("Dr. Vikram Sethi (Chief PT, MIAP)");
+  const [newDoctor, setNewDoctor] = useState("");
+  const [newTherapist, setNewTherapist] = useState("");
+  const [newSeniorPt, setNewSeniorPt] = useState("");
   const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
   const [newCondition, setNewCondition] = useState(CONDITION_PRESETS[0].name);
   const [newJoint, setNewJoint] = useState(CONDITION_PRESETS[0].joint);
@@ -476,7 +477,7 @@ export default function RehabDashboardPage() {
         body: JSON.stringify({
           plan_id: selectedPlan.id,
           action: "approve_modifications",
-          approved_by: "Dr. Vikram Sethi (Chief PT, MIAP - License #PT-88412)"
+          approved_by: getStoredUser()?.full_name || ""
         })
       });
       if (res.ok) {
@@ -568,7 +569,7 @@ export default function RehabDashboardPage() {
                   Physiotherapy &amp; Rehabilitation Studio
                 </h1>
                 <span className="text-xs px-2.5 py-0.5 rounded-full font-mono bg-rose-500/10 text-rose-600 border border-rose-500/20 font-semibold">
-                  Marley Rehab Core
+                  Rehabilitation Core
                 </span>
                 <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-semibold border border-emerald-500/20 flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3" /> Senior PT Governed
@@ -995,7 +996,7 @@ export default function RehabDashboardPage() {
                     <div className="p-4 rounded-2xl bg-black/[0.01] dark:bg-white/[0.01] border border-black/[0.06] dark:border-white/[0.08] space-y-1.5">
                       <div className="text-[10px] uppercase font-bold text-[#86868B]">Senior PT Governance Oversight</div>
                       <div className="font-bold text-sm text-[#1D1D1F] dark:text-white">{selectedPlan.approved_by}</div>
-                      <div className="text-[11px] text-[#86868B]">Chief Physiotherapist (License Verified)</div>
+                      <div className="text-[11px] text-[#86868B]">Chief Physiotherapist</div>
                       <div className="text-[11px] text-emerald-600 font-semibold pt-1">
                         ✓ Biomechanical loading &amp; progression governed
                       </div>
@@ -1346,7 +1347,7 @@ export default function RehabDashboardPage() {
                           {/* Gated Exercises Executed */}
                           {sess.exercises_performed && sess.exercises_performed.length > 0 && (
                             <div className="space-y-1">
-                              <span className="text-[10px] uppercase font-bold text-[#86868B]">Verified Movement Execution:</span>
+                              <span className="text-[10px] uppercase font-bold text-[#86868B]">Movement Execution:</span>
                               <div className="flex flex-wrap gap-1.5">
                                 {sess.exercises_performed.map((ex, i) => (
                                   <span 
@@ -1682,7 +1683,7 @@ export default function RehabDashboardPage() {
                     Gated Movement Execution Checklist (All must be accounted for)
                   </label>
                   <span className="text-[10px] text-emerald-600 font-mono font-semibold">
-                    100% Gated Enforcement
+                    Gated checklist enforced
                   </span>
                 </div>
 
@@ -1967,7 +1968,7 @@ export default function RehabDashboardPage() {
                 <input
                   type="text"
                   disabled
-                  value="Dr. Vikram Sethi (Chief PT, MIAP - License #PT-88412)"
+                  value={getStoredUser()?.full_name || ""}
                   className="w-full px-3 py-2 rounded-xl border border-black/[0.08] dark:border-white/[0.1] bg-black/[0.02] text-[#86868B]"
                 />
               </div>
@@ -2088,7 +2089,7 @@ export default function RehabDashboardPage() {
                   <p className="text-xs text-[#86868B]">Department of Physical Therapy &amp; Musculoskeletal Recovery</p>
                 </div>
                 <div className="text-right font-mono text-xs">
-                  <div className="font-bold text-rose-600">REHAB-{(selectedPlan.id || "00000000").slice(0, 8).toUpperCase()}</div>
+                  <div className="font-bold text-rose-600">{selectedPlan.id ? `REHAB-${String(selectedPlan.id).slice(0, 8).toUpperCase()}` : "REHAB — ID not on file"}</div>
                   <div className="text-[#86868B] text-[11px]">
                     Date: {new Date().toLocaleDateString("en-IN")}
                   </div>
